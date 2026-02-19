@@ -2,6 +2,9 @@
 
 Pequeña web al estilo **gw2efficiency** para ver las **divisas (wallet)** de una cuenta de Guild Wars 2, con soporte para **múltiples API Keys**, **validación de permisos**, **filtros** y **vista compacta**.
 
+## Novedades
+**v1.1.0** – Re‑maquetado de tarjetas: texto (nombre + descripción + categorías) arriba y una fila con **icono + cantidad** abajo. Mejor legibilidad y coherencia visual.
+
 ## Características
 - Guardar **múltiples API Keys** localmente (solo en tu navegador).
 - Validación con **/v2/tokeninfo** y chequeo de permisos **account** + **wallet**.
@@ -20,30 +23,5 @@ Pequeña web al estilo **gw2efficiency** para ver las **divisas (wallet)** de un
   .nojekyll
   .github/workflows/pages.yml
   LICENSE
+  CHANGELOG.md
 ```
-
-## Uso local
-1. Abre `index.html` en tu navegador.
-2. Pega tu **API Key** (con permisos `account` y `wallet`).
-3. Selecciona la key en el combo y pulsa **Actualizar**.
-
-## Publicar en GitHub Pages (sin herramientas externas)
-1. Crea un repositorio en GitHub (por ejemplo `gw2-wallet-ligero`).
-2. Sube **todos** los archivos de este ZIP a la rama `main` (raíz del repo).
-3. Ve a **Settings → Pages** y en *Build and deployment* selecciona:
-   - **Source**: *Deploy from a branch*
-   - **Branch**: `main` / (root)
-4. Guarda; espera unos segundos y entra al link que te muestra GitHub Pages.
-
-## Publicar en GitHub Pages (con Actions automáticas)
-Este proyecto incluye `.github/workflows/pages.yml`. Si prefieres Actions:
-1. Subí el contenido a `main`.
-2. Abrí la pestaña **Actions** y habilitá workflows si te lo pide.
-3. El job **Deploy static content to Pages** publicará automáticamente.
-
-## Seguridad
-- Las **API Keys** se guardan **solo** en `localStorage` del navegador del usuario.
-- Para peticiones autenticadas desde el front se usa `?access_token=`, recomendado cuando el backend de la API no soporta preflight CORS.
-
-## Licencia
-MIT.

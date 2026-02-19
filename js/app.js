@@ -4,6 +4,7 @@
 //  - Validación de permisos (tokeninfo)
 //  - Billetera + catálogo
 //  - Filtros + vista compacta
+//  - NUEVO: tarjetas con header+footer (icono+cantidad)
 // ==========================
 
 const LS_KEYS = 'gw2.wallet.keys.v1';
@@ -98,74 +99,68 @@ function formatCoins(totalCopper){
 }
 
 // --- Mapeo de categorías (comunitario) ---
-// Referencias: categorías habituales (Generales, Competitivas, Mapas, Llaves, Mazmorras, Black Lion, Históricas)
-// Basado en discusiones/recopilaciones de la comunidad; este mapeo puede cambiar con el tiempo.
-// Se incluye un subconjunto representativo. Puedes ampliarlo si lo deseas.
 const CATEGORY_MAP = {
   // Generales
-  4:['general','blacklion'], // Gem
-  1:['general'], // Coin
-  2:['general'], // Karma
-  23:['general'], // Spirit Shard
-  3:['general'], // Laurel
-  16:['general'], // Guild Commendation
-  18:['general','blacklion'], // Transmutation Charge
-  63:['general'], // Astral Acclaim
+  4:['general','blacklion'], 1:['general'], 2:['general'], 23:['general'],
+  3:['general'], 16:['general'], 18:['general','blacklion'], 63:['general'],
   // Competitivas
-  30:['competitive'], // PvP League Ticket
-  15:['competitive'], // Badge of Honor
-  26:['competitive'], // WvW Skirmish Claim Ticket
-  31:['competitive'], // Proof of Heroics
-  36:['competitive'], // Testimony of Desert Heroics
-  65:['competitive'], // Testimony of Jade Heroics
-  33:['competitive'], // Ascended Shards of Glory
+  30:['competitive'], 15:['competitive'], 26:['competitive'], 31:['competitive'],
+  36:['competitive'], 65:['competitive'], 33:['competitive'],
   // Mapas
   25:['map'],27:['map'],19:['map'],22:['map'],20:['map'],29:['map'],32:['map'],34:['map'],35:['map'],45:['map'],47:['map'],50:['map'],57:['map'],58:['map'],60:['map'],67:['map'],72:['map'],73:['map'],75:['map'],76:['map'],28:['map'],70:['map'],53:['map'],77:['map'],
   // Llaves
   43:['key'],41:['key'],37:['key'],42:['key'],38:['key'],44:['key'],49:['key'],51:['key'],54:['key'],71:['key'],40:['key'],
   // Mazmorras/Fractales
   7:['dungeon'],24:['dungeon'],69:['dungeon'],59:['dungeon'],
-  // Históricas (ya no se usan en el juego)
+  // Históricas
   39:['historic'],55:['historic'],52:['historic'],56:['historic'],5:['historic'],9:['historic'],11:['historic'],10:['historic'],13:['historic'],12:['historic'],14:['historic'],6:['historic'],74:['historic']
 };
 
-// Lista de principales (usada en el filtro "Solo principales")
+// Lista de principales (filtro)
 const MAIN_IDS = [1,4,2,23,3,16,18,63];
 
-// --- Render grilla de tarjetas ---
+// --- Render grilla de tarjetas (NUEVO layout) ---
 function renderCards(list){
   const byId = new Map(currencies.map(c => [c.id, c]));
   const container = $('#walletCards');
   container.innerHTML = '';
+
   list.forEach(entry => {
     const meta = byId.get(entry.id) || { name:`ID ${entry.id}`, icon:'', description:'' };
+
     const card = document.createElement('div');
-    card.className = 'card';
-    const img = document.createElement('img');
-    img.alt = meta.name; img.src = meta.icon || '';
-    const block = document.createElement('div'); block.style.minWidth = '0';
+    card.className = 'card card-col';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'card-header';
     const title = document.createElement('div'); title.className = 'title'; title.textContent = meta.name || `ID ${entry.id}`;
     const desc = document.createElement('div'); desc.className = 'muted'; desc.style.fontSize = '12px'; desc.textContent = meta.description || '';
-    const value = document.createElement('div'); value.className = 'value';
-
-    if(entry.id === 1){ // monedas
-      const {g,s,c} = formatCoins(entry.value);
-      const wrap = document.createElement('div'); wrap.className = 'coins';
-      const cg = document.createElement('span'); cg.className = 'coin g'; cg.textContent = nf.format(g)+' g';
-      const cs = document.createElement('span'); cs.className = 'coin s'; cs.textContent = s+' s';
-      const cc = document.createElement('span'); cc.className = 'coin c'; cc.textContent = c+' c';
-      wrap.append(cg, cs, cc);
-      value.appendChild(wrap);
-    } else {
-      value.textContent = nf.format(entry.value);
-    }
-
     const cats = document.createElement('div');
     const c = CATEGORY_MAP[entry.id] || [];
     if(c.length){ cats.className = 'muted'; cats.style.fontSize = '11px'; cats.textContent = c.join(', '); }
+    header.append(title, desc, cats);
 
-    block.append(title, desc, cats);
-    card.append(img, block, value);
+    // Footer: icon + amount en una sola fila
+    const footer = document.createElement('div');
+    footer.className = 'card-footer';
+    const icon = document.createElement('img'); icon.alt = meta.name; icon.src = meta.icon || ''; icon.width = 28; icon.height = 28; icon.loading='lazy';
+
+    const amount = document.createElement('div'); amount.className = 'value';
+    if(entry.id === 1){
+      const {g,s,c:cc} = formatCoins(entry.value);
+      const wrap = document.createElement('div'); wrap.className = 'coins';
+      const cg = document.createElement('span'); cg.className = 'coin g'; cg.textContent = nf.format(g)+' g';
+      const cs = document.createElement('span'); cs.className = 'coin s'; cs.textContent = s+' s';
+      const ccc = document.createElement('span'); ccc.className = 'coin c'; ccc.textContent = cc+' c';
+      wrap.append(cg, cs, ccc);
+      amount.appendChild(wrap);
+    } else {
+      amount.textContent = nf.format(entry.value);
+    }
+
+    footer.append(icon, amount);
+    card.append(header, footer);
     container.appendChild(card);
   });
 }
@@ -230,7 +225,6 @@ function applyFilters(){
     if(sort === 'amount'){
       return (b.value||0) - (a.value||0);
     }
-    // default: order del catálogo
     const oa = byId.get(a.id)?.order ?? 0;
     const ob = byId.get(b.id)?.order ?? 0;
     return oa - ob;
@@ -295,7 +289,6 @@ async function refreshSelected(){
 $('#refreshBtn').addEventListener('click', refreshSelected);
 $('#keySelect').addEventListener('change', refreshSelected);
 
-// Filtros y vista
 ['searchBox','categorySelect','onlyPositive','onlyMain','sortSelect','viewSelect'].forEach(id=>{
   const el = document.getElementById(id);
   el.addEventListener(el.tagName==='INPUT' && el.type==='text' ? 'input' : 'change', applyFilters);

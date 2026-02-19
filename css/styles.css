@@ -39,10 +39,9 @@ button.red{background:var(--err); color:white}
 
 /* Grilla de tarjetas */
 .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px}
-.card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; display:flex; gap:12px; align-items:center}
-.card img{width:32px; height:32px; border-radius:6px; background:#0b1020; flex:0 0 auto}
+.card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px}
 .card .title{font-weight:600}
-.card .value{margin-left:auto; font-variant-numeric:tabular-nums}
+.card .value{font-variant-numeric:tabular-nums}
 
 /* Monedas */
 .coins{display:flex; gap:6px; align-items:center; font-variant-numeric:tabular-nums}
@@ -60,3 +59,9 @@ button.red{background:var(--err); color:white}
 .table th,.table td{padding:8px 10px; border-bottom:1px solid var(--border)}
 .table th{background:#121722; text-align:left; font-size:12px; color:#b7c3d7}
 .right{text-align:right}
+
+/* NUEVO: tarjetas con header (texto) + footer (icono + cantidad) */
+.card-col{display:flex; flex-direction:column; gap:10px}
+.card-header{display:block}
+.card-footer{display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:6px; border-top:1px dashed var(--border)}
+.card-footer img{width:28px; height:28px; border-radius:6px; background:#0b1020}
