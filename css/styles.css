@@ -1,0 +1,62 @@
+/* Estilos base */
+:root{
+  --bg:#0f1216; --panel:#171b22; --panel-2:#1f2530; --text:#e7edf4; --muted:#9fb0c3;
+  --brand:#60a5fa; --ok:#34d399; --warn:#f59e0b; --err:#ef4444; --border:#2a3443;
+  --card:#1a2030;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0; background:var(--bg); color:var(--text); font:14px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+
+.topbar{position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:12px; padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--border)}
+.topbar h1{font-size:16px; margin:0; font-weight:700; letter-spacing:.3px}
+.topbar .badge{font-size:12px; color:#cbd5e1; background:#0b1020; border:1px solid var(--border); padding:2px 8px; border-radius:999px}
+.topbar .spacer{flex:1}
+.topbar nav a{color:var(--muted); text-decoration:none; margin-left:12px; font-size:12px}
+
+main{padding:16px; max-width:1100px; margin:0 auto}
+.panel{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:16px}
+
+.row{display:flex; flex-wrap:wrap; gap:10px}
+.toolbar{display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap}
+.grow{flex:1 1 220px}
+.flex{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+
+label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
+input[type=text]{width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px 12px}
+select{width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px 12px; appearance:none}
+button{background:var(--brand); color:#08111f; border:0; border-radius:8px; padding:10px 14px; font-weight:700; cursor:pointer}
+button.ghost{background:transparent; color:var(--muted); border:1px solid var(--border)}
+button.red{background:var(--err); color:white}
+
+.status{font-size:12px; color:var(--muted)}
+.status.ok{color:var(--ok)} .status.warn{color:var(--warn)} .status.err{color:var(--err)}
+
+.pill{padding:6px 10px; border:1px solid var(--border); background:var(--panel-2); border-radius:999px; font-size:12px}
+.hr{height:1px; background:var(--border); margin:10px 0}
+.muted{color:var(--muted)}
+.mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
+
+/* Grilla de tarjetas */
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px}
+.card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px; display:flex; gap:12px; align-items:center}
+.card img{width:32px; height:32px; border-radius:6px; background:#0b1020; flex:0 0 auto}
+.card .title{font-weight:600}
+.card .value{margin-left:auto; font-variant-numeric:tabular-nums}
+
+/* Monedas */
+.coins{display:flex; gap:6px; align-items:center; font-variant-numeric:tabular-nums}
+.coin{display:inline-flex; gap:4px; align-items:center; padding:2px 6px; border:1px solid var(--border); border-radius:6px; background:#0f1420}
+.coin.g{color:#f5d061} .coin.s{color:#c0c0c0} .coin.c{color:#d0926b}
+
+/* Filtros */
+.filters{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin:10px 0}
+.field{display:block}
+.field.checkbox label{margin:0; display:flex; align-items:center; gap:8px; padding-top:20px}
+
+/* Tabla compacta */
+.table-wrap{overflow:auto}
+.table{width:100%; border-collapse:collapse; background:var(--panel-2); border:1px solid var(--border)}
+.table th,.table td{padding:8px 10px; border-bottom:1px solid var(--border)}
+.table th{background:#121722; text-align:left; font-size:12px; color:#b7c3d7}
+.right{text-align:right}
