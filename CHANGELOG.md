@@ -1,15 +1,8 @@
 # Changelog
 
-## [1.2.0] - 2026-02-19
+## [1.3.0] - 2026-02-20
 ### Added
-- Tema ArenaNet Dark, header con tabs y botones rojos.
-- Tarjetas estilo bloques de gestión de API Keys (header + footer icono/cantidad).
-- Tipografía y layout compactos.
-
-## [1.1.0] - 2026-02-19
-### Added
-- Nuevo layout de tarjetas: header (nombre + descripción + categorías) y footer (icono + cantidad).
-
-## [1.0.0] - 2026-02-19
-### Added
-- Versión inicial: soporte multi API Key, validación de permisos, filtros y vista compacta.
+- Sidebar fija estilo ArenaNet y reorganización 2 columnas.
+- Header con textura abstracta en grises (moderada).
+- Tarjetas horizontales de API Keys (copiar/editar/eliminar).
+- Iconografía minimal, hover rojo y modo denso.
