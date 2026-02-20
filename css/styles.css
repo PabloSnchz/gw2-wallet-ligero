@@ -31,13 +31,19 @@ input[type=text]:focus,select:focus{outline:none;border-color:#494949;box-shadow
 .btn{background:#1b1b1b;color:#ddd;border:1px solid var(--border);border-radius:2px;padding:9px 12px;cursor:pointer}
 .btn:hover{border-color:#444}.btn--primary{background:#151515;border-color:#414141}.btn--primary:hover{border-color:#5a5a5a}
 
+/* Icon buttons */
+.icon-btn{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);background:#111;cursor:pointer;border-radius:2px}
+.icon-btn:hover{border-color:#e63030;box-shadow:0 0 0 2px rgba(194,15,15,.2)}
+.icon{width:16px;height:16px;fill:#cfcfcf}
+.icon-btn:hover .icon{fill:var(--accent)}
+
 .status{font-size:12px;color:var(--muted);margin:8px 0}
 
 .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:8px 0}
 .field{margin-bottom:8px}
 .field.checkbox label{margin:0;display:flex;align-items:center;gap:8px;padding-top:6px}
 
-/* Tarjetas y tabla (exclusividad la maneja JS con hidden) */
+/* Tarjetas y tabla (exclusividad la maneja JS) */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
 .card{background:#0d0d0d;border:1px solid var(--border);padding:10px;border-radius:2px;transition:border-color .15s ease,box-shadow .15s ease}
 .card:hover{border-color:#4a4a4a;box-shadow:0 0 0 2px rgba(194,15,15,.2)}
@@ -57,6 +63,7 @@ input[type=text]:focus,select:focus{outline:none;border-color:#494949;box-shadow
 .table th{background:#0e0e0e;text-align:left;color:#cfcfcf}
 .right{text-align:right}
 
+/* Densidad ArenaNet por defecto */
 .dense .grid{gap:8px}
 .dense .card{padding:8px}
 .dense .table th,.dense .table td{padding:6px 8px}

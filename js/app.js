@@ -1,5 +1,10 @@
 
-// v1.4.0-preview — 4 cambios: Account ID junto al combo, exclusividad de vistas, tab API Keys externo (HTML), sin tarjetas de sidebar
+// v1.4.0-preview2 — Fixes solicitados
+// - Exclusividad de vistas garantizada en applyFilters
+// - Acciones con iconos junto al combo
+// - Densidad ArenaNet por defecto (sin checkbox)
+// - Cuenta muestra account.name (ej.: shiruvano.3084)
+
 const LS_KEYS='gw2.wallet.keys.v1';
 const LS_CURRENCIES='gw2.wallet.currencies.v1';
 let keys=loadKeys(); let currencies=null; let wallet=[];
@@ -14,12 +19,12 @@ function maskKey(id){ return id ? id.slice(0,8)+'…'+id.slice(-6) : ''; }
 async function validateKey(id){
   const url=`https://api.guildwars2.com/v2/tokeninfo?access_token=${encodeURIComponent(id)}`;
   const r=await fetch(url); if(!r.ok) throw new Error(`Token inválido (${r.status})`);
-  const data=await r.json(); return data; // {name, permissions:[...], ...}
+  return await r.json(); // {name, permissions:[...], ...}
 }
 async function fetchAccount(id){
   const url=`https://api.guildwars2.com/v2/account?access_token=${encodeURIComponent(id)}`;
   const r=await fetch(url); if(!r.ok) throw new Error(`No se pudo leer /v2/account (${r.status})`);
-  return await r.json(); // { id (GUID), name, world, ... }
+  return await r.json(); // { id (GUID), name (shiruvano.3084), ... }
 }
 async function loadCurrenciesCatalog(force=false){
   if(!force){ try{ const cached=JSON.parse(localStorage.getItem(LS_CURRENCIES)); if(cached&&Array.isArray(cached.items)&&(Date.now()-cached.ts)<(1000*60*60*24*7)){ currencies=cached.items; return currencies; } }catch{}
@@ -35,7 +40,6 @@ async function fetchWallet(id){
   return await r.json();
 }
 
-// ---- UI helpers ----
 function setStatus(msg, cls=''){ const el=$('#status'); if(!el) return; el.className='status '+cls; el.textContent=msg; }
 function formatCoins(total){ const g=Math.floor(total/10000); const s=Math.floor((total%10000)/100); const c=total%100; return {g,s,c}; }
 
@@ -53,7 +57,7 @@ function setView(view){
 }
 $('#hiddenViewSelect')?.addEventListener('change', e=>{ setView(e.target.value); applyFilters(); });
 
-// categorías (mapeo comunitario abreviado)
+// categorías (mapeo resumido)
 const CATEGORY_MAP={ 4:['general','blacklion'],1:['general'],2:['general'],23:['general'],3:['general'],16:['general'],18:['general','blacklion'],63:['general'], 30:['competitive'],15:['competitive'],26:['competitive'],31:['competitive'],36:['competitive'],65:['competitive'],33:['competitive'], 25:['map'],27:['map'],19:['map'],22:['map'],20:['map'],29:['map'],32:['map'],34:['map'],35:['map'],45:['map'],47:['map'],50:['map'],57:['map'],58:['map'],60:['map'],67:['map'],72:['map'],73:['map'],75:['map'],76:['map'],28:['map'],70:['map'],53:['map'],77:['map'], 43:['key'],41:['key'],37:['key'],42:['key'],38:['key'],44:['key'],49:['key'],51:['key'],54:['key'],71:['key'],40:['key'], 7:['dungeon'],24:['dungeon'],69:['dungeon'],59:['dungeon'], 39:['historic'],55:['historic'],52:['historic'],56:['historic'],5:['historic'],9:['historic'],11:['historic'],10:['historic'],13:['historic'],12:['historic'],14:['historic'],6:['historic'],74:['historic'] };
 const MAIN_IDS=[1,4,2,23,3,16,18,63];
 
@@ -64,7 +68,6 @@ function applyFilters(){
   const onlyPos=$('#onlyPositive')?.checked||false;
   const onlyMain=$('#onlyMain')?.checked||false;
   const sort=$('#sortSelect')?.value||'order';
-  const dense=$('#denseMode')?.checked||false; document.body.classList.toggle('dense', dense);
 
   const byId=new Map(currencies.map(c=>[c.id,c]));
   let list=wallet.slice();
@@ -83,7 +86,12 @@ function applyFilters(){
   });
 
   const view=$('#hiddenViewSelect')?.value||'cards';
-  if(view==='compact') renderTable(list); else renderCards(list);
+  // EXCLUSIVIDAD de vistas garantizada acá también
+  if(view==='compact'){
+    $('#walletCards').hidden=true; $('#walletTableWrap').hidden=false; renderTable(list);
+  } else {
+    $('#walletTableWrap').hidden=true; $('#walletCards').hidden=false; renderCards(list);
+  }
 }
 
 function renderCards(list){
@@ -129,11 +137,10 @@ function renderTable(list){
 $('#copyKeyBtn')?.addEventListener('click', ()=>{ const i=$('#keySelect').value; if(i===''||!keys[i]) return; navigator.clipboard?.writeText(keys[i].id); });
 $('#renameKeyBtn')?.addEventListener('click', ()=>{ const i=$('#keySelect').value; if(i===''||!keys[i]) return; const nuevo=prompt('Nuevo nombre para la key:', keys[i].name||''); if(nuevo!==null){ keys[i].name=nuevo; persistKeys(); renderKeySelect(); }});
 $('#deleteKeyBtn')?.addEventListener('click', ()=>{ const i=$('#keySelect').value; if(i===''||!keys[i]) return; if(confirm('¿Eliminar esta key?')){ const removed=keys.splice(i,1)[0]; persistKeys(); renderKeySelect(); $('#ownerLabel').textContent='—'; $('#walletCards').innerHTML=''; const tb=$('#walletTable tbody'); if(tb) tb.innerHTML=''; setStatus(`Key eliminada: ${removed.name||maskKey(removed.id)}`,'ok'); }});
-
 $('#refreshBtn')?.addEventListener('click', refreshSelected);
 $('#keySelect')?.addEventListener('change', refreshSelected);
 
-['searchBox','categorySelect','onlyPositive','onlyMain','sortSelect','denseMode'].forEach(id=>{
+['searchBox','categorySelect','onlyPositive','onlyMain','sortSelect'].forEach(id=>{
   const el=document.getElementById(id); if(!el) return; const ev=(el.tagName==='INPUT'&&el.type==='text')?'input':'change'; el.addEventListener(ev, applyFilters);
 });
 
@@ -141,14 +148,13 @@ async function refreshSelected(){
   const idx=$('#keySelect').value; if(idx===''||!keys[idx]){ setStatus('No hay key seleccionada.','warn'); return; }
   const k=keys[idx]; setStatus('Cargando datos…');
   try{
-    // Validar permisos y obtener Account ID
+    // Validar permisos y obtener Account NAME (name: shiruvano.3084)
     const token=await validateKey(k.id); // token.permissions
     if(!new Set(token.permissions||[]).has('account')){ setStatus('Falta permiso: account','err'); $('#ownerLabel').textContent='—'; return; }
-    const acc=await fetchAccount(k.id); // GUID oficial
-    $('#ownerLabel').textContent=acc.id;
+    const acc=await fetchAccount(k.id); // {id(GUID), name(shiruvano.3084)}
+    $('#ownerLabel').textContent=acc.name || '—';
 
     await loadCurrenciesCatalog(false);
-    // Si no tiene wallet avisamos, pero seguimos mostrando Account ID
     if(!new Set(token.permissions||[]).has('wallet')){ setStatus('Falta permiso: wallet (no se podrán leer saldos)', 'warn'); wallet=[]; applyFilters(); return; }
 
     wallet=await fetchWallet(k.id);
@@ -160,5 +166,5 @@ async function refreshSelected(){
 // ---- Init ----
 renderKeySelect();
 loadCurrenciesCatalog(false).catch(()=>{});
-// Vista por defecto
+// Vista por defecto + densidad ArenaNet (body ya tiene .dense)
 setView(document.getElementById('hiddenViewSelect')?.value||'cards');

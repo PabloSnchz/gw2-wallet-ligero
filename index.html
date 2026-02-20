@@ -4,10 +4,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GW2 Wallet — v1.4.0-preview (ArenaNet)</title>
+  <title>GW2 Wallet — v1.4.0-preview2 (ArenaNet)</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
-<body>
+<body class="dense">
   <!-- Header con tabs + link externo a gestión de API Keys -->
   <header class="an-header">
     <div class="an-header__inner">
@@ -22,7 +22,7 @@
   </header>
 
   <main class="container">
-    <!-- Banda superior con Account ID + combo + acciones reubicadas -->
+    <!-- Banda superior con Account NAME + combo + acciones en iconos -->
     <section class="panel">
       <h2 class="panel__title">Divisas de la cuenta</h2>
       <div class="panel__body">
@@ -34,14 +34,24 @@
           <div class="owner-right">
             <label for="keySelect" class="muted">Seleccionar KEY</label>
             <select id="keySelect"></select>
-            <button id="copyKeyBtn" class="btn" title="Copiar API Key">Copiar</button>
-            <button id="renameKeyBtn" class="btn" title="Renombrar API Key">Renombrar</button>
-            <button id="deleteKeyBtn" class="btn" title="Eliminar API Key">Eliminar</button>
-            <button id="refreshBtn" class="btn btn--primary" title="Actualizar datos">Actualizar</button>
+
+            <!-- acciones como íconos, al lado del combo -->
+            <button id="copyKeyBtn" class="icon-btn" title="Copiar API Key" aria-label="Copiar">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v12h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            </button>
+            <button id="renameKeyBtn" class="icon-btn" title="Renombrar API Key" aria-label="Renombrar">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04l-2.34-2.34-1.42 1.42 2.34 2.34 1.42-1.42z"/></svg>
+            </button>
+            <button id="deleteKeyBtn" class="icon-btn" title="Eliminar API Key" aria-label="Eliminar">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1z"/></svg>
+            </button>
+            <button id="refreshBtn" class="icon-btn" title="Actualizar datos" aria-label="Actualizar">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5H5c0 3.87 3.13 7 7 7s7-3.13 7-7-3.13-7-7-7z"/></svg>
+            </button>
           </div>
         </div>
 
-        <!-- Filtros -->
+        <!-- Filtros (sin selector de densidad) -->
         <div class="filters">
           <div class="field"><label for="searchBox">Buscar</label><input id="searchBox" type="text" placeholder="Nombre de la divisa…" /></div>
           <div class="field"><label for="categorySelect">Categoría</label>
@@ -52,7 +62,6 @@
           </div>
           <div class="field checkbox"><label><input type="checkbox" id="onlyPositive" /> Solo &gt; 0</label></div>
           <div class="field checkbox"><label><input type="checkbox" id="onlyMain" /> Solo principales</label></div>
-          <div class="field checkbox"><label><input type="checkbox" id="denseMode" /> Densidad ArenaNet</label></div>
         </div>
 
         <p class="status" id="status">Esperando acción…</p>
