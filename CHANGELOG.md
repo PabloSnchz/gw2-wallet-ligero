@@ -1,7 +1,15 @@
-
 # Changelog
 
-## [1.3.1] - 2026-02-20
-### Fixed
-- Restaurado `js/app.js` funcional (agregar key, validar permisos, cargar wallet).
-- Estructura verificada: css/js/assets incluidos en el ZIP.
+## [1.2.0] - 2026-02-19
+### Added
+- Tema ArenaNet Dark, header con tabs y botones rojos.
+- Tarjetas estilo bloques de gestión de API Keys (header + footer icono/cantidad).
+- Tipografía y layout compactos.
+
+## [1.1.0] - 2026-02-19
+### Added
+- Nuevo layout de tarjetas: header (nombre + descripción + categorías) y footer (icono + cantidad).
+
+## [1.0.0] - 2026-02-19
+### Added
+- Versión inicial: soporte multi API Key, validación de permisos, filtros y vista compacta.
