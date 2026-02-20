@@ -1,38 +1,87 @@
 
-// Normaliza ?access_token= para llamadas a GW2 API y asegura selección de key
+// patch v2: además de normalizar ?access_token, pobla el <select id="keySelect"> con keys guardadas
 (function(){
-  function getSelectedKeyFromUI(){
-    const selectors = ['#keySelect', '#apiKeySelect', '#key-select', '.key-select', '#apiKey', '#api_key', '[name="key"]', '[name="apiKey"]'];
-    for (const s of selectors){
-      const el = document.querySelector(s);
-      if (el && (el.value || el.getAttribute('value'))) return el.value || el.getAttribute('value');
-    }
-    return null;
-  }
-  function getKeyFromStorage(){
+  // ---- almacenamiento y lectura de keys ----
+  function readKeysFromStorage(){
+    const out = [];
     try{
-      const candidates = ['gw2_selected_key','selected_key','api_key','gw2_api_key'];
+      // formatos posibles: arreglo simple de strings, arreglo de objetos {id|value|key,label|name}
+      const candidates = [
+        'gw2_keys',          // preferido: ["key1","key2",...]
+        'api_keys',
+        'keys',
+      ];
       for (const k of candidates){
-        const v = localStorage.getItem(k);
-        if (v) return v;
+        const raw = localStorage.getItem(k);
+        if (!raw) continue;
+        const val = JSON.parse(raw);
+        if (Array.isArray(val)){
+          for (const it of val){
+            if (typeof it === 'string'){ out.push({ id: it, label: mask(it) }); }
+            else if (it && typeof it === 'object'){
+              const id = it.id || it.value || it.key || '';
+              const label = it.label || it.name || mask(id);
+              if (id) out.push({ id, label });
+            }
+          }
+          break;
+        }
       }
-      const arr = JSON.parse(localStorage.getItem('gw2_keys')||'[]');
-      if (Array.isArray(arr) && arr.length>0) return arr[0];
+      // clave única suelta
+      const singles = ['gw2_selected_key','selected_key','api_key','gw2_api_key'];
+      for (const s of singles){
+        const v = localStorage.getItem(s);
+        if (v && !out.some(x=>x.id===v)) out.push({ id: v, label: mask(v) });
+      }
     }catch(e){}
+    return out;
+  }
+
+  function mask(k){ if (!k) return '—'; return k.length>8 ? k.slice(0,4)+'…'+k.slice(-4) : k; }
+  function persistSelectedKey(v){ try{ if (v) localStorage.setItem('gw2_selected_key', v); }catch(e){} }
+
+  function populateSelect(){
+    const sel = document.getElementById('keySelect');
+    if (!sel) return null;
+    const keys = readKeysFromStorage();
+    sel.innerHTML = '';
+    const opt0 = document.createElement('option');
+    opt0.value=''; opt0.textContent='Seleccioná una API Key…'; opt0.disabled = true; opt0.selected = true;
+    sel.appendChild(opt0);
+    keys.forEach(k=>{
+      const o=document.createElement('option'); o.value=k.id; o.textContent=k.label; sel.appendChild(o);
+    });
+    // set valor desde storage si existe
+    const current = localStorage.getItem('gw2_selected_key') || (keys[0] && keys[0].id) || '';
+    if (current){ sel.value = current; }
+    return sel;
+  }
+
+  function getSelectedKey(){
+    const sel = document.getElementById('keySelect');
+    if (sel && sel.value) return sel.value;
+    const singles = ['gw2_selected_key','selected_key','api_key','gw2_api_key'];
+    for (const s of singles){ const v = localStorage.getItem(s); if (v) return v; }
     return null;
   }
-  function persistSelectedKey(v){ try{ if (v) localStorage.setItem('gw2_selected_key', v); }catch(e){} }
-  function effectiveKey(){
-    const ui = getSelectedKeyFromUI();
-    if (ui) { persistSelectedKey(ui); return ui; }
-    return getKeyFromStorage();
-  }
-  function watchKeySelect(){
-    const sel = document.querySelector('#keySelect, #apiKeySelect, #key-select, .key-select, #apiKey, #api_key, [name="key"], [name="apiKey"]');
-    if (sel){ sel.addEventListener('change', ()=> persistSelectedKey(sel.value)); }
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchKeySelect); else watchKeySelect();
 
+  function wireSelect(sel){
+    if (!sel) return;
+    sel.addEventListener('change', ()=>{
+      persistSelectedKey(sel.value);
+      // avisa a la app que cambió la key (por si escucha eventos)
+      document.dispatchEvent(new CustomEvent('gw2:apiKeyChanged',{ detail:{ key: sel.value }}));
+    });
+  }
+
+  function initSelector(){
+    const sel = populateSelect();
+    wireSelect(sel);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSelector); else initSelector();
+
+  // ---- parche fetch ----
   const _fetch = window.fetch;
   window.fetch = function(input, init){
     try{
@@ -40,10 +89,12 @@
       if (!url) return _fetch.call(this, input, init);
       const targets = ['/v2/account/wallet', '/v2/tokeninfo'];
       if (targets.some(t=>url.includes(t))){
-        const key = effectiveKey();
+        const key = getSelectedKey();
         if (key){
           const u = new URL(url, window.location.origin);
-          if (u.searchParams.has('kay')) u.searchParams.delete('kay');
+          // limpiar alias incorrectos
+          ['kay','key','apikey','api_key'].forEach(p=>{ if (u.searchParams.has(p)) u.searchParams.delete(p); });
+          // setear access_token si falta
           const current = u.searchParams.get('access_token');
           if (!current || current.trim()==='') u.searchParams.set('access_token', key);
           if (typeof input !== 'string') input = new Request(u.toString(), input); else input = u.toString();
