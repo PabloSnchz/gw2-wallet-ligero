@@ -87,34 +87,10 @@ input:focus,select:focus{outline:none;border-color:#494949;box-shadow:0 0 0 2px 
 .dense .card{padding:8px}
 .dense .table th,.dense .table td{padding:6px 8px}
 
-/* Cuadritos de moneda (oro/plata/cobre) */
-.coins {
-  display: inline-flex;
-  gap: 6px;
-  align-items: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.coin-box {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  background: #0c0c0c;
-  border-radius: 2px;
-  line-height: 1;
-  /* evita que se rompa la línea en vistas angostas */
-  white-space: nowrap;
-}
-
-/* Colores temáticos */
-.coin-box.g { color: #f5d061; }   /* oro */
-.coin-box.s { color: #c0c0c0; }   /* plata */
-.coin-box.c { color: #d0926b; }   /* cobre */
-
-/* Opcional: enfatizar oro en tarjetas (como en tu 2da imagen) */
-.card .coin-box.g {
-  font-weight: 600;
-  box-shadow: 0 0 0 1px rgba(245, 208, 97, .08) inset;
-}
+/* === Cuadritos de moneda (oro/plata/cobre) === */
+.coins{display:inline-flex;gap:6px;align-items:center;font-variant-numeric:tabular-nums}
+.coin-box{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid var(--border);background:#0c0c0c;border-radius:2px;line-height:1;white-space:nowrap}
+.coin-box.g{color:#f5d061}
+.coin-box.s{color:#c0c0c0}
+.coin-box.c{color:#d0926b}
+.card .coin-box.g{font-weight:600;box-shadow:0 0 0 1px rgba(245,208,97,.08) inset}

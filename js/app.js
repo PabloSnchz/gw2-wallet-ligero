@@ -1,5 +1,5 @@
 
-// v1.5.0-pre1 — Favoritos, Tooltips, Conversor Gem↔Gold
+// v1.5.0-pre1 — Favoritos, Tooltips, Conversor Gem↔Gold (patch: coin boxes for gold)
 const LS_KEYS='gw2.wallet.keys.v1';
 const LS_CURRENCIES='gw2.wallet.currencies.v1';
 const LS_FAVS='gw2.wallet.favorites.v1';
@@ -17,7 +17,7 @@ function maskKey(id){ return id ? id.slice(0,8)+'…'+id.slice(-6) : ''; }
 async function validateKey(id){
   const url=`https://api.guildwars2.com/v2/tokeninfo?access_token=${encodeURIComponent(id)}`;
   const r=await fetch(url); if(!r.ok) throw new Error(`Token inválido (${r.status})`);
-  return await r.json(); // {name, permissions:[...], ...}
+  return await r.json();
 }
 async function fetchAccount(id){
   const url=`https://api.guildwars2.com/v2/account?access_token=${encodeURIComponent(id)}`;
@@ -83,7 +83,6 @@ function applyFilters(){
     const oa=byId.get(a.id)?.order??0; const ob=byId.get(b.id)?.order??0; return oa-ob;
   });
 
-  // Separar favoritas
   const favSet=new Set(favs);
   const favList=list.filter(x=>favSet.has(x.id));
   const rest=list.filter(x=>!favSet.has(x.id));
@@ -105,15 +104,22 @@ function renderFavCards(list, byId){
     const meta=byId.get(entry.id)||{name:`ID ${entry.id}`, icon:'', description:''};
     const card=document.createElement('div'); card.className='card card-col';
     const star=document.createElement('div'); star.className='star active'; star.textContent='★'; star.title='Quitar de favoritas'; star.addEventListener('click',()=>toggleFav(entry.id));
-    const title=document.createElement('div'); title.className='title'; title.textContent=meta.name||`ID ${entry.id}`;
-    attachTooltip(title, meta);
+    const title=document.createElement('div'); title.className='title'; title.textContent=meta.name||`ID ${entry.id}`; attachTooltip(title, meta);
     const desc=document.createElement('div'); desc.className='muted'; desc.style.fontSize='12px'; desc.textContent=meta.description||'';
     const cats=document.createElement('div'); const c=CATEGORY_MAP[entry.id]||[]; if(c.length){ cats.className='muted'; cats.style.fontSize='11px'; cats.textContent=c.join(', ');} 
     const footer=document.createElement('div'); footer.className='card-footer';
     const icon=document.createElement('img'); icon.alt=meta.name; icon.src=meta.icon||''; icon.width=22; icon.height=22; icon.loading='lazy'; attachTooltip(icon, meta);
+
     const amount=document.createElement('div'); amount.className='value';
-    if(entry.id===1){ const {g,s,c}=formatCoins(entry.value); amount.textContent=`${nf.format(g)} g ${s} s ${c} c`; }
-    else { amount.textContent=nf.format(entry.value); }
+    if(entry.id===1){
+      const {g,s,c}=formatCoins(entry.value);
+      const wrap=document.createElement('div'); wrap.className='coins';
+      const G=document.createElement('span'); G.className='coin-box g'; G.textContent=`${nf.format(g)} g`;
+      const S=document.createElement('span'); S.className='coin-box s'; S.textContent=`${s} s`;
+      const C=document.createElement('span'); C.className='coin-box c'; C.textContent=`${c} c`;
+      wrap.append(G,S,C); amount.appendChild(wrap);
+    } else { amount.textContent=nf.format(entry.value); }
+
     footer.append(icon,amount);
     card.append(star,title,desc,cats,footer); cont.appendChild(card);
   });
@@ -130,33 +136,18 @@ function renderCards(list, byId, favSet){
     const cats=document.createElement('div'); const c=CATEGORY_MAP[entry.id]||[]; if(c.length){ cats.className='muted'; cats.style.fontSize='11px'; cats.textContent=c.join(', ');} 
     const footer=document.createElement('div'); footer.className='card-footer';
     const icon=document.createElement('img'); icon.alt=meta.name; icon.src=meta.icon||''; icon.width=22; icon.height=22; icon.loading='lazy'; attachTooltip(icon, meta);
-    const amount = document.createElement('div');
-amount.className = 'value';
 
-if (entry.id === 1) {
-  const { g, s, c } = formatCoins(entry.value);
-  const wrap = document.createElement('div');
-  wrap.className = 'coins';
+    const amount=document.createElement('div'); amount.className='value';
+    if(entry.id===1){
+      const {g,s,c}=formatCoins(entry.value);
+      const wrap=document.createElement('div'); wrap.className='coins';
+      const G=document.createElement('span'); G.className='coin-box g'; G.textContent=`${nf.format(g)} g`;
+      const S=document.createElement('span'); S.className='coin-box s'; S.textContent=`${s} s`;
+      const C=document.createElement('span'); C.className='coin-box c'; C.textContent=`${c} c`;
+      wrap.append(G,S,C); amount.appendChild(wrap);
+    } else { amount.textContent=nf.format(entry.value); }
 
-  const G = document.createElement('span');
-  G.className = 'coin-box g';
-  G.textContent = `${nf.format(g)} g`;
-
-  const S = document.createElement('span');
-  S.className = 'coin-box s';
-  S.textContent = `${s} s`;
-
-  const C = document.createElement('span');
-  C.className = 'coin-box c';
-  C.textContent = `${c} c`;
-
-  wrap.append(G, S, C);
-  amount.appendChild(wrap);
-} else {
-  amount.textContent = nf.format(entry.value);
-}
-
-footer.append(icon, amount);
+    footer.append(icon,amount);
     card.append(star,title,desc,cats,footer); container.appendChild(card);
   });
 }
@@ -168,31 +159,17 @@ function renderTable(list, byId, favSet){
     const tr=document.createElement('tr');
     const tdI=document.createElement('td'); const img=document.createElement('img'); img.src=meta.icon||''; img.alt=meta.name; img.width=20; img.height=20; img.style.borderRadius='2px'; attachTooltip(img, meta); tdI.appendChild(img);
     const tdN=document.createElement('td'); tdN.textContent=meta.name||`ID ${entry.id}`; attachTooltip(tdN, meta);
-    const tdV = document.createElement('td');
-tdV.className = 'right';
 
-if (entry.id === 1) {
-  const { g, s, c } = formatCoins(entry.value);
-  const wrap = document.createElement('div');
-  wrap.className = 'coins';
+    const tdV=document.createElement('td'); tdV.className='right';
+    if(entry.id===1){
+      const {g,s,c}=formatCoins(entry.value);
+      const wrap=document.createElement('div'); wrap.className='coins';
+      const G=document.createElement('span'); G.className='coin-box g'; G.textContent=`${nf.format(g)} g`;
+      const S=document.createElement('span'); S.className='coin-box s'; S.textContent=`${s} s`;
+      const C=document.createElement('span'); C.className='coin-box c'; C.textContent=`${c} c`;
+      wrap.append(G,S,C); tdV.appendChild(wrap);
+    } else { tdV.textContent=nf.format(entry.value); }
 
-  const G = document.createElement('span');
-  G.className = 'coin-box g';
-  G.textContent = `${nf.format(g)} g`;
-
-  const S = document.createElement('span');
-  S.className = 'coin-box s';
-  S.textContent = `${s} s`;
-
-  const C = document.createElement('span');
-  C.className = 'coin-box c';
-  C.textContent = `${c} c`;
-
-  wrap.append(G, S, C);
-  tdV.appendChild(wrap);
-} else {
-  tdV.textContent = nf.format(entry.value);
-}
     const tdC=document.createElement('td'); const cats=CATEGORY_MAP[entry.id]||[]; tdC.textContent=cats.join(', ');
     const tdF=document.createElement('td'); tdF.className='right'; const star=document.createElement('span'); star.textContent='★'; star.className='star'+(favSet.has(entry.id)?' active':''); star.style.position='static'; star.title=favSet.has(entry.id)?'Quitar de favoritas':'Marcar como favorita'; star.addEventListener('click',()=>toggleFav(entry.id)); tdF.appendChild(star);
     tr.append(tdI,tdN,tdV,tdC,tdF); tbody.appendChild(tr);
@@ -212,7 +189,7 @@ function moveTooltip(ev){ const pad=10; const x=ev.clientX+pad; const y=ev.clien
 function hideTooltip(){ tt.hidden=true; }
 function escapeHtml(s){ return (s||'').replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
 
-// ---- Acciones: combo y botones a la derecha ----
+// ---- Acciones combo ----
 $('#copyKeyBtn')?.addEventListener('click', ()=>{ const i=$('#keySelect').value; if(i===''||!keys[i]) return; navigator.clipboard?.writeText(keys[i].id); });
 $('#renameKeyBtn')?.addEventListener('click', ()=>{ const i=$('#keySelect').value; if(i===''||!keys[i]) return; const nuevo=prompt('Nuevo nombre para la key:', keys[i].name||''); if(nuevo!==null){ keys[i].name=nuevo; persistKeys(); renderKeySelect(); }});
 $('#deleteKeyBtn')?.addEventListener('click', ()=>{ const i=$('#keySelect').value; if(i===''||!keys[i]) return; if(confirm('¿Eliminar esta key?')){ const removed=keys.splice(i,1)[0]; persistKeys(); renderKeySelect(); $('#ownerLabel').textContent='—'; $('#walletCards').innerHTML=''; const tb=$('#walletTable tbody'); if(tb) tb.innerHTML=''; setStatus(`Key eliminada: ${removed.name||maskKey(removed.id)}`,'ok'); }});
@@ -225,10 +202,9 @@ async function refreshSelected(){
   const idx=$('#keySelect').value; if(idx===''||!keys[idx]){ setStatus('No hay key seleccionada.','warn'); return; }
   const k=keys[idx]; setStatus('Cargando datos…');
   try{
-    const token=await validateKey(k.id); // token.permissions
+    const token=await validateKey(k.id);
     if(!new Set(token.permissions||[]).has('account')){ setStatus('Falta permiso: account','err'); $('#ownerLabel').textContent='—'; return; }
-    const acc=await fetchAccount(k.id);
-    $('#ownerLabel').textContent=acc.name || '—';
+    const acc=await fetchAccount(k.id); $('#ownerLabel').textContent=acc.name || '—';
 
     await loadCurrenciesCatalog(false);
     if(!new Set(token.permissions||[]).has('wallet')){ setStatus('Falta permiso: wallet (no se podrán leer saldos)', 'warn'); wallet=[]; applyFilters(); return; }
@@ -241,15 +217,11 @@ async function refreshSelected(){
 
 // ---- Conversor Gem ↔ Gold
 function parseGoldInput(s){
-  if(!s) return 0; // copper
-  // formatos: 5g 10s 2c o 5g o 10s o 123c
-  let g=0,sil=0,c=0; s=s.toLowerCase();
+  if(!s) return 0; let g=0,sil=0,c=0; s=s.toLowerCase();
   const rg=/(\d+)\s*g/; const rs=/(\d+)\s*s/; const rc=/(\d+)\s*c/;
   const mg=rg.exec(s); const ms=rs.exec(s); const mc=rc.exec(s);
   if(mg) g=parseInt(mg[1]); if(ms) sil=parseInt(ms[1]); if(mc) c=parseInt(mc[1]);
-  if(!mg&&!ms&&!mc){ // número pelado → gold
-    const n=parseFloat(s.replace(/,/g,'.'))||0; g=Math.floor(n);
-  }
+  if(!mg&&!ms&&!mc){ const n=parseFloat(s.replace(/,/g,'.'))||0; g=Math.floor(n); }
   return g*10000 + sil*100 + c;
 }
 function fmtCoins(c){ const {g,s,c:c2}=formatCoins(c); return `${nf.format(g)} g ${s} s ${c2} c`; }
@@ -260,7 +232,7 @@ $('#btnG2C')?.addEventListener('click', async()=>{
     $('#convStatus').textContent='Consultando Exchange…';
     const url=`https://api.guildwars2.com/v2/commerce/exchange/gems?quantity=${q}`;
     const r=await fetch(url); if(!r.ok) throw new Error('Exchange no disponible');
-    const data=await r.json(); // { coins_per_gem, quantity }
+    const data=await r.json();
     $('#outG2C').textContent=`${q} gemas ≈ ${fmtCoins(data.quantity)}  (≈ ${data.coins_per_gem} cobre/gema)`;
     $('#convStatus').textContent='Tasas actualizadas.';
   }catch(err){ $('#outG2C').textContent='Error consultando Exchange'; $('#convStatus').textContent=String(err.message||err); }
@@ -272,7 +244,7 @@ $('#btnC2G')?.addEventListener('click', async()=>{
     $('#convStatus').textContent='Consultando Exchange…';
     const url=`https://api.guildwars2.com/v2/commerce/exchange/coins?quantity=${copper}`;
     const r=await fetch(url); if(!r.ok) throw new Error('Exchange no disponible');
-    const data=await r.json(); // { gems, coins_per_gem? }
+    const data=await r.json();
     $('#outC2G').textContent=`${fmtCoins(copper)} ≈ ${data.quantity||data.gems||0} gemas`;
     $('#convStatus').textContent='Tasas actualizadas.';
   }catch(err){ $('#outC2G').textContent='Error consultando Exchange'; $('#convStatus').textContent=String(err.message||err); }
@@ -281,4 +253,4 @@ $('#btnC2G')?.addEventListener('click', async()=>{
 // ---- Init ----
 renderKeySelect();
 loadCurrenciesCatalog(false).catch(()=>{});
-showCards(); // vista por defecto
+showCards();
