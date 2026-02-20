@@ -1,8 +1,7 @@
+
 # Changelog
 
-## [1.4.0-preview2] - 2026-02-20
-### Fixed
-- Vistas exclusivas (Tarjetas o Compacta).
-- Íconos de acciones reubicados junto al combo.
-- Densidad por defecto.
-- `Cuenta:` muestra `account.name` en lugar del GUID.
+## [1.4.0-preview4] - 2026-02-20
+### Fixed/Added
+- Alternancia estricta de vistas (Tarjetas/Compacta) integrada en el build completo.
+- Account Name al lado del combo, iconos reubicados, densidad por defecto.
