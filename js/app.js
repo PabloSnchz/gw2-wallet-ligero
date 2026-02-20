@@ -130,10 +130,33 @@ function renderCards(list, byId, favSet){
     const cats=document.createElement('div'); const c=CATEGORY_MAP[entry.id]||[]; if(c.length){ cats.className='muted'; cats.style.fontSize='11px'; cats.textContent=c.join(', ');} 
     const footer=document.createElement('div'); footer.className='card-footer';
     const icon=document.createElement('img'); icon.alt=meta.name; icon.src=meta.icon||''; icon.width=22; icon.height=22; icon.loading='lazy'; attachTooltip(icon, meta);
-    const amount=document.createElement('div'); amount.className='value';
-    if(entry.id===1){ const {g,s,c}=formatCoins(entry.value); amount.textContent=`${nf.format(g)} g ${s} s ${c} c`; }
-    else { amount.textContent=nf.format(entry.value); }
-    footer.append(icon,amount);
+    const amount = document.createElement('div');
+amount.className = 'value';
+
+if (entry.id === 1) {
+  const { g, s, c } = formatCoins(entry.value);
+  const wrap = document.createElement('div');
+  wrap.className = 'coins';
+
+  const G = document.createElement('span');
+  G.className = 'coin-box g';
+  G.textContent = `${nf.format(g)} g`;
+
+  const S = document.createElement('span');
+  S.className = 'coin-box s';
+  S.textContent = `${s} s`;
+
+  const C = document.createElement('span');
+  C.className = 'coin-box c';
+  C.textContent = `${c} c`;
+
+  wrap.append(G, S, C);
+  amount.appendChild(wrap);
+} else {
+  amount.textContent = nf.format(entry.value);
+}
+
+footer.append(icon, amount);
     card.append(star,title,desc,cats,footer); container.appendChild(card);
   });
 }
@@ -145,8 +168,31 @@ function renderTable(list, byId, favSet){
     const tr=document.createElement('tr');
     const tdI=document.createElement('td'); const img=document.createElement('img'); img.src=meta.icon||''; img.alt=meta.name; img.width=20; img.height=20; img.style.borderRadius='2px'; attachTooltip(img, meta); tdI.appendChild(img);
     const tdN=document.createElement('td'); tdN.textContent=meta.name||`ID ${entry.id}`; attachTooltip(tdN, meta);
-    const tdV=document.createElement('td'); tdV.className='right';
-    if(entry.id===1){ const {g,s,c}=formatCoins(entry.value); tdV.textContent=`${nf.format(g)} g ${s} s ${c} c`; } else { tdV.textContent=nf.format(entry.value); }
+    const tdV = document.createElement('td');
+tdV.className = 'right';
+
+if (entry.id === 1) {
+  const { g, s, c } = formatCoins(entry.value);
+  const wrap = document.createElement('div');
+  wrap.className = 'coins';
+
+  const G = document.createElement('span');
+  G.className = 'coin-box g';
+  G.textContent = `${nf.format(g)} g`;
+
+  const S = document.createElement('span');
+  S.className = 'coin-box s';
+  S.textContent = `${s} s`;
+
+  const C = document.createElement('span');
+  C.className = 'coin-box c';
+  C.textContent = `${c} c`;
+
+  wrap.append(G, S, C);
+  tdV.appendChild(wrap);
+} else {
+  tdV.textContent = nf.format(entry.value);
+}
     const tdC=document.createElement('td'); const cats=CATEGORY_MAP[entry.id]||[]; tdC.textContent=cats.join(', ');
     const tdF=document.createElement('td'); tdF.className='right'; const star=document.createElement('span'); star.textContent='★'; star.className='star'+(favSet.has(entry.id)?' active':''); star.style.position='static'; star.title=favSet.has(entry.id)?'Quitar de favoritas':'Marcar como favorita'; star.addEventListener('click',()=>toggleFav(entry.id)); tdF.appendChild(star);
     tr.append(tdI,tdN,tdV,tdC,tdF); tbody.appendChild(tr);
