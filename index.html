@@ -1,1 +1,136 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>GW2 Wallet — v1.3.0</title><link rel="stylesheet" href="css/styles.css"></head><body><header class="an-header"><div class="an-header__texture"></div><div class="an-header__inner"><div class="an-brand">GW2 Wallet</div><nav class="an-nav"><button class="an-tab an-tab--active" data-view="cards">Tarjetas</button><button class="an-tab" data-view="compact">Compacta</button></nav></div><div class="an-accent"></div></header><div class="layout"><aside class="sidebar"><section class="panel"><h2 class="panel__title">Claves API</h2><div class="panel__body"><div class="key-add"><label>Nombre</label><input id="keyName" type="text"><label>API Key</label><input id="apiKey" type="text" class="mono"><div class="key-actions-row"><button id="saveBtn" class="btn btn--accent">Agregar</button></div><p class="status" id="status">Esperando acción…</p></div><div class="key-list" id="keyList"></div></div></section><section class="panel"><h2 class="panel__title">Filtros</h2><div class="panel__body"><div class="field"><label for="searchBox">Buscar</label><input id="searchBox" type="text"></div></div></section></aside><main class="content"><section class="panel"><h2 class="panel__title">Divisas de la cuenta</h2><div class="panel__body"><div class="owner"><span class="muted">Cuenta: </span><span id="ownerLabel" class="owner__pill">—</span><div class="pull-right"><label>Seleccionar key</label><select id="keySelect"></select><button id="refreshBtn" class="btn btn--primary">Actualizar</button></div></div><div id="walletCards" class="grid"></div><div id="walletTableWrap" class="table-wrap" hidden><table class="table" id="walletTable"><thead><tr><th>Icono</th><th>Divisa</th><th class="right">Cantidad</th><th>Categorías</th></tr></thead><tbody></tbody></table></div></div></section></main></div><script src="js/app.js"></script></body></html>
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GW2 Wallet — v1.3.1 estilo ArenaNet</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- Header con textura -->
+  <header class="an-header">
+    <div class="an-header__texture"></div>
+    <div class="an-header__inner">
+      <div class="an-brand">GW2 Wallet</div>
+      <nav class="an-nav">
+        <button class="an-tab an-tab--active" data-view="cards">Tarjetas</button>
+        <button class="an-tab" data-view="compact">Compacta</button>
+        <a class="an-link" href="https://wiki.guildwars2.com/wiki/API:API_key" target="_blank" rel="noopener">API Keys</a>
+      </nav>
+    </div>
+    <div class="an-accent"></div>
+  </header>
+
+  <div class="layout">
+    <!-- Sidebar fija estilo ArenaNet -->
+    <aside class="sidebar">
+      <section class="panel">
+        <h2 class="panel__title">Claves API</h2>
+        <div class="panel__body" id="apiKeysPanel">
+          <div class="key-add">
+            <label for="keyName">Nombre</label>
+            <input id="keyName" type="text" placeholder="Cuenta principal / Mula" />
+            <label for="apiKey">API Key</label>
+            <input id="apiKey" type="text" placeholder="XXXXXX-XXXX-...-XXXX" class="mono" />
+            <div class="key-actions-row">
+              <button id="saveBtn" class="btn btn--accent">Agregar</button>
+            </div>
+            <p class="status" id="status">Esperando acción…</p>
+          </div>
+          <div class="key-list" id="keyList"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel__title">Vínculo de cuentas</h2>
+        <div class="panel__body">
+          <input type="text" placeholder="Buscar" />
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel__title">Filtros</h2>
+        <div class="panel__body">
+          <div class="field">
+            <label for="searchBox">Buscar</label>
+            <input id="searchBox" type="text" placeholder="Nombre de la divisa…" />
+          </div>
+          <div class="field">
+            <label for="categorySelect">Categoría</label>
+            <select id="categorySelect">
+              <option value="">Todas</option>
+              <option value="general">Generales</option>
+              <option value="competitive">Competitivas</option>
+              <option value="map">De mapa</option>
+              <option value="key">Llaves</option>
+              <option value="dungeon">Mazmorras/Fractales</option>
+              <option value="blacklion">Black Lion</option>
+              <option value="historic">Históricas</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="sortSelect">Orden</label>
+            <select id="sortSelect">
+              <option value="order">Orden del juego</option>
+              <option value="name">Nombre (A→Z)</option>
+              <option value="amount">Cantidad (desc)</option>
+            </select>
+          </div>
+          <div class="field checkbox"><label><input type="checkbox" id="onlyPositive" /> Solo > 0</label></div>
+          <div class="field checkbox"><label><input type="checkbox" id="onlyMain" /> Solo principales</label></div>
+          <div class="field checkbox"><label><input type="checkbox" id="denseMode" /> Densidad ArenaNet</label></div>
+        </div>
+      </section>
+    </aside>
+
+    <!-- Contenido principal -->
+    <main class="content">
+      <section class="panel">
+        <h2 class="panel__title">Divisas de la cuenta</h2>
+        <div class="panel__body">
+          <div class="owner"><span class="muted">Cuenta: </span><span id="ownerLabel" class="owner__pill">—</span>
+            <div class="pull-right">
+              <label>Seleccionar key</label>
+              <select id="keySelect"></select>
+              <button id="refreshBtn" class="btn btn--primary">Actualizar</button>
+            </div>
+          </div>
+          <div id="walletCards" class="grid" aria-live="polite"></div>
+          <div id="walletTableWrap" class="table-wrap" hidden>
+            <table class="table" id="walletTable" aria-label="Divisas (vista compacta)">
+              <thead>
+                <tr>
+                  <th>Icono</th>
+                  <th>Divisa</th>
+                  <th class="right">Cantidad</th>
+                  <th>Categorías</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    // Tabs del header
+    document.addEventListener('click', (e)=>{
+      if(e.target.matches('.an-tab')){
+        document.querySelectorAll('.an-tab').forEach(b=>b.classList.remove('an-tab--active'));
+        e.target.classList.add('an-tab--active');
+        const v = e.target.getAttribute('data-view');
+        const sel = document.getElementById('hiddenViewSelect');
+        if(sel){ sel.value = v; sel.dispatchEvent(new Event('change')); }
+      }
+    });
+  </script>
+  <select id="hiddenViewSelect" hidden>
+    <option value="cards">Tarjetas</option>
+    <option value="compact">Compacta</option>
+  </select>
+</body>
+</html>
