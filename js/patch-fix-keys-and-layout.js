@@ -1,7 +1,8 @@
 
-// patch v2.1: conserva botón/acción de “+ agregar API Key” y opciones especiales del <select>
+// patch v2.2 — Restaura botón “+” Agregar API Key junto al selector, sin alterar el resto
+// Mantiene: poblar <select>, eventos gw2:apiKeyChanged / gw2:addApiKeyRequested, y parche de fetch
 (function(){
-  // --- utilidades de almacenamiento ---
+  // ===== Utils almacenamiento =====
   function mask(k){ if (!k) return '—'; return k.length>8 ? k.slice(0,4)+'…'+k.slice(-4) : k; }
   function persistSelectedKey(v){ try{ if (v) localStorage.setItem('gw2_selected_key', v); }catch(e){} }
 
@@ -31,12 +32,12 @@
     return out;
   }
 
+  // ===== Poblar <select> preservando opción “agregar” si existía =====
   function populateSelectPreservandoAdd(){
     const sel = document.getElementById('keySelect');
     if (!sel) return null;
 
-    // 1) Detectar opción especial existente para “agregar” y preservarla
-    //    Soportamos varias variantes: value="__add__", data-add-key, class="add-key"
+    // Detectar y preservar opciones especiales de “agregar”
     const specialOpts = [];
     Array.from(sel.options).forEach(o => {
       if (o.dataset && (o.dataset.addKey!==undefined)) specialOpts.push(o.cloneNode(true));
@@ -44,13 +45,11 @@
       else if ((o.className||'').split(/\s+/).includes('add-key')) specialOpts.push(o.cloneNode(true));
     });
 
-    // 2) Placeholder existente
+    // Placeholder existente (si lo hay)
     let placeholder = Array.from(sel.options).find(o => o.disabled && !o.value) || null;
 
-    // 3) Limpiar solo opciones regulares (no botón agregar si existía)
     sel.innerHTML = '';
 
-    // 4) Volver a poner placeholder (o crear uno si no existía)
     if (!placeholder){
       placeholder = document.createElement('option');
       placeholder.value = '';
@@ -59,21 +58,16 @@
     }
     sel.appendChild(placeholder);
 
-    // 5) Insertar keys desde storage
     const keys = readKeysFromStorage();
     keys.forEach(k=>{
       const o=document.createElement('option'); o.value=k.id; o.textContent=k.label; sel.appendChild(o);
     });
 
-    // 6) Reponer opción especial de “agregar” si existía
     if (specialOpts.length){
-      // Separador opcional
-      const sep = document.createElement('option'); sep.disabled = true; sep.textContent = '────────'; sep.value='';
-      sel.appendChild(sep);
+      const sep = document.createElement('option'); sep.disabled = true; sep.textContent = '────────'; sep.value=''; sel.appendChild(sep);
       specialOpts.forEach(o=> sel.appendChild(o));
     }
 
-    // 7) Seleccionar valor actual si existe
     const current = localStorage.getItem('gw2_selected_key') || (keys[0] && keys[0].id) || '';
     if (current){ sel.value = current; }
 
@@ -88,13 +82,72 @@
     return null;
   }
 
+  // ===== Botón “+” (re)insertado junto al <select> =====
+  function ensureAddButton(){
+    const sel = document.getElementById('keySelect');
+    if (!sel) return;
+    if (document.getElementById('addKeyBtn')) return; // evitar duplicados
+
+    const btn = document.createElement('button');
+    btn.id = 'addKeyBtn';
+    btn.type = 'button';
+    btn.className = 'icon-btn'; // reutiliza estilos existentes
+    btn.title = 'Agregar API Key';
+    btn.setAttribute('aria-label','Agregar API Key');
+    btn.innerHTML = "<svg class='icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z'/></svg>";
+
+    // Insertar inmediatamente después del select
+    sel.insertAdjacentElement('afterend', btn);
+
+    btn.addEventListener('click', onAddKeyClick);
+  }
+
+  async function onAddKeyClick(){
+    const raw = (window.prompt && window.prompt('Pegá tu API Key de GW2')) || '';
+    const key = (raw||'').trim();
+    if (!key) return;
+
+    // Validar contra /v2/tokeninfo
+    const url = `https://api.guildwars2.com/v2/tokeninfo?access_token=${encodeURIComponent(key)}`;
+    let ok=false, info=null;
+    try{
+      const r = await fetch(url);
+      ok = r.ok; info = ok ? await r.json() : null;
+    }catch(e){ ok=false; }
+    if (!ok || !info || !info.id){
+      alert('La API Key no es válida o no tiene permisos suficientes.');
+      return;
+    }
+
+    // Evitar duplicadas
+    let list = [];
+    try{ list = JSON.parse(localStorage.getItem('gw2_keys')||'[]'); if (!Array.isArray(list)) list=[]; }catch(e){ list=[]; }
+    if (!list.includes(key)) list.push(key);
+    try{ localStorage.setItem('gw2_keys', JSON.stringify(list)); }catch(e){}
+
+    // Persistir selección actual
+    persistSelectedKey(key);
+
+    // Refrescar UI del selector (sin perder “+”)
+    const sel = populateSelectPreservandoAdd();
+    if (sel) sel.value = key;
+
+    // Avisar a la app y refrescar datos
+    document.dispatchEvent(new CustomEvent('gw2:apiKeyChanged',{ detail:{ key } }));
+    // Compatibilidad con apps existentes
+    try{
+      if (typeof window.refreshSelected === 'function') window.refreshSelected();
+      else if (document.getElementById('refreshBtn')) document.getElementById('refreshBtn').click();
+      else document.dispatchEvent(new CustomEvent('gw2:refreshRequested'));
+    }catch(e){}
+  }
+
   function wireSelect(sel){
     if (!sel) return;
     sel.addEventListener('change', ()=>{
-      // Si el usuario eligió la opción especial de agregar, disparamos un evento y NO persistimos
       if (sel.value === '__add__' || (sel.selectedOptions[0] && (sel.selectedOptions[0].dataset.addKey!==undefined))){
+        // Si tu select también tiene una opción especial de agregar
         document.dispatchEvent(new CustomEvent('gw2:addApiKeyRequested'));
-        // Volver al valor anterior/placeholder para no dejar seleccionado "__add__"
         const prev = localStorage.getItem('gw2_selected_key') || '';
         sel.value = prev || '';
         return;
@@ -107,11 +160,12 @@
   function init(){
     const sel = populateSelectPreservandoAdd();
     wireSelect(sel);
+    ensureAddButton();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 
-  // --- parche fetch (igual que v2) ---
+  // ===== Parche fetch (igual que v2.1) =====
   const _fetch = window.fetch;
   window.fetch = function(input, init){
     try{
