@@ -1,12 +1,9 @@
 
-// patch v2.4 — Fix de recursión: evita bucles entre change() y triggerRefresh()
-// Cambios mínimos sobre v2.3: incorpora banderas _refreshing y _internalChange para prevenir loops.
+// patch v3.0 — Normaliza access_token, restaura botón +, pobla el selector y agrega Fallback de carga
 (function(){
-  // ===== Flags anti‑recursión =====
-  let _refreshing = false;     // true mientras se ejecuta triggerRefresh()
-  let _internalChange = false; // true cuando el 'change' fue disparado por este parche
+  let _refreshing = false;
+  let _internalChange = false;
 
-  // ===== Utils =====
   function mask(k){ if (!k) return '—'; return k.length>8 ? k.slice(0,4)+'…'+k.slice(-4) : k; }
   function persistSelectedKey(v){ try{ if (v) localStorage.setItem('gw2_selected_key', v); }catch(e){} }
 
@@ -20,7 +17,7 @@
         const val = JSON.parse(raw);
         if (Array.isArray(val)){
           for (const it of val){
-            if (typeof it === 'string'){ out.push({ id: it, label: mask(it) }); }
+            if (typeof it === 'string') out.push({ id: it, label: mask(it) });
             else if (it && typeof it === 'object'){
               const id = it.id || it.value || it.key || '';
               const label = it.label || it.name || mask(id);
@@ -36,6 +33,14 @@
     return out;
   }
 
+  function getSelectedKey(){
+    const sel = document.getElementById('keySelect');
+    if (sel && sel.value && sel.value !== '__add__') return sel.value;
+    const singles = ['gw2_selected_key','selected_key','api_key','gw2_api_key'];
+    for (const s of singles){ const v = localStorage.getItem(s); if (v) return v; }
+    return null;
+  }
+
   function populateSelectPreservandoAdd(){
     const sel = document.getElementById('keySelect');
     if (!sel) return null;
@@ -48,14 +53,9 @@
     });
 
     let placeholder = Array.from(sel.options).find(o => o.disabled && !o.value) || null;
-
     sel.innerHTML = '';
-
     if (!placeholder){
-      placeholder = document.createElement('option');
-      placeholder.value = '';
-      placeholder.textContent = 'Seleccioná una API Key…';
-      placeholder.disabled = true;
+      placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = 'Seleccioná una API Key…'; placeholder.disabled = true;
     }
     sel.appendChild(placeholder);
 
@@ -69,53 +69,16 @@
 
     const current = localStorage.getItem('gw2_selected_key') || (keys[0] && keys[0].id) || '';
     if (current){ sel.value = current; }
-
     return sel;
-  }
-
-  function getSelectedKey(){
-    const sel = document.getElementById('keySelect');
-    if (sel && sel.value && sel.value !== '__add__') return sel.value;
-    const singles = ['gw2_selected_key','selected_key','api_key','gw2_api_key'];
-    for (const s of singles){ const v = localStorage.getItem(s); if (v) return v; }
-    return null;
-  }
-
-  function dispatchChangeOnSelect(){
-    const sel = document.getElementById('keySelect');
-    if (!sel) return;
-    _internalChange = true;
-    try{ sel.dispatchEvent(new Event('change', { bubbles: true })); }
-    catch(e){}
-    setTimeout(()=>{ _internalChange = false; }, 0);
-  }
-
-  function triggerRefresh(){
-    if (_refreshing) return; // evita reentradas
-    _refreshing = true;
-    try{
-      // Nota: NO llamamos a dispatchChangeOnSelect() acá para evitar bucles.
-      document.dispatchEvent(new CustomEvent('gw2:refreshRequested'));
-      try{ if (typeof window.refreshSelected === 'function') window.refreshSelected(); }catch(e){}
-      try{ const btn = document.getElementById('refreshBtn'); if (btn) btn.click(); }catch(e){}
-      try{ if (typeof window.loadWallet === 'function') window.loadWallet(); }catch(e){}
-      try{ if (typeof window.refreshWallet === 'function') window.refreshWallet(); }catch(e){}
-    } finally {
-      setTimeout(()=>{ _refreshing = false; }, 0);
-    }
   }
 
   function ensureAddButton(){
     const sel = document.getElementById('keySelect');
     if (!sel) return;
     if (document.getElementById('addKeyBtn')) return;
-
     const btn = document.createElement('button');
-    btn.id = 'addKeyBtn';
-    btn.type = 'button';
-    btn.className = 'icon-btn';
-    btn.title = 'Agregar API Key';
-    btn.setAttribute('aria-label','Agregar API Key');
+    btn.id = 'addKeyBtn'; btn.type = 'button'; btn.className = 'icon-btn';
+    btn.title = 'Agregar API Key'; btn.setAttribute('aria-label','Agregar API Key');
     btn.innerHTML = "<svg class='icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z'/></svg>";
     sel.insertAdjacentElement('afterend', btn);
     btn.addEventListener('click', onAddKeyClick);
@@ -125,42 +88,106 @@
     const raw = (window.prompt && window.prompt('Pegá tu API Key de GW2')) || '';
     const key = (raw||'').trim();
     if (!key) return;
+    const info = await validateKey(key);
+    if (!info){ alert('La API Key no es válida o no tiene permisos account + wallet.'); return; }
+    let list = []; try{ list = JSON.parse(localStorage.getItem('gw2_keys')||'[]'); if (!Array.isArray(list)) list=[]; }catch(e){ list=[]; }
+    if (!list.includes(key)) list.push(key);
+    try{ localStorage.setItem('gw2_keys', JSON.stringify(list)); }catch(e){}
+    persistSelectedKey(key);
+    const sel = populateSelectPreservandoAdd(); if (sel) sel.value = key;
+    document.dispatchEvent(new CustomEvent('gw2:apiKeyChanged',{ detail:{ key } }));
+    kickLoad();
+  }
 
-    // Validación estricta: requiere account + wallet
-    const url = `https://api.guildwars2.com/v2/tokeninfo?access_token=${encodeURIComponent(key)}`;
-    let ok=false, info=null;
-    try{ const r = await fetch(url); ok = r.ok; info = ok ? await r.json() : null; }catch(e){ ok=false; }
-    const perms = (info && info.permissions) || [];
-    const hasAccount = Array.isArray(perms) && perms.indexOf('account') !== -1;
-    const hasWallet  = Array.isArray(perms) && perms.indexOf('wallet')  !== -1;
-    if (!ok || !info || !info.id || !hasAccount || !hasWallet){
-      alert('La API Key no es válida o no tiene permisos de "account" y "wallet".');
+  async function validateKey(key){
+    try{
+      const r = await fetch(`https://api.guildwars2.com/v2/tokeninfo?access_token=${encodeURIComponent(key)}`);
+      if (!r.ok) return null; const info = await r.json();
+      const perms = info && info.permissions || [];
+      if (!Array.isArray(perms) || perms.indexOf('account')===-1 || perms.indexOf('wallet')===-1) return null;
+      return info;
+    }catch(e){ return null; }
+  }
+
+  function setStatus(msg){ const el=document.getElementById('status'); if (el) el.textContent = msg; }
+
+  async function loadWalletFallback(){
+    const key = getSelectedKey(); if (!key) return;
+    setStatus('Cargando…');
+    // 1) wallet
+    const wRes = await fetch(`https://api.guildwars2.com/v2/account/wallet?access_token=${encodeURIComponent(key)}`);
+    if (!wRes.ok){ setStatus('Error al cargar wallet'); return; }
+    const wallet = await wRes.json();
+    // 2) currencies metadata
+    const ids = wallet.map(x=>x.id).filter((v,i,a)=>a.indexOf(v)===i);
+    const cRes = await fetch(`https://api.guildwars2.com/v2/currencies?ids=${ids.join(',')}`);
+    const currencies = cRes.ok ? await cRes.json() : [];
+    const map = new Map(currencies.map(c=>[c.id, c]));
+
+    // Si la app ya renderizó, no interferimos
+    const cards = document.getElementById('walletCards');
+    if (cards && cards.children && cards.children.length>0){ setStatus('Listo'); return; }
+
+    // Render mínimo (no intrusivo): tarjetas
+    if (cards){
+      cards.innerHTML = '';
+      wallet.forEach(entry=>{
+        const meta = map.get(entry.id) || {name:`ID ${entry.id}`};
+        const d = document.createElement('div');
+        d.className = 'card card--mini';
+        d.style.cssText = 'border:1px solid #ddd;padding:8px;border-radius:6px;display:flex;align-items:center;gap:8px;';
+        const img = document.createElement('img'); img.alt = meta.name || ''; img.width=24; img.height=24; img.src = (meta.icon || '').replace('http://','https://');
+        const name = document.createElement('div'); name.textContent = meta.name || `ID ${entry.id}`;
+        const val = document.createElement('div'); val.textContent = entry.value; val.style.marginLeft='auto'; val.style.fontWeight='600';
+        d.appendChild(img); d.appendChild(name); d.appendChild(val);
+        cards.appendChild(d);
+      });
+      setStatus(`Listo — ${wallet.length} divisas`);
+      document.dispatchEvent(new CustomEvent('gw2:walletData', { detail:{ wallet, currencies } }));
       return;
     }
 
-    // Guardar evitando duplicados
-    let list = [];
-    try{ list = JSON.parse(localStorage.getItem('gw2_keys')||'[]'); if (!Array.isArray(list)) list=[]; }catch(e){ list=[]; }
-    if (!list.includes(key)) list.push(key);
-    try{ localStorage.setItem('gw2_keys', JSON.stringify(list)); }catch(e){}
+    // Fallback tabla mínima si existen elementos de tabla
+    const tbody = document.querySelector('#walletTable tbody');
+    if (tbody){
+      tbody.innerHTML = '';
+      wallet.forEach(entry=>{
+        const meta = map.get(entry.id) || {name:`ID ${entry.id}`};
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td></td><td>${meta.name||'—'}</td><td class="right">${entry.value}</td><td></td><td class="right"></td>`;
+        tbody.appendChild(tr);
+      });
+      setStatus(`Listo — ${wallet.length} divisas`);
+      document.dispatchEvent(new CustomEvent('gw2:walletData', { detail:{ wallet, currencies } }));
+      return;
+    }
 
-    persistSelectedKey(key);
+    // Si no hay contenedores, al menos actualizamos estado y disparamos evento
+    setStatus(`Listo — ${wallet.length} divisas`);
+    document.dispatchEvent(new CustomEvent('gw2:walletData', { detail:{ wallet, currencies } }));
+  }
 
-    const sel = populateSelectPreservandoAdd();
-    if (sel) sel.value = key;
-
-    document.dispatchEvent(new CustomEvent('gw2:apiKeyChanged',{ detail:{ key } }));
-    // disparamos change del select 1 sola vez y luego el refresco (con guardas)
-    dispatchChangeOnSelect();
-    triggerRefresh();
+  function kickLoad(){
+    if (_refreshing) return;
+    _refreshing = true;
+    try{
+      // Intentos en orden: funciones existentes, botón refresh, y por último fallback
+      if (typeof window.refreshSelected === 'function'){ window.refreshSelected(); }
+      else if (typeof window.loadWallet === 'function'){ window.loadWallet(); }
+      else if (typeof window.refreshWallet === 'function'){ window.refreshWallet(); }
+      else {
+        const btn = document.getElementById('refreshBtn');
+        if (btn) btn.click();
+        // Espera corta, si no hay cambios visuales, corremos fallback
+        setTimeout(()=>{ loadWalletFallback(); }, 400);
+      }
+    } finally { setTimeout(()=>{ _refreshing=false; }, 0); }
   }
 
   function wireSelect(sel){
     if (!sel) return;
-    sel.addEventListener('change', (ev)=>{
-      // Si este change viene del propio parche o estamos refrescando, no re‑encadenamos
+    sel.addEventListener('change', ()=>{
       if (_internalChange || _refreshing) return;
-
       if (sel.value === '__add__' || (sel.selectedOptions[0] && (sel.selectedOptions[0].dataset.addKey!==undefined))){
         document.dispatchEvent(new CustomEvent('gw2:addApiKeyRequested'));
         const prev = localStorage.getItem('gw2_selected_key') || '';
@@ -169,7 +196,7 @@
       }
       persistSelectedKey(sel.value);
       document.dispatchEvent(new CustomEvent('gw2:apiKeyChanged',{ detail:{ key: sel.value }}));
-      triggerRefresh();
+      kickLoad();
     });
   }
 
@@ -177,13 +204,13 @@
     const sel = populateSelectPreservandoAdd();
     wireSelect(sel);
     ensureAddButton();
-    // Si ya hay key, lanzamos un único ciclo de refresco sin disparar change artificial
-    if (getSelectedKey()) triggerRefresh();
+    // Auto‑kick si hay key guardada
+    if (getSelectedKey()) kickLoad();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 
-  // ===== Parche fetch específico =====
+  // ===== Parche fetch de normalización (solo para endpoints necesarios) =====
   const _fetch = window.fetch;
   window.fetch = function(input, init){
     try{

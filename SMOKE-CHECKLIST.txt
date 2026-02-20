@@ -1,5 +1,1 @@
-
-SMOKE – gw2-wallet-ligero (integrado)
-[ ] Network: /v2/tokeninfo?access_token=... y /v2/account/wallet?access_token=...
-[ ] Sidebar (desktop) no empuja; (mobile) se apila; sticky respeta header.
-[ ] Sin dependencias nuevas; reversible quitando 2 includes.
+1) Seleccionar/Agregar key → Network con tokeninfo+wallet; 2) Tarjetas muestran tarjetas o status listo; 3) Metaeventos sidebar OK; 4) Sin errores en consola
