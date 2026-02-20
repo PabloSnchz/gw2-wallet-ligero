@@ -1,9 +1,5 @@
-# Changelog
 
-## [1.6.0-alpha1] - 2026-02-20
-### Added
-- Pantalla **MetaEventos** (alpha) con grid de tarjetas y seguimiento diario por evento.
-- Tarjeta incluida: **Choya Piñata** (y otras). Omitido Wurm en esta alfa.
-
-### Unchanged
-- Diseño base y funcionalidades de Wallet/Conversor.
+## v1.1.1 – Parche rápido
+- Normaliza `?access_token` en llamadas a `/v2/tokeninfo` y `/v2/account/wallet`.
+- Ignora parámetros erróneos `kay`/`key` si aparecen, para compatibilidad.
+- Ajusta layout de Metaeventos (flex + sticky) sin tocar estilos base.
