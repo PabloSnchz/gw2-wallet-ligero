@@ -1,5 +1,5 @@
 
-// v1.4.0-preview4 — Full build con exclusividad estricta integrada
+// GW2 Wallet — v1.4.0
 // - Account Name (nombre.####) junto al combo (desde /v2/account)
 // - Exclusividad estricta Tarjetas/Compacta con style.display
 // - Iconos de acciones junto al combo
@@ -86,7 +86,6 @@ function applyFilters(){
     const oa=byId.get(a.id)?.order??0; const ob=byId.get(b.id)?.order??0; return oa-ob;
   });
 
-  // Respetar la vista actual por style.display
   if($('#walletTableWrap').style.display==='block'){
     renderTable(list);
   } else {

@@ -1,14 +1,16 @@
+
 <!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GW2 Wallet — v1.4.0-preview4 (con header-texture)</title>
+  <title>GW2 Wallet — v1.4.0</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body class="dense">
+  <!-- Header con textura + tabs + link externo a gestión de API Keys -->
   <header class="an-header">
-    <div class="an-header__texture"></div><!-- textura -->
+    <div class="an-header__texture"></div>
     <div class="an-header__inner">
       <div class="an-brand">GW2 Wallet</div>
       <nav class="an-nav">
@@ -32,6 +34,8 @@
           <div class="owner-right">
             <label for="keySelect" class="muted">Seleccionar KEY</label>
             <select id="keySelect"></select>
+
+            <!-- Acciones en iconos junto al combo -->
             <button id="copyKeyBtn" class="icon-btn" title="Copiar API Key" aria-label="Copiar">
               <svg class="icon" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v12h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
             </button>
@@ -47,6 +51,7 @@
           </div>
         </div>
 
+        <!-- Filtros -->
         <div class="filters">
           <div class="field"><label for="searchBox">Buscar</label><input id="searchBox" type="text" placeholder="Nombre de la divisa…" /></div>
           <div class="field"><label for="categorySelect">Categoría</label>
@@ -61,7 +66,7 @@
 
         <p class="status" id="status">Esperando acción…</p>
 
-        <!-- Contenido con exclusividad estricta por style.display -->
+        <!-- Contenido: exclusividad estricta por style.display -->
         <div id="walletCards" class="grid" style="display:grid" aria-live="polite"></div>
         <div id="walletTableWrap" class="table-wrap" style="display:none">
           <table class="table" id="walletTable" aria-label="Divisas (vista compacta)">

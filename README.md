@@ -1,15 +1,15 @@
 
-# GW2 Wallet — v1.4.0-preview4
+# GW2 Wallet — v1.4.0 (final)
 
-Este build integra la alternancia **estricta** Tarjetas/Compacta en el proyecto completo:
-
+Incluye:
 - **Account Name** (ej.: `shiruvano.3084`) desde `/v2/account` (permiso `account`).
-- **Exclusividad estricta** entre Tarjetas y Compacta usando `style.display`.
+- **Exclusividad estricta** entre Tarjetas/Compacta con `style.display`.
 - **Iconos de acciones** (copiar/renombrar/eliminar/actualizar) junto al combo.
 - **Densidad ArenaNet** por defecto (sin selector).
+- **Header con textura** abstracta en grises (archivo `assets/header-texture.png`).
 
-Endpoints usados:
-- `/v2/tokeninfo` para validar permisos de la key (`account`/`wallet`).
-- `/v2/account` para `name` (y GUID interno `id`).
-- `/v2/currencies?ids=all` para metadatos de divisas.
-- `/v2/account/wallet` para saldos.
+Endpoints:
+- `/v2/tokeninfo` (validar permisos)
+- `/v2/account` (name, id)
+- `/v2/currencies?ids=all` (catálogo)
+- `/v2/account/wallet` (saldos)

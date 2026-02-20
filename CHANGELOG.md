@@ -1,7 +1,9 @@
 
 # Changelog
 
-## [1.4.0-preview4] - 2026-02-20
-### Fixed/Added
-- Alternancia estricta de vistas (Tarjetas/Compacta) integrada en el build completo.
-- Account Name al lado del combo, iconos reubicados, densidad por defecto.
+## [1.4.0] - 2026-02-20
+### Added
+- Alternancia estricta Tarjetas/Compacta.
+- Account Name a la vista junto al combo.
+- Acciones (copiar/renombrar/eliminar/actualizar) en iconos.
+- Densidad por defecto y header con textura.
