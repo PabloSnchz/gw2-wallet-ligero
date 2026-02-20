@@ -1,31 +1,23 @@
 
-/* Parche de layout para Metaeventos – sidebar derecho no empuje el contenido */
-/* Buscamos ser defensivos: soportamos varios selectores comunes sin romper estilos existentes */
-
-.metaeventos, .meta-events, .page--metaeventos, .metaeventos-layout {
+/* Corrige sidebar derecho que empuja el contenido (aplica a tu estructura real) */
+/* Layout principal */
+.container.layout {
   display: flex;
   align-items: flex-start;
   gap: 16px;
 }
-
-/* Contenido principal (tarjetas) */
-.metaeventos .cards, .meta-events .cards, .metaeventos-content, .page--metaeventos .cards {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
+/* Columna principal con tarjetas */
+.col-main { flex: 1 1 auto; min-width: 0; }
 /* Sidebar derecho */
-.metaeventos .sidebar-right, .meta-events .sidebar-right, .metaeventos aside.sidebar, .page--metaeventos aside.sidebar, .metaeventos-sidebar {
-  flex: 0 0 320px;
-  max-width: 320px;
-  position: sticky;
-  top: 80px; /* ajustá según header */
-  align-self: flex-start;
+.col-side { flex: 0 0 320px; max-width: 320px; position: sticky; top: 80px; align-self: flex-start; }
+/* Responsivo */
+@media (max-width: 960px) {
+  .container.layout { flex-direction: column; }
+  .col-side { position: static; top: auto; max-width: none; width: 100%; }
 }
 
-@media (max-width: 960px) {
-  .metaeventos, .meta-events, .page--metaeventos, .metaeventos-layout { flex-direction: column; }
-  .metaeventos .sidebar-right, .meta-events .sidebar-right, .metaeventos aside.sidebar, .page--metaeventos aside.sidebar, .metaeventos-sidebar {
-    position: static; top: auto; max-width: none; width: 100%;
-  }
-}
+/* Compatibilidad adicional (si existieran otras páginas o clases futuras) */
+.metaeventos, .meta-events, .page--metaeventos, .metaeventos-layout { display:flex; align-items:flex-start; gap:16px; }
+.metaeventos .cards, .meta-events .cards, .metaeventos-content, .page--metaeventos .cards { flex:1 1 auto; min-width:0; }
+.metaeventos .sidebar-right, .meta-events .sidebar-right, .metaeventos aside.sidebar, .page--metaeventos aside.sidebar, .metaeventos-sidebar { flex:0 0 320px; max-width:320px; position:sticky; top:80px; align-self:flex-start; }
+@media (max-width:960px){ .metaeventos, .meta-events, .page--metaeventos, .metaeventos-layout{flex-direction:column} .metaeventos .sidebar-right, .meta-events .sidebar-right, .metaeventos aside.sidebar, .page--metaeventos aside.sidebar, .metaeventos-sidebar{position:static; top:auto; max-width:none; width:100%} }
