@@ -1,67 +1,91 @@
-/* Estilos base */
+/* =====================================================
+   ArenaNet Dark Theme (inspiración visual)
+   ===================================================== */
 :root{
-  --bg:#0f1216; --panel:#171b22; --panel-2:#1f2530; --text:#e7edf4; --muted:#9fb0c3;
-  --brand:#60a5fa; --ok:#34d399; --warn:#f59e0b; --err:#ef4444; --border:#2a3443;
-  --card:#1a2030;
+  /* Paleta ArenaNet-like */
+  --bg:#0a0a0a;           /* fondo principal negro */
+  --bg-panel:#111;        /* panel */
+  --bg-panel-2:#151515;   /* inputs/panel interno */
+  --text:#ececec;         /* texto base */
+  --muted:#a9a9a9;        /* texto secundario */
+  --border:#2f2f2f;       /* bordes oscuros */
+  --accent:#c20f0f;       /* rojo ArenaNet */
+  --accent-2:#e01919;     /* rojo hover */
 }
+
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0; background:var(--bg); color:var(--text); font:14px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial}
+body{margin:0; background:var(--bg); color:var(--text); font:14px/1.35 system-ui,Segoe UI,Roboto,Helvetica,Arial}
 
-.topbar{position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:12px; padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--border)}
-.topbar h1{font-size:16px; margin:0; font-weight:700; letter-spacing:.3px}
-.topbar .badge{font-size:12px; color:#cbd5e1; background:#0b1020; border:1px solid var(--border); padding:2px 8px; border-radius:999px}
-.topbar .spacer{flex:1}
-.topbar nav a{color:var(--muted); text-decoration:none; margin-left:12px; font-size:12px}
+/* ================= HEADER estilo ArenaNet ================= */
+.an-header{position:sticky; top:0; z-index:10; background:#000; border-bottom:1px solid #111}
+.an-header__inner{max-width:1100px; margin:0 auto; display:flex; align-items:center; gap:20px; padding:10px 16px}
+.an-brand{font-weight:700; letter-spacing:.4px}
+.an-nav{display:flex; gap:12px; align-items:center}
+.an-tab{background:transparent; color:var(--text); border:0; padding:8px 10px; cursor:pointer; font-weight:600}
+.an-tab--active{position:relative}
+.an-tab--active::after{content:""; position:absolute; left:0; right:0; bottom:-10px; height:3px; background:var(--accent)}
+.an-link{color:var(--muted); text-decoration:none; padding:8px 10px}
+.an-link:hover{color:#fff}
+.an-accent{height:2px; background:var(--accent)}
 
-main{padding:16px; max-width:1100px; margin:0 auto}
-.panel{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:16px}
+/* ================= CONTENEDOR ================= */
+.container{max-width:1100px; margin:16px auto; padding:0 16px}
 
-.row{display:flex; flex-wrap:wrap; gap:10px}
-.toolbar{display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap}
-.grow{flex:1 1 220px}
-.flex{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+/* ================= PANELES ================= */
+.panel{background:var(--bg-panel); border:1px solid var(--border); margin-bottom:14px}
+.panel__title{margin:0; padding:8px 12px; font-size:13px; letter-spacing:.3px; background:#0e0e0e; border-bottom:1px solid var(--border)}
+.panel__body{padding:12px}
 
+/* Inputs, selects y botones: esquinas rectas, borde oscuro */
 label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
-input[type=text]{width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px 12px}
-select{width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px 12px; appearance:none}
-button{background:var(--brand); color:#08111f; border:0; border-radius:8px; padding:10px 14px; font-weight:700; cursor:pointer}
-button.ghost{background:transparent; color:var(--muted); border:1px solid var(--border)}
-button.red{background:var(--err); color:white}
-
-.status{font-size:12px; color:var(--muted)}
-.status.ok{color:var(--ok)} .status.warn{color:var(--warn)} .status.err{color:var(--err)}
-
-.pill{padding:6px 10px; border:1px solid var(--border); background:var(--panel-2); border-radius:999px; font-size:12px}
-.hr{height:1px; background:var(--border); margin:10px 0}
-.muted{color:var(--muted)}
+input[type=text], select{width:100%; background:var(--bg-panel-2); color:var(--text); border:1px solid var(--border); border-radius:2px; padding:9px 10px}
+input[type=text]:focus, select:focus{outline:none; border-color:#494949; box-shadow:0 0 0 2px rgba(194,15,15,.25)}
 .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
 
-/* Grilla de tarjetas */
-.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px}
-.card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px}
-.card .title{font-weight:600}
-.card .value{font-variant-numeric:tabular-nums}
+/* Botones */
+.btn{background:#1b1b1b; color:#ddd; border:1px solid var(--border); border-radius:2px; padding:9px 12px; cursor:pointer}
+.btn:hover{border-color:#444}
+.btn--primary{background:#151515; border-color:#414141}
+.btn--primary:hover{border-color:#5a5a5a}
+.btn--accent{background:var(--accent); color:#fff; border-color:#b10e0e}
+.btn--accent:hover{background:var(--accent-2)}
+
+/* Grids y layout compacto */
+.row{display:flex; flex-wrap:wrap; gap:10px}
+.toolbar{display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap}
+.grow{flex:1 1 220px}
+.hr{height:1px; background:var(--border); margin:10px 0}
+.muted{color:var(--muted)}
+.status{font-size:12px; color:var(--muted)}
+
+/* Propietario */
+.owner{margin-top:6px}
+.owner__pill{padding:4px 8px; background:#0e0e0e; border:1px solid var(--border); font-size:12px}
+
+/* ================= FILTROS ================= */
+.filters{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin:8px 0}
+.field.checkbox label{margin:0; display:flex; align-items:center; gap:8px; padding-top:20px}
+
+/* ================= TARJETAS (rediseño estilo bloques API Keys) ================= */
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px}
+.card{background:#0d0d0d; border:1px solid var(--border); padding:10px; border-radius:2px; transition:border-color .15s ease, box-shadow .15s ease}
+.card:hover{border-color:#4a4a4a; box-shadow:0 0 0 2px rgba(194,15,15,.2)}
+.card .title{font-weight:600; font-size:14px}
+.card .value{font-variant-numeric:tabular-nums; font-weight:600}
+.card-col{display:flex; flex-direction:column; gap:8px}
+.card-header{display:block}
+.card-footer{display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:6px; border-top:1px solid var(--border)}
+.card-footer img{width:22px; height:22px; border-radius:2px; background:#0b0b0b}
 
 /* Monedas */
 .coins{display:flex; gap:6px; align-items:center; font-variant-numeric:tabular-nums}
-.coin{display:inline-flex; gap:4px; align-items:center; padding:2px 6px; border:1px solid var(--border); border-radius:6px; background:#0f1420}
+.coin{display:inline-flex; gap:4px; align-items:center; padding:2px 6px; border:1px solid var(--border); background:#0c0c0c}
 .coin.g{color:#f5d061} .coin.s{color:#c0c0c0} .coin.c{color:#d0926b}
 
-/* Filtros */
-.filters{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px; margin:10px 0}
-.field{display:block}
-.field.checkbox label{margin:0; display:flex; align-items:center; gap:8px; padding-top:20px}
-
-/* Tabla compacta */
+/* ================= TABLA COMPACTA ================= */
 .table-wrap{overflow:auto}
-.table{width:100%; border-collapse:collapse; background:var(--panel-2); border:1px solid var(--border)}
-.table th,.table td{padding:8px 10px; border-bottom:1px solid var(--border)}
-.table th{background:#121722; text-align:left; font-size:12px; color:#b7c3d7}
+.table{width:100%; border-collapse:collapse; background:var(--bg-panel-2); border:1px solid var(--border)}
+.table th,.table td{padding:8px 10px; border-bottom:1px solid var(--border); font-size:13px}
+.table th{background:#0e0e0e; text-align:left; color:#cfcfcf}
 .right{text-align:right}
-
-/* NUEVO: tarjetas con header (texto) + footer (icono + cantidad) */
-.card-col{display:flex; flex-direction:column; gap:10px}
-.card-header{display:block}
-.card-footer{display:flex; align-items:center; justify-content:space-between; gap:12px; padding-top:6px; border-top:1px dashed var(--border)}
-.card-footer img{width:28px; height:28px; border-radius:6px; background:#0b1020}

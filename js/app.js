@@ -1,10 +1,7 @@
 // ==========================
-//  GW2 Wallet (ligero)
-//  - Multi API Keys
-//  - Validación de permisos (tokeninfo)
-//  - Billetera + catálogo
-//  - Filtros + vista compacta
-//  - NUEVO: tarjetas con header+footer (icono+cantidad)
+//  GW2 Wallet (ligero) – Estilo ArenaNet (v1.2.0)
+//  Five-pack: tema oscuro, header, tarjetas, hovers/botones rojos,
+//  tipografía compacta
 // ==========================
 
 const LS_KEYS = 'gw2.wallet.keys.v1';
@@ -20,6 +17,7 @@ const statusEl = $('#status');
 const nf = new Intl.NumberFormat('es-AR');
 
 function status(msg, cls=''){
+  if(!statusEl) return;
   statusEl.className = 'status ' + cls;
   statusEl.textContent = msg;
 }
@@ -34,6 +32,7 @@ function mask(key){ return key ? key.slice(0,8) + '…' + key.slice(-6) : ''; }
 
 function renderKeySelect(){
   const sel = $('#keySelect');
+  if(!sel) return;
   sel.innerHTML = '';
   if(keys.length === 0){
     const opt = document.createElement('option');
@@ -119,10 +118,11 @@ const CATEGORY_MAP = {
 // Lista de principales (filtro)
 const MAIN_IDS = [1,4,2,23,3,16,18,63];
 
-// --- Render grilla de tarjetas (NUEVO layout) ---
+// --- Render tarjetas (layout header+footer) ---
 function renderCards(list){
   const byId = new Map(currencies.map(c => [c.id, c]));
   const container = $('#walletCards');
+  if(!container) return;
   container.innerHTML = '';
 
   list.forEach(entry => {
@@ -131,7 +131,6 @@ function renderCards(list){
     const card = document.createElement('div');
     card.className = 'card card-col';
 
-    // Header
     const header = document.createElement('div');
     header.className = 'card-header';
     const title = document.createElement('div'); title.className = 'title'; title.textContent = meta.name || `ID ${entry.id}`;
@@ -141,10 +140,9 @@ function renderCards(list){
     if(c.length){ cats.className = 'muted'; cats.style.fontSize = '11px'; cats.textContent = c.join(', '); }
     header.append(title, desc, cats);
 
-    // Footer: icon + amount en una sola fila
     const footer = document.createElement('div');
     footer.className = 'card-footer';
-    const icon = document.createElement('img'); icon.alt = meta.name; icon.src = meta.icon || ''; icon.width = 28; icon.height = 28; icon.loading='lazy';
+    const icon = document.createElement('img'); icon.alt = meta.name; icon.src = meta.icon || ''; icon.width = 22; icon.height = 22; icon.loading='lazy';
 
     const amount = document.createElement('div'); amount.className = 'value';
     if(entry.id === 1){
@@ -169,12 +167,13 @@ function renderCards(list){
 function renderTable(list){
   const byId = new Map(currencies.map(c => [c.id, c]));
   const tbody = $('#walletTable tbody');
+  if(!tbody) return;
   tbody.innerHTML = '';
   list.forEach(entry => {
     const meta = byId.get(entry.id) || { name:`ID ${entry.id}`, icon:'' };
     const tr = document.createElement('tr');
     const tdI = document.createElement('td');
-    const img = document.createElement('img'); img.src = meta.icon || ''; img.alt = meta.name; img.width = 24; img.height = 24; img.style.borderRadius='4px';
+    const img = document.createElement('img'); img.src = meta.icon || ''; img.alt = meta.name; img.width = 20; img.height = 20; img.style.borderRadius='2px';
     tdI.appendChild(img);
     const tdN = document.createElement('td'); tdN.textContent = meta.name || `ID ${entry.id}`;
     const tdV = document.createElement('td'); tdV.className = 'right';
@@ -192,11 +191,11 @@ function renderTable(list){
 
 // --- Filtro/orden/vista ---
 function applyFilters(){
-  const txt = $('#searchBox').value.trim().toLowerCase();
-  const cat = $('#categorySelect').value;
-  const onlyPos = $('#onlyPositive').checked;
-  const onlyMain = $('#onlyMain').checked;
-  const sort = $('#sortSelect').value;
+  const txt = $('#searchBox')?.value.trim().toLowerCase() || '';
+  const cat = $('#categorySelect')?.value || '';
+  const onlyPos = $('#onlyPositive')?.checked || false;
+  const onlyMain = $('#onlyMain')?.checked || false;
+  const sort = $('#sortSelect')?.value || 'order';
 
   const byId = new Map(currencies.map(c => [c.id, c]));
 
@@ -230,7 +229,7 @@ function applyFilters(){
     return oa - ob;
   });
 
-  const view = $('#viewSelect').value;
+  const view = $('#viewSelect')?.value || 'cards';
   if(view === 'compact'){
     $('#walletCards').hidden = true;
     $('#walletTableWrap').hidden = false;
@@ -243,7 +242,7 @@ function applyFilters(){
 }
 
 // --- Eventos de UI ---
-$('#saveBtn').addEventListener('click', async ()=>{
+$('#saveBtn')?.addEventListener('click', async ()=>{
   const id = $('#apiKey').value.trim();
   if(!id){ status('Ingresá una API Key.', 'warn'); return; }
   status('Validando key…');
@@ -259,7 +258,7 @@ $('#saveBtn').addEventListener('click', async ()=>{
   }catch(e){ status(String(e.message || e), 'err'); }
 });
 
-$('#deleteBtn').addEventListener('click', ()=>{
+$('#deleteBtn')?.addEventListener('click', ()=>{
   const i = $('#keySelect').value;
   if(i === '' || !keys[i]) return;
   const removed = keys.splice(i,1)[0];
@@ -286,12 +285,12 @@ async function refreshSelected(){
   }catch(e){ status(String(e.message || e), 'err'); }
 }
 
-$('#refreshBtn').addEventListener('click', refreshSelected);
-$('#keySelect').addEventListener('change', refreshSelected);
+$('#refreshBtn')?.addEventListener('click', refreshSelected);
+$('#keySelect')?.addEventListener('change', refreshSelected);
 
 ['searchBox','categorySelect','onlyPositive','onlyMain','sortSelect','viewSelect'].forEach(id=>{
   const el = document.getElementById(id);
-  el.addEventListener(el.tagName==='INPUT' && el.type==='text' ? 'input' : 'change', applyFilters);
+  el && el.addEventListener(el.tagName==='INPUT' && el.type==='text' ? 'input' : 'change', applyFilters);
 });
 
 // Init

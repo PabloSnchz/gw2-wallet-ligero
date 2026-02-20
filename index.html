@@ -3,124 +3,150 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GW2 Wallet (ligero) — estilo gw2efficiency</title>
+  <title>GW2 Wallet – estilo ArenaNet</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <h1>GW2 Wallet (ligero)</h1>
-    <span class="badge">Demo local</span>
-    <div class="spacer"></div>
-    <nav>
-      <a href="https://wiki.guildwars2.com/wiki/API:2/account/wallet" target="_blank" rel="noopener">/v2/account/wallet</a>
-      <a href="https://wiki.guildwars2.com/wiki/API:2/currencies" target="_blank" rel="noopener">/v2/currencies</a>
-      <a href="https://wiki.guildwars2.com/wiki/API:2/tokeninfo" target="_blank" rel="noopener">/v2/tokeninfo</a>
-    </nav>
+  <!-- HEADER superior estilo ArenaNet -->
+  <header class="an-header">
+    <div class="an-header__inner">
+      <div class="an-brand">GW2 Wallet</div>
+      <nav class="an-nav">
+        <button class="an-tab an-tab--active" data-view="cards">Tarjetas</button>
+        <button class="an-tab" data-view="compact">Compacta</button>
+        <a class="an-link" href="https://wiki.guildwars2.com/wiki/API:API_key" target="_blank" rel="noopener">API Keys</a>
+      </nav>
+    </div>
+    <div class="an-accent"></div>
   </header>
 
-  <main>
+  <main class="container">
+    <!-- Panel de claves + acciones -->
     <section class="panel">
-      <div class="toolbar">
-        <div class="field grow">
-          <label for="keySelect">Cuenta (API Key guardada)</label>
-          <select id="keySelect"></select>
+      <h2 class="panel__title">Claves API</h2>
+      <div class="panel__body">
+        <div class="toolbar">
+          <div class="field grow">
+            <label for="keySelect">Cuenta (API Key guardada)</label>
+            <select id="keySelect"></select>
+          </div>
+          <button id="refreshBtn" class="btn btn--primary" title="Actualizar divisas">Actualizar</button>
+          <button id="deleteBtn" class="btn" title="Eliminar la key seleccionada">Eliminar key</button>
         </div>
-        <button id="refreshBtn" title="Actualizar divisas de la cuenta seleccionada">Actualizar</button>
-        <button id="deleteBtn" class="ghost" title="Eliminar la key seleccionada">Eliminar key</button>
-      </div>
-      <div class="hr"></div>
-      <div class="row">
-        <div class="field grow">
-          <label for="keyName">Nombre para identificar la key (opcional)</label>
-          <input id="keyName" type="text" placeholder="Ej.: Cuenta principal / Mula / EU / Steam" />
+        <div class="hr"></div>
+        <div class="row">
+          <div class="field grow">
+            <label for="keyName">Nombre de la key (opcional)</label>
+            <input id="keyName" type="text" placeholder="Ej.: Cuenta principal / Mula / EU / Steam" />
+          </div>
+          <div class="field grow">
+            <label for="apiKey">API Key de Guild Wars 2</label>
+            <input id="apiKey" type="text" placeholder="XXXXXX-XXXX-...-XXXX" class="mono" />
+          </div>
+          <div style="align-self:flex-end">
+            <button id="saveBtn" class="btn btn--accent">Agregar key</button>
+          </div>
         </div>
-        <div class="field grow">
-          <label for="apiKey">API Key de Guild Wars 2</label>
-          <input id="apiKey" type="text" placeholder="XXXXXX-XXXX-...-XXXX" class="mono" />
-        </div>
-        <div style="align-self:flex-end">
-          <button id="saveBtn">Agregar key</button>
-        </div>
-      </div>
-      <p class="status" id="status">Esperando acción…</p>
-      <small class="muted">
-        Las claves se guardan <b>solo en tu navegador</b> (localStorage). Usamos <code>?access_token=</code> para evitar preflight CORS.
-      </small>
-    </section>
-
-    <section class="panel">
-      <div class="flex">
-        <h2 style="margin:0">Divisas de la cuenta</h2>
-        <span id="ownerLabel" class="pill">—</span>
-      </div>
-
-      <div class="filters">
-        <div class="field">
-          <label for="searchBox">Buscar</label>
-          <input id="searchBox" type="text" placeholder="Nombre de la divisa…" />
-        </div>
-        <div class="field">
-          <label for="categorySelect">Categoría</label>
-          <select id="categorySelect">
-            <option value="">Todas</option>
-            <option value="general">Generales</option>
-            <option value="competitive">Competitivas</option>
-            <option value="map">De mapa</option>
-            <option value="key">Llaves</option>
-            <option value="dungeon">Mazmorras/Fractales</option>
-            <option value="blacklion">Black Lion</option>
-            <option value="historic">Históricas</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="sortSelect">Orden</label>
-          <select id="sortSelect">
-            <option value="order">Orden del juego</option>
-            <option value="name">Nombre (A→Z)</option>
-            <option value="amount">Cantidad (desc)</option>
-          </select>
-        </div>
-        <div class="field checkbox">
-          <label><input type="checkbox" id="onlyPositive" /> Solo > 0</label>
-        </div>
-        <div class="field checkbox">
-          <label><input type="checkbox" id="onlyMain" /> Solo principales</label>
-        </div>
-        <div class="field">
-          <label for="viewSelect">Vista</label>
-          <select id="viewSelect">
-            <option value="cards">Tarjetas</option>
-            <option value="compact">Compacta</option>
-          </select>
-        </div>
-      </div>
-
-      <div id="walletCards" class="grid" aria-live="polite"></div>
-      <div id="walletTableWrap" class="table-wrap" hidden>
-        <table class="table" id="walletTable" aria-label="Divisas (vista compacta)">
-          <thead>
-            <tr>
-              <th>Icono</th>
-              <th>Divisa</th>
-              <th class="right">Cantidad</th>
-              <th>Categorías</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <p class="status" id="status">Esperando acción…</p>
+        <small class="muted">Las claves se guardan <b>solo en tu navegador</b> (localStorage). Usamos <code>?access_token=</code> para evitar preflight CORS.</small>
       </div>
     </section>
 
+    <!-- Panel de filtros y vista -->
     <section class="panel">
-      <h3 style="margin-top:0">Acerca de esta página</h3>
-      <p class="muted">
-        - Valida permisos <code>account</code> y <code>wallet</code> antes de usar la key.<br/>
-        - Catálogo de divisas cacheado 7 días en <code>localStorage</code>.<br/>
-        - Filtros: búsqueda por nombre, por categoría (mapeo comunitario), solo principales, solo con saldo, y orden configurable.<br/>
-      </p>
+      <h2 class="panel__title">Divisas</h2>
+      <div class="panel__body">
+        <div class="filters">
+          <div class="field">
+            <label for="searchBox">Buscar</label>
+            <input id="searchBox" type="text" placeholder="Nombre de la divisa…" />
+          </div>
+          <div class="field">
+            <label for="categorySelect">Categoría</label>
+            <select id="categorySelect">
+              <option value="">Todas</option>
+              <option value="general">Generales</option>
+              <option value="competitive">Competitivas</option>
+              <option value="map">De mapa</option>
+              <option value="key">Llaves</option>
+              <option value="dungeon">Mazmorras/Fractales</option>
+              <option value="blacklion">Black Lion</option>
+              <option value="historic">Históricas</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="sortSelect">Orden</label>
+            <select id="sortSelect">
+              <option value="order">Orden del juego</option>
+              <option value="name">Nombre (A→Z)</option>
+              <option value="amount">Cantidad (desc)</option>
+            </select>
+          </div>
+          <div class="field checkbox">
+            <label><input type="checkbox" id="onlyPositive" /> Solo > 0</label>
+          </div>
+          <div class="field checkbox">
+            <label><input type="checkbox" id="onlyMain" /> Solo principales</label>
+          </div>
+          <div class="field">
+            <label for="viewSelect">Vista</label>
+            <select id="viewSelect">
+              <option value="cards">Tarjetas</option>
+              <option value="compact">Compacta</option>
+            </select>
+          </div>
+        </div>
+        <div class="owner">
+          <span class="muted">Cuenta:</span>
+          <span id="ownerLabel" class="owner__pill">—</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contenido -->
+    <section class="panel">
+      <div class="panel__body">
+        <div id="walletCards" class="grid" aria-live="polite"></div>
+        <div id="walletTableWrap" class="table-wrap" hidden>
+          <table class="table" id="walletTable" aria-label="Divisas (vista compacta)">
+            <thead>
+              <tr>
+                <th>Icono</th>
+                <th>Divisa</th>
+                <th class="right">Cantidad</th>
+                <th>Categorías</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Info -->
+    <section class="panel">
+      <h2 class="panel__title">Acerca de</h2>
+      <div class="panel__body">
+        <p class="muted">
+          - Valida permisos <code>account</code> y <code>wallet</code> antes de usar la key.<br/>
+          - Catálogo de divisas cacheado 7 días en <code>localStorage</code>.<br/>
+          - Filtros: búsqueda por nombre, categoría (mapeo comunitario), solo principales, solo con saldo y orden configurable.<br/>
+        </p>
+      </div>
     </section>
   </main>
 
   <script src="js/app.js"></script>
+  <script>
+    // tabs del header para cambiar vista rápidamente
+    document.addEventListener('click', (e)=>{
+      if(e.target.matches('.an-tab')){
+        document.querySelectorAll('.an-tab').forEach(b=>b.classList.remove('an-tab--active'));
+        e.target.classList.add('an-tab--active');
+        const v = e.target.getAttribute('data-view');
+        if(v){ const sel = document.getElementById('viewSelect'); sel.value = v; sel.dispatchEvent(new Event('change')); }
+      }
+    });
+  </script>
 </body>
 </html>
