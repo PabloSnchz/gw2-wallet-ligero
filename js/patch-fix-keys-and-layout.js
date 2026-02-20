@@ -1,8 +1,11 @@
 
-// patch v2.3 — Fix: tras agregar/seleccionar API Key, dispara el flujo de carga sin tocar el resto
-// Cambios mínimos respecto v2.2: (1) valida permisos wallet/account, (2) dispara 'change' del select,
-// (3) trigger de refresco más robusto, (4) init auto-kick si hay key guardada.
+// patch v2.4 — Fix de recursión: evita bucles entre change() y triggerRefresh()
+// Cambios mínimos sobre v2.3: incorpora banderas _refreshing y _internalChange para prevenir loops.
 (function(){
+  // ===== Flags anti‑recursión =====
+  let _refreshing = false;     // true mientras se ejecuta triggerRefresh()
+  let _internalChange = false; // true cuando el 'change' fue disparado por este parche
+
   // ===== Utils =====
   function mask(k){ if (!k) return '—'; return k.length>8 ? k.slice(0,4)+'…'+k.slice(-4) : k; }
   function persistSelectedKey(v){ try{ if (v) localStorage.setItem('gw2_selected_key', v); }catch(e){} }
@@ -81,20 +84,25 @@
   function dispatchChangeOnSelect(){
     const sel = document.getElementById('keySelect');
     if (!sel) return;
-    try{ sel.dispatchEvent(new Event('change', { bubbles: true })); }catch(e){ /* IE fallback no necesario */ }
+    _internalChange = true;
+    try{ sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    catch(e){}
+    setTimeout(()=>{ _internalChange = false; }, 0);
   }
 
   function triggerRefresh(){
-    // 1) disparamos change del select (muchas apps escuchan esto)
-    dispatchChangeOnSelect();
-    // 2) custom event por compatibilidad
-    document.dispatchEvent(new CustomEvent('gw2:refreshRequested'));
-    // 3) intentos no intrusivos
-    try{ if (typeof window.refreshSelected === 'function') window.refreshSelected(); }catch(e){}
-    try{ const btn = document.getElementById('refreshBtn'); if (btn) btn.click(); }catch(e){}
-    // 4) funciones comunes (no fallan si no existen)
-    try{ if (typeof window.loadWallet === 'function') window.loadWallet(); }catch(e){}
-    try{ if (typeof window.refreshWallet === 'function') window.refreshWallet(); }catch(e){}
+    if (_refreshing) return; // evita reentradas
+    _refreshing = true;
+    try{
+      // Nota: NO llamamos a dispatchChangeOnSelect() acá para evitar bucles.
+      document.dispatchEvent(new CustomEvent('gw2:refreshRequested'));
+      try{ if (typeof window.refreshSelected === 'function') window.refreshSelected(); }catch(e){}
+      try{ const btn = document.getElementById('refreshBtn'); if (btn) btn.click(); }catch(e){}
+      try{ if (typeof window.loadWallet === 'function') window.loadWallet(); }catch(e){}
+      try{ if (typeof window.refreshWallet === 'function') window.refreshWallet(); }catch(e){}
+    } finally {
+      setTimeout(()=>{ _refreshing = false; }, 0);
+    }
   }
 
   function ensureAddButton(){
@@ -118,13 +126,10 @@
     const key = (raw||'').trim();
     if (!key) return;
 
-    // Validación estricta: requiere permisos account + wallet
+    // Validación estricta: requiere account + wallet
     const url = `https://api.guildwars2.com/v2/tokeninfo?access_token=${encodeURIComponent(key)}`;
     let ok=false, info=null;
-    try{
-      const r = await fetch(url);
-      ok = r.ok; info = ok ? await r.json() : null;
-    }catch(e){ ok=false; }
+    try{ const r = await fetch(url); ok = r.ok; info = ok ? await r.json() : null; }catch(e){ ok=false; }
     const perms = (info && info.permissions) || [];
     const hasAccount = Array.isArray(perms) && perms.indexOf('account') !== -1;
     const hasWallet  = Array.isArray(perms) && perms.indexOf('wallet')  !== -1;
@@ -133,7 +138,7 @@
       return;
     }
 
-    // Guardar sin duplicar
+    // Guardar evitando duplicados
     let list = [];
     try{ list = JSON.parse(localStorage.getItem('gw2_keys')||'[]'); if (!Array.isArray(list)) list=[]; }catch(e){ list=[]; }
     if (!list.includes(key)) list.push(key);
@@ -141,16 +146,21 @@
 
     persistSelectedKey(key);
 
-    // Refrescar UI y flujo
     const sel = populateSelectPreservandoAdd();
     if (sel) sel.value = key;
+
     document.dispatchEvent(new CustomEvent('gw2:apiKeyChanged',{ detail:{ key } }));
+    // disparamos change del select 1 sola vez y luego el refresco (con guardas)
+    dispatchChangeOnSelect();
     triggerRefresh();
   }
 
   function wireSelect(sel){
     if (!sel) return;
-    sel.addEventListener('change', ()=>{
+    sel.addEventListener('change', (ev)=>{
+      // Si este change viene del propio parche o estamos refrescando, no re‑encadenamos
+      if (_internalChange || _refreshing) return;
+
       if (sel.value === '__add__' || (sel.selectedOptions[0] && (sel.selectedOptions[0].dataset.addKey!==undefined))){
         document.dispatchEvent(new CustomEvent('gw2:addApiKeyRequested'));
         const prev = localStorage.getItem('gw2_selected_key') || '';
@@ -159,7 +169,7 @@
       }
       persistSelectedKey(sel.value);
       document.dispatchEvent(new CustomEvent('gw2:apiKeyChanged',{ detail:{ key: sel.value }}));
-      triggerRefresh(); // clave: al seleccionar, forzamos el flujo de carga
+      triggerRefresh();
     });
   }
 
@@ -167,7 +177,7 @@
     const sel = populateSelectPreservandoAdd();
     wireSelect(sel);
     ensureAddButton();
-    // Auto-kick inicial si ya hay key persistida (evita quedar en "Esperando acción")
+    // Si ya hay key, lanzamos un único ciclo de refresco sin disparar change artificial
     if (getSelectedKey()) triggerRefresh();
   }
 
