@@ -1,8 +1,6 @@
 
-// v1.5.0-pre2 API patch — SOLO lógica de llamadas (sin cambios de diseño)
-// - Normaliza llamadas a GW2 API con fetch robusto (timeout, reintentos, no-store)
-// - Corrige/asegura uso de campos quantity / coins_per_gem en Exchange
-// - No cambia HTML/CSS ni otras interacciones
+// v1.5.0-pre2 API patch (C2G coin-box) — SOLO ajusta salida visual de oro en Gold→Gemas
+// Mantiene el robustFetch/timeout/retry y TODO el resto de la lógica intacto.
 
 const LS_KEYS='gw2.wallet.keys.v1';
 const LS_CURRENCIES='gw2.wallet.currencies.v1';
@@ -26,7 +24,6 @@ async function robustFetch(url, {retries=1, timeoutMs=8000}={}){
       const r=await fetch(url, {signal: ctrl.signal, cache:'no-store', mode:'cors'});
       clearTimeout(t);
       if(!r.ok){
-        // 429/5xx: reintentar si queda intento
         if((r.status===429 || r.status>=500) && attempt<retries) { await new Promise(res=>setTimeout(res, 600)); continue; }
         throw new Error(`HTTP ${r.status}`);
       }
@@ -39,27 +36,17 @@ async function robustFetch(url, {retries=1, timeoutMs=8000}={}){
   }
 }
 
-// ---- API helpers (usan robustFetch) ----
-async function validateKey(id){
-  const url=`https://api.guildwars2.com/v2/tokeninfo?access_token=${encodeURIComponent(id)}`;
-  return await robustFetch(url, {retries:1});
-}
-async function fetchAccount(id){
-  const url=`https://api.guildwars2.com/v2/account?access_token=${encodeURIComponent(id)}`;
-  return await robustFetch(url, {retries:1});
-}
+// ---- API helpers ----
+async function validateKey(id){ return await robustFetch(`https://api.guildwars2.com/v2/tokeninfo?access_token=${encodeURIComponent(id)}`, {retries:1}); }
+async function fetchAccount(id){ return await robustFetch(`https://api.guildwars2.com/v2/account?access_token=${encodeURIComponent(id)}`, {retries:1}); }
 async function loadCurrenciesCatalog(force=false){
   if(!force){ try{ const cached=JSON.parse(localStorage.getItem(LS_CURRENCIES)); if(cached&&Array.isArray(cached.items)&&(Date.now()-cached.ts)<(1000*60*60*24*7)){ currencies=cached.items; return currencies; } }catch{}
   }
-  const url='https://api.guildwars2.com/v2/currencies?ids=all';
-  currencies=await robustFetch(url, {retries:1});
+  currencies=await robustFetch('https://api.guildwars2.com/v2/currencies?ids=all', {retries:1});
   localStorage.setItem(LS_CURRENCIES, JSON.stringify({ts:Date.now(), items:currencies}));
   return currencies;
 }
-async function fetchWallet(id){
-  const url=`https://api.guildwars2.com/v2/account/wallet?access_token=${encodeURIComponent(id)}`;
-  return await robustFetch(url, {retries:1});
-}
+async function fetchWallet(id){ return await robustFetch(`https://api.guildwars2.com/v2/account/wallet?access_token=${encodeURIComponent(id)}`, {retries:1}); }
 
 // ---- UI helpers ----
 function setStatus(msg, cls=''){ const el=$('#status'); if(!el) return; el.className='status '+cls; el.textContent=msg; }
@@ -84,7 +71,6 @@ $('#tabCompact')?.addEventListener('click',()=>{ showCompact(); applyFilters(); 
 
 const CATEGORY_MAP={ 4:['general','blacklion'],1:['general'],2:['general'],23:['general'],3:['general'],16:['general'],18:['general','blacklion'],63:['general'] };
 const MAIN_IDS=[1,4,2,23,3,16,18,63];
-
 function isTableView(){ return $('#walletTableWrap').style.display==='block'; }
 
 function applyFilters(){
@@ -175,10 +161,7 @@ function renderTable(list, byId, favSet){
   });
 }
 
-function toggleFav(id){
-  const i=favs.indexOf(id); if(i>=0) favs.splice(i,1); else favs.push(id);
-  persistFavs(); applyFilters();
-}
+function toggleFav(id){ const i=favs.indexOf(id); if(i>=0) favs.splice(i,1); else favs.push(id); persistFavs(); applyFilters(); }
 
 // ---- Acciones combo ----
 $('#copyKeyBtn')?.addEventListener('click', ()=>{ const i=$('#keySelect').value; if(i===''||!keys[i]) return; navigator.clipboard?.writeText(keys[i].id); });
@@ -186,28 +169,22 @@ $('#renameKeyBtn')?.addEventListener('click', ()=>{ const i=$('#keySelect').valu
 $('#deleteKeyBtn')?.addEventListener('click', ()=>{ const i=$('#keySelect').value; if(i===''||!keys[i]) return; if(confirm('¿Eliminar esta key?')){ const removed=keys.splice(i,1)[0]; persistKeys(); renderKeySelect(); $('#ownerLabel').textContent='—'; $('#walletCards').innerHTML=''; const tb=$('#walletTable tbody'); if(tb) tb.innerHTML=''; setStatus(`Key eliminada: ${removed.name||maskKey(removed.id)}`,'ok'); }});
 $('#refreshBtn')?.addEventListener('click', refreshSelected);
 $('#keySelect')?.addEventListener('change', refreshSelected);
-
 ['searchBox','categorySelect','onlyPositive','onlyMain','sortSelect'].forEach(id=>{ const el=document.getElementById(id); if(!el) return; const ev=(el.tagName==='INPUT'&&el.type==='text')?'input':'change'; el.addEventListener(ev, applyFilters); });
 
 async function refreshSelected(){
   const idx=$('#keySelect').value; if(idx===''||!keys[idx]){ setStatus('No hay key seleccionada.','warn'); return; }
   const k=keys[idx]; setStatus('Cargando datos…');
   try{
-    const token=await validateKey(k.id); // token.permissions
-    if(!new Set(token.permissions||[]).has('account')){ setStatus('Falta permiso: account','err'); $('#ownerLabel').textContent='—'; return; }
-    const acc=await fetchAccount(k.id);
-    $('#ownerLabel').textContent=acc.name || '—';
-
+    const token=await validateKey(k.id); if(!new Set(token.permissions||[]).has('account')){ setStatus('Falta permiso: account','err'); $('#ownerLabel').textContent='—'; return; }
+    const acc=await fetchAccount(k.id); $('#ownerLabel').textContent=acc.name || '—';
     await loadCurrenciesCatalog(false);
     if(!new Set(token.permissions||[]).has('wallet')){ setStatus('Falta permiso: wallet (no se podrán leer saldos)', 'warn'); wallet=[]; applyFilters(); return; }
-
     wallet=await fetchWallet(k.id);
-    setStatus('Listo.','ok');
-    applyFilters();
+    setStatus('Listo.','ok'); applyFilters();
   }catch(e){ setStatus(`Error cargando datos: ${String(e.message||e)}`,'err'); $('#ownerLabel').textContent='—'; }
 }
 
-// ---- Conversor Gem ↔ Gold (Exchange oficial)
+// ---- Conversor Gem ↔ Gold (con coin-box en ambas direcciones)
 function parseGoldInput(s){
   if(!s) return 0; let g=0,sil=0,c=0; s=s.toLowerCase();
   const rg=/(\d+)\s*g/; const rs=/(\d+)\s*s/; const rc=/(\d+)\s*c/;
@@ -218,8 +195,7 @@ function parseGoldInput(s){
 }
 function fmtCoins(c){ const {g,s,c:c2}=formatCoins(c); return `${nf.format(g)} g ${s} s ${c2} c`; }
 
-let lastExchangeTs=0; let lastGemsResp=null; let lastCoinsResp=null;
-const EX_TTL=30000;
+let lastExchangeTs=0; let lastGemsResp=null; let lastCoinsResp=null; const EX_TTL=30000;
 
 $('#btnG2C')?.addEventListener('click', async()=>{
   const q=parseInt($('#convGems').value||'0'); if(!q||q<=0){ $('#outG2C').textContent='Ingrese una cantidad válida de gemas'; return; }
@@ -231,8 +207,8 @@ $('#btnG2C')?.addEventListener('click', async()=>{
       lastGemsResp=await robustFetch(url, {retries:2, timeoutMs:8000});
       lastGemsResp.q=q; lastExchangeTs=now;
     }
-    const coins=Number(lastGemsResp.quantity)||0; // cobre que recibís
-    const box=coinBoxes(coins); const out=$('#outG2C'); out.innerHTML=''; out.appendChild(box);
+    const coins=Number(lastGemsResp.quantity)||0; // cobre recibido
+    const out=$('#outG2C'); out.innerHTML=''; out.appendChild(coinBoxes(coins));
     $('#convStatus').textContent=`≈ ${lastGemsResp.coins_per_gem} cobre/gema · tasas actualizadas.`;
   }catch(err){ $('#outG2C').textContent='Error consultando Exchange'; $('#convStatus').textContent=String(err.message||err); }
 });
@@ -247,8 +223,11 @@ $('#btnC2G')?.addEventListener('click', async()=>{
       lastCoinsResp=await robustFetch(url, {retries:2, timeoutMs:8000});
       lastCoinsResp.c=copper; lastExchangeTs=now;
     }
-    const gems=Number(lastCoinsResp.quantity||lastCoinsResp.gems)||0; // tolerante a cambios
-    $('#outC2G').textContent=`${fmtCoins(copper)} ≈ ${gems} gemas`;
+    const gems=Number(lastCoinsResp.quantity||lastCoinsResp.gems)||0; // gemas
+    // *** CAMBIO SOLICITADO: mostrar el monto de GOLD con coin-boxes ***
+    const out=$('#outC2G'); out.innerHTML='';
+    out.appendChild(coinBoxes(copper));
+    out.appendChild(document.createTextNode(` ≈ ${gems} gemas`));
     $('#convStatus').textContent=`≈ ${lastCoinsResp.coins_per_gem} cobre/gema · tasas actualizadas.`;
   }catch(err){ $('#outC2G').textContent='Error consultando Exchange'; $('#convStatus').textContent=String(err.message||err); }
 });
