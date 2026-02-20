@@ -1,6 +1,7 @@
 
-// v1.6.0-alpha1-hotfix1 — Exponer refreshSelected y asegurar binding
-// Nota: No cambia diseño ni flujos; solo robustece carga y expone la función.
+// v1.6.0-alpha1-hotfix2 — Restaura botón "+" para agregar API Keys
+// - Mantiene el hotfix anterior (exponer refreshSelected y binding seguro)
+// - Inserta botón Add (JS) sin tocar HTML ni estilos globales
 (function(){
   const LS_KEYS='gw2.wallet.keys.v1';
   const LS_CURRENCIES='gw2.wallet.currencies.v1';
@@ -89,6 +90,39 @@
     }catch(e){ setStatus(String(e.message||e),'err'); const lab=$('#ownerLabel'); if(lab) lab.textContent='—'; }
   }
 
+  function insertAddKeyButton(){
+    const right=$('.owner-right'); if(!right) return;
+    // ¿Ya existe?
+    if(document.getElementById('addKeyBtn')) return;
+    const btn=document.createElement('button');
+    btn.id='addKeyBtn'; btn.className='icon-btn'; btn.title='Agregar API Key'; btn.ariaLabel='Agregar API Key';
+    btn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>`;
+    const sel=$('#keySelect');
+    if(sel && sel.nextSibling){ right.insertBefore(btn, sel.nextSibling); } else { right.appendChild(btn); }
+    btn.addEventListener('click', addKeyFlow);
+  }
+
+  async function addKeyFlow(){
+    try{
+      const raw=prompt('Pegá tu API Key (ArenaNet)'); if(!raw||!raw.trim()){ return; }
+      const id=raw.trim(); setStatus('Validando API Key…');
+      const token=await validateKey(id);
+      // Evitar duplicadas
+      const exists=(JSON.parse(localStorage.getItem(LS_KEYS)||'[]')||[]).some(k=>k.id===id);
+      if(exists){ setStatus('Esa key ya está guardada.','warn'); return; }
+      // Tomar nombre sugerido o pedirlo
+      let name = token && token.name ? token.name : '';
+      name = prompt('Nombre para identificar la key', name||'') ?? '';
+      const arr=JSON.parse(localStorage.getItem(LS_KEYS)||'[]');
+      arr.push({id, name:name.trim()||undefined});
+      localStorage.setItem(LS_KEYS, JSON.stringify(arr));
+      keys=arr; renderKeySelect();
+      const sel=$('#keySelect'); if(sel){ sel.selectedIndex=arr.length-1; }
+      setStatus('Key agregada. Cargando datos…');
+      await refreshSelected();
+    }catch(e){ setStatus('Error al validar la key: '+String(e.message||e),'err'); }
+  }
+
   function bindUI(){
     $('#tabCards')?.addEventListener('click',()=>{ showCards(); applyFilters(); toggleTabs('cards'); });
     $('#tabCompact')?.addEventListener('click',()=>{ showCompact(); applyFilters(); toggleTabs('compact'); });
@@ -101,13 +135,16 @@
 
     ['searchBox','categorySelect','onlyPositive','onlyMain','sortSelect'].forEach(id=>{ const el=document.getElementById(id); if(!el) return; const ev=(el.tagName==='INPUT'&&el.type==='text')?'input':'change'; el.addEventListener(ev, applyFilters); });
 
-    // Exponer global para debug manual
+    // Restaura botón "+" junto al selector
+    insertAddKeyButton();
+
+    // Exponer global
     window.refreshSelected = refreshSelected;
   }
 
   function toggleTabs(which){ ['tabCards','tabCompact','tabMeta'].forEach(id=>$('#'+id)?.classList.remove('an-tab--active')); if(which==='cards') $('#tabCards')?.classList.add('an-tab--active'); else if(which==='compact') $('#tabCompact')?.classList.add('an-tab--active'); else if(which==='meta') $('#tabMeta')?.classList.add('an-tab--active'); }
 
-  // ===== MetaEventos (mínimo necesario para no romper nada) =====
+  // ===== MetaEventos (de momento dejamos solo Choya; luego completamos el grid) =====
   const META_DATA=[
     {id:'choya_pinata', name:'Choya Piñata', image:'assets/meta/choya.jpg', infusionIcon:'assets/icons/infusion.svg', waypoint:'[&BIAKAAA=]', desc:'Meta de festival en Amnoon, puede soltar una infusión rara.'},
   ];
