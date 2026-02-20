@@ -1,8 +1,4 @@
-
-/* PATCH header-texture (añadir al CSS del proyecto) */
-
+/* Header texture layer (integrado) */
 .an-header{position:sticky;top:0;z-index:10;background:#000;border-bottom:1px solid #111;overflow:clip}
-
 .an-header__texture{position:absolute;inset:0;background:url('../assets/header-texture.png') center/cover no-repeat;opacity:.32;filter:grayscale(100%) contrast(90%) blur(1px);pointer-events:none}
-
 .an-header__inner{position:relative}
