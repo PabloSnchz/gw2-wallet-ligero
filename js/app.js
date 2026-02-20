@@ -1,18 +1,16 @@
 
-// GW2 Wallet — v1.4.0
-// - Account Name (nombre.####) junto al combo (desde /v2/account)
-// - Exclusividad estricta Tarjetas/Compacta con style.display
-// - Iconos de acciones junto al combo
-// - Densidad ArenaNet por defecto (sin selector)
-
+// v1.5.0-pre1 — Favoritos, Tooltips, Conversor Gem↔Gold
 const LS_KEYS='gw2.wallet.keys.v1';
 const LS_CURRENCIES='gw2.wallet.currencies.v1';
-let keys=loadKeys(); let currencies=null; let wallet=[];
+const LS_FAVS='gw2.wallet.favorites.v1';
+let keys=loadKeys(); let currencies=null; let wallet=[]; let favs=loadFavs();
 const $=s=>document.querySelector(s); const $$=s=>Array.from(document.querySelectorAll(s));
 const nf=new Intl.NumberFormat('es-AR');
 
 function loadKeys(){ try{return JSON.parse(localStorage.getItem(LS_KEYS))||[]}catch{return[]} }
 function persistKeys(){ localStorage.setItem(LS_KEYS, JSON.stringify(keys)); }
+function loadFavs(){ try{return JSON.parse(localStorage.getItem(LS_FAVS))||[]}catch{return[]} }
+function persistFavs(){ localStorage.setItem(LS_FAVS, JSON.stringify(favs)); }
 function maskKey(id){ return id ? id.slice(0,8)+'…'+id.slice(-6) : ''; }
 
 // ---- API helpers ----
@@ -24,7 +22,7 @@ async function validateKey(id){
 async function fetchAccount(id){
   const url=`https://api.guildwars2.com/v2/account?access_token=${encodeURIComponent(id)}`;
   const r=await fetch(url); if(!r.ok) throw new Error(`No se pudo leer /v2/account (${r.status})`);
-  return await r.json(); // { id (GUID), name (shiruvano.3084), ... }
+  return await r.json();
 }
 async function loadCurrenciesCatalog(force=false){
   if(!force){ try{ const cached=JSON.parse(localStorage.getItem(LS_CURRENCIES)); if(cached&&Array.isArray(cached.items)&&(Date.now()-cached.ts)<(1000*60*60*24*7)){ currencies=cached.items; return currencies; } }catch{}
@@ -40,6 +38,7 @@ async function fetchWallet(id){
   return await r.json();
 }
 
+// ---- UI helpers ----
 function setStatus(msg, cls=''){ const el=$('#status'); if(!el) return; el.className='status '+cls; el.textContent=msg; }
 function formatCoins(total){ const g=Math.floor(total/10000); const s=Math.floor((total%10000)/100); const c=total%100; return {g,s,c}; }
 
@@ -50,11 +49,9 @@ function renderKeySelect(){
   sel.selectedIndex=0;
 }
 
-// ---- Exclusividad estricta
+// ---- Vistas exclusivas
 function showCards(){ const a=$('#walletCards'), b=$('#walletTableWrap'); if(a){a.style.display='grid'} if(b){b.style.display='none'} }
 function showCompact(){ const a=$('#walletCards'), b=$('#walletTableWrap'); if(a){a.style.display='none'} if(b){b.style.display='block'} }
-
-// Tabs
 $('#tabCards')?.addEventListener('click',()=>{ showCards(); applyFilters(); $('#tabCards').classList.add('an-tab--active'); $('#tabCompact').classList.remove('an-tab--active'); });
 $('#tabCompact')?.addEventListener('click',()=>{ showCompact(); applyFilters(); $('#tabCompact').classList.add('an-tab--active'); $('#tabCards').classList.remove('an-tab--active'); });
 
@@ -86,51 +83,88 @@ function applyFilters(){
     const oa=byId.get(a.id)?.order??0; const ob=byId.get(b.id)?.order??0; return oa-ob;
   });
 
+  // Separar favoritas
+  const favSet=new Set(favs);
+  const favList=list.filter(x=>favSet.has(x.id));
+  const rest=list.filter(x=>!favSet.has(x.id));
+
+  renderFavCards(favList, byId);
+
   if($('#walletTableWrap').style.display==='block'){
-    renderTable(list);
+    renderTable(favList.concat(rest), byId, favSet);
   } else {
-    renderCards(list);
+    renderCards(favList.concat(rest), byId, favSet);
   }
 }
 
-function renderCards(list){
-  const byId=new Map(currencies.map(c=>[c.id,c]));
+function renderFavCards(list, byId){
+  const block=$('#favBlock'); const cont=$('#favCards');
+  if(!list || list.length===0){ block.hidden=true; cont.innerHTML=''; return; }
+  block.hidden=false; cont.innerHTML='';
+  list.forEach(entry=>{
+    const meta=byId.get(entry.id)||{name:`ID ${entry.id}`, icon:'', description:''};
+    const card=document.createElement('div'); card.className='card card-col';
+    const star=document.createElement('div'); star.className='star active'; star.textContent='★'; star.title='Quitar de favoritas'; star.addEventListener('click',()=>toggleFav(entry.id));
+    const title=document.createElement('div'); title.className='title'; title.textContent=meta.name||`ID ${entry.id}`;
+    attachTooltip(title, meta);
+    const desc=document.createElement('div'); desc.className='muted'; desc.style.fontSize='12px'; desc.textContent=meta.description||'';
+    const cats=document.createElement('div'); const c=CATEGORY_MAP[entry.id]||[]; if(c.length){ cats.className='muted'; cats.style.fontSize='11px'; cats.textContent=c.join(', ');} 
+    const footer=document.createElement('div'); footer.className='card-footer';
+    const icon=document.createElement('img'); icon.alt=meta.name; icon.src=meta.icon||''; icon.width=22; icon.height=22; icon.loading='lazy'; attachTooltip(icon, meta);
+    const amount=document.createElement('div'); amount.className='value';
+    if(entry.id===1){ const {g,s,c}=formatCoins(entry.value); amount.textContent=`${nf.format(g)} g ${s} s ${c} c`; }
+    else { amount.textContent=nf.format(entry.value); }
+    footer.append(icon,amount);
+    card.append(star,title,desc,cats,footer); cont.appendChild(card);
+  });
+}
+
+function renderCards(list, byId, favSet){
   const container=$('#walletCards'); container.innerHTML='';
   list.forEach(entry=>{
     const meta=byId.get(entry.id)||{name:`ID ${entry.id}`, icon:'', description:''};
     const card=document.createElement('div'); card.className='card card-col';
-    const header=document.createElement('div'); header.className='card-header';
-    const title=document.createElement('div'); title.className='title'; title.textContent=meta.name||`ID ${entry.id}`;
+    const star=document.createElement('div'); star.className='star'+(favSet.has(entry.id)?' active':''); star.textContent='★'; star.title=favSet.has(entry.id)?'Quitar de favoritas':'Marcar como favorita'; star.addEventListener('click',()=>toggleFav(entry.id));
+    const title=document.createElement('div'); title.className='title'; title.textContent=meta.name||`ID ${entry.id}`; attachTooltip(title, meta);
     const desc=document.createElement('div'); desc.className='muted'; desc.style.fontSize='12px'; desc.textContent=meta.description||'';
     const cats=document.createElement('div'); const c=CATEGORY_MAP[entry.id]||[]; if(c.length){ cats.className='muted'; cats.style.fontSize='11px'; cats.textContent=c.join(', ');} 
-    header.append(title,desc,cats);
     const footer=document.createElement('div'); footer.className='card-footer';
-    const icon=document.createElement('img'); icon.alt=meta.name; icon.src=meta.icon||''; icon.width=22; icon.height=22; icon.loading='lazy';
+    const icon=document.createElement('img'); icon.alt=meta.name; icon.src=meta.icon||''; icon.width=22; icon.height=22; icon.loading='lazy'; attachTooltip(icon, meta);
     const amount=document.createElement('div'); amount.className='value';
-    if(entry.id===1){ const {g,s,c}=formatCoins(entry.value); const wrap=document.createElement('div'); wrap.className='coins';
-      const cg=document.createElement('span'); cg.className='coin g'; cg.textContent=nf.format(g)+' g';
-      const cs=document.createElement('span'); cs.className='coin s'; cs.textContent=s+' s';
-      const cc=document.createElement('span'); cc.className='coin c'; cc.textContent=c+' c';
-      wrap.append(cg,cs,cc); amount.appendChild(wrap);
-    } else { amount.textContent=nf.format(entry.value); }
-    footer.append(icon,amount); card.append(header,footer); container.appendChild(card);
+    if(entry.id===1){ const {g,s,c}=formatCoins(entry.value); amount.textContent=`${nf.format(g)} g ${s} s ${c} c`; }
+    else { amount.textContent=nf.format(entry.value); }
+    footer.append(icon,amount);
+    card.append(star,title,desc,cats,footer); container.appendChild(card);
   });
 }
 
-function renderTable(list){
-  const byId=new Map(currencies.map(c=>[c.id,c]));
+function renderTable(list, byId, favSet){
   const tbody=$('#walletTable tbody'); tbody.innerHTML='';
   list.forEach(entry=>{
     const meta=byId.get(entry.id)||{name:`ID ${entry.id}`, icon:''};
     const tr=document.createElement('tr');
-    const tdI=document.createElement('td'); const img=document.createElement('img'); img.src=meta.icon||''; img.alt=meta.name; img.width=20; img.height=20; img.style.borderRadius='2px'; tdI.appendChild(img);
-    const tdN=document.createElement('td'); tdN.textContent=meta.name||`ID ${entry.id}`;
+    const tdI=document.createElement('td'); const img=document.createElement('img'); img.src=meta.icon||''; img.alt=meta.name; img.width=20; img.height=20; img.style.borderRadius='2px'; attachTooltip(img, meta); tdI.appendChild(img);
+    const tdN=document.createElement('td'); tdN.textContent=meta.name||`ID ${entry.id}`; attachTooltip(tdN, meta);
     const tdV=document.createElement('td'); tdV.className='right';
     if(entry.id===1){ const {g,s,c}=formatCoins(entry.value); tdV.textContent=`${nf.format(g)} g ${s} s ${c} c`; } else { tdV.textContent=nf.format(entry.value); }
     const tdC=document.createElement('td'); const cats=CATEGORY_MAP[entry.id]||[]; tdC.textContent=cats.join(', ');
-    tr.append(tdI,tdN,tdV,tdC); tbody.appendChild(tr);
+    const tdF=document.createElement('td'); tdF.className='right'; const star=document.createElement('span'); star.textContent='★'; star.className='star'+(favSet.has(entry.id)?' active':''); star.style.position='static'; star.title=favSet.has(entry.id)?'Quitar de favoritas':'Marcar como favorita'; star.addEventListener('click',()=>toggleFav(entry.id)); tdF.appendChild(star);
+    tr.append(tdI,tdN,tdV,tdC,tdF); tbody.appendChild(tr);
   });
 }
+
+function toggleFav(id){
+  const i=favs.indexOf(id); if(i>=0) favs.splice(i,1); else favs.push(id);
+  persistFavs(); applyFilters();
+}
+
+// ---- Tooltips
+const tt=$('#tooltip');
+function attachTooltip(el, meta){ if(!el) return; el.addEventListener('mouseenter', ev=>showTooltip(ev, meta)); el.addEventListener('mousemove', ev=>moveTooltip(ev)); el.addEventListener('mouseleave', hideTooltip); }
+function showTooltip(ev, meta){ tt.innerHTML=`<h4>${escapeHtml(meta.name||'—')}</h4><p>${escapeHtml(meta.description||'')}</p>${(meta.categoriesHtml||'')}`; tt.hidden=false; moveTooltip(ev); }
+function moveTooltip(ev){ const pad=10; const x=ev.clientX+pad; const y=ev.clientY+pad; tt.style.left=x+'px'; tt.style.top=y+'px'; }
+function hideTooltip(){ tt.hidden=true; }
+function escapeHtml(s){ return (s||'').replace(/[&<>]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])); }
 
 // ---- Acciones: combo y botones a la derecha ----
 $('#copyKeyBtn')?.addEventListener('click', ()=>{ const i=$('#keySelect').value; if(i===''||!keys[i]) return; navigator.clipboard?.writeText(keys[i].id); });
@@ -145,10 +179,9 @@ async function refreshSelected(){
   const idx=$('#keySelect').value; if(idx===''||!keys[idx]){ setStatus('No hay key seleccionada.','warn'); return; }
   const k=keys[idx]; setStatus('Cargando datos…');
   try{
-    // Validar permisos y obtener Account NAME (name: nombre.####)
     const token=await validateKey(k.id); // token.permissions
     if(!new Set(token.permissions||[]).has('account')){ setStatus('Falta permiso: account','err'); $('#ownerLabel').textContent='—'; return; }
-    const acc=await fetchAccount(k.id); // {id(GUID), name(nombre.####)}
+    const acc=await fetchAccount(k.id);
     $('#ownerLabel').textContent=acc.name || '—';
 
     await loadCurrenciesCatalog(false);
@@ -159,6 +192,45 @@ async function refreshSelected(){
     applyFilters();
   }catch(e){ setStatus(String(e.message||e),'err'); $('#ownerLabel').textContent='—'; }
 }
+
+// ---- Conversor Gem ↔ Gold
+function parseGoldInput(s){
+  if(!s) return 0; // copper
+  // formatos: 5g 10s 2c o 5g o 10s o 123c
+  let g=0,sil=0,c=0; s=s.toLowerCase();
+  const rg=/(\d+)\s*g/; const rs=/(\d+)\s*s/; const rc=/(\d+)\s*c/;
+  const mg=rg.exec(s); const ms=rs.exec(s); const mc=rc.exec(s);
+  if(mg) g=parseInt(mg[1]); if(ms) sil=parseInt(ms[1]); if(mc) c=parseInt(mc[1]);
+  if(!mg&&!ms&&!mc){ // número pelado → gold
+    const n=parseFloat(s.replace(/,/g,'.'))||0; g=Math.floor(n);
+  }
+  return g*10000 + sil*100 + c;
+}
+function fmtCoins(c){ const {g,s,c:c2}=formatCoins(c); return `${nf.format(g)} g ${s} s ${c2} c`; }
+
+$('#btnG2C')?.addEventListener('click', async()=>{
+  const q=parseInt($('#convGems').value||'0'); if(!q||q<=0){ $('#outG2C').textContent='Ingrese una cantidad válida de gemas'; return; }
+  try{
+    $('#convStatus').textContent='Consultando Exchange…';
+    const url=`https://api.guildwars2.com/v2/commerce/exchange/gems?quantity=${q}`;
+    const r=await fetch(url); if(!r.ok) throw new Error('Exchange no disponible');
+    const data=await r.json(); // { coins_per_gem, quantity }
+    $('#outG2C').textContent=`${q} gemas ≈ ${fmtCoins(data.quantity)}  (≈ ${data.coins_per_gem} cobre/gema)`;
+    $('#convStatus').textContent='Tasas actualizadas.';
+  }catch(err){ $('#outG2C').textContent='Error consultando Exchange'; $('#convStatus').textContent=String(err.message||err); }
+});
+
+$('#btnC2G')?.addEventListener('click', async()=>{
+  const copper=parseGoldInput($('#convGold').value||''); if(!copper||copper<=0){ $('#outC2G').textContent='Ingrese un monto de oro válido'; return; }
+  try{
+    $('#convStatus').textContent='Consultando Exchange…';
+    const url=`https://api.guildwars2.com/v2/commerce/exchange/coins?quantity=${copper}`;
+    const r=await fetch(url); if(!r.ok) throw new Error('Exchange no disponible');
+    const data=await r.json(); // { gems, coins_per_gem? }
+    $('#outC2G').textContent=`${fmtCoins(copper)} ≈ ${data.quantity||data.gems||0} gemas`;
+    $('#convStatus').textContent='Tasas actualizadas.';
+  }catch(err){ $('#outC2G').textContent='Error consultando Exchange'; $('#convStatus').textContent=String(err.message||err); }
+});
 
 // ---- Init ----
 renderKeySelect();

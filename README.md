@@ -1,15 +1,11 @@
 
-# GW2 Wallet — v1.4.0 (final)
+# GW2 Wallet — v1.5.0-pre1
 
-Incluye:
-- **Account Name** (ej.: `shiruvano.3084`) desde `/v2/account` (permiso `account`).
-- **Exclusividad estricta** entre Tarjetas/Compacta con `style.display`.
-- **Iconos de acciones** (copiar/renombrar/eliminar/actualizar) junto al combo.
-- **Densidad ArenaNet** por defecto (sin selector).
-- **Header con textura** abstracta en grises (archivo `assets/header-texture.png`).
+Este build agrega:
+- **Favoritos / Pinned** (⭐) en tarjetas y tabla, con persistencia local.
+- **Tooltips** estilo ArenaNet (nombre, descripción, categorías).
+- **Conversor Gem ↔ Gold** en el sidebar (usa los endpoints del Exchange).
 
-Endpoints:
-- `/v2/tokeninfo` (validar permisos)
-- `/v2/account` (name, id)
-- `/v2/currencies?ids=all` (catálogo)
-- `/v2/account/wallet` (saldos)
+Endpoints de referencia:
+- `/v2/currencies?ids=all` (catálogo de divisas). 
+- `/v2/commerce/exchange/gems` y `/v2/commerce/exchange/coins` para tasas del exchange.

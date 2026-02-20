@@ -4,11 +4,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>GW2 Wallet — v1.4.0</title>
+  <title>GW2 Wallet — v1.5.0-pre1</title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body class="dense">
-  <!-- Header con textura + tabs + link externo a gestión de API Keys -->
   <header class="an-header">
     <div class="an-header__texture"></div>
     <div class="an-header__inner">
@@ -22,8 +21,8 @@
     <div class="an-accent"></div>
   </header>
 
-  <main class="container">
-    <section class="panel">
+  <main class="container layout">
+    <section class="panel col-main">
       <h2 class="panel__title">Divisas de la cuenta</h2>
       <div class="panel__body">
         <div class="owner">
@@ -34,20 +33,10 @@
           <div class="owner-right">
             <label for="keySelect" class="muted">Seleccionar KEY</label>
             <select id="keySelect"></select>
-
-            <!-- Acciones en iconos junto al combo -->
-            <button id="copyKeyBtn" class="icon-btn" title="Copiar API Key" aria-label="Copiar">
-              <svg class="icon" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v12h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-            </button>
-            <button id="renameKeyBtn" class="icon-btn" title="Renombrar API Key" aria-label="Renombrar">
-              <svg class="icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04l-2.34-2.34-1.42 1.42 2.34 2.34 1.42-1.42z"/></svg>
-            </button>
-            <button id="deleteKeyBtn" class="icon-btn" title="Eliminar API Key" aria-label="Eliminar">
-              <svg class="icon" viewBox="0 0 24 24"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1z"/></svg>
-            </button>
-            <button id="refreshBtn" class="icon-btn" title="Actualizar datos" aria-label="Actualizar">
-              <svg class="icon" viewBox="0 0 24 24"><path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5H5c0 3.87 3.13 7 7 7s7-3.13 7-7-3.13-7-7-7z"/></svg>
-            </button>
+            <button id="copyKeyBtn" class="icon-btn" title="Copiar API Key" aria-label="Copiar">★</button>
+            <button id="renameKeyBtn" class="icon-btn" title="Renombrar API Key" aria-label="Renombrar">✎</button>
+            <button id="deleteKeyBtn" class="icon-btn" title="Eliminar API Key" aria-label="Eliminar">🗑</button>
+            <button id="refreshBtn" class="icon-btn" title="Actualizar datos" aria-label="Actualizar">⟳</button>
           </div>
         </div>
 
@@ -66,17 +55,64 @@
 
         <p class="status" id="status">Esperando acción…</p>
 
+        <!-- Bloque de Favoritas (solo se muestra si hay) -->
+        <div id="favBlock" class="fav-block" hidden>
+          <h3 class="fav-title">Favoritas</h3>
+          <div id="favCards" class="grid"></div>
+        </div>
+
         <!-- Contenido: exclusividad estricta por style.display -->
         <div id="walletCards" class="grid" style="display:grid" aria-live="polite"></div>
         <div id="walletTableWrap" class="table-wrap" style="display:none">
           <table class="table" id="walletTable" aria-label="Divisas (vista compacta)">
-            <thead><tr><th>Icono</th><th>Divisa</th><th class="right">Cantidad</th><th>Categorías</th></tr></thead>
+            <thead><tr><th>Icono</th><th>Divisa</th><th class="right">Cantidad</th><th>Categorías</th><th class="right">⭐</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
       </div>
     </section>
+
+    <!-- Sidebar con conversor Gem↔Gold y espacio para futuras funciones -->
+    <aside class="col-side">
+      <section class="panel">
+        <h3 class="panel__title">Conversor Gem ↔ Gold</h3>
+        <div class="panel__body">
+          <div class="conv-row">
+            <label for="convGems">Gemas → Gold</label>
+            <div class="inputs">
+              <input id="convGems" type="number" min="0" step="1" value="100" />
+              <button id="btnG2C" class="btn btn--primary">Calcular</button>
+            </div>
+            <div id="outG2C" class="conv-out muted">—</div>
+          </div>
+          <hr />
+          <div class="conv-row">
+            <label for="convGold">Gold → Gemas</label>
+            <div class="inputs">
+              <input id="convGold" type="text" placeholder="5g 10s 0c" />
+              <button id="btnC2G" class="btn btn--primary">Calcular</button>
+            </div>
+            <div id="outC2G" class="conv-out muted">—</div>
+          </div>
+          <p id="convStatus" class="status">Tasas actualizadas recientemente.</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3 class="panel__title">Próximas funciones</h3>
+        <div class="panel__body">
+          <ul class="muted">
+            <li>Exportar CSV/JSON</li>
+            <li>Historial y variación</li>
+            <li>Deep‑links</li>
+          </ul>
+        </div>
+      </section>
+    </aside>
   </main>
+
+  <!-- Tooltip global -->
+  <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
 
   <script src="js/app.js"></script>
 </body>

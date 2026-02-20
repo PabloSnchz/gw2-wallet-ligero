@@ -1,9 +1,8 @@
 
 # Changelog
 
-## [1.4.0] - 2026-02-20
+## [1.5.0-pre1] - 2026-02-20
 ### Added
-- Alternancia estricta Tarjetas/Compacta.
-- Account Name a la vista junto al combo.
-- Acciones (copiar/renombrar/eliminar/actualizar) en iconos.
-- Densidad por defecto y header con textura.
+- Favoritos/Pinned con almacenamiento local.
+- Tooltips mejorados en tarjetas y tabla.
+- Conversor Gem ↔ Gold en el sidebar.
