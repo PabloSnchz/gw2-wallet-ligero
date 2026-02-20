@@ -1,8 +1,9 @@
 
-// patch v2.2 — Restaura botón “+” Agregar API Key junto al selector, sin alterar el resto
-// Mantiene: poblar <select>, eventos gw2:apiKeyChanged / gw2:addApiKeyRequested, y parche de fetch
+// patch v2.3 — Fix: tras agregar/seleccionar API Key, dispara el flujo de carga sin tocar el resto
+// Cambios mínimos respecto v2.2: (1) valida permisos wallet/account, (2) dispara 'change' del select,
+// (3) trigger de refresco más robusto, (4) init auto-kick si hay key guardada.
 (function(){
-  // ===== Utils almacenamiento =====
+  // ===== Utils =====
   function mask(k){ if (!k) return '—'; return k.length>8 ? k.slice(0,4)+'…'+k.slice(-4) : k; }
   function persistSelectedKey(v){ try{ if (v) localStorage.setItem('gw2_selected_key', v); }catch(e){} }
 
@@ -32,12 +33,10 @@
     return out;
   }
 
-  // ===== Poblar <select> preservando opción “agregar” si existía =====
   function populateSelectPreservandoAdd(){
     const sel = document.getElementById('keySelect');
     if (!sel) return null;
 
-    // Detectar y preservar opciones especiales de “agregar”
     const specialOpts = [];
     Array.from(sel.options).forEach(o => {
       if (o.dataset && (o.dataset.addKey!==undefined)) specialOpts.push(o.cloneNode(true));
@@ -45,7 +44,6 @@
       else if ((o.className||'').split(/\s+/).includes('add-key')) specialOpts.push(o.cloneNode(true));
     });
 
-    // Placeholder existente (si lo hay)
     let placeholder = Array.from(sel.options).find(o => o.disabled && !o.value) || null;
 
     sel.innerHTML = '';
@@ -59,9 +57,7 @@
     sel.appendChild(placeholder);
 
     const keys = readKeysFromStorage();
-    keys.forEach(k=>{
-      const o=document.createElement('option'); o.value=k.id; o.textContent=k.label; sel.appendChild(o);
-    });
+    keys.forEach(k=>{ const o=document.createElement('option'); o.value=k.id; o.textContent=k.label; sel.appendChild(o); });
 
     if (specialOpts.length){
       const sep = document.createElement('option'); sep.disabled = true; sep.textContent = '────────'; sep.value=''; sel.appendChild(sep);
@@ -82,23 +78,38 @@
     return null;
   }
 
-  // ===== Botón “+” (re)insertado junto al <select> =====
+  function dispatchChangeOnSelect(){
+    const sel = document.getElementById('keySelect');
+    if (!sel) return;
+    try{ sel.dispatchEvent(new Event('change', { bubbles: true })); }catch(e){ /* IE fallback no necesario */ }
+  }
+
+  function triggerRefresh(){
+    // 1) disparamos change del select (muchas apps escuchan esto)
+    dispatchChangeOnSelect();
+    // 2) custom event por compatibilidad
+    document.dispatchEvent(new CustomEvent('gw2:refreshRequested'));
+    // 3) intentos no intrusivos
+    try{ if (typeof window.refreshSelected === 'function') window.refreshSelected(); }catch(e){}
+    try{ const btn = document.getElementById('refreshBtn'); if (btn) btn.click(); }catch(e){}
+    // 4) funciones comunes (no fallan si no existen)
+    try{ if (typeof window.loadWallet === 'function') window.loadWallet(); }catch(e){}
+    try{ if (typeof window.refreshWallet === 'function') window.refreshWallet(); }catch(e){}
+  }
+
   function ensureAddButton(){
     const sel = document.getElementById('keySelect');
     if (!sel) return;
-    if (document.getElementById('addKeyBtn')) return; // evitar duplicados
+    if (document.getElementById('addKeyBtn')) return;
 
     const btn = document.createElement('button');
     btn.id = 'addKeyBtn';
     btn.type = 'button';
-    btn.className = 'icon-btn'; // reutiliza estilos existentes
+    btn.className = 'icon-btn';
     btn.title = 'Agregar API Key';
     btn.setAttribute('aria-label','Agregar API Key');
     btn.innerHTML = "<svg class='icon' viewBox='0 0 24 24' aria-hidden='true'><path d='M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z'/></svg>";
-
-    // Insertar inmediatamente después del select
     sel.insertAdjacentElement('afterend', btn);
-
     btn.addEventListener('click', onAddKeyClick);
   }
 
@@ -107,46 +118,40 @@
     const key = (raw||'').trim();
     if (!key) return;
 
-    // Validar contra /v2/tokeninfo
+    // Validación estricta: requiere permisos account + wallet
     const url = `https://api.guildwars2.com/v2/tokeninfo?access_token=${encodeURIComponent(key)}`;
     let ok=false, info=null;
     try{
       const r = await fetch(url);
       ok = r.ok; info = ok ? await r.json() : null;
     }catch(e){ ok=false; }
-    if (!ok || !info || !info.id){
-      alert('La API Key no es válida o no tiene permisos suficientes.');
+    const perms = (info && info.permissions) || [];
+    const hasAccount = Array.isArray(perms) && perms.indexOf('account') !== -1;
+    const hasWallet  = Array.isArray(perms) && perms.indexOf('wallet')  !== -1;
+    if (!ok || !info || !info.id || !hasAccount || !hasWallet){
+      alert('La API Key no es válida o no tiene permisos de "account" y "wallet".');
       return;
     }
 
-    // Evitar duplicadas
+    // Guardar sin duplicar
     let list = [];
     try{ list = JSON.parse(localStorage.getItem('gw2_keys')||'[]'); if (!Array.isArray(list)) list=[]; }catch(e){ list=[]; }
     if (!list.includes(key)) list.push(key);
     try{ localStorage.setItem('gw2_keys', JSON.stringify(list)); }catch(e){}
 
-    // Persistir selección actual
     persistSelectedKey(key);
 
-    // Refrescar UI del selector (sin perder “+”)
+    // Refrescar UI y flujo
     const sel = populateSelectPreservandoAdd();
     if (sel) sel.value = key;
-
-    // Avisar a la app y refrescar datos
     document.dispatchEvent(new CustomEvent('gw2:apiKeyChanged',{ detail:{ key } }));
-    // Compatibilidad con apps existentes
-    try{
-      if (typeof window.refreshSelected === 'function') window.refreshSelected();
-      else if (document.getElementById('refreshBtn')) document.getElementById('refreshBtn').click();
-      else document.dispatchEvent(new CustomEvent('gw2:refreshRequested'));
-    }catch(e){}
+    triggerRefresh();
   }
 
   function wireSelect(sel){
     if (!sel) return;
     sel.addEventListener('change', ()=>{
       if (sel.value === '__add__' || (sel.selectedOptions[0] && (sel.selectedOptions[0].dataset.addKey!==undefined))){
-        // Si tu select también tiene una opción especial de agregar
         document.dispatchEvent(new CustomEvent('gw2:addApiKeyRequested'));
         const prev = localStorage.getItem('gw2_selected_key') || '';
         sel.value = prev || '';
@@ -154,6 +159,7 @@
       }
       persistSelectedKey(sel.value);
       document.dispatchEvent(new CustomEvent('gw2:apiKeyChanged',{ detail:{ key: sel.value }}));
+      triggerRefresh(); // clave: al seleccionar, forzamos el flujo de carga
     });
   }
 
@@ -161,11 +167,13 @@
     const sel = populateSelectPreservandoAdd();
     wireSelect(sel);
     ensureAddButton();
+    // Auto-kick inicial si ya hay key persistida (evita quedar en "Esperando acción")
+    if (getSelectedKey()) triggerRefresh();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 
-  // ===== Parche fetch (igual que v2.1) =====
+  // ===== Parche fetch específico =====
   const _fetch = window.fetch;
   window.fetch = function(input, init){
     try{
