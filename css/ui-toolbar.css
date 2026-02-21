@@ -1,0 +1,20 @@
+/* Toolbar y layout */
+.toolbar { display: grid; gap: .75rem; margin-block: 1rem; }
+.key-row { display:flex; align-items:center; gap:.5rem; flex-wrap: wrap; }
+.controls { display:flex; flex-wrap: wrap; gap:.5rem; }
+.btn { cursor:pointer; padding:.45rem .75rem; border:1px solid #ccc; background:#fafafa; border-radius:.375rem; }
+.btn.primary { background:#0b5fff; color:white; border-color:#0b5fff; }
+.btn[aria-pressed="true"] { background:#e6f0ff; border-color:#0b5fff; }
+
+.add-key { display:grid; grid-template-columns: 1fr 2fr auto auto; gap:.5rem; align-items:center; }
+.add-key.collapsed { display:none; }
+.hint { color:#666; grid-column: 1 / -1; }
+
+#messages { margin:.5rem 0; color:#b00020; min-height:1.25rem; }
+
+/* Grid de tarjetas (vista cards) */
+.cards { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:.75rem; }
+.card { border:1px solid #e5e5e5; border-radius:.5rem; padding:.75rem; background:#fff; display:flex; flex-direction:column; gap:.5rem; }
+.card header h3 { margin:0; font-size:1rem; }
+.card header small { color:#666; }
+.card footer.row { display:flex; align-items:center; justify-content:space-between; }
