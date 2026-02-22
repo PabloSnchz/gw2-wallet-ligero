@@ -1,1 +1,0 @@
-1) Seleccionar/Agregar key → Network con tokeninfo+wallet; 2) Tarjetas muestran tarjetas o status listo; 3) Metaeventos sidebar OK; 4) Sin errores en consola
