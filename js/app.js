@@ -1,138 +1,244 @@
+/* eslint-disable no-console */
+// js/app.js  (ES module)
+const $  = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
 
-// v1.6.0-alpha1 — FIX#2 (scoped)
-// Corregidos 3 puntos específicos SIN tocar Wallet/Compacta/Conversor:
-// 1) La lista de MetaEventos en el sidebar SOLO aparece en la pantalla MetaEventos.
-// 2) Sidebar contiene listado ampliado de eventos principales; el grid muestra 6 favoritos por defecto
-//    y si el usuario elige otros, se reemplazan (máximo 6 seleccionados).
-// 3) Tildar "Hecho hoy" ya no oscurece ni bloquea: se actualiza la tarjeta al instante sin re-render completo.
-(function(){
-  'use strict';
-  // ======= Constantes de LocalStorage =======
-  const LS_KEYS='gw2.wallet.keys.v1';
-  const LS_CURRENCIES='gw2.wallet.currencies.v1';
-  const LS_FAVS='gw2.wallet.favorites.v1';
-  const LS_META_DONE='gw2.meta.done.v1';
-  const LS_META_FAVS='gw2.meta.favorites.v1';
+console.info('%cGW2 Wallet app.js v1.3.4','color:#0bf; font-weight:700');
 
-  const $=s=>document.querySelector(s);
-  const nf=new Intl.NumberFormat('es-AR');
-  function loadJSON(k,def){ try{ const v=JSON.parse(localStorage.getItem(k)); return v??def; }catch{ return def; } }
-  function saveJSON(k,v){ localStorage.setItem(k, JSON.stringify(v)); }
+const state = {
+  keys: [], selected: null, accountName: '—',
+  currencies: new Map(), currenciesLoaded: false,
+  wallet: [],
+  filters: { q:'', cat:'', sort:'order', onlyPos:false, onlyMain:false },
+  favs: new Set(),
+  view: 'cards',
+};
 
-  // ======= (Se mantiene Wallet/Compacta/Conversor del FIX anterior) =======
-  // Solo incluimos funciones que tocan los tres puntos solicitados o son NO intrusivas.
+const LS_KEYS='gw2_keys';
+const LS_FAVS='gw2_favs';
+const LS_CURR='gw2_currencies_cache_v1';
+const CURR_TTL = 1000*60*60*24*7;
 
-  // ======= META: Catálogo ampliado (eventos principales) =======
-  // Nota: para eventos sin imagen, bg puede omitirse; el CSS dará fondo neutro.
-  const META_DATA=[
-    { id:'choya', name:'Choya', en:'Choya Piñata', map:'Amnoon — Crystal Oasis', waypoint:'[&BLsKAAA=]', drop:{kind:'infusion', itemIds:[84882]}, bg:'assets/meta/choya.jpg' },
-    { id:'chak_gerent', name:'Regente Chak', en:'Chak Gerent', map:'Tangled Depths', waypoint:'[&BPUHAAA=]', drop:{kind:'infusion', itemIds:[72021]}, bg:'assets/meta/chak_gerent.jpg' },
-    { id:'vinewrath', name:'Furienhiedra', en:'Mordrem Vinewrath', map:'The Silverwastes', waypoint:'[&BPoHAAA=]', drop:{kind:'infusion', itemIds:[68440]}, bg:'assets/meta/vinewrath.jpg' },
-    { id:'shatterer', name:'El Despedazador', en:'The Shatterer', map:'Jahai Bluffs', waypoint:'[&BJMLAAA=]', drop:{kind:'infusion', itemIds:[88771]}, worldbossId:'the_shatterer', bg:'assets/meta/shatterer.jpg' },
-    { id:'dragonstorm', name:'Tormenta Dragón', en:'Dragonstorm', map:'Eye of the North', waypoint:'[&BAkMAAA=]', drop:{kind:'infusion', itemIds:[94948]}, bg:'assets/meta/dragonstorm.jpg' },
-    { id:'tarir', name:'Tarir (Octovino)', en:'Auric Basin — Octovine', map:'Auric Basin', waypoint:'[&BN0HAAA=]', drop:{kind:'infusion', itemIds:[]}, bg:'assets/meta/tarir.jpg' },
-    // Principales extra (sin imagen obligatoria)
-    { id:'tequatl', name:'Tequatl el Sombrío', en:'Tequatl the Sunless', map:'Sparkfly Fen', waypoint:'[&BNABAAA=]', worldbossId:'tequatl_the_sunless', drop:{} },
-    { id:'karka_queen', name:'Reina Karka', en:'Karka Queen', map:'Southsun Cove', waypoint:'[&BNUGAAA=]', worldbossId:'karka_queen', drop:{} },
-    { id:'claw_jormag', name:'Garra de Jormag', en:'Claw of Jormag', map:'Frostgorge Sound', waypoint:'[&BHECAAA=]', worldbossId:'claw_of_jormag', drop:{} },
-    { id:'shadow_behemoth', name:'Sombra del Desenlace', en:'Shadow Behemoth', map:'Queensdale', waypoint:'[&BPwAAAA=]', worldbossId:'shadow_behemoth', drop:{} },
-    { id:'golem_mark_ii', name:'Gólem Mark II', en:'Inquest Golem Mark II', map:'Mount Maelstrom', waypoint:'[&BHoCAAA=]', worldbossId:'inquest_golem_mark_ii', drop:{} },
-    { id:'megadestroyer', name:'Megadestructor', en:'Megadestroyer', map:'Mount Maelstrom', waypoint:'[&BM0CAAA=]', worldbossId:'megadestroyer', drop:{} },
-    { id:'triple_wurm', name:'Triple Sierpe', en:'Triple Trouble Wurm', map:'Bloodtide Coast', waypoint:'[&BKoBAAA=]', worldbossId:'triple_trouble_wurm', drop:{} }
-  ];
+const API = {
+  withToken: (url,t)=>`${url}${url.includes('?')?'&':'?'}access_token=${encodeURIComponent(t)}`,
+  async json(url){ const r=await fetch(url,{headers:{'Accept':'application/json'},cache:'no-store'}); if(!r.ok) throw new Error(await r.text()||`HTTP ${r.status}`); return r.json(); },
+  tokenInfo: (t)=>API.json(API.withToken('https://api.guildwars2.com/v2/tokeninfo',t)),
+  account:   (t)=>API.json(API.withToken('https://api.guildwars2.com/v2/account',t)),
+  wallet:    (t)=>API.json(API.withToken('https://api.guildwars2.com/v2/account/wallet',t)),
+  currencies:()=>API.json('https://api.guildwars2.com/v2/currencies?ids=all&lang=es'),
+};
 
-  // ======= Favoritos (máximo 6) =======
-  function loadMetaFavs(){ return loadJSON(LS_META_FAVS, null); }
-  function saveMetaFavs(arr){ saveJSON(LS_META_FAVS, arr); }
-  function ensureDefaultMetaFavs(){ let favs=loadMetaFavs(); if(!Array.isArray(favs)||!favs.length){ favs=['choya','chak_gerent','vinewrath','shatterer','dragonstorm','tarir']; saveMetaFavs(favs); } }
+const el = {
+  ownerLabel:$('#ownerLabel'), keySelect:$('#keySelect'),
+  addKeyBtn:$('#addKeyBtn'), keyPopover:$('#keyPopover'),
+  newKeyLabel:$('#newKeyLabel'), newKeyValue:$('#newKeyValue'),
+  cancelKeyBtn:$('#cancelKeyBtn'),
+  copyKeyBtn:$('#copyKeyBtn'), renameKeyBtn:$('#renameKeyBtn'),
+  deleteKeyBtn:$('#deleteKeyBtn'), refreshBtn:$('#refreshBtn'),
+  searchBox:$('#searchBox'), category:$('#categorySelect'),
+  sort:$('#sortSelect'), onlyPos:$('#onlyPositive'), onlyMain:$('#onlyMain'),
+  clearBtn:$('#clearFiltersBtn'), toggleViewBtn:$('#toggleViewBtn'),
+  status:$('#status'),
+  walletCards:$('#walletCards'), favBlock:$('#favBlock'), favCards:$('#favCards'),
+  tableWrap:$('#walletTableWrap'), tableBody:$('#walletTable tbody'),
+};
 
-  function addFavLimited(id){ let favs=loadMetaFavs()||[]; if(favs.includes(id)) return favs; if(favs.length>=6){ // reemplazo FIFO: elimino el primero
-    favs.shift();
+function setStatus(m,k='info'){ if(!el.status) return; el.status.style.color=k==='error'?'#f28b82':(k==='ok'?'#a7f3d0':'#a0a0a6'); el.status.textContent=m; }
+function obfuscate(t){ return !t||t.length<8 ? 'Key' : `Key ${t.slice(0,4)}…${t.slice(-4)}`; }
+function ensureOption(label,value){ if(![...el.keySelect.options].some(o=>o.value===value)){ const opt=document.createElement('option'); opt.value=value; opt.textContent=label; el.keySelect.appendChild(opt);} }
+function esc(s){ return String(s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+
+function splitCoins(v){ const g=Math.floor(v/10000), s=Math.floor((v%10000)/100), c=v%100; return {g,s,c}; }
+function isCoins(cur){ const n=(cur?.name||'').toLowerCase(); return cur?.id===1 || n.includes('moneda') || n.includes('coin'); }
+function amountRightHTML(cur,amount){ if(isCoins(cur)) return ''; return `<span class="card__amount">${amount.toLocaleString()}</span>`; }
+function coinBadgesHTML(cur,amount){ if(!isCoins(cur)) return ''; const {g,s,c}=splitCoins(amount); return `<div class="coin-badges">${g?`<span class="coin coin--g">${g.toLocaleString()}</span>`:''}${s?`<span class="coin coin--s">${s.toLocaleString()}</span>`:''}${c?`<span class="coin coin--c">${c.toLocaleString()}</span>`:''}</div>`; }
+
+const CATEGORY_OVERRIDES = { 18:['general','blacklion'], 4:['general','blacklion'], 63:['general'] };
+function categorize(cur){
+  if (CATEGORY_OVERRIDES[cur.id]) return CATEGORY_OVERRIDES[cur.id];
+  const t=`${(cur.name||'').toLowerCase()} ${(cur.description||'').toLowerCase()}`, has=s=>t.includes(s), cats=new Set();
+  if (has('león negro')||has('black lion')) cats.add('blacklion');
+  if (has('pvp')||has('wvw')||has('torneo')||has('fractal')||has('mazmorra')||has('dungeon')) cats.add('competitiva');
+  if (has('geoda')||has('geode')||has('mapa')||has('map ')) cats.add('mapa');
+  if (has('histórico')||has('gloria')||has('glory')) cats.add('histórica');
+  if (!cats.size) cats.add('general');
+  return [...cats];
+}
+function isMainCurrency(cur){ const n=(cur.name||'').toLowerCase(), any=(...ws)=>ws.some(w=>n.includes(w)); return cur.id===1||any('karma','laurel','gem','gema')||any('fragmento de espíritu','spirit shard')||any('reconocimiento astral','astral acclaim')||any('mención de clan','guild commendation'); }
+
+function renderSkeleton(count=8){
+  if (state.view==='table'){
+    el.tableBody.innerHTML = Array.from({length:count}).map(()=>`
+      <tr>
+        <td><span class="skel skel-icon"></span></td>
+        <td><span class="skel skel-title" style="display:inline-block;width:160px;"></span></td>
+        <td class="right"><span class="skel skel-amount" style="display:inline-block;"></span></td>
+        <td><span class="skel skel-cats" style="display:inline-block;"></span></td>
+        <td class="right"><span class="skel skel-icon"></span></td>
+      </tr>`).join('');
+    return;
   }
-  favs.push(id); saveMetaFavs(favs); return favs; }
+  el.walletCards.innerHTML = Array.from({length:count}).map(()=>`
+    <article class="card card--skeleton">
+      <div class="card__head"><div class="skel skel-title"></div><div class="skel skel-amount"></div></div>
+      <div class="card__desc"><div class="skel skel-line"></div><div class="skel skel-line" style="width:70%"></div></div>
+      <div class="card__meta"><span class="meta-left"><span class="skel skel-icon"></span></span><span class="skel skel-cats"></span></div>
+    </article>`).join('');
+}
 
-  function removeFav(id){ let favs=loadMetaFavs()||[]; const i=favs.indexOf(id); if(i>=0) favs.splice(i,1); saveMetaFavs(favs); return favs; }
+function buildRows(){
+  if (!state.currenciesLoaded || state.currencies.size===0) return [];
+  const rows = state.wallet.map(w=>{
+    const c=state.currencies.get(w.id)||{id:w.id,name:`#${w.id}`,order:9999,icon:'',description:''};
+    return { id:w.id, amount:w.value, name:c.name||`#${w.id}`, desc:c.description||'', order:Number.isFinite(c.order)?c.order:9999,
+             cats:categorize(c), isMain:isMainCurrency(c), isFav:state.favs.has(String(w.id)), _cur:c };
+  });
 
-  // ======= Estado diario (API + local) =======
-  function todayKey(){ const d=new Date(); const y=d.getUTCFullYear(); const m=('0'+(d.getUTCMonth()+1)).slice(-2); const dd=('0'+d.getUTCDate()).slice(-2); return `${y}-${m}-${dd}`; }
-  function loadMetaState(){ return loadJSON(LS_META_DONE, {}); }
-  function isDoneTodayLocalMeta(id){ const st=loadMetaState(); return st[id]===todayKey(); }
-  function toggleMetaDoneLocal(id, checked){ const st=loadMetaState(); const k=todayKey(); st[id]=checked? k : undefined; if(!checked) delete st[id]; saveJSON(LS_META_DONE, st); setMetaCardState(id, checked); }
+  let list=rows;
+  if (state.filters.onlyPos) list=list.filter(r=>r.amount>0);
+  if (state.filters.onlyMain) list=list.filter(r=>r.isMain);
+  if (state.filters.cat) list=list.filter(r=>r.cats.includes(state.filters.cat));
+  if (state.filters.q){ const q=state.filters.q.toLowerCase(); list=list.filter(r=>r.name.toLowerCase().includes(q)||r.desc.toLowerCase().includes(q)); }
+  if (state.filters.sort==='name') list.sort((a,b)=>a.name.localeCompare(b.name));
+  else if (state.filters.sort==='amount') list.sort((a,b)=>b.amount-a.amount);
+  else list.sort((a,b)=>a.order-b.order);
+  return list;
+}
 
-  async function fetchWorldbossesDone(token){ try{ const r=await fetch(`https://api.guildwars2.com/v2/account/worldbosses?access_token=${encodeURIComponent(token)}`,{cache:'no-store'}); if(!r.ok) throw 0; return await r.json(); }catch{ return null; } }
+function catsLine(r){ return `<span class="cats">${(r.cats&&r.cats.length)?r.cats.join(', '):'—'}</span>`; }
+function cardHTML(r){
+  const iconHTML = r._cur?.icon
+    ? `<img src="${esc(r._cur.icon)}" alt="${esc(r.name)}" loading="lazy" width="18" height="18">`
+    : `<span></span>`;
 
-  const iconCache={};
-  async function resolveDropIcon(itemIds){ try{ const ids=(itemIds||[]).filter(Boolean); if(!ids.length) return null; const miss=ids.filter(id=>!iconCache[id]); if(miss.length){ const r=await fetch(`https://api.guildwars2.com/v2/items?ids=${miss.join(',')}`,{cache:'force-cache'}); if(r.ok){ const arr=await r.json(); arr.forEach(it=>{ iconCache[it.id]=it.icon; }); } } for(const id of ids){ if(iconCache[id]) return iconCache[id]; } return null; }catch{ return null; } }
+  return `
+  <article class="card" data-id="${r.id}">
+    <button class="star ${r.isFav?'star--on':''}" data-star="${r.id}" title="Favorita">★</button>
+    <div class="card__head">
+      <h3 class="card__title">${esc(r.name)}</h3>
+      <div class="card__amount-wrap">${amountRightHTML(r._cur,r.amount)}</div>
+    </div>
+    <div class="card__desc">
+      ${r.desc?esc(r.desc):''}
+      ${coinBadgesHTML(r._cur,r.amount)}
+    </div>
+    <div class="card__meta">
+      <span class="meta-left">${iconHTML}</span>
+      ${catsLine(r)}
+    </div>
+  </article>`;
+}
+function renderCards(rows){
+  const favs=rows.filter(r=>r.isFav), rest=rows.filter(r=>!r.isFav);
+  if (favs.length){ el.favBlock?.removeAttribute('hidden'); el.favCards.innerHTML=favs.map(cardHTML).join(''); }
+  else { el.favBlock?.setAttribute('hidden',''); el.favCards.innerHTML=''; }
+  el.walletCards.innerHTML=rest.map(cardHTML).join('');
+}
 
-  // ======= Render =======
-  function getMetaPanel(){ return $('#metaPanel'); }
+function rowHTML(r){
+  const icon = r._cur?.icon
+    ? `<img src="${esc(r._cur.icon)}" alt="${esc(r.name)}" loading="lazy" width="18" height="18">`
+    : '';
+  const star = `<span class="star ${r.isFav?'star--on':''}" data-star="${r.id}" title="Favorita">★</span>`;
+  const cats = (r.cats && r.cats.length) ? r.cats.join(', ') : '—';
+  const amount = isCoins(r._cur) ? (()=>{ const {g,s,c}=splitCoins(r.amount); return `${g.toLocaleString()} g ${s} s ${c} c`; })() : r.amount.toLocaleString();
 
-  function ensureSidebarListVisible(isMeta){
-    const sb=$('#sideBar'); if(!sb) return;
-    let list=$('#metaSideList');
-    if(isMeta){
-      sb.style.display='block';
-      if(!list){ list=document.createElement('div'); list.id='metaSideList'; list.className='panel'; list.innerHTML=`<h3 class="panel__title">MetaEventos — Lista</h3><div class="panel__body" id="metaSideBody"></div>`; sb.prepend(list); }
-      list.style.display='block';
-      renderSidebarList();
-    } else {
-      if(list){ list.style.display='none'; }
-    }
+  return `<tr data-id="${r.id}"><td>${icon}</td><td>${esc(r.name)}</td><td class="right">${amount}</td><td>${esc(cats)}</td><td class="right">${star}</td></tr>`;
+}
+function renderTable(rows){ el.tableBody.innerHTML = rows.map(rowHTML).join(''); }
+
+function render(){
+  const rows=buildRows();
+  if (!rows.length){
+    if (state.view==='table'){ el.walletCards.style.display='none'; el.tableWrap.hidden=false; renderSkeleton(8); }
+    else { el.tableWrap.hidden=true; el.walletCards.style.display='grid'; renderSkeleton(8); }
+    return;
   }
-
-  function renderSidebarList(){ const body=$('#metaSideBody'); if(!body) return; body.innerHTML=''; const favSet=new Set(loadMetaFavs()||[]);
-    META_DATA.forEach(ev=>{
-      const row=document.createElement('div'); row.style.display='flex'; row.style.alignItems='center'; row.style.justifyContent='space-between'; row.style.gap='8px'; row.style.padding='6px 0';
-      const left=document.createElement('div'); left.innerHTML=`<div style="font-weight:600">${ev.name}</div><div class="muted" style="font-size:11px">(${ev.en})</div>`;
-      const star=document.createElement('button'); star.className='icon-btn'; star.title=favSet.has(ev.id)?'Quitar de favoritos':'Agregar a favoritos'; star.innerHTML='★'; star.style.color=favSet.has(ev.id)?'#f2b01e':'#777';
-      star.addEventListener('click',()=>{ let favs=loadMetaFavs()||[]; if(favSet.has(ev.id)){ favs=removeFav(ev.id); } else { favs=addFavLimited(ev.id); }
-        renderSidebarList(); renderMetaGrid(); });
-      row.append(left,star); body.appendChild(row);
-    });
+  if (state.view==='table'){
+    el.walletCards.style.display='none'; el.tableWrap.hidden=false; el.favBlock?.setAttribute('hidden',''); el.favCards.innerHTML=''; renderTable(rows);
+  } else {
+    el.tableWrap.hidden=true; el.walletCards.style.display='grid'; renderCards(rows);
   }
+}
 
-  function setMetaCardState(id, done){ const card=document.querySelector(`.meta-card[data-id="${id}"]`); if(!card) return; card.classList.remove('done','pending'); card.classList.add(done? 'done':'pending'); }
+/* Cache catálogo */
+function loadCurrCache(){ try{ const raw=localStorage.getItem(LS_CURR); if(!raw) return null; const {ts,items}=JSON.parse(raw); if(!Array.isArray(items)||!ts) return null; if((Date.now()-ts)>CURR_TTL) return null; return items; }catch{ return null } }
+function saveCurrCache(list){ try{ localStorage.setItem(LS_CURR, JSON.stringify({ts:Date.now(),items:list})); }catch{} }
+async function ensureCurrencies(){
+  const cached=loadCurrCache();
+  if (cached && cached.length){ state.currencies=new Map(cached.map(c=>[c.id,c])); state.currenciesLoaded=true; console.info('[gw2] currencies (cache):',state.currencies.size); return; }
+  console.info('[gw2] fetching /v2/currencies?ids=all&lang=es …');
+  const list=await API.currencies();
+  state.currencies=new Map(list.map(c=>[c.id,c])); state.currenciesLoaded=true; saveCurrCache(list);
+  console.info('[gw2] currencies OK:',state.currencies.size);
+}
 
-  async function renderMetaGrid(){ const mp=getMetaPanel(); if(!mp) return; const grid=$('#metaGrid'); if(!grid) return; grid.innerHTML=''; ensureDefaultMetaFavs(); const favOrder=loadMetaFavs()||[]; const favSet=new Set(favOrder);
-    // Mostrar SOLO favoritos (máximo 6), en el orden guardado
-    const visible=META_DATA.filter(ev=>favSet.has(ev.id)).sort((a,b)=>favOrder.indexOf(a.id)-favOrder.indexOf(b.id)).slice(0,6);
-    // worldboss hecho hoy si hay key
-    let worldbossDone=null; try{ const idx=$('#keySelect')?.value; const arr=loadJSON(LS_KEYS,[]); if(idx!==''&&arr[idx]&&arr[idx].id){ worldbossDone=await fetchWorldbossesDone(arr[idx].id); } }catch{}
+/* Data flow */
+async function loadAllForToken(token){
+  setStatus('Cargando datos…'); renderSkeleton(8);
+  await ensureCurrencies();
+  const [acct, w] = await Promise.all([ API.account(token).catch(()=>null), API.wallet(token) ]);
+  state.accountName = acct?.name || '—'; state.wallet = w || [];
+  el.ownerLabel.textContent = state.accountName; setStatus('Listo.','ok'); render();
+}
 
-    for(const ev of visible){ const card=document.createElement('div'); card.className='meta-card'; card.dataset.id=ev.id; const done=(ev.worldbossId && Array.isArray(worldbossDone) && worldbossDone.includes(ev.worldbossId)) || (!ev.worldbossId && isDoneTodayLocalMeta(ev.id)); card.classList.add(done? 'done':'pending');
-      const bg=document.createElement('div'); bg.className='meta-bg'; if(ev.bg){ bg.style.backgroundImage=`url(${ev.bg})`; }
-      const body=document.createElement('div'); body.className='meta-body';
-      const h=document.createElement('div'); h.className='meta-title'; h.textContent=ev.name;
-      const en=document.createElement('div'); en.className='muted'; en.style.fontSize='11px'; en.textContent=`(${ev.en})`;
-      const p=document.createElement('div'); p.className='meta-desc'; p.textContent=ev.map;
-      const row1=document.createElement('div'); row1.className='meta-row';
-      const chat=document.createElement('span'); chat.className='meta-pill'; chat.textContent=ev.waypoint;
-      const copy=document.createElement('button'); copy.className='btn'; copy.textContent='Copiar'; copy.addEventListener('click',()=>navigator.clipboard?.writeText(ev.waypoint)); row1.append(chat,copy);
-      const row2=document.createElement('div'); row2.className='meta-row';
-      const infWrap=document.createElement('span'); infWrap.className='meta-pill'; const infIcon=document.createElement('img'); infIcon.className='meta-badge'; infIcon.alt='Infusión'; const infTxt=document.createElement('span'); infTxt.textContent='Posible infusión'; infWrap.append(infIcon,infTxt);
-      (async()=>{ const url=await resolveDropIcon(ev.drop?.itemIds||[]); infIcon.src=url || 'assets/icons/infusion.svg'; })();
-      const row3=document.createElement('div'); row3.className='meta-row'; const when=document.createElement('span'); when.className='meta-pill'; when.textContent='Próximo horario: '; const timersLink=document.createElement('a'); timersLink.href='https://wiki.guildwars2.com/wiki/Event_timers'; timersLink.target='_blank'; timersLink.rel='noopener'; timersLink.textContent='Ver horarios'; const timerBox=document.createElement('span'); timerBox.className='muted'; timerBox.style.fontSize='12px'; timerBox.style.marginLeft='6px'; timerBox.appendChild(timersLink); row3.append(when,timerBox);
-      const row4=document.createElement('div'); row4.className='meta-row'; const toggle=document.createElement('label'); toggle.className='meta-toggle'; const chk=document.createElement('input'); chk.type='checkbox'; chk.checked=done; const lb=document.createElement('span'); lb.textContent='Hecho hoy';
-      if(ev.worldbossId && Array.isArray(worldbossDone)){ chk.disabled=true; lb.title='Marcado por API (world boss)'; } else {
-        chk.addEventListener('change',()=>{ toggleMetaDoneLocal(ev.id, chk.checked); });
-      }
-      toggle.append(chk,lb); row4.append(toggle);
+/* Events */
+function wireEvents(){
+  const pop=()=>el.keyPopover?.removeAttribute('hidden');
+  el.addKeyBtn?.addEventListener('click', ()=> el.keyPopover?.hasAttribute('hidden') ? pop() : el.keyPopover?.setAttribute('hidden','') );
+  el.cancelKeyBtn?.addEventListener('click', ()=>{ el.keyPopover?.setAttribute('hidden',''); el.newKeyLabel.value=''; el.newKeyValue.value=''; });
 
-      body.append(h,en,p,row1,infWrap,row3,row4); card.append(bg,body); grid.appendChild(card);
-    }
-  }
+  el.keyPopover?.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const label=el.newKeyLabel.value.trim(), value=el.newKeyValue.value.trim();
+    if(!value) return setStatus('Ingresá una API key.','error');
+    try{
+      setStatus('Validando API key…');
+      const tokenInfo=await API.tokenInfo(value); const perms=new Set(tokenInfo.permissions||[]); if(!perms.has('account')) throw new Error('Falta permiso account');
+      state.keys.push({label,value}); localStorage.setItem(LS_KEYS, JSON.stringify(state.keys));
+      ensureOption(label||obfuscate(value), value); el.keySelect.value=value; state.selected=value;
+      el.keyPopover.setAttribute('hidden',''); el.newKeyLabel.value=''; el.newKeyValue.value='';
+      await loadAllForToken(value);
+    }catch(err){ console.error(err); setStatus(err.message||'La API key no es válida.','error'); }
+  });
 
-  // ======= Hook de visibilidad de la lista en sidebar (Punto 1) =======
-  function showCards(){ const cards=$('#walletCards'), table=$('#walletTableWrap'); if(cards) cards.style.display='grid'; if(table) table.style.display='none'; const wp=$('#walletPanel'), mp=$('#metaPanel'); if(wp) wp.style.display='block'; if(mp) mp.style.display='none'; ensureSidebarListVisible(false); toggleTabs('cards'); }
-  function showCompact(){ const cards=$('#walletCards'), table=$('#walletTableWrap'); if(cards) cards.style.display='none'; if(table) table.style.display='block'; const wp=$('#walletPanel'), mp=$('#metaPanel'); if(wp) wp.style.display='block'; if(mp) mp.style.display='none'; ensureSidebarListVisible(false); toggleTabs('compact'); }
-  function showMeta(){ const wp=$('#walletPanel'), mp=$('#metaPanel'); if(wp) wp.style.display='none'; if(mp) mp.style.display='block'; ensureSidebarListVisible(true); toggleTabs('meta'); renderMetaGrid(); }
-  function toggleTabs(which){ ['tabCards','tabCompact','tabMeta'].forEach(id=>$('#'+id)?.classList.remove('an-tab--active')); if(which==='cards') $('#tabCards')?.classList.add('an-tab--active'); else if(which==='compact') $('#tabCompact')?.classList.add('an-tab--active'); else if(which==='meta') $('#tabMeta')?.classList.add('an-tab--active'); }
+  el.keySelect?.addEventListener('change', async ()=>{ const token=el.keySelect.value; state.selected=token||null; if(!state.selected) return; await loadAllForToken(state.selected); });
 
-  // ======= Bind mínimo para tabs (no toca resto del Wallet) =======
-  function bindTabsOnly(){ $('#tabCards')?.addEventListener('click', showCards); $('#tabCompact')?.addEventListener('click', showCompact); $('#tabMeta')?.addEventListener('click', showMeta); }
+  el.copyKeyBtn?.addEventListener('click', ()=>{ const opt=el.keySelect.selectedOptions[0]; if(!opt) return; navigator.clipboard.writeText(opt.value).then(()=>setStatus('API key copiada.','ok')); });
+  el.renameKeyBtn?.addEventListener('click', ()=>{ const opt=el.keySelect.selectedOptions[0]; if(!opt) return; const item=state.keys.find(k=>k.value===opt.value); if(!item) return; const name=prompt('Nuevo nombre para la key:', item.label||''); if(name===null) return; item.label=name; localStorage.setItem(LS_KEYS, JSON.stringify(state.keys)); opt.textContent=name||obfuscate(item.value); });
+  el.deleteKeyBtn?.addEventListener('click', ()=>{ const opt=el.keySelect.selectedOptions[0]; if(!opt) return; if(!confirm('¿Eliminar esta API key de tu navegador?')) return; state.keys=state.keys.filter(k=>k.value!==opt.value); localStorage.setItem(LS_KEYS, JSON.stringify(state.keys)); opt.remove(); el.ownerLabel.textContent='—'; state.selected=null; state.wallet=[]; render(); });
+  el.refreshBtn?.addEventListener('click', async ()=>{ if(!state.selected) return; await loadAllForToken(state.selected); });
 
-  // ======= INIT seguro =======
-  function init(){ bindTabsOnly(); }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init); else init();
+  el.searchBox?.addEventListener('input', ()=>{ state.filters.q=el.searchBox.value.trim(); render(); });
+  el.category?.addEventListener('change', ()=>{ state.filters.cat=el.category.value||''; render(); });
+  el.sort?.addEventListener('change', ()=>{ state.filters.sort=el.sort.value; render(); });
+  el.onlyPos?.addEventListener('change', ()=>{ state.filters.onlyPos=el.onlyPos.checked; render(); });
+  el.onlyMain?.addEventListener('change', ()=>{ state.filters.onlyMain=el.onlyMain.checked; render(); });
+  el.clearBtn?.addEventListener('click', (e)=>{ e.preventDefault(); state.filters={ q:'', cat:'', sort:'order', onlyPos:false, onlyMain:false }; el.searchBox.value=''; el.category.value=''; el.sort.value='order'; el.onlyPos.checked=false; el.onlyMain.checked=false; render(); setStatus('Filtros reiniciados.','ok'); });
 
-})();
+  el.toggleViewBtn?.addEventListener('click', ()=>{ state.view = (state.view==='cards') ? 'table' : 'cards'; el.toggleViewBtn.textContent = (state.view==='cards') ? 'Vista tabla' : 'Vista tarjetas'; render(); });
+
+  function handleStarClick(e){ const btn=e.target.closest('[data-star]'); if(!btn) return; const id=String(btn.getAttribute('data-star')); if(state.favs.has(id)) state.favs.delete(id); else state.favs.add(id); localStorage.setItem(LS_FAVS, JSON.stringify([...state.favs])); render(); }
+  el.walletCards.addEventListener('click', handleStarClick);
+  el.favCards?.addEventListener('click', handleStarClick);
+  el.tableBody?.addEventListener('click', handleStarClick);
+
+  document.addEventListener('keydown',(e)=>{ if(e.key==='Escape') el.keyPopover?.setAttribute('hidden',''); });
+  document.addEventListener('click',(e)=>{ const t=e.target; const inside=t===el.addKeyBtn || el.keyPopover?.contains(t); if(!inside) el.keyPopover?.setAttribute('hidden',''); }, true);
+}
+
+/* Boot */
+async function boot(){
+  try{ state.keys = JSON.parse(localStorage.getItem(LS_KEYS))||[] }catch{ state.keys=[] }
+  try{ state.favs = new Set(JSON.parse(localStorage.getItem(LS_FAVS))||[]) }catch{ state.favs = new Set() }
+  state.keys.forEach(k=>ensureOption(k.label||obfuscate(k.value), k.value));
+
+  const raw=localStorage.getItem(LS_CURR);
+  if(raw){ try{ const {ts,items}=JSON.parse(raw); if(Array.isArray(items)&&ts&&(Date.now()-ts)<=CURR_TTL){ state.currencies=new Map(items.map(c=>[c.id,c])); state.currenciesLoaded=true; console.info('[gw2] currencies (cache):',state.currencies.size); } }catch{} }
+  if(!state.currenciesLoaded){ console.info('[gw2] fetching /v2/currencies?ids=all&lang=es …'); const list=await API.currencies(); state.currencies=new Map(list.map(c=>[c.id,c])); state.currenciesLoaded=true; localStorage.setItem(LS_CURR, JSON.stringify({ts:Date.now(),items:list})); console.info('[gw2] currencies OK:',state.currencies.size); }
+
+  if(state.keys.length && !state.selected){ state.selected=state.keys[0].value; el.keySelect.value=state.selected; await loadAllForToken(state.selected); }
+  else { renderSkeleton(8); }
+  wireEvents();
+}
+boot();

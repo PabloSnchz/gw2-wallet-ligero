@@ -1,6 +1,0 @@
-
-/* Metaeventos layout (estable) */
-.container.layout { display:flex; align-items:flex-start; gap:16px; }
-.col-main { flex:1 1 auto; min-width:0; }
-.col-side { flex:0 0 320px; max-width:320px; position:sticky; top:80px; align-self:flex-start; }
-@media (max-width:960px){ .container.layout{flex-direction:column} .col-side{position:static; top:auto; max-width:none; width:100%} }
