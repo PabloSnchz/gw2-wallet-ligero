@@ -3,27 +3,18 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Bóveda del Gato Negro — v2.0.0</title>
+  <title>Bóveda del Gato Negro — v2.3.3</title>
 
-  <!-- Favicons / App icons -->
-  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-  <link rel="icon" type="image/png" href="assets/favicon.png" sizes="32x32">
-  <link rel="apple-touch-icon" href="assets/favicon.png">
-
-  <!-- Google Fonts (Cinzel Decorative + Unica One + Righteous) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Righteous&family=Unica+One&display=swap" rel="stylesheet">
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="assets/favicon.png"/>
 
   <!-- CSS principal -->
-  <link rel="stylesheet" href="css/main.css?v=1.6.2">
+  <link rel="stylesheet" href="css/main.css?v=2.3.3"/>
 </head>
 <body class="dense">
 
-  <!-- ======= HEADER ArenaNet Style (utilbar + hero + overlay) ======= -->
-  <header class="an-header">
-
-    <!-- Top bar: utilidades + redes + API Keys (rojo) -->
+  <!-- ======= HEADER ======= -->
+  <header class="an-header" role="banner">
     <div class="an-utilbar">
       <div class="an-util-left">
         <a class="an-util-link" href="https://wiki.guildwars2.com/wiki/Main_Page" target="_blank" rel="noopener">Wiki GW2</a>
@@ -32,49 +23,52 @@
         <a class="an-util-link" href="https://www.guildwars2.com/" target="_blank" rel="noopener">Sitio oficial</a>
         <span class="an-sep">|</span>
         <a class="an-util-link an-link--keys" href="https://account.arena.net/applications" target="_blank" rel="noopener">API Keys</a>
-
-        <!-- Dropdown: Enlaces útiles -->
-        <details class="util-dd">
-          <summary class="util-trigger">Enlaces útiles ▾</summary>
-          <div class="util-menu" role="menu">
-            <a class="util-item" href="https://gw2efficiency.com/" target="_blank" rel="noopener">GW2Efficiency</a>
-            <a class="util-item" href="https://gw2timer.com/" target="_blank" rel="noopener">Timers Metaeventos</a>
-            <a class="util-item" href="https://www.deltaconnected.com/arcdps/arcdps/" target="_blank" rel="noopener">ArcDPS</a>
-            <a class="util-item" href="https://wiki.guildwars2.com/wiki/Event_timers" target="_blank" rel="noopener">Wiki: Event Timers</a>
-            <a class="util-item" href="https://api.guildwars2.com/v2" target="_blank" rel="noopener">API Explorer</a>
-          </div>
-        </details>
       </div>
 
-      <div class="an-util-right">
-        <!-- Discord -->
-        <a class="an-social" href="https://discord.gg/ZGNsfsqyKe" target="_blank" rel="noopener" aria-label="Discord">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.317 4.369A19.791 19.791 0 0 0 16.558 3c-.2.362-.434.85-.595 1.232a17.3 17.3 0 0 0-4.926 0A8.258 8.258 0 0 0 10.442 3c-1.4.258-2.725.682-3.758 1.369C3.659 7.14 3.015 9.801 3.153 12.422c1.544 1.148 3.04 1.852 4.512 2.316a12.7 12.7 0 0 0 .894-1.475 8.6 8.6 0 0 1-1.407-.68c.118-.088.234-.179.347-.273 2.713 1.261 5.64 1.261 8.35 0 .114.094.23.185.347.273-.446.266-.92.492-1.408.68.268.514.566 1.028.897 1.476 1.47-.467 2.966-1.17 4.509-2.319.256-4.402-.907-7.036-2.877-9.053ZM9.61 12.7c-.82 0-1.491-.75-1.491-1.674 0-.924.66-1.677 1.49-1.677.84 0 1.502.753 1.492 1.677 0 .924-.652 1.673-1.492 1.673Zm4.78 0c-.82 0-1.491-.75-1.491-1.674 0-.924.66-1.677 1.49-1.677.84 0 1.503.753 1.492 1.677 0 .924-.652 1.673-1.492 1.673Z"/></svg>
+      <!-- Redes: íconos en color original + Twitch -->
+      <div class="an-util-right" aria-label="Redes">
+        <a class="an-social an-social--discord" href="https://discord.gg/ZGNsfsqyKe" target="_blank" rel="noopener" aria-label="Discord" title="Discord">
+          <!-- Discord -->
+          <svg viewBox="0 0 24 24" width="18" height="18" role="img" aria-hidden="true">
+            <path fill="currentColor" d="M20.317 4.369A19.79 19.79 0 0 0 16.558 3c-.2.36-.43.85-.59 1.234a18.27 18.27 0 0 0-7.936 0C7.371 3.85 7.141 3.36 6.94 3A19.736 19.736 0 0 0 3.182 4.37C.943 7.68.38 10.89.62 14.067c2.07 1.55 4.08 2.5 6.01 3.125.48-.66.91-1.37 1.28-2.12-.71-.27-1.39-.6-2.03-.98.17-.12.33-.25.49-.38 3.93 1.84 8.18 1.84 12.07 0 .17.13.33.26.5.38-.64.38-1.32.71-2.03.98.37.75.8 1.46 1.28 2.12 1.93-.63 3.94-1.58 6.01-3.13.33-4.23-.68-7.41-2.93-9.7zM8.9 13.2c-.79 0-1.44-.73-1.44-1.63 0-.9.64-1.63 1.44-1.63s1.45.73 1.45 1.63c0 .9-.65 1.63-1.45 1.63zm6.2 0c-.79 0-1.44-.73-1.44-1.63 0-.9.64-1.63 1.44-1.63s1.45.73 1.45 1.63c0 .9-.65 1.63-1.45 1.63z"/>
+          </svg>
         </a>
-        <!-- Instagram -->
-        <a class="an-social an-ig" href="https://www.instagram.com/pablin.schez/" target="_blank" rel="noopener" aria-label="Instagram">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2C4.239 2 2 4.239 2 7v10c0 2.761 2.239 5 5 5h10c2.762 0 5-2.239 5-5V7c0-2.761-2.238-5-5-5H7zm10 2c1.657 0 3 1.343 3 3v10c0 1.657-1.343 3-3 3H7c-1.657 0-3-1.343-3-3V7c0-1.657 1.343-3 3-3h10zm-5 3a5 5 0 1 0 .001 10.001A5 5 0 0 0 12 7zm5.5-1a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
+
+        <a class="an-social an-social--instagram" href="https://www.instagram.com/pablin.schez/" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">
+          <!-- Instagram -->
+          <svg viewBox="0 0 24 24" width="18" height="18" role="img" aria-hidden="true">
+            <path fill="currentColor" d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7Zm5 3.5A5.5 5.5 0 1 1 6.5 13 5.5 5.5 0 0 1 12 7.5Zm0 2A3.5 3.5 0 1 0 15.5 13 3.5 3.5 0 0 0 12 9.5Zm5.75-3.25a1.25 1.25 0 1 1-1.25 1.25 1.25 1.25 0 0 1 1.25-1.25Z"/>
+          </svg>
         </a>
-        <!-- YouTube -->
-        <a class="an-social an-yt" href="https://www.youtube.com/@pablinschez" target="_blank" rel="noopener" aria-label="YouTube">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23.5 6.2s-.2-1.6-.8-2.3c-.8-.8-1.7-.8-2.1-.9C17.9 2.7 12 2.7 12 2.7s-5.9 0-8.6.3c-.4 0-1.3.1-2.1.9C.7 4.6.5 6.2.5 6.2S.3 8.1.3 10v2c0 1.9.2 3.8.2 3.8s.2 1.6.8 2.3c.8.8 1.9.8 2.4.9 1.7.2 7.3.3 8.3.3 0 0 5.9 0 8.6-.3.4 0 1.3-.1 2.1-.9.6-.7.8-2.3.8-2.3s.2-1.9.2-3.8V10c0-1.9-.2-3.8-.2-3.8zM9.8 14.5V7.9l6.1 3.3-6.1 3.3z"/></svg>
+
+        <a class="an-social an-social--youtube" href="https://www.youtube.com/@pablinschez" target="_blank" rel="noopener" aria-label="YouTube" title="YouTube">
+          <!-- YouTube -->
+          <svg viewBox="0 0 24 24" width="18" height="18" role="img" aria-hidden="true">
+            <path fill="currentColor" d="M23.5 7.1a4.6 4.6 0 0 0-3.2-3.2C18.5 3.3 12 3.3 12 3.3s-6.5 0-8.3.6A4.6 4.6 0 0 0 .5 7.1 48 48 0 0 0 0 12a48 48 0 0 0 .5 4.9 4.6 4.6 0 0 0 3.2 3.2c1.8.6 8.3.6 8.3.6s6.5 0 8.3-.6a4.6 4.6 0 0 0 3.2-3.2A48 48 0 0 0 24 12a48 48 0 0 0-.5-4.9ZM9.6 15.5v-7L16 12l-6.4 3.5Z"/>
+          </svg>
+        </a>
+
+        <a class="an-social an-social--twitch" href="https://www.twitch.tv/pblsnchz" target="_blank" rel="noopener" aria-label="Twitch" title="Twitch">
+          <!-- Twitch -->
+          <svg viewBox="0 0 24 24" width="18" height="18" role="img" aria-hidden="true">
+            <path fill="currentColor" d="M4 3h16v10.5L16.5 17H13l-2.5 2.5H8v-2.5H4V3Zm2 2v9h4v2h1.5l2-2H18V5H6Zm8 2h2v4h-2V7Zm-5 0h2v4H9V7Z"/>
+          </svg>
         </a>
       </div>
     </div>
 
-    <!-- Hero: textura GW2 ancho completo -->
     <div class="an-hero" role="img" aria-label="Arte de Guild Wars 2">
-      <!-- Overlay: BRAND + TABS — dentro del hero (no tapa la util-bar) -->
-      <div class="an-overlay" aria-label="Identidad y navegación principal">
+      <div class="an-overlay">
         <div class="overlay-inner">
           <div class="brand-wrap">
-            <img class="brand-logo" src="assets/logo-gato-negro.png" alt="Gato Negro">
+            <img class="brand-logo" src="assets/logo-gato-negro.png" alt=""/>
             <h1 class="brand-title">
               <span class="brand-top">Bóveda</span>
               <span class="brand-bottom">del Gato Negro</span>
             </h1>
           </div>
 
+          <!-- Tabs hero (subrayado rojo igual a API Keys) -->
           <nav class="overlay-tabs" aria-label="Vista principal">
             <button class="overlay-tab overlay-tab--active" data-view="cards" type="button">Tarjetas</button>
             <button class="overlay-tab" data-view="meta" type="button" disabled>MetaEventos</button>
@@ -84,45 +78,34 @@
     </div>
   </header>
 
-  <!-- ======= CONTENIDO PRINCIPAL ======= -->
-  <main class="container layout">
-    <!-- PANEL PRINCIPAL -->
+  <!-- ======= MAIN ======= -->
+  <main class="container layout" role="main">
     <section id="walletPanel" class="panel col-main" aria-labelledby="walletTitle">
       <h2 class="panel__title" id="walletTitle">Divisas de la cuenta</h2>
 
       <div class="panel__body">
-        <!-- Owner + Selección de KEY + icon-btns -->
+        <!-- Owner + KEY -->
         <div class="owner">
           <div class="owner-left">
-            <span class="muted">Cuenta:</span>
-            <span id="ownerLabel" class="owner__pill">—</span>
+            <span class="muted" id="lblAccount">Cuenta:</span>
+            <span id="ownerLabel" class="owner__pill" aria-labelledby="lblAccount">—</span>
           </div>
 
           <div class="owner-right" id="ownerRight">
             <label for="keySelect" class="muted">Seleccionar KEY</label>
             <select id="keySelect" aria-label="Seleccionar API Key"></select>
 
-            <button id="copyKeyBtn" class="icon-btn" title="Copiar API Key" aria-label="Copiar">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4c-1.1 0-2 .9-2 2v12h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-            </button>
-            <button id="renameKeyBtn" class="icon-btn" title="Renombrar API Key" aria-label="Renombrar">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04l-2.34-2.34-1.42 1.42 2.34 2.34 1.42-1.42z"/></svg>
-            </button>
-            <button id="deleteKeyBtn" class="icon-btn" title="Eliminar API Key" aria-label="Eliminar">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1z"/></svg>
-            </button>
-            <button id="refreshBtn" class="icon-btn" title="Actualizar datos" aria-label="Actualizar">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6V3L8 7l4 4V8c2.76 0 5 2.24 5 5s-2.24 5-5 5-5-2.24-5-5H5c0 3.87 3.13 7 7 7s7-3.13 7-7-3.13-7-7-7z"/></svg>
-            </button>
-            <button id="addKeyBtn" class="icon-btn" title="Agregar API Key" aria-label="Agregar">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/></svg>
-            </button>
+            <button id="copyKeyBtn" class="icon-btn" title="Copiar API Key" aria-label="Copiar">⧉</button>
+            <button id="renameKeyBtn" class="icon-btn" title="Renombrar API Key" aria-label="Renombrar">✎</button>
+            <button id="deleteKeyBtn" class="icon-btn" title="Eliminar API Key" aria-label="Eliminar">🗑</button>
+            <button id="refreshBtn" class="icon-btn" title="Actualizar datos" aria-label="Actualizar">↻</button>
+            <button id="addKeyBtn" class="icon-btn" title="Agregar API Key" aria-label="Agregar">＋</button>
 
             <!-- Popover alta KEY -->
             <form id="keyPopover" class="key-popover" hidden>
               <div class="kp-row">
                 <label for="newKeyLabel" class="muted">Nombre</label>
-                <input id="newKeyLabel" type="text" placeholder="Opcional">
+                <input id="newKeyLabel" type="text" placeholder="Opcional" autocomplete="off">
               </div>
               <div class="kp-row">
                 <label for="newKeyValue" class="muted">API key</label>
@@ -167,11 +150,10 @@
           </div>
 
           <div class="field checkbox">
-            <label><input type="checkbox" id="onlyPositive"/> Solo &gt; 0</label>
+            <label for="onlyPositive"><input type="checkbox" id="onlyPositive"/> Solo &gt; 0</label>
           </div>
-
           <div class="field checkbox">
-            <label><input type="checkbox" id="onlyMain"/> Solo principales</label>
+            <label for="onlyMain"><input type="checkbox" id="onlyMain"/> Solo principales</label>
           </div>
 
           <div class="field field-inline">
@@ -180,7 +162,7 @@
           </div>
         </div>
 
-        <p class="status" id="status">Listo.</p>
+        <p class="status" id="status" aria-live="polite">Listo.</p>
 
         <!-- Favoritas -->
         <div id="favBlock" class="fav-block" hidden>
@@ -191,7 +173,7 @@
         <!-- Tarjetas -->
         <div id="walletCards" class="grid" aria-live="polite"></div>
 
-        <!-- Vista compacta (tabla) -->
+        <!-- Tabla -->
         <div id="walletTableWrap" class="table-wrap" hidden>
           <table id="walletTable">
             <thead>
@@ -209,12 +191,62 @@
       </div>
     </section>
 
-    <!-- Sidebar -->
+    <!-- ======= Sidebar ======= -->
     <aside class="col-side">
-      <section class="panel">
-        <h3 class="panel__title">Conversor Gem ↔ Gold</h3>
-        <div class="panel__body"><p class="muted">WIP</p></div>
+      <section class="panel" aria-labelledby="convTitle">
+        <h3 class="panel__title" id="convTitle">Conversor Gem ↔ Gold</h3>
+        <div class="panel__body">
+          <div id="convWrap" class="conv2" aria-live="polite">
+
+            <!-- Arriba: CONSEGUIR GEMAS -->
+            <h4 class="muted" style="margin:0 0 6px">Conseguir gemas</h4>
+            <div class="conv2-row">
+              <div class="conv2-input conv2-with-icon">
+                <label for="cvGems">Gemas</label>
+                <span class="conv2-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#7dd3fc" d="M5 9 9 3h6l4 6-7 12zM9 3 5 9h14L15 3z"/></svg>
+                </span>
+                <input id="cvGems" class="conv2-big" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off"/>
+              </div>
+              <div class="conv2-arrow" aria-hidden="true">→</div>
+              <div class="conv2-output">
+                <span class="form-label" id="lblGemsOut">Monedas</span>
+                <div id="cvGemsOut" class="coin-badges coin-badges--lg">—</div>
+              </div>
+            </div>
+
+            <!-- Abajo: CONSEGUIR ORO -->
+            <h4 class="muted" style="margin:12px 0 6px">Conseguir oro</h4>
+            <div class="conv2-row">
+              <div class="conv2-input conv2-with-icon">
+                <label for="cvGold">Oro</label>
+                <span class="conv2-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="9" fill="#d7b062"/><circle cx="12" cy="12" r="7" fill="#f1cc7a"/></svg>
+                </span>
+                <input id="cvGold" class="conv2-big conv2-gold" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off"/>
+              </div>
+              <div class="conv2-arrow" aria-hidden="true">→</div>
+              <div class="conv2-output">
+                <span class="form-label" id="lblGoldOut">Gemas</span>
+                <output id="cvGoldOut" class="conv2-gems">—</output>
+              </div>
+            </div>
+
+            <!-- Controles (sólo botón) -->
+            <div class="conv2-controls">
+              <button id="cvRefresh" class="btn" title="Actualizar cotización">Actualizar</button>
+            </div>
+
+            <p id="cvState" class="conv2-state muted" aria-live="polite">Listo.</p>
+
+            <!-- Referencia 400 -->
+            <div class="conv2-ref">
+              <span id="cvRef400" class="coin-badges coin-badges--lg">—</span>
+            </div>
+          </div>
+        </div>
       </section>
+
       <section class="panel">
         <h3 class="panel__title">Próximas funciones</h3>
         <div class="panel__body">
@@ -228,15 +260,15 @@
     </aside>
   </main>
 
-  <!-- ======= FOOTER con marquita ======= -->
-  <footer class="site-footer">
+  <!-- ======= FOOTER ======= -->
+  <footer class="site-footer" role="contentinfo">
     <div class="footer-inner">
-      <img class="footer-mark" src="assets/gn-mark.svg" alt="Marca Gato Negro">
+      <img class="footer-mark" src="assets/logo-gato-negro.png" alt="" width="18" height="18"/>
       <span class="footer-copy">© Comunidad Gato Negro — Herramientas para GW2</span>
     </div>
   </footer>
 
-  <!-- JS principal -->
-  <script src="js/app.js?v=1.3.4" defer></script>
+  <!-- Único JS -->
+  <script defer src="js/app.js?v=2.3.3"></script>
 </body>
 </html>
