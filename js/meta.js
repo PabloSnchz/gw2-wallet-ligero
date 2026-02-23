@@ -22,7 +22,7 @@
     miniNext:   $('#metaMiniNext')
   };
 
-  // --------- Constantes / Estado ----------
+    // --------- Constantes / Estado ----------
   const LS_FAVS  = 'gw2_meta_favs';
   const SOON_MIN = 20;
 
@@ -78,7 +78,49 @@
     el.reset.textContent = `Próximo reset en ${pad2(hh)}:${pad2(mm)} h`;
   }
 
-  // --------- Carga de datos (seed + drops) ----------
+  // --- SKELETON HELPERS (MetaEventos) ---
+  // Render de tarjetas fantasma durante la carga inicial.
+  // No es intrusivo: el próximo render() sobreescribe su contenido.
+  function renderSkeletonMeta(count=8){
+    if(!el.list) return;
+    const cards = Array.from({length: count}).map(()=>`
+      <article class="skel-card skel-anim">
+        <div class="skel-row w70"></div>
+        <div class="skel-row w30"></div>
+        <div class="skel-row"></div>
+        <div class="skel-row w50"></div>
+      </article>
+    `).join('');
+    el.list.innerHTML = `<div class="skel-grid">${cards}</div>`;
+
+    // Mientras hay skeleton, ocultamos el bloque de favoritos
+    if(el.favBlock){
+      el.favBlock.setAttribute('hidden','');
+      el.favGrid.innerHTML = '';
+    }
+  }
+
+  function clearSkeletonMeta(){
+    // noop: el próximo render() sobreescribe el contenido de el.list
+  }
+
+  // --- SKELETON HELPERS (MetaEventos) ---
+  function renderSkeletonMeta(count=8){
+  if(!el.list) return;
+  const cards = Array.from({length: count}).map(()=>`
+    <article class="skel-card skel-anim">
+      <div class="skel-row w70"></div>
+      <div class="skel-row w30"></div>
+      <div class="skel-row"></div>
+      <div class="skel-row w50"></div>
+    </article>
+  `).join('');
+  el.list.innerHTML = `<div class="skel-grid">${cards}</div>`;
+  if(el.favBlock){ el.favBlock.setAttribute('hidden',''); el.favGrid.innerHTML=''; }
+  }
+  function clearSkeletonMeta(){ /* noop: próximo render sobreescribe */ }
+
+    // --------- Carga de datos (seed + drops) ----------
   let externalDrops = new Map();
 
   async function loadExternalDrops(){
@@ -417,7 +459,10 @@
       b.addEventListener('click', ()=>{
         const v=b.getAttribute('data-copy') ?? '';
         if(!v) return;
-        navigator.clipboard.writeText(v).then(()=> setStatus('Copiado al portapapeles.','ok'));
+        navigator.clipboard.writeText(v).then(()=>{
+          setStatus('Copiado al portapapeles.','ok');
+          if (typeof toast === 'function') toast('Copiado al portapapeles','ok', 1600);
+        });
       });
     });
     $$('.meta-mini_focus', el.miniNext).forEach(b=>{
@@ -479,7 +524,10 @@
       btn.addEventListener('click', ()=>{
         const v = btn.getAttribute('data-copy') ?? '';
         if(!v) return;
-        navigator.clipboard.writeText(v).then(()=> setStatus('Copiado al portapapeles.','ok'));
+        navigator.clipboard.writeText(v).then(()=>{
+          setStatus('Copiado al portapapeles.','ok');
+          if (typeof toast === 'function') toast('Copiado al portapapeles','ok', 1600);
+        });
       });
     });
     $$('.m-star', el.panel).forEach(btn=>{
@@ -533,6 +581,7 @@
     if(!el.panel) return;
     try{
       setStatus('Cargando MetaEventos…');
+      renderSkeletonMeta(8);
       loadFavs();
       await loadSeed();
       await refreshAccountFlags();
@@ -556,6 +605,7 @@
     }catch(e){
       console.error(e);
       setStatus('No se pudo cargar MetaEventos.','error');
+      toast?.('No se pudo cargar MetaEventos','error', 2400); // <-- NUEVO
     }
   }
 
@@ -577,10 +627,11 @@
 
   // Cambio de token (refrescar flags y re-render)
   document.addEventListener('gn:tokenchange', async ()=>{
-    if(!inited) return;
-    await refreshAccountFlags();
-    render();
-  });
+  if(!inited) return;
+  renderSkeletonMeta(6);        // <-- NUEVO (opcional)
+  await refreshAccountFlags();
+  render();
+});
 
   // Filtros
   ['change','input'].forEach(ev=>{
