@@ -87,6 +87,13 @@
     return p.length? p.join('') : '0';
   }
 
+  function fadeIn(el){
+  if(!el) return;
+  el.classList.remove('fade-in'); // reset
+  void el.offsetWidth;            // reflow para reiniciar anim
+  el.classList.add('fade-in');
+  }
+
   /* =============== Íconos: renderer + check ================= */
   function iconTag(url, size=22){
     const u = String(url||'').trim();
@@ -242,19 +249,32 @@
           el.walletPanel?.setAttribute('hidden','');
           el.metaPanel?.removeAttribute('hidden');
 
+          const conv = document.getElementById('asideConvSection');
+          const next = document.getElementById('asideNextFeatures');
+          const metaAside = document.getElementById('metaAsideNext');
+
           // ocultar conversor + próximas funciones; mostrar sidebar meta
           conv?.setAttribute('hidden','');
           next?.setAttribute('hidden','');
           metaAside?.removeAttribute('hidden');
 
+          // transición suave al mostrar el panel meta
+          fadeIn(el.metaPanel);           // <-- NUEVO
         }else{
           el.metaPanel?.setAttribute('hidden','');
           el.walletPanel?.removeAttribute('hidden');
+
+          const conv = document.getElementById('asideConvSection');
+          const next = document.getElementById('asideNextFeatures');
+          const metaAside = document.getElementById('metaAsideNext');
 
           // mostrar conversor + próximas funciones; ocultar sidebar meta
           conv?.removeAttribute('hidden');
           next?.removeAttribute('hidden');
           metaAside?.setAttribute('hidden','');
+
+          // transición suave al mostrar el panel de tarjetas
+          fadeIn(el.walletPanel);         // <-- NUEVO
         }
 
         document.dispatchEvent(new CustomEvent('gn:tabchange',{ detail:{ view } }));
