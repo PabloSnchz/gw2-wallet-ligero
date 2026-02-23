@@ -5,6 +5,47 @@ El formato sigue las recomendaciones de
 **Keep a Changelog** (https://keepachangelog.com/)  
 y el versionado **SemVer** (https://semver.org/).
 
+
+## [v2.5.0] — 2026-02-22
+
+### Added
+- Activación del módulo **MetaEventos** con:
+  - Estado: Activo / Próximo / Más tarde
+  - Filtros (tipo, expansión, activos, próximos ≤20m, infusiones)
+  - Favoritos (máx. 6)
+  - Sidebar “**Top 3** próximos”
+  - Tooltips visuales para infusiones (preview + wiki)
+  - Botón **copiar waypoint** con icono personalizado
+
+### Changed
+- Hero actualizado con **glow dorado**.
+- Tabs del hero robustecidas para evitar deformaciones.
+- CSS general reorganizado y limpiado.
+- Normalización de badges por expansión.
+
+### Fixed
+- Tooltips de infusiones ahora se enganchan después del render.
+- Correcciones del layout del hero para evitar el desplazamiento de tabs.
+- Ajuste del reloj y “Próximo reset”.
+
+---
+
+## [v2.3.3] — 2026-02-21
+
+### Added
+- Glow rojo en tabs del hero.
+- Iconos de redes (Discord, Instagram, YouTube, Twitch).
+- Mejoras visuales en tarjetas y botones.
+
+### Changed
+- Conversor final estable sin loops.
+- Íconos de divisas a 22px.
+- Limpieza visual en `main.css`.
+
+### Fixed
+- Render robusto de íconos API.
+- Eliminado error `ReferenceError: renderCards is not defined`.
+
 ---
 
 ## [2.0.0] - 2026-02-21
