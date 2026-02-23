@@ -3,13 +3,18 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Bóveda del Gato Negro — v2.3.3</title>
+  <title>Bóveda del Gato Negro — v2.5.0</title>
+
+  <!-- Fuente hero: Cinzel Decorative -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="assets/favicon.png"/>
 
   <!-- CSS principal -->
-  <link rel="stylesheet" href="css/main.css?v=2.3.3"/>
+  <link rel="stylesheet" href="css/main.css?v=2.5.0"/>
 </head>
 <body class="dense">
 
@@ -68,10 +73,10 @@
             </h1>
           </div>
 
-          <!-- Tabs hero (subrayado rojo igual a API Keys) -->
+          <!-- Tabs hero -->
           <nav class="overlay-tabs" aria-label="Vista principal">
             <button class="overlay-tab overlay-tab--active" data-view="cards" type="button">Tarjetas</button>
-            <button class="overlay-tab" data-view="meta" type="button" disabled>MetaEventos</button>
+            <button class="overlay-tab" data-view="meta" type="button">MetaEventos</button>
           </nav>
         </div>
       </div>
@@ -191,9 +196,56 @@
       </div>
     </section>
 
+    <!-- ======= Panel MetaEventos ======= -->
+    <section id="metaPanel" class="panel col-main" aria-labelledby="metaTitle" hidden>
+      <h2 class="panel__title" id="metaTitle">MetaEventos</h2>
+      <div class="panel__body">
+        <div class="meta-topbar">
+          <div class="meta-clock">
+            <span id="metaLocalTime" class="muted">—</span>
+            <span class="meta-sep">•</span>
+            <span id="metaReset" class="muted">Próximo reset en —</span>
+          </div>
+          <div class="meta-filters" aria-label="Filtros de metas">
+            <select id="metaType">
+              <option value="">Tipo: Todos</option>
+              <option value="worldboss">World Boss</option>
+              <option value="meta">Meta Event</option>
+              <option value="convergence">Convergence</option>
+              <option value="fractal">Fractal Incursion</option>
+            </select>
+            <select id="metaExp">
+              <option value="">Expansión: Todas</option>
+              <option value="Core">Core Tyria</option>
+              <option value="HoT">Heart of Thorns</option>
+              <option value="PoF">Path of Fire</option>
+              <option value="EoD">End of Dragons</option>
+              <option value="SotO">Secrets of the Obscure</option>
+              <option value="Janthir">Janthir</option>
+            </select>
+            <label class="chk"><input id="metaOnlyActive" type="checkbox"> Activos</label>
+            <label class="chk"><input id="metaOnlySoon" type="checkbox"> Próximos (≤ 20m)</label>
+            <label class="chk"><input id="metaOnlyInfusions" type="checkbox" />Infusiones</label>
+          </div>
+        </div>
+        <p id="metaStatus" class="status" aria-live="polite">Cargando MetaEventos…</p>
+
+        <!-- Favoritos (máx. 6) -->
+        <div id="metaFavBlock" class="meta-fav-block" hidden>
+          <h3 class="fav-title">Tus 6 preferidos</h3>
+          <div id="metaFavGrid" class="meta-grid"></div>
+        </div>
+
+        <!-- Lista completa -->
+        <div id="metaList" class="meta-list"><!-- JS --></div>
+      </div>
+    </section>
+
     <!-- ======= Sidebar ======= -->
     <aside class="col-side">
-      <section class="panel" aria-labelledby="convTitle">
+
+      <!-- Conversor: sólo visible en Tarjetas -->
+      <section class="panel" aria-labelledby="convTitle" id="asideConvSection">
         <h3 class="panel__title" id="convTitle">Conversor Gem ↔ Gold</h3>
         <div class="panel__body">
           <div id="convWrap" class="conv2" aria-live="polite">
@@ -247,7 +299,8 @@
         </div>
       </section>
 
-      <section class="panel">
+      <!-- Próximas funciones: sólo visible en Tarjetas -->
+      <section class="panel" id="asideNextFeatures">
         <h3 class="panel__title">Próximas funciones</h3>
         <div class="panel__body">
           <ul class="muted">
@@ -257,6 +310,15 @@
           </ul>
         </div>
       </section>
+
+      <!-- [NUEVO] Sidebar MetaEventos: Top 3 próximos (visible sólo en Meta) -->
+      <section class="panel" id="metaAsideNext" hidden>
+        <h3 class="panel__title">Próximos (Top 3)</h3>
+        <div class="panel__body">
+          <ul class="meta-mini-list" id="metaMiniNext"><!-- JS --></ul>
+        </div>
+      </section>
+
     </aside>
   </main>
 
@@ -268,7 +330,8 @@
     </div>
   </footer>
 
-  <!-- Único JS -->
-  <script defer src="js/app.js?v=2.3.3"></script>
+  <!-- JS -->
+  <script defer src="js/app.js?v=2.5.0"></script>
+  <script defer src="js/meta.js?v=2.5.0"></script>
 </body>
 </html>

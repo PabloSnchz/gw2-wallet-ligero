@@ -2,7 +2,7 @@
   --bg:#0e0e10; --panel:#141418; --panel-border:#242428; --panel-outline:#1d1d20;
   --text:#e9e9ee; --muted:#a0a0a6; --btn:#1c1c20; --btn-border:#2a2a2f; --btn-hover:#24242a;
   --gn-gold:#FFA928; --gn-gold-2:#FFCE66;
-  --accent:#b71c1c; /* mismo rojo brillante que el link API Keys */
+  --accent:#b71c1c;
   --hero-h: 96px; --overlay-space: 0px;
 }
 
@@ -29,14 +29,14 @@ input[type="number"]::-webkit-inner-spin-button{ appearance:none; -webkit-appear
 .an-link--keys{ color:#b71c1c; text-shadow:0 0 6px rgba(255,59,59,.55) }
 .an-sep{ color:#3a3a3f }
 
-/* Redes: íconos en color original */
+/* Redes */
 .an-social{
   display:inline-grid; place-items:center; width:24px; height:24px;
   color:#cfd3da; border-radius:6px; text-decoration:none; transition:transform .12s ease;
 }
 .an-social:hover{ transform: translateY(-1px) }
-.an-social--discord{ color:#5865F2 }   /* Blurple */
-.an-social--instagram{ color:#E4405F } /* Brand solid (en vez de gradiente) */
+.an-social--discord{ color:#5865F2 }
+.an-social--instagram{ color:#E4405F }
 .an-social--youtube{ color:#FF0000 }
 .an-social--twitch{ color:#9146FF }
 
@@ -50,21 +50,113 @@ input[type="number"]::-webkit-inner-spin-button{ appearance:none; -webkit-appear
 }
 .brand-wrap{ display:flex; align-items:center; gap:12px }
 .brand-logo{ width:56px; height:56px; object-fit:contain; border-radius:6px }
-.brand-title{ margin:0; line-height:1.05; letter-spacing:.4px; color:var(--gn-gold); font-family:"Cinzel Decorative",serif; font-weight:700; font-size: clamp(24px, 3.1vw, 34px) }
-.brand-title .brand-bottom{ display:block; color:var(--gn-gold-2); letter-spacing:.6px }
+.brand-title{
+  margin:0;
+  font-family:"Cinzel Decorative", serif;
+  font-weight:700;
+  font-size: clamp(28px, 3.8vw, 40px);
+  letter-spacing:.8px;
+  line-height:1.05;
+  color:#fbe6b2;
 
-/* Tabs hero (subrayado = rojo API Keys) */
-.overlay-tabs{ display:flex; gap:10px; align-items:center; border-bottom: 1px solid rgba(255,255,255,.08); }
-.overlay-tab{
-  background: transparent; border: 0; color: #d7d7df; padding: 6px 10px;
-  border-bottom: 3px solid transparent; cursor: pointer;
+  /* Glow elegido (Runas Douradas) */
+  text-shadow:
+    0 0 6px rgba(255,230,180,0.55),
+    0 0 12px rgba(255,200,110,0.50),
+    0 0 20px rgba(255,160,60,0.35),
+    0 0 32px rgba(255,140,50,0.30);
 }
-.overlay-tab--active{
+
+/* ======= HERO + TABS (corrección de layout) ======= */
+.overlay-inner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap: wrap;       /* permite bajar las tabs si no entra todo */
+  min-height:72px;
+  padding:10px 16px;
+  background:linear-gradient(180deg, rgba(14,14,16,.78), rgba(14,14,16,.95));
+  backdrop-filter:blur(4px);
+  border-top:1px solid #1f1f24;
+  border-bottom:1px solid #1f1f24;
+  box-shadow:0 6px 20px rgba(0,0,0,.35);
+}
+
+.brand-wrap{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex: 1 1 auto;        /* el branding ocupa el espacio disponible */
+  min-width:0;           /* evita overflow del título */
+}
+
+.overlay-tabs{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  white-space:nowrap;    /* que los botones no se partan */
+  flex: 0 0 auto;        /* no crecer/encoger */
+  margin-left:auto;      /* a la derecha */
+}
+
+/* Botones de la tab bar (asegurar estilo vs. nativo) */
+.overlay-tabs .overlay-tab,
+button.overlay-tab{
+  background: transparent;
+  border: 0;
+  color: #d7d7df;
+  padding: 6px 10px;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font: inherit;         /* hereda tipografía, evita botón del sistema */
+}
+.overlay-tabs .overlay-tab:hover{ color:#fff; }
+
+.overlay-tabs .overlay-tab--active{
   color: #fff;
   border-bottom-color: var(--accent);
-  box-shadow: 0 3px 0 0 var(--accent);
+  box-shadow:
+    0 3px 0 0 var(--accent),
+    0 6px 8px -6px rgba(183, 28, 28, .65),
+    0 0 8px rgba(183, 28, 28, .45);
+}
+``
+
+  /* Glow mágico */
+  text-shadow:
+    0 0 6px rgba(255,230,180,0.55),
+    0 0 12px rgba(255,200,110,0.50),
+    0 0 20px rgba(255,160,60,0.35),
+    0 0 32px rgba(255,140,50,0.30);
 }
 
+.brand-title{
+  margin:0;
+  font-family:"Cinzel Decorative", serif;
+  font-weight:700;
+  font-size: clamp(28px, 3.8vw, 40px);
+  letter-spacing:.8px;
+  line-height:1.05;
+  color:#fbe6b2;
+
+  /* Glow mágico */
+  text-shadow:
+    0 0 6px rgba(255,230,180,0.55),
+    0 0 12px rgba(255,200,110,0.50),
+    0 0 20px rgba(255,160,60,0.35),
+    0 0 32px rgba(255,140,50,0.30);
+}
+
+.brand-title .brand-bottom{
+  display:block;
+  color:#ffe9c2;
+
+  text-shadow:
+    0 0 8px rgba(255,210,140,0.55),
+    0 0 18px rgba(255,175,70,0.45),
+    0 0 28px rgba(255,150,50,0.35);
+}
 /* Layout */
 .container.layout{ display:grid; grid-template-columns:1fr 320px; gap:14px; padding:14px }
 .panel{ background:#141418; border:1px solid #242428; border-radius:12px; overflow:hidden; box-shadow:0 0 0 1px #1d1d20 inset }
@@ -94,13 +186,13 @@ select:focus, input:focus{ outline:2px solid #ffffff10; border-color:#334155 }
 .owner__pill{ padding:4px 8px; border:1px solid #242428; border-radius:999px; color:#a0a0a6; background:#111114 }
 #ownerRight{ position:relative; display:flex; align-items:center; gap:6px; flex-wrap:wrap }
 
-/* Filtros */
+/* Filtros Wallet */
 .filters{ display:grid; grid-template-columns: 1fr 190px 210px 110px 150px auto; gap:10px; align-items:end; margin:10px 0 6px }
 .field{ display:grid; gap:6px }
 .field-inline{ display:flex; gap:8px; align-items:center }
 .status{ margin:8px 0 12px; color:#a0a0a6 }
 
-/* Tarjetas */
+/* Tarjetas Wallet */
 .grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:12px }
 .card{
   background:#15151a; border:1px solid #242428; border-radius:10px; box-shadow:0 0 0 1px #1d1d20 inset;
@@ -138,7 +230,7 @@ select:focus, input:focus{ outline:2px solid #ffffff10; border-color:#334155 }
 .conv2-state{ margin:0 }
 .conv2-ref{ font-size:13px }
 
-/* Tabla */
+/* Tabla Wallet */
 .table-wrap{ margin-top:8px }
 #walletTable{ width:100%; border-collapse:separate; border-spacing:0; border:1px solid #242428; border-radius:10px; overflow:hidden; background:#15151a; box-shadow:0 0 0 1px #1d1d20 inset }
 #walletTable thead th{ text-align:left; font-weight:600; color:#d6d6db; border-bottom:1px solid #242428; padding:8px 10px; background:#141418 }
@@ -159,37 +251,22 @@ select:focus, input:focus{ outline:2px solid #ffffff10; border-color:#334155 }
   .field-inline{ grid-column:1 / -1 }
 }
 
-/* ——— Tweak: Glow rojo en subrayado de tabs del hero (match con API Keys) ——— */
-.overlay-tabs { 
-  /* ya tenés el borde base; lo dejamos tal cual o lo reafirmamos */
-  border-bottom: 1px solid rgba(255,255,255,.08);
-}
-
+/* ——— Tweak: Glow rojo tabs ——— */
+.overlay-tabs { border-bottom: 1px solid rgba(255,255,255,.08); }
 .overlay-tab--active{
-  /* rojo brillante ya alineado con API Keys: var(--accent) = #b71c1c */
   border-bottom-color: var(--accent);
-
-  /* subrayado sólido + glow sutil alrededor del borde inferior */
-  /* 1) “subrayado” (línea de 3px)    */
-  /* 2) halo proyectado hacia abajo   */
-  /* 3) glow suave en todo el rótulo  */
   box-shadow:
-    0 3px 0 0 var(--accent),                 /* línea roja */
-    0 6px 8px -6px rgba(183, 28, 28, .65),   /* halo sutil debajo */
-    0 0 8px rgba(183, 28, 28, .45);          /* glow suave alrededor */
-
-  color:#fff; /* por las dudas, mantenemos contraste del tab activo */
+    0 3px 0 0 var(--accent),
+    0 6px 8px -6px rgba(183, 28, 28, .65),
+    0 0 8px rgba(183, 28, 28, .45);
+  color:#fff;
 }
-
-/* Opcional: un toque al pasar el mouse por la pestaña activa */
 .overlay-tab--active:hover{
   box-shadow:
     0 3px 0 0 var(--accent),
     0 8px 12px -6px rgba(183, 28, 28, .70),
     0 0 10px rgba(183, 28, 28, .55);
 }
-
-/* Accesibilidad: si el usuario prefiere menos animación, hacemos el glow más “calmo” */
 @media (prefers-reduced-motion: reduce){
   .overlay-tab--active,
   .overlay-tab--active:hover{
@@ -199,3 +276,195 @@ select:focus, input:focus{ outline:2px solid #ffffff10; border-color:#334155 }
       0 0 6px rgba(183, 28, 28, .35);
   }
 }
+
+/* ============ META (tarjetas) ============ */
+.meta-topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px }
+.meta-clock{ color:var(--muted); display:flex; align-items:center; gap:8px }
+.meta-sep{ opacity:.7 }
+.meta-filters{ display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+.meta-filters select{ background:#0f0f12; color:var(--text); border:1px solid #242428; border-radius:8px; padding:6px 8px }
+.chk{ color:var(--muted) }
+.meta-fav-block{ margin:10px 0 14px }
+.meta-grid, .meta-list{
+  display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap:12px;
+}
+.m-card{
+  background:#15151a; border:1px solid #242428; border-radius:10px;
+  box-shadow:0 0 0 1px #1d1d20 inset; padding:10px 12px; position:relative; min-height:126px;
+  transition: box-shadow .18s ease, transform .18s ease;
+}
+.m-card:hover{ box-shadow: 0 0 0 1px #3b1e1e, 0 6px 18px rgba(208,71,71,.35); transform: translateY(-1px); }
+.m-head{ display:flex; align-items:center; gap:10px; padding-bottom:6px; border-bottom:1px solid #202027; min-height:28px }
+.m-title{ margin:0; font-weight:700; color:#f0f0f4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1 1 auto; min-width:0 }
+.m-right{ display:flex; align-items:center; gap:8px; white-space:nowrap }
+.m-badge{ display:inline-block; background:#202028; border:1px solid #2a2a2f; color:#cfcfd6; border-radius:999px; padding:2px 8px; font-size:12px }
+.m-badge--active{ background:#1f3328; border-color:#2f4f3d; color:#a7f3d0 }
+.m-badge--soon{ background:#2f231f; border-color:#4f3f3a; color:#fcd3c4 }
+.m-next{ color:#c8c8ce; font-size:12px }
+.m-sub{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; color:#a4a4aa; font-size:13px; margin-top:6px }
+.m-sep{ opacity:.5 }
+.m-actions{ display:flex; gap:8px; margin:8px 0 6px }
+.m-actions a{ color:#c8d1ff; text-decoration:none }
+.m-actions a:hover{ text-decoration:underline }
+.m-foot{ display:flex; align-items:center; gap:8px; margin-top:6px; color:#a8a8b0; font-size:13px; border-top:1px solid #202027; padding-top:6px }
+.m-item{ display:inline-flex; align-items:center; gap:6px }
+.m-item__name{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px }
+.m-foot img{ width:18px; height:18px; border-radius:3px; vertical-align:middle }
+.m-star{
+  position:absolute; top:8px; right:8px; width:26px; height:26px; border-radius:50%;
+  border:1px dashed #3a3a3f; background:#111114cc; color:#ffd166; display:grid; place-items:center; cursor:pointer
+}
+.m-star--on{ color:#ffe08a; box-shadow:0 0 0 1px #3b1e1e, 0 2px 6px rgba(208,71,71,.35) }
+.m-done{ display:inline-block; min-width:20px; text-align:center; border:1px solid #2a2a2f; border-radius:6px; padding:2px 6px; background:#101013; color:#cfcfd6 }
+.m-done--on{ background:#1f3328; color:#a7f3d0; border-color:#2f4f3d }
+
+@media (max-width: 900px){
+  .meta-grid, .meta-list{ grid-template-columns:1fr; }
+}
+
+/* --- Asegurar el título siempre visible (primera línea) --- */
+.m-head{ 
+  display:flex; 
+  align-items:center; 
+  gap:10px; 
+  padding-bottom:6px; 
+  border-bottom:1px solid #202027; 
+  min-height:28px;
+  flex-wrap: wrap;              /* permite salto de línea */
+}
+
+.m-title{
+  margin:0;
+  font-weight:700;
+  color:#f0f0f4;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  flex: 1 1 100%;               /* ocupa el 100% de la primera fila */
+  min-width: 0;                 /* evita overflow del flex item */
+}
+
+/* El bloque de la derecha puede bajar a segunda línea y envolver */
+.m-right{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap: wrap;              /* envolver si no entra */
+  width:100%;                   /* fuerza salto debajo del título si hace falta */
+}
+
+/* Botón “Copiar waypoint” sólo icono: cuadradito compacto */
+.m-actions .btn.btn--ghost,
+.meta-mini__actions .btn.btn--ghost{
+  display:inline-grid;
+  place-items:center;
+  padding:4px 8px;
+}
+.m-actions .btn.btn--ghost svg,
+.meta-mini__actions .btn.btn--ghost svg{
+  width:16px; height:16px;
+}
+
+/* Etiquetas del pie (Infusión vs Drop) */
+.m-tag{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-right:8px;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:700;
+  border:1px solid #2a2a2f;
+  background:#101013;
+  color:#cfcfd6;
+}
+.m-tag.tag--inf{
+  /* resalte para 'Infusión destacada' */
+  background:#1f3328;
+  border-color:#2f4f3d;
+  color:#a7f3d0;   /* verde agua */
+  box-shadow:0 0 0 1px #214534 inset, 0 0 8px rgba(31, 51, 40, .35);
+}
+.m-tag.tag--drop{
+  background:#2f231f;
+  border-color:#4f3f3a;
+  color:#fcd3c4;   /* durazno */
+}
+
+/* ====== Badge de expansión ====== */
+.badge-exp{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:2px 8px; border-radius:999px; font-size:12px; font-weight:700;
+  border:1px solid #2a2a2f; background:#15151a; color:#e0e0e8; margin-right:6px;
+}
+/* Colores por expansión/temporada */
+.badge-exp--core{ background:#202028; color:#d6d6dc; }
+.badge-exp--hot{ background:#1d2a22; color:#b9f3c8; }       /* HoT */
+.badge-exp--pof{ background:#2a201d; color:#ffd7b3; }       /* PoF */
+.badge-exp--eod{ background:#1d262a; color:#a3e7ff; }       /* EoD */
+.badge-exp--soto{ background:#26201e; color:#f4c7a6; }      /* SotO */
+.badge-exp--livingworlds4, .badge-exp--livingworlds4s4, .badge-exp--livingworlds4s{ background:#231e2a; color:#d9c9ff; } /* LS4 */
+.badge-exp--janthir{ background:#1f2328; color:#cfe3ff; }
+
+/* ====== Pills del pie (Infusión vs Drop) ====== */
+.m-tag{
+  display:inline-flex; align-items:center; gap:6px; margin-right:8px;
+  padding:2px 8px; border-radius:999px; font-size:12px; font-weight:700;
+  border:1px solid #2a2a2f; background:#101013; color:#cfcfd6;
+}
+.m-tag.tag--inf{
+  /* AMARILLO (nuevo): no compite con el ✔ de Hecho hoy */
+  background:#3a2e14;
+  border-color:#5c471f;
+  color:#ffe08a;
+  box-shadow:0 0 0 1px #5c471f inset, 0 0 8px rgba(92,71,31,.35);
+}
+.m-tag.tag--drop{
+  background:#2f231f;
+  border-color:#4f3f3a;
+  color:#fcd3c4;
+}
+
+/* ====== Popover visual de infusiones (controlado por JS) ====== */
+.inf-prev{
+  position:absolute;
+  z-index:1000;
+  pointer-events:none;
+  background:#0f0f12;
+  border:1px solid #2a2a2f;
+  border-radius:10px;
+  box-shadow:0 10px 24px rgba(0,0,0,.55);
+  padding:8px;
+  opacity:0;
+  transform:translateY(6px);
+  transition:all .12s ease-out;
+}
+.inf-prev.on{
+  opacity:1;
+  transform:translateY(0);
+}
+.inf-prev img{
+  display:block;
+  max-width:360px;
+  max-height:260px;
+  border-radius:6px;
+}
+
+/* ============ Sidebar Meta: mini lista ============ */
+.meta-mini-list{
+  list-style:none; margin:0; padding:0; display:grid; gap:8px;
+}
+.meta-mini{
+  display:grid; gap:4px; padding:8px; border:1px solid #242428; border-radius:8px; background:#15151a;
+}
+.meta-mini__top{
+  display:flex; align-items:center; justify-content:space-between; gap:8px; font-weight:600
+}
+.meta-mini__name{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 210px }
+.meta-mini__next{ color:#c8c8ce; font-size:12px }
+.meta-mini__sub{ color:#a4a4aa; font-size:12px; display:flex; gap:6px; align-items:center }
+.meta-mini__actions{ display:flex; gap:8px; margin-top:4px }
+.meta-mini__actions .btn{ padding:4px 8px; font-size:12px }
+

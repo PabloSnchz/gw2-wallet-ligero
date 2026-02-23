@@ -3,7 +3,7 @@
   const $  = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => [...r.querySelectorAll(s)];
 
-  console.info('%cGW2 Wallet app.js v2.3.3 (scope aislado + render robusto + conversor estable)','color:#0bf; font-weight:700');
+  console.info('%cGW2 Wallet app.js v2.5.0 (router tabs + conversor estable)','color:#0bf; font-weight:700');
 
   const state = {
     keys: [], selected: null, accountName: '—',
@@ -50,6 +50,10 @@
 
   /* ======================== Elements ======================= */
   const el = {
+    overlayTabs: $$('.overlay-tab'),
+    walletPanel: $('#walletPanel'),
+    metaPanel:   $('#metaPanel'),
+
     ownerLabel:$('#ownerLabel'), keySelect:$('#keySelect'),
     addKeyBtn:$('#addKeyBtn'), keyPopover:$('#keyPopover'),
     newKeyLabel:$('#newKeyLabel'), newKeyValue:$('#newKeyValue'),
@@ -88,7 +92,6 @@
     const u = String(url||'').trim();
     if(!/^https?:\/\//i.test(u)) return '';
     const safe = u.replace(/"/g,'&quot;');
-    // ⬇️ Devuelve SIEMPRE un <img> bien formado
     return `<img src="${safe}" width="${size}" height="${size}" alt="" loading="lazy" referrerpolicy="no-referrer">`;
   }
   function runIconChecks(){
@@ -225,6 +228,40 @@
 
   /* ======================= Events ========================= */
   function wireEvents(){
+    // Router tabs
+    el.overlayTabs.forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const view = btn.getAttribute('data-view'); // 'cards' | 'meta'
+        $$('.overlay-tab').forEach(b=>b.classList.toggle('overlay-tab--active', b===btn));
+
+        const conv = document.getElementById('asideConvSection');
+        const next = document.getElementById('asideNextFeatures');
+        const metaAside = document.getElementById('metaAsideNext');
+
+        if(view==='meta'){
+          el.walletPanel?.setAttribute('hidden','');
+          el.metaPanel?.removeAttribute('hidden');
+
+          // ocultar conversor + próximas funciones; mostrar sidebar meta
+          conv?.setAttribute('hidden','');
+          next?.setAttribute('hidden','');
+          metaAside?.removeAttribute('hidden');
+
+        }else{
+          el.metaPanel?.setAttribute('hidden','');
+          el.walletPanel?.removeAttribute('hidden');
+
+          // mostrar conversor + próximas funciones; ocultar sidebar meta
+          conv?.removeAttribute('hidden');
+          next?.removeAttribute('hidden');
+          metaAside?.setAttribute('hidden','');
+        }
+
+        document.dispatchEvent(new CustomEvent('gn:tabchange',{ detail:{ view } }));
+      });
+    });
+
+    // Keys
     el.addKeyBtn?.addEventListener('click', ()=> el.keyPopover?.toggleAttribute('hidden')===false );
     el.cancelKeyBtn?.addEventListener('click', ()=>{ el.keyPopover?.setAttribute('hidden',''); el.newKeyLabel.value=''; el.newKeyValue.value=''; });
 
@@ -239,15 +276,44 @@
         ensureOption(label||obfuscate(value), value); el.keySelect && (el.keySelect.value=value); state.selected=value;
         el.keyPopover.setAttribute('hidden',''); el.newKeyLabel.value=''; el.newKeyValue.value='';
         await loadAllForToken(value);
+        document.dispatchEvent(new CustomEvent('gn:tokenchange',{ detail:{ token:value } }));
       }catch(err){ console.error(err); setStatus(err.message||'La API key no es válida.','error'); }
     });
 
-    el.keySelect?.addEventListener('change', async ()=>{ const token=el.keySelect.value; state.selected=token||null; if(!state.selected) return; await loadAllForToken(state.selected); });
-    el.copyKeyBtn?.addEventListener('click', ()=>{ const opt=el.keySelect.selectedOptions[0]; if(!opt) return; navigator.clipboard.writeText(opt.value).then(()=>setStatus('API key copiada.','ok')); });
-    el.renameKeyBtn?.addEventListener('click', ()=>{ const opt=el.keySelect.selectedOptions[0]; if(!opt) return; const item=state.keys.find(k=>k.value===opt.value); if(!item) return; const name=prompt('Nuevo nombre para la key:', item.label||''); if(name===null) return; item.label=name; localStorage.setItem(LS_KEYS, JSON.stringify(state.keys)); opt.textContent=name||obfuscate(item.value); });
-    el.deleteKeyBtn?.addEventListener('click', ()=>{ const opt=el.keySelect.selectedOptions[0]; if(!opt) return; if(!confirm('¿Eliminar esta API key de tu navegador?')) return; state.keys=state.keys.filter(k=>k.value!==opt.value); localStorage.setItem(LS_KEYS, JSON.stringify(state.keys)); opt.remove(); el.ownerLabel && (el.ownerLabel.textContent='—'); state.selected=null; state.wallet=[]; render(); });
-    el.refreshBtn?.addEventListener('click', async ()=>{ if(!state.selected) return; await loadAllForToken(state.selected); });
+    el.keySelect?.addEventListener('change', async ()=>{
+      const token=el.keySelect.value; state.selected=token||null;
+      if(!state.selected) return;
+      await loadAllForToken(state.selected);
+      document.dispatchEvent(new CustomEvent('gn:tokenchange',{ detail:{ token:state.selected } }));
+    });
 
+    el.copyKeyBtn?.addEventListener('click', ()=>{
+      const opt=el.keySelect.selectedOptions[0]; if(!opt) return;
+      navigator.clipboard.writeText(opt.value).then(()=>setStatus('API key copiada.','ok'));
+    });
+
+    el.renameKeyBtn?.addEventListener('click', ()=>{
+      const opt=el.keySelect.selectedOptions[0]; if(!opt) return;
+      const item=state.keys.find(k=>k.value===opt.value); if(!item) return;
+      const name=prompt('Nuevo nombre para la key:', item.label||''); if(name===null) return;
+      item.label=name; localStorage.setItem(LS_KEYS, JSON.stringify(state.keys));
+      opt.textContent=name||obfuscate(item.value);
+    });
+
+    el.deleteKeyBtn?.addEventListener('click', ()=>{
+      const opt=el.keySelect.selectedOptions[0]; if(!opt) return;
+      if(!confirm('¿Eliminar esta API key de tu navegador?')) return;
+      state.keys=state.keys.filter(k=>k.value!==opt.value); localStorage.setItem(LS_KEYS, JSON.stringify(state.keys));
+      opt.remove(); el.ownerLabel && (el.ownerLabel.textContent='—'); state.selected=null; state.wallet=[]; render();
+      document.dispatchEvent(new CustomEvent('gn:tokenchange',{ detail:{ token:null } }));
+    });
+
+    el.refreshBtn?.addEventListener('click', async ()=>{
+      if(!state.selected) return; await loadAllForToken(state.selected);
+      document.dispatchEvent(new CustomEvent('gn:tokenchange',{ detail:{ token:state.selected } }));
+    });
+
+    // Filtros Wallet
     el.searchBox?.addEventListener('input', ()=>{ state.filters.q=el.searchBox.value.trim(); render(); });
     el.category?.addEventListener('change', ()=>{ state.filters.cat=el.category.value||''; render(); });
     el.sort?.addEventListener('change', ()=>{ state.filters.sort=el.sort.value; render(); });
@@ -257,7 +323,7 @@
 
     el.toggleViewBtn?.addEventListener('click', ()=>{ state.view = (state.view==='cards') ? 'table' : 'cards'; el.toggleViewBtn.textContent = (state.view==='cards') ? 'Vista tabla' : 'Vista tarjetas'; render(); });
 
-    // Conversor (estable)
+    // Conversor
     if($('#convWrap')){
       let t=null; const deb=(fn,ms=300)=>(...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); };
       el.cvGems?.addEventListener('input', deb(onTopInput));
@@ -286,6 +352,9 @@
     wireEvents();
     updateRef400().catch(()=>{});
     runIconChecks();
+
+    // avisar token inicial a meta
+    document.dispatchEvent(new CustomEvent('gn:tokenchange',{ detail:{ token:state.selected } }));
   }
   boot();
 
@@ -392,6 +461,9 @@
     }
   }
 
-  // Exponer hooks mínimos por si los necesitás desde DevTools
-  window.__GN__ = { render, runIconChecks };
+  // Exponer hooks
+  window.__GN__ = {
+    render, runIconChecks,
+    getSelectedToken: ()=> state.selected || null
+  };
 })();
