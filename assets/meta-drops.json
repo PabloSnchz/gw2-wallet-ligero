@@ -1,0 +1,109 @@
+[
+  {
+    "metaId": "octovine",
+    "items": [
+      {
+        "itemName": "Liquid Aurillium Infusion",
+        "wiki": "https://wiki.guildwars2.com/wiki/Liquid_Aurillium_Infusion",
+        "preview": "https://wiki.guildwars2.com/images/thumb/e/e1/Aurillium-3.gif/150px-Aurillium-3.gif"
+      }
+    ],
+    "highlightItemId": 81715
+  },
+  {
+    "metaId": "chak_gerent",
+    "items": [
+      {
+        "itemName": "Chak Infusion",
+        "wiki": "https://wiki.guildwars2.com/wiki/Chak_Infusion",
+        "preview": "https://wiki.guildwars2.com/images/thumb/a/ae/Chak_Animation_8.gif/150px-Chak_Animation_8.gif"
+      }
+    ],
+    "highlightItemId": 81825
+  },
+  {
+    "metaId": "pinata",
+    "items": [
+      {
+        "itemName": "Festive Confetti Infusion",
+        "wiki": "https://wiki.guildwars2.com/wiki/Festive_Confetti_Infusion",
+        "preview": "https://wiki.wishingstar.top/images/thumb/a/ac/Festive_confetti_infusion_top.jpg/218px-Festive_confetti_infusion_top.jpg"
+      }
+    ],
+    "highlightItemId": 84882
+  },
+  {
+    "metaId": "dragons_end",
+    "items": [
+      {
+        "itemName": "Echo of the Dragonvoid",
+        "wiki": "https://wiki.guildwars2.com/wiki/Echo_of_the_Dragonvoid",
+        "preview": "https://wiki.guildwars2.com/images/2/29/Echo_of_the_Dragonvoid_infusion.jpg"
+      }
+    ],
+    "highlightItemId": 97993
+  },
+  {
+    "metaId": "defense_amnytas",
+    "items": [
+      {
+        "itemName": "—",
+        "wiki": "https://wiki.guildwars2.com/wiki/The_Defense_of_Amnytas"
+      }
+    ],
+    "highlightItemId": null
+  },
+  {
+    "metaId": "drakkar",
+    "items": [
+      {
+        "itemName": "Winter's Heart Infusion",
+        "wiki": "https://wiki.guildwars2.com/wiki/Winter%27s_Heart_Infusion",
+        "preview": "https://wiki.guildwars2.com/images/archive/1/1b/20171002144251!Winter's_Heart_Infusion_Eyes.jpg"
+      }
+    ],
+    "highlightItemId": 79959
+  },
+  {
+    "metaId": "drizzlewood_north",
+    "items": [
+      {
+        "itemName": "Frost Legion Infusion",
+        "wiki": "https://wiki.guildwars2.com/wiki/Frost_Legion_Infusion",
+        "preview": "https://wiki.guildwars2.com/images/thumb/3/38/Frost_Legion_Infusion.jpg/349px-Frost_Legion_Infusion.jpg"
+      }
+    ],
+    "highlightItemId": 93775
+  },
+  {
+    "metaId": "vinewrath",
+    "items": [
+      {
+        "itemName": "Queen Bee Infusion",
+        "wiki": "https://wiki.guildwars2.com/wiki/Queen_Bee_Infusion",
+        "preview": "https://wiki.guildwars2.com/images/thumb/e/e6/QB_Animation_7.gif/150px-QB_Animation_7.gif"
+      }
+    ],
+    "highlightItemId": 81663
+  },
+  {
+    "metaId": "the_shatterer",
+    "items": [
+      {
+        "itemName": "—",
+        "wiki": "https://wiki.guildwars2.com/wiki/The_Shatterer"
+      }
+    ],
+    "highlightItemId": null
+  },
+  {
+    "metaId": "death_branded_shatterer",
+    "items": [
+      {
+        "itemName": "Crystal Infusion",
+        "wiki": "https://wiki.guildwars2.com/wiki/Crystal_Infusion"
+      }
+    ],
+    "highlightItemId": 88771
+  }
+]
