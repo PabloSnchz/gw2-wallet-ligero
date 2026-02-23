@@ -47,6 +47,21 @@ y el versionado **SemVer** (https://semver.org/).
 - Eliminado error `ReferenceError: renderCards is not defined`.
 
 ---
+## [v2.3.3] — 2026‑02‑21
+### Added
+- Glow rojo en tabs del hero (match visual con API Keys).
+- Iconos de redes con color de marca (Discord, Instagram, YouTube) + icono de Twitch.
+- Mejora visual general (brillo sutil en tarjetas y botones).
+
+### Changed
+- Conversor final estable (lógica con búsqueda binaria, sin auto‑update).
+- Íconos de divisas a 22px.
+- Limpieza visual: fix-pack integrado en `main.css`.
+
+### Fixed
+- Render robusto de íconos en tarjetas y tabla (siempre `<img>`).
+- Eliminar error `ReferenceError: renderCards is not defined`.
+- Alineado de orden/alcance de funciones de render.
 
 ## [2.0.0] - 2026-02-21
 ### 🚀 Rediseño total – “Bóveda del Gato Negro”
