@@ -39,17 +39,17 @@
     "highlightItemId": 24836
   },
   {
-  "id": "death_branded_shatterer",
-  "name": "Death-Branded Shatterer",
-  "type": "worldboss",
-  "expansion": "Living World S4",
-  "map": "Jahai Bluffs",
-  "wiki": "https://wiki.guildwars2.com/wiki/Crystal_Infusion",
-  "chat": "",
-  "windowsUTC": [],
-  "durationMin": 20,
-  "api": {},
-  "highlightItemId": null
+    "id": "death_branded_shatterer",
+    "name": "Death-Branded Shatterer",
+    "type": "worldboss",
+    "expansion": "Living World S4",
+    "map": "Jahai Bluffs",
+    "wiki": "https://wiki.guildwars2.com/wiki/Death-Branded_Shatterer",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 20,
+    "api": {},
+    "highlightItemId": null
   },
   {
     "id": "karka_queen",
@@ -116,7 +116,6 @@
     "api": { "mapChestId": "dragons_stand_heros_choice_chest" },
     "highlightItemId": 80713
   },
-
   {
     "id": "pinata",
     "name": "Casino Blitz / Piñata",
@@ -143,7 +142,6 @@
     "api": { "mapChestId": "domain_of_vabbi_heros_choice_chest" },
     "highlightItemId": 85245
   },
-
   {
     "id": "dragons_end",
     "name": "The Battle for the Jade Sea",
@@ -169,5 +167,70 @@
     "durationMin": 20,
     "api": {},
     "highlightItemId": 100356
-  }
+  },
+  {
+    "id": "drakkar",
+    "name": "Drakkar",
+    "type": "meta",
+    "expansion": "Icebrood Saga",
+    "map": "Bjora Marches",
+    "wiki": "https://wiki.guildwars2.com/wiki/Drakkar",
+    "chat": "",
+    "windowsUTC": ["01:00","05:00","09:00","13:00","17:00","21:00"],
+    "durationMin": 20,
+    "api": {},
+    "highlightItemId": null
+  },
+  {
+    "id": "drizzlewood_north",
+    "name": "Assault on the Frost Citadel (North Meta)",
+    "type": "meta",
+    "expansion": "Icebrood Saga",
+    "map": "Drizzlewood Coast",
+    "wiki": "https://wiki.guildwars2.com/wiki/Assault_on_the_Frost_Citadel",
+    "chat": "",
+    "windowsUTC": ["00:30","03:30","06:30","09:30","12:30","15:30","18:30","21:30"],
+    "durationMin": 25,
+    "api": {},
+    "highlightItemId": null
+  },
+  {
+    "id": "vinewrath",
+    "name": "Mordrem Vinewrath",
+    "type": "meta",
+    "expansion": "Living World S2",
+    "map": "Silverwastes",
+    "wiki": "https://wiki.guildwars2.com/wiki/Mordrem_Vinewrath",
+    "chat": "",
+    "windowsUTC": ["00:10","02:10","04:10","06:10","08:10","10:10","12:10","14:10","16:10","18:10","20:10","22:10"],
+    "durationMin": 20,
+    "api": {},
+    "highlightItemId": null
+  },
+  {
+    "id": "dragonstorm",
+    "name": "Dragonstorm",
+    "type": "meta",
+    "expansion": "Icebrood Saga",
+    "map": "Eye of the North (public/instance)",
+    "wiki": "https://wiki.guildwars2.com/wiki/Dragonstorm",
+    "chat": "",
+    "windowsUTC": ["01:30","07:30","13:30","19:30"],
+    "durationMin": 20,
+    "api": {},
+    "highlightItemId": null
+  },
+  {
+  "id": "secrets_of_the_weald",
+  "name": "Secrets of the Weald",
+  "type": "meta",
+  "expansion": "Visions of Eternity",
+  "map": "Starlit Weald",
+  "wiki": "https://gw2tldr.com/metas/secrets-of-the-weald",
+  "chat": "",
+  "windowsUTC": ["01:40","05:40","09:40","13:40","17:40","21:40"],
+  "durationMin": 35,
+  "api": {},
+  "highlightItemId": null
+}
 ]

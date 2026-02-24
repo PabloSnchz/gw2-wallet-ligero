@@ -113,24 +113,19 @@ button.overlay-tab{
 }
 .overlay-tabs .overlay-tab:hover{ color:#fff; }
 
+/* ——— Tweak: Glow rojo tabs ——— */
+.overlay-tabs { border-bottom: 1px solid rgba(255,255,255,.08); }
+
 .overlay-tabs .overlay-tab--active{
-  color: #fff;
+  color:#fff;
   border-bottom-color: var(--accent);
   box-shadow:
     0 3px 0 0 var(--accent),
     0 6px 8px -6px rgba(183, 28, 28, .65),
     0 0 8px rgba(183, 28, 28, .45);
 }
-``
 
-  /* Glow mágico */
-  text-shadow:
-    0 0 6px rgba(255,230,180,0.55),
-    0 0 12px rgba(255,200,110,0.50),
-    0 0 20px rgba(255,160,60,0.35),
-    0 0 32px rgba(255,140,50,0.30);
-}
-
+/* ===== Título del hero ===== */
 .brand-title{
   margin:0;
   font-family:"Cinzel Decorative", serif;
@@ -468,3 +463,108 @@ select:focus, input:focus{ outline:2px solid #ffffff10; border-color:#334155 }
 .meta-mini__actions{ display:flex; gap:8px; margin-top:4px }
 .meta-mini__actions .btn{ padding:4px 8px; font-size:12px }
 
+/* =========================
+   UX: Skeletons + Fade-in + Toasts + Filtros compactos
+   ========================= */
+
+/* 1) SKELETONS (MetaEventos) */
+.skel-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap:12px;
+}
+.skel-card{
+  border-radius:10px;
+  border:1px solid #242428;
+  background: #141418;
+  box-shadow:0 0 0 1px #1d1d20 inset;
+  padding:10px 12px;
+  min-height:126px;
+  position:relative;
+  overflow:hidden;
+}
+.skel-row{ height:12px; background: #1a1a20; border-radius:6px; margin:8px 0; }
+.skel-row.w50{ width:50% } .skel-row.w70{ width:70% } .skel-row.w30{ width:30% }
+.skel-anim::after{
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+  transform:translateX(-100%);
+  animation: skel-sweep 1.2s infinite;
+}
+@keyframes skel-sweep{ 100%{ transform:translateX(100%); } }
+
+/* 2) FADE-IN (al mostrar panel tras cambiar tab) */
+.fade-in{ animation: fadeIn .18s ease-out; }
+@keyframes fadeIn{
+  from{ opacity:0; transform:translateY(4px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+
+/* 3) TOASTS (notificaciones) */
+.toasts{
+  position: fixed;
+  right: 16px; bottom: 16px;
+  display: grid; gap: 8px;
+  z-index: 9999;
+}
+.toast{
+  background:#101013;
+  color:#e9e9ee;
+  border:1px solid #2a2a2f;
+  border-radius:8px;
+  padding:8px 10px;
+  box-shadow:0 8px 20px rgba(0,0,0,.35);
+  max-width: 360px;
+  animation: toastIn .16s ease-out;
+}
+.toast--ok{ border-color:#2f4f3d; box-shadow:0 0 0 1px #1f3328 inset,0 8px 20px rgba(0,0,0,.35); }
+.toast--warn{ border-color:#5c471f; box-shadow:0 0 0 1px #5c471f inset,0 8px 20px rgba(0,0,0,.35); }
+.toast--error{ border-color:#4f3f3a; box-shadow:0 0 0 1px #4f3f3a inset,0 8px 20px rgba(0,0,0,.35); }
+@keyframes toastIn{
+  from{ opacity:0; transform: translateY(6px); }
+  to{ opacity:1; transform: translateY(0); }
+}
+
+/* 4) FILTROS COMPACTOS */
+.filters, .meta-filters{ gap:8px; }
+.filters select, .filters input[type="text"],
+.meta-filters select{
+  padding:5px 7px;
+  font-size:13px;
+  border-radius:7px;
+}
+.filters .btn, .meta-filters .btn{
+  padding:6px 10px;
+  font-size:13px;
+}
+/* Mobile: reducir un poco más */
+@media (max-width: 900px){
+  .filters select, .filters input[type="text"], .meta-filters select{ font-size:12px; padding:4px 6px; }
+  .filters .btn, .meta-filters .btn{ font-size:12px; padding:5px 8px; }
+}
+
+.fade-in{ animation: fadeIn .18s ease-out; }
+@keyframes fadeIn{
+  from{ opacity:0; transform:translateY(4px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+
+.toasts{ position:fixed; right:16px; bottom:16px; display:grid; gap:8px; z-index:9999;}
+.toast{ background:#101013; color:#e9e9ee; border:1px solid #2a2a2f; border-radius:8px; padding:8px 10px; box-shadow:0 8px 20px rgba(0,0,0,.35); max-width:360px; animation: toastIn .16s ease-out;}
+.toast--ok{ border-color:#2f4f3d; box-shadow:0 0 0 1px #1f3328 inset,0 8px 20px rgba(0,0,0,.35);}
+.toast--warn{ border-color:#5c471f; box-shadow:0 0 0 1px #5c471f inset,0 8px 20px rgba(0,0,0,.35);}
+.toast--error{ border-color:#4f3f3a; box-shadow:0 0 0 1px #4f3f3a inset,0 8px 20px rgba(0,0,0,.35);}
+@keyframes toastIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+/* UX polish: estados de foco/hover en filtros */
+.filters select:hover, .filters input[type="text"]:hover,
+.meta-filters select:hover{
+  border-color:#334155;
+}
+
+.filters select:focus, .filters input[type="text"]:focus,
+.meta-filters select:focus{
+  border-color:#44546b;
+  outline:2px solid rgba(255,255,255,0.08);
+  box-shadow:0 0 0 1px rgba(255,255,255,0.06) inset;
+}
