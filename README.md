@@ -1,91 +1,101 @@
-assets/cover-v233.png
-assets/logo-gato-negro.png
+# 🐈‍⬛ Bóveda del Gato Negro — GW2 Wallet & MetaEventos
 
-# Bóveda del Gato Negro
-### Panel avanzado para ver las divisas y metaeventos de tu cuenta de Guild Wars 2
+Aplicación liviana para **Guild Wars 2** que permite consultar:
 
-https://img.shields.io/badge/versión-v2.5.0-b71c1c?style=for-the-badge
+- 🪙 **Wallet / Divisas** de la cuenta  
+- 🎭 **MetaEventos** con horarios, estado y “Hecho hoy”  
+- 💱 **Conversor Gem ↔ Gold**  
+- 🔐 Gestión completa de **API Keys**  
+- ⭐ Favoritas, filtros avanzados, vista tarjetas/tabla  
 
-assets/screenshot-v250.png
-
----
-
-## 🐾 ¿Qué es Bóveda del Gato Negro?
-
-**Bóveda del Gato Negro** es una herramienta ligera, rápida y modular para visualizar:
-
-- 👛 **Divisas completas** de `/v2/account/wallet`
-- 📌 **MetaEventos** en tiempo real
-- ✨ Interfaz al estilo ArenaNet
-- 📍 Chat-codes de **waypoints** (con botón de copia)
-- ⭐ Favoritos en ambos módulos (máx. 6)
-- 🔍 Filtros avanzados y vista compacta
-- 📈 Conversor **Gemas ↔ Oro** estable
-- ⚡ Render robusto de íconos (API, wiki, drops, infusiones)
+👉 **Página oficial (Deploy GitHub Pages):**  
+https://pablosnchz.github.io/gw2-wallet-ligero/
 
 ---
 
-## 🎯 Módulos principales
+## ✨ Novedades principales — v2.6.0
 
-### **1) Tarjetas / Wallet**
-- Iconos HD (22px)
-- Categorías automáticas
-- Favoritos
-- Vista “tabla”
-- Búsqueda en tiempo real
+### 🔐 Modal “Gestión de API Keys”
+- Alta, edición, eliminación, copia y selección de API Keys  
+- Validación de permisos **`account` + `wallet`**  
+- UI moderna, accesible (ESC / backdrop), consistente  
+- Se almacena en **LocalStorage**, sin servidores externos
 
-### **2) MetaEventos**
-- Estado de cada meta: **Activo / Próximo / Más tarde**
-- **Top 3 próximos**
-- Filtros por:
-  - Tipo
-  - Expansión
-  - Activos
-  - Próximos (≤20m)
-  - Solo infusiones
-- Tooltips visuales con **preview de infusiones**
-- Botón de copiar **waypoint** con ícono propio
-- Persistencia local de favoritos
+### 🌐 Selector Global en el Header
+- Permite cambiar de key **desde cualquier pantalla**  
+- Sin necesidad de volver a Wallet  
+- Sincroniza automáticamente con el modal
 
-### **3) Conversor Gem ↔ Oro**
-- Lógica estable sin loops
-- Inversión precisa vía búsqueda binaria
-- Referencia 400 actualizada
+### 🧹 Limpieza de UI
+- Eliminado el selector viejo del panel Wallet  
+- Código legacy removido  
+- Wallet queda mucho más claro y ordenado
+
+### 🧠 Mejoras internas
+- Nuevo **KeyManager** unificado (JS)  
+- Fix en `onBottomInput()` del conversor  
+- Revisión y estabilidad en `updateRef400()`  
+- Limpieza de eventos duplicados
 
 ---
 
-## 🧩 Estructura del proyecto
+## 🧩 Estructura del Proyecto
+## 🔐 API Keys — Cómo funcionan
+
+El sistema requiere una API Key de ArenaNet con permisos:
+
+- `account`
+- `wallet`
+
+Podés generarlas acá:  
+https://account.arena.net/applications
+
+Las claves **no se envían a servidores externos**.  
+Se guardan **localmente en tu navegador** mediante `localStorage`.
+
+### Gestión de keys
+- Botón **“Gestión de API Keys ▾”** en el header  
+- Desde el modal podés:
+  - ➕ Agregar  
+  - ✏️ Renombrar  
+  - 🗑 Eliminar  
+  - 📋 Copiar  
+  - 🔄 Usar  
+
+El **selector global** a su derecha permite cambiar de cuenta instantáneamente.
 
 ---
 
-## 🔥 Novedades v2.5.0
+## 📊 Funcionalidad
 
-- 🗺️ **MetaEventos activado**
-  - Filtros completos
-  - Favoritos (máx. 6)
-  - Top 3 próximos
-  - Tooltips de infusiones
-- 📍 Botón “copiar waypoint” con ícono de teleporter
-- 🌕 Glow dorado en el hero (nuevo estilo)
-- 🎛️ Tabs del hero robustecidas (no se rompen con glow)
-- ⚙️ Purga de duplicados en CSS
-- 🚀 Preparación para futuros módulos
+### 🪙 Wallet
+- Filtros: búsqueda, categoría, orden, “Solo > 0”, “Solo principales”  
+- Vista **tarjetas** y **tabla**  
+- Favoritas con ★  
+- Badges de monedas (oro/plata/cobre)
+
+### 🎭 MetaEventos
+- Estado en vivo: **Activo / Próximo / Más tarde**  
+- Cálculo por ventanas **UTC**  
+- “**Hecho hoy**” basado en:
+  - `GET /v2/account/worldbosses`
+  - `GET /v2/account/mapchests`
+- Sidebar: **Top 3 próximos**
+- Tooltip visual de infusiones
+
+### 💱 Conversor Gem ↔ Gold
+- Cálculo por búsqueda binaria  
+- Cache TTL 30 min  
+- Indicador especial **Ref 400**  
 
 ---
 
-## 📘 Licencia
+## 🛠 Desarrollo local
 
-Herramienta gratuita creada por y para la comunidad hispana de **Guild Wars 2**.  
-No afiliada con ArenaNet.
+No requiere backend.  
+Podés servirlo de manera estática.
 
----
-
-## 💬 Contacto
-
-Ideas, feedback o bugs:
-
-- Discord:
-- GitHub Issues: abrir ticket en este repo  
-  https://github.com/PabloSnchz/gw2-wallet-ligero
-
-Hecho con ❤️ por la comunidad.
+### 1) Clonar repo
+```bash
+git clone https://github.com/PabloSnchz/gw2-wallet-ligero.git
+cd gw2-wallet-ligero
