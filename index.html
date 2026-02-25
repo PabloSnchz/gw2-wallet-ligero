@@ -89,8 +89,8 @@
 
           <!-- Tabs hero -->
           <nav class="overlay-tabs" aria-label="Vista principal">
-            <button class="overlay-tab overlay-tab--active" data-view="cards" type="button">Tarjetas</button>
-            <button class="overlay-tab" data-view="meta" type="button">MetaEventos</button>
+            <button class="overlay-tab overlay-tab--active" data-view="cards" type="button">Cartera</button>
+            <button class="overlay-tab" data-view="meta" type="button">Meta&Eventos</button>
           </nav>
         </div>
       </div>
@@ -103,23 +103,24 @@
       <h2 class="panel__title" id="walletTitle">Divisas de la cuenta</h2>
 
       <div class="panel__body">
-        <!-- Owner (sólo label de cuenta) -->
-        <div class="owner">
-          <div class="owner-left">
-            <span class="muted" id="lblAccount">Cuenta:</span>
-            <span id="ownerLabel" class="owner__pill" aria-labelledby="lblAccount">—</span>
+        <!-- Encabezado refinado: título + estado (Cuenta) -->
+        <div class="panel-head">
+          <h3 class="panel-head__title">Detalle de cartera</h3>
+          <div class="meta-topline">
+            <span class="meta-stat"><strong>Cuenta</strong>: <span id="ownerLabel" aria-labelledby="lblAccount">—</span></span>
           </div>
         </div>
+        <hr class="hr-hairline">
 
-        <!-- Filtros -->
-        <div class="filters" aria-label="Filtros de divisas">
-          <div class="field">
-            <label for="searchBox">Buscar</label>
+        <!-- Filtros (chips discretos) -->
+        <div class="chips" aria-label="Filtros de divisas">
+          <div class="chip">
+            <label for="searchBox" class="visually-hidden">Buscar</label>
             <input id="searchBox" type="text" placeholder="Nombre de la divisa…"/>
           </div>
 
-          <div class="field">
-            <label for="categorySelect">Categoría</label>
+          <div class="chip">
+            <label for="categorySelect" class="visually-hidden">Categoría</label>
             <select id="categorySelect">
               <option value="">Todas</option>
               <option value="general">Generales</option>
@@ -131,8 +132,8 @@
             </select>
           </div>
 
-          <div class="field">
-            <label for="sortSelect">Orden</label>
+          <div class="chip">
+            <label for="sortSelect" class="visually-hidden">Orden</label>
             <select id="sortSelect">
               <option value="order">Orden del juego</option>
               <option value="name">Nombre (A→Z)</option>
@@ -140,20 +141,20 @@
             </select>
           </div>
 
-          <div class="field checkbox">
+          <div class="chip chip--check">
             <label for="onlyPositive"><input type="checkbox" id="onlyPositive"/> Solo &gt; 0</label>
           </div>
-          <div class="field checkbox">
+          <div class="chip chip--check">
             <label for="onlyMain"><input type="checkbox" id="onlyMain"/> Solo principales</label>
           </div>
 
-          <div class="field field-inline">
+          <div class="filters-actions">
             <button id="clearFiltersBtn" class="btn" title="Reiniciar filtros">Limpiar filtros</button>
             <button id="toggleViewBtn" class="btn btn--ghost" title="Vista tarjeta/tabla">Vista tabla</button>
           </div>
         </div>
 
-        <p class="status" id="status" aria-live="polite">Listo.</p>
+        <p class="panel-status" id="status" aria-live="polite">Listo.</p>
 
         <!-- Favoritas -->
         <div id="favBlock" class="fav-block" hidden>
@@ -184,15 +185,23 @@
 
     <!-- ======= Panel MetaEventos ======= -->
     <section id="metaPanel" class="panel col-main" aria-labelledby="metaTitle" hidden>
-      <h2 class="panel__title" id="metaTitle">MetaEventos</h2>
+      <h2 class="panel__title" id="metaTitle">Metas & Eventos</h2>
       <div class="panel__body">
-        <div class="meta-topbar">
-          <div class="meta-clock">
-            <span id="metaLocalTime" class="muted">—</span>
-            <span class="meta-sep">•</span>
-            <span id="metaReset" class="muted">Próximo reset en —</span>
+
+        <!-- Encabezado refinado: título + hora/reset/actualizado -->
+        <div class="panel-head" style="width:100%;">
+          <h3 class="panel-head__title">Pendientes / Hecho hoy</h3>
+          <div class="meta-topline">
+            <span class="meta-stat" title="Hora local"><span id="metaLocalTime" class="muted">—</span></span>
+            <span class="meta-stat" title="Reset diario"><span id="metaReset" class="muted">Próximo reset en —</span></span>
+            <span class="meta-stat" title="Última actualización de 'Hecho hoy'"><span id="metaFlagsTs" class="muted">Actualizado —</span></span>
           </div>
-          <div class="meta-filters" aria-label="Filtros de metas">
+        </div>
+        <hr class="hr-hairline">
+
+        <div class="meta-filters chips" aria-label="Filtros de metas">
+          <div class="chip">
+            <label for="metaType" class="visually-hidden">Tipo</label>
             <select id="metaType">
               <option value="">Tipo: Todos</option>
               <option value="worldboss">World Boss</option>
@@ -200,6 +209,10 @@
               <option value="convergence">Convergence</option>
               <option value="fractal">Fractal Incursion</option>
             </select>
+          </div>
+
+          <div class="chip">
+            <label for="metaExp" class="visually-hidden">Expansión</label>
             <select id="metaExp">
               <option value="">Expansión: Todas</option>
               <option value="Core">Core Tyria</option>
@@ -209,11 +222,17 @@
               <option value="SotO">Secrets of the Obscure</option>
               <option value="Janthir">Janthir</option>
             </select>
-            <label class="chk"><input id="metaOnlyActive" type="checkbox"> Activos</label>
-            <label class="chk"><input id="metaOnlySoon" type="checkbox"> Próximos (≤ 20m)</label>
-            <label class="chk"><input id="metaOnlyInfusions" type="checkbox" />Infusiones</label>
+          </div>
+
+          <div class="chip chip--check"><label><input id="metaOnlyActive" type="checkbox"> Activos</label></div>
+          <div class="chip chip--check"><label><input id="metaOnlySoon" type="checkbox"> Próximos (≤ 20m)</label></div>
+          <div class="chip chip--check"><label><input id="metaOnlyInfusions" type="checkbox"> Infusiones</label></div>
+
+          <div class="filters-actions">
+            <button id="metaRefreshFlags" class="btn btn--ghost" title="Volver a consultar 'Hecho hoy'">Refrescar estado</button>
           </div>
         </div>
+
         <p id="metaStatus" class="status" aria-live="polite">Cargando MetaEventos…</p>
 
         <!-- Favoritos (máx. 6) -->
@@ -230,57 +249,62 @@
     <!-- ======= Sidebar ======= -->
     <aside class="col-side">
 
-      <!-- Conversor: sólo visible en Tarjetas -->
+      <!-- Conversor: refinado, títulos coloreados, sin “box dentro de box” -->
       <section class="panel" aria-labelledby="convTitle" id="asideConvSection">
-        <h3 class="panel__title" id="convTitle">Conversor Gem ↔ Gold</h3>
+        <div class="panel-head">
+          <h3 class="panel-head__title" id="convTitle">Conversor Gem ↔ Gold</h3>
+        </div>
+        <hr class="hr-hairline">
+
         <div class="panel__body">
-          <div id="convWrap" class="conv2" aria-live="polite">
+          <div id="convWrap" class="conv2 conv2--clean" aria-live="polite">
 
             <!-- Arriba: CONSEGUIR GEMAS -->
-            <h4 class="muted" style="margin:0 0 6px">Conseguir gemas</h4>
+            <h4 class="conv2-label conv2-label--gems">
+              <span class="conv2-label__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#7dd3fc" d="M5 9 9 3h6l4 6-7 12zM9 3 5 9h14L15 3z"/></svg>
+              </span>
+              <span>Conseguir Gemas</span>
+            </h4>
             <div class="conv2-row">
-              <div class="conv2-input conv2-with-icon">
-                <label for="cvGems">Gemas</label>
-                <span class="conv2-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#7dd3fc" d="M5 9 9 3h6l4 6-7 12zM9 3 5 9h14L15 3z"/></svg>
-                </span>
-                <input id="cvGems" class="conv2-big" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off"/>
-              </div>
+              <!-- ÚNICO BLOQUE VISIBLE: el input -->
+              <input id="cvGems" class="conv2-entry" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Gemas"/>
+
               <div class="conv2-arrow" aria-hidden="true">→</div>
-              <div class="conv2-output">
-                <span class="form-label" id="lblGemsOut">Monedas</span>
-                <div id="cvGemsOut" class="coin-badges coin-badges--lg">—</div>
-              </div>
+
+              <!-- Resultado sin contenedor con borde adicional -->
+              <div id="cvGemsOut" class="coin-badges coin-badges--lg">—</div>
             </div>
 
             <!-- Abajo: CONSEGUIR ORO -->
-            <h4 class="muted" style="margin:12px 0 6px">Conseguir oro</h4>
+            <h4 class="conv2-label conv2-label--gold">
+              <span class="conv2-label__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="9" fill="#d7b062"/><circle cx="12" cy="12" r="7" fill="#f1cc7a"/></svg>
+              </span>
+              <span>Conseguir Oro</span>
+            </h4>
             <div class="conv2-row">
-              <div class="conv2-input conv2-with-icon">
-                <label for="cvGold">Oro</label>
-                <span class="conv2-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="9" fill="#d7b062"/><circle cx="12" cy="12" r="7" fill="#f1cc7a"/></svg>
-                </span>
-                <input id="cvGold" class="conv2-big conv2-gold" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off"/>
-              </div>
+              <!-- ÚNICO BLOQUE VISIBLE: el input -->
+              <input id="cvGold" class="conv2-entry conv2-gold" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Oro (g)"/>
+
               <div class="conv2-arrow" aria-hidden="true">→</div>
-              <div class="conv2-output">
-                <span class="form-label" id="lblGoldOut">Gemas</span>
-                <output id="cvGoldOut" class="conv2-gems">—</output>
-              </div>
+
+              <!-- Resultado sin contenedor con borde adicional -->
+              <output id="cvGoldOut" class="conv2-gems">—</output>
             </div>
 
-            <!-- Controles -->
-            <div class="conv2-controls">
+            <!-- Controles + Estado -->
+            <div class="conv2-actions">
               <button id="cvRefresh" class="btn" title="Actualizar cotización">Actualizar</button>
+              <p id="cvState" class="conv2-state muted">Listo.</p>
             </div>
 
-            <p id="cvState" class="conv2-state muted" aria-live="polite">Listo.</p>
-
-            <!-- Referencia 400 -->
-            <div class="conv2-ref">
+            <!-- Ref 400 -->
+            <hr class="hr-hairline">
+            <div class="conv2-refline">
               <span id="cvRef400" class="coin-badges coin-badges--lg">—</span>
             </div>
+
           </div>
         </div>
       </section>

@@ -211,20 +211,6 @@ select:focus, input:focus{ outline:2px solid #ffffff10; border-color:#334155 }
 .coin{ display:inline-flex; align-items:center; gap:6px; background:#101013; border:1px solid #2a2a2f; border-radius:6px; font-weight:700; padding:2px 6px; color:#e8e8ee }
 .coin--g::after{ content:" g"; color:#d7b062 } .coin--s::after{ content:" s"; color:#c1c1c7 } .coin--c::after{ content:" c"; color:#b48a6b }
 
-/* Conversor 2 filas */
-.conv2{ display:grid; gap:12px }
-.conv2-row{ display:grid; grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr); gap:10px; align-items:end }
-.conv2-input, .conv2-output{ display:grid; gap:6px }
-.conv2-with-icon{ position:relative }
-.conv2-icon{ position:absolute; left:8px; bottom:9px; opacity:.9 }
-.conv2-big{ font-size:18px; letter-spacing:2px; text-align:right; padding:8px 12px 8px 28px; background:#1c1c23; border:1px solid rgba(255,255,255,.1); border-radius:8px; color:#e9eaee }
-.conv2-gold{ color:#d7b062 }
-.conv2-gems{ font-weight:700; font-size:18px }
-.conv2-arrow{ text-align:center; color:#cdb58f; font-weight:700; margin-bottom:4px }
-.conv2-controls{ display:flex; align-items:center; gap:10px; margin-top:8px }
-.conv2-state{ margin:0 }
-.conv2-ref{ font-size:13px }
-
 /* Tabla Wallet */
 .table-wrap{ margin-top:8px }
 #walletTable{ width:100%; border-collapse:separate; border-spacing:0; border:1px solid #242428; border-radius:10px; overflow:hidden; background:#15151a; box-shadow:0 0 0 1px #1d1d20 inset }
@@ -376,16 +362,16 @@ select:focus, input:focus{ outline:2px solid #ffffff10; border-color:#334155 }
   color:#cfcfd6;
 }
 .m-tag.tag--inf{
-  /* resalte para 'Infusión destacada' */
-  background:#1f3328;
-  border-color:#2f4f3d;
-  color:#a7f3d0;   /* verde agua */
-  box-shadow:0 0 0 1px #214534 inset, 0 0 8px rgba(31, 51, 40, .35);
+  /* AMARILLO (nuevo): no compite con el ✔ de Hecho hoy */
+  background:#3a2e14;
+  border-color:#5c471f;
+  color:#ffe08a;
+  box-shadow:0 0 0 1px #5c471f inset, 0 0 8px rgba(92,71,31,.35);
 }
 .m-tag.tag--drop{
   background:#2f231f;
   border-color:#4f3f3a;
-  color:#fcd3c4;   /* durazno */
+  color:#fcd3c4;
 }
 
 /* ====== Badge de expansión ====== */
@@ -543,25 +529,11 @@ select:focus, input:focus{ outline:2px solid #ffffff10; border-color:#334155 }
   .filters .btn, .meta-filters .btn{ font-size:12px; padding:5px 8px; }
 }
 
-.fade-in{ animation: fadeIn .18s ease-out; }
-@keyframes fadeIn{
-  from{ opacity:0; transform:translateY(4px); }
-  to{ opacity:1; transform:translateY(0); }
-}
-
-.toasts{ position:fixed; right:16px; bottom:16px; display:grid; gap:8px; z-index:9999;}
-.toast{ background:#101013; color:#e9e9ee; border:1px solid #2a2a2f; border-radius:8px; padding:8px 10px; box-shadow:0 8px 20px rgba(0,0,0,.35); max-width:360px; animation: toastIn .16s ease-out;}
-.toast--ok{ border-color:#2f4f3d; box-shadow:0 0 0 1px #1f3328 inset,0 8px 20px rgba(0,0,0,.35);}
-.toast--warn{ border-color:#5c471f; box-shadow:0 0 0 1px #5c471f inset,0 8px 20px rgba(0,0,0,.35);}
-.toast--error{ border-color:#4f3f3a; box-shadow:0 0 0 1px #4f3f3a inset,0 8px 20px rgba(0,0,0,.35);}
-@keyframes toastIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
-
 /* UX polish: estados de foco/hover en filtros */
 .filters select:hover, .filters input[type="text"]:hover,
 .meta-filters select:hover{
   border-color:#334155;
 }
-
 .filters select:focus, .filters input[type="text"]:focus,
 .meta-filters select:focus{
   border-color:#44546b;
@@ -569,44 +541,26 @@ select:focus, input:focus{ outline:2px solid #ffffff10; border-color:#334155 }
   box-shadow:0 0 0 1px rgba(255,255,255,0.06) inset;
 }
 
-/* ================================
-   NUEVO: Modal Gestión de API Keys
-   ================================ */
+/* ==============================
+   Modal Gestión de API Keys
+   ============================== */
 .modal[hidden]{ display:none !important; }
-.modal{
-  position:fixed; inset:0; z-index:10000;
-}
-.modal__backdrop{
-  position:absolute; inset:0;
-  background:rgba(0,0,0,.55);
-  backdrop-filter: blur(2px);
-}
+.modal{ position:fixed; inset:0; z-index:10000; }
+.modal__backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.55); backdrop-filter: blur(2px); }
 .modal__dialog{
-  position:absolute; left:50%; top:50%;
-  transform: translate(-50%,-50%);
+  position:absolute; left:50%; top:50%; transform: translate(-50%,-50%);
   width: min(720px, calc(100vw - 28px));
-  max-height: calc(100vh - 28px);
-  overflow:auto;
-  background:var(--panel);
-  border:1px solid var(--panel-border);
-  border-radius:12px;
-  box-shadow:0 10px 28px rgba(0,0,0,.5);
-  padding:0;
-  outline:none;
+  max-height: calc(100vh - 28px); overflow:auto;
+  background:var(--panel); border:1px solid var(--panel-border); border-radius:12px;
+  box-shadow:0 10px 28px rgba(0,0,0,.5); padding:0; outline:none;
 }
-.modal__header{
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
-  padding:10px 14px; border-bottom:1px solid var(--panel-border);
-}
+.modal__header{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; border-bottom:1px solid var(--panel-border); }
 .modal__body{ padding:12px 14px 16px; }
 .modal__close{
   background:var(--btn); border:1px solid var(--btn-border); color:var(--text); border-radius:6px;
-  width:28px; height:28px; cursor:pointer;
-  transition: box-shadow .18s ease, transform .18s ease;
+  width:28px; height:28px; cursor:pointer; transition: box-shadow .18s ease, transform .18s ease;
 }
 .modal__close:hover{ box-shadow: 0 0 0 1px #3b1e1e, 0 4px 12px rgba(208,71,71,.35); transform: translateY(-1px); }
-
-/* Lista/Formulario de keys */
 .keys-list{ display:grid; gap:8px; margin:6px 0 12px; }
 .keys-row{
   display:flex; align-items:center; justify-content:space-between; gap:12px;
@@ -642,6 +596,95 @@ select:focus, input:focus{ outline:2px solid #ffffff10; border-color:#334155 }
 }
 
 /* Selector global compacto en header */
-.an-util-left select#keySelectGlobal{
-  font-size:13px; padding:4px 6px; border-radius:7px;
+.an-util-left select#keySelectGlobal{ font-size:13px; padding:4px 6px; border-radius:7px; }
+
+/* ========== Refinado de encabezados (Wallet + Meta) ========== */
+.panel-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:2px 0 8px; }
+.panel-head__title{ margin:0; font-weight:700; letter-spacing:.2px; color:#e9e9ee; }
+.hr-hairline{ height:1px; background:#1f1f23; border:0; margin:8px 0 10px; }
+
+/* Chips */
+.chips{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.chip{ display:inline-flex; align-items:center; gap:6px; padding:6px 8px; background:#101013; border:1px solid #26262b; border-radius:10px; }
+.chip > select, .chip > input[type="text"]{ background:transparent; border:0; padding:0; outline:none; color:var(--text); min-width:160px; }
+.chip > select:focus, .chip > input[type="text"]:focus{ outline:none; }
+.chip--check{ padding:6px 10px; }
+.chip--check input{ margin:0; transform:translateY(1px); }
+.chip .btn, .chips .btn{ border-radius:8px; padding:6px 10px; height:30px; line-height:18px; }
+.filters-actions{ margin-left:auto; display:flex; gap:8px; }
+.panel-status{ margin:6px 0 10px; color:var(--muted); }
+
+/* Meta topbar refinada */
+.meta-topline{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.meta-stat{ display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border:1px solid #242428; border-radius:8px; background:#101013; color:#cfcfd6; font-size:12px; }
+
+@media (max-width: 900px){
+  .panel-head{ flex-direction:column; align-items:flex-start; gap:6px; }
+  .filters-actions{ margin-left:0; }
+  .chip > select, .chip > input[type="text"]{ min-width:140px; }
+}
+
+/* ==========================================
+   Conversor — versión final (limpia y alineada)
+   ========================================== */
+
+/* Contenedor general y separación vertical */
+.conv2--clean{ display:flex; flex-direction:column; gap:12px; }
+
+/* Títulos de grupo con icono */
+.conv2-label{ display:inline-flex; align-items:center; gap:8px; margin:6px 0 4px; font-size:14px; color:#b8b8c0; }
+.conv2-label__icon{ display:inline-grid; place-items:center; }
+
+/* colores pedidos para los títulos */
+.conv2-label--gems{ color:#7dd3fc; }   /* celeste/azulino de gemas */
+.conv2-label--gold{ color:#f1cc7a; }   /* amarillo oro */
+
+/* Fila: input | flecha | salida */
+.conv2-row{
+  display:grid;
+  grid-template-columns: minmax(0,1fr) 28px minmax(0,1fr);
+  gap:10px; align-items:center;
+}
+
+/* Baldosas de entrada/salida */
+.conv2-block{
+  background:#0f0f12;
+  border:1px solid #242428;
+  border-radius:10px;
+  padding:8px 10px;
+  display:flex; align-items:center; gap:8px;
+  height:42px;
+}
+
+/* Icono dentro de la baldosa */
+.conv2-icon{ display:flex; align-items:center; opacity:.9; }
+
+/* Campo de entrada */
+.conv2-entry{
+  background:transparent; border:0; outline:none;
+  width:100%; color:#e9e9ee; font-size:18px;
+}
+.conv2-gold{ color:#d7b062; }  /* consistente con la paleta de monedas */
+
+/* Baldosa de salida */
+.conv2-outputbox{ display:flex; align-items:center; padding-left:6px; }
+
+/* Flecha central */
+.conv2-arrow{ text-align:center; color:#c8b79a; font-size:18px; margin-top:4px; }
+
+/* Acciones + Estado */
+.conv2-actions{ display:flex; align-items:center; justify-content:space-between; margin-top:4px; }
+.conv2-actions .btn{ border-radius:8px; padding:6px 14px; }
+.conv2-state{ margin:0; }
+
+/* Línea y referencia 400 */
+.conv2-refline{ display:flex; justify-content:flex-end; padding-top:2px; }
+
+/* Hover sutil */
+.conv2-block:hover{ border-color:#334155; }
+
+/* Responsive */
+@media (max-width: 900px){
+  .conv2-row{ grid-template-columns:1fr; }
+  .conv2-arrow{ order:-1; margin:-4px 0 -2px; }
 }
