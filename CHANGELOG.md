@@ -5,6 +5,69 @@ El formato sigue las recomendaciones de
 **Keep a Changelog** (https://keepachangelog.com/)  
 y el versionado **SemVer** (https://semver.org/).
 
+
+## [3.0.0] – 2026-02-24
+### Agregado
+- **MetaEventos Deluxe v3.0**:
+  - Tarjetas con jerarquía clara: header → subinfo → ✔ → contexto → acciones → pie.
+  - **Acciones**: Copiar WP, abrir Wiki, **Mapa** (gw2.io), **Compartir** texto, Favorito.
+  - **Horarios por tarjeta** (toggle), chips con estados **NOW** y **SOON (≤20m)**.
+  - **Vista Compacta** global.
+  - **Colores por categoría** (worldboss/meta/global/instance/temple/event).
+  - **Contexto** automático por tipo.
+- **Selects** (Meta & Eventos / Wallet): tema **oscuro** real, **sin caret**, menú desplegable dark, **una sola pastilla** (chip).
+- **Chips sólidos**: hover/focus/pressed/checked consistentes y accesibles.
+- **Toggles** inyectados (sin tocar index.html):  
+  - `data-meta-deluxe="on|off"`  
+  - `data-meta-compact="on|off"`
+- Integración total con:
+  - **Hecho hoy (API)**: `/v2/account/worldbosses`, `/v2/account/mapchests`.
+  - **Hecho hoy (Manual)**: por `id`/token/día UTC (localStorage), reset automático 00:00 UTC.
+  - **Cache** de flags (TTL 5′), **refresh** manual.
+
+### Cambiado
+- Refinamiento visual de tarjetas y filtros, sin romper la estructura previa.
+- Ordenación por favoritos, estado (activo > próximo > más tarde) y proximidad.
+
+### Corregido
+- **Selects** que se veían con **fondo blanco / texto claro** (ilegible) en algunos navegadores.
+- Flechita (caret) que se superponía en **checkbox chips** (“Activos”, “Próximos”, etc.).
+
+---
+
+## [2.6.2] – 2026-02-23
+### Agregado
+- **Manual check** para metas sin API (`manualCheck:true`), persistente por token/día UTC.
+- Tooltips y preview en infusiones (cuando hay `highlightItemId` o `preview`).
+- Top‑3 próximos en sidebar.
+
+### Cambiado
+- Skeleton y render más robustos; mensajes de estado claros.
+
+### Corregido
+- Ajustes menores de iconos y tooltips.
+- Evitar error silencioso cuando `meta-drops.json` no está disponible.
+
+---
+
+## [2.5.0] – 2026-01-xx
+### Agregado
+- Base del panel MetaEventos (v2.x) y Cartera (Wallet).
+- Gestión de API Keys en UI.
+- Filtros iniciales (tipo/expansión/activos/próximos/infusiones).
+
+---
+
+## Sin publicar (HEAD)
+- _Nada por ahora._
+
+---
+
+### Notas
+- Si necesitás invalidar cache, podés incrementar el query `?v=` en `index.html` para `js/meta.js` y/o `assets`.
+- Para eventos nuevos, preferí `worldBossId` oficiales (`/v2/worldbosses`) y `mapchestId` documentados (`/v2/mapchests`); usa `manualecho hoy”.
+
+
 ## [2.6.1] - 2026-02-24
 ### Added
 - MetaEventos: cache por API key (TTL 5 min) para “Hecho hoy”.
