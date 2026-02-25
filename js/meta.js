@@ -3,7 +3,8 @@
   const $  = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => [...r.querySelectorAll(s)];
 
-  console.info('%cMetaEventos meta.js v2.6.1 — done-today: cache + manual refresh + auto-UTC reset','color:#fb0; font-weight:700');
+  console.info('%cMetaEventos meta.js v3.0 — Deluxe: horarios + compacta + contexto + acciones',
+    'color:#fb0; font-weight:700');
 
   // --------- Elementos del DOM ----------
   const el = {
@@ -32,6 +33,14 @@
   // Cache por key (done today)
   const LS_FLAGS      = 'gw2_meta_flags_v1';
   const FLAGS_TTL_MS  = 5 * 60 * 1000; // 5 minutos
+
+  // Manual done por token / día
+  const LS_MANUAL    = 'gw2_meta_manual_v1';
+
+  // Deluxe toggles
+  const BODY = document.body;
+  const DELUXE_DEFAULT  = true;   // activo por defecto
+  const COMPACT_DEFAULT = false;  // desactivado por defecto
 
   // Normalización para badge de expansión (coincide con CSS)
   const EXP_MAP = {
@@ -106,7 +115,6 @@
 
   async function loadExternalDrops(){
     try{
-      // Alineado a 2.5.0 para coherencia de cache-bust
       const r = await fetch('assets/meta-drops.json?v=2.5.0', { headers:{'Accept':'application/json'} });
       if(!r.ok) return;
       const arr = await r.json();
@@ -117,7 +125,6 @@
   }
 
   async function loadSeed(){
-    // Alineado a 2.5.0 para coherencia de cache-bust
     const r = await fetch('assets/meta-events.json?v=2.5.0', { headers:{'Accept':'application/json'} });
     if(!r.ok) throw new Error('No se pudo cargar meta-events.json');
     seed = await r.json();
@@ -145,6 +152,53 @@
     try{ localStorage.setItem(LS_FAVS, JSON.stringify([...favs])); }catch{}
   }
 
+  // --------- Hecho HOY (MANUAL) ----------
+  function tokenFingerprint(){
+    const t = window.__GN__?.getSelectedToken?.() ?? null;
+    if(!t) return null;
+    return `${t.slice(0,4)}…${t.slice(-4)}`; // no exponemos completa
+  }
+  function todayUTCKey(){
+    const d = new Date();
+    const k = `${d.getUTCFullYear()}-${pad2(d.getUTCMonth()+1)}-${pad2(d.getUTCDate())}`;
+    return k;
+  }
+  function manualKeyNamespace(){
+    // namespace por token (o 'anon') y por día
+    return `${LS_MANUAL}:${tokenFingerprint() || 'anon'}:${todayUTCKey()}`;
+  }
+  function loadManualDone(){
+    try{
+      const all = JSON.parse(localStorage.getItem(manualKeyNamespace()) || '[]');
+      return new Set(Array.isArray(all) ? all : []);
+    }catch{
+      return new Set();
+    }
+  }
+  function saveManualDone(set){
+    try{
+      localStorage.setItem(manualKeyNamespace(), JSON.stringify([...set]));
+    }catch{}
+  }
+  // set en memoria del día
+  let manualDoneSet = loadManualDone();
+
+  function isManualEligible(meta){
+    // elegible si manualCheck:true y no tiene API
+    const hasAPI = !!(meta?.api?.worldBossId || meta?.api?.mapChestId);
+    return !!meta?.manualCheck && !hasAPI;
+  }
+  function isManualDone(meta){
+    return isManualEligible(meta) && manualDoneSet.has(meta.id);
+  }
+  function toggleManual(meta){
+    if(!isManualEligible(meta)) return false;
+    if(manualDoneSet.has(meta.id)) manualDoneSet.delete(meta.id);
+    else manualDoneSet.add(meta.id);
+    saveManualDone(manualDoneSet);
+    return manualDoneSet.has(meta.id);
+  }
+
   // --------- API GW2: banderas de cuenta ----------
   async function fetchWorldBosses(token){
     if(!token) return new Set();
@@ -164,11 +218,6 @@
   }
 
   // --------- Cache por Key (TTL 5min) ----------
-  function tokenFingerprint(){
-    const t = window.__GN__?.getSelectedToken?.() ?? null;
-    if(!t) return null;
-    return `${t.slice(0,4)}…${t.slice(-4)}`; // no exponemos completa
-  }
   function loadFlagsFromCache(){
     try{
       const all = JSON.parse(localStorage.getItem(LS_FLAGS) || '{}');
@@ -218,8 +267,8 @@
   function iconTag(url, size=18, alt=''){
     const u = String(url ?? '').trim();
     if(!/^https?:\/\//i.test(u)) return '';
-    const safe = u.replace(/"/g,'&quot;');
-    const a    = (alt ?? '').replace(/"/g,'&quot;');
+    const safe = u.replace(/"/g,'"');
+    const a    = (alt ?? '').replace(/"/g,'"');
     return `<img src="${safe}" alt="${a}" width="${size}" height="${size}" loading="lazy" decoding="async" style="vertical-align:middle;border-radius:3px">`;
   }
 
@@ -271,12 +320,32 @@
     filters.onlyInf    = !!el.onlyInf?.checked;
   }
 
+  // --- Contexto (línea adicional) ---
+  function buildContext(meta){
+    const hasWB = !!meta?.api?.worldBossId;
+    const hasMC = !!meta?.api?.mapChestId;
+    const t = String(meta?.type || '').toLowerCase();
+
+    if (hasWB) return '• Cofre diario (worldboss) • Recom. 40+';
+    if (hasMC) return '• Cofre diario: Hero’s Choice';
+    if (t==='global')   return '• Evento rotativo / no marcado por API';
+    if (t==='instance') return '• Instancia pública • no marcado por API';
+    if (t==='temple')   return '• Evento de templo • no marcado por API';
+    if (t==='event')    return '• Evento de mapa • no marcado por API';
+    return '';
+  }
+
   // --- Hecho hoy (detalle + bool) ---
   function doneTodayDetail(meta){
+    // 1) API oficial
     if(meta.api?.worldBossId && accountFlags.worldbosses.has(meta.api.worldBossId))
       return { done:true, src:'worldbosses' };
     if(meta.api?.mapChestId && accountFlags.mapchests.has(meta.api.mapChestId))
       return { done:true, src:'mapchests' };
+
+    // 2) Manual (si elegible)
+    if(isManualDone(meta)) return { done:true, src:'manual' };
+
     return { done:false, src:null };
   }
   function doneToday(meta){
@@ -330,7 +399,7 @@
       ? listFromExt.map(it => `• ${it.itemName ?? '—'}${it.wiki ? `\n ${it.wiki}` : ''}`).join('\n')
       : (item && item.name ? `• ${item.name}` : '—')
     );
-    const tipAttr = String(tipText ?? '').replace(/"/g,'&quot;');
+    const tipAttr = String(tipText ?? '').replace(/"/g,'"');
 
     if (meta.highlightItemId){
       if (!item){
@@ -364,6 +433,26 @@
     `;
   }
 
+  // ---------- Helpers: Horarios (chips NOW/SOON) ----------
+  function buildWindowsChips(meta){
+    const list = Array.isArray(meta.windowsUTC) ? meta.windowsUTC : [];
+    if (!list.length) return '';
+
+    const now = nowLocal();
+    const chips = list.map(hhmm => {
+      const start = localDateFromUTC_HHMM(hhmm);
+      const end   = new Date(start.getTime() + (meta.durationMin ?? 15)*60000);
+      let cls = 'chip chip--ghost';
+      if (now >= start && now < end) cls += ' chip--now';
+      else {
+        const diffMin = Math.floor((start - now)/60000);
+        if (diffMin >=0 && diffMin <= SOON_MIN) cls += ' chip--soon';
+      }
+      return `<span class="${cls}" title="Ventana ${hhmm} UTC">${hhmm}</span>`;
+    }).join('');
+    return `<div class="m-win" hidden><div class="chips">${chips}</div></div>`;
+  }
+
   // ---------- Render ----------
   function cardHTML(meta, inst, item, isFav){
     const now = nowLocal();
@@ -372,16 +461,24 @@
       ? `Termina en ${minsRemaining} min`
       : (minsRemaining!=null ? `Próximo en ${minsRemaining} min` : '—');
 
-    // NUEVO: detalle de done hoy
+    // Hecho hoy (fuente)
     const dt = doneTodayDetail(meta);
     const when = accountFlags.lastHuman || '—';
-    const srcTxt = dt.src ? (dt.src==='worldbosses'?'worldbosses':'mapchests') : '—';
+    const srcTxt = dt.src ? (dt.src==='worldbosses'?'worldbosses': dt.src==='mapchests'?'mapchests':'manual') : '—';
+    const manualEligible = isManualEligible(meta);
+
     const doneTitle = dt.done
-      ? `Hecho hoy (fuente: ${srcTxt}; actualizado ${when})`
-      : `No hecho hoy (fuente: ${srcTxt}; actualizado ${when})`;
+      ? `Hecho hoy (fuente: ${srcTxt}; actualizado ${when})${manualEligible ? ' — Click para desmarcar' : ''}`
+      : manualEligible
+        ? `No hecho hoy (fuente: ${srcTxt}) — Click para marcar manualmente`
+        : `No hecho hoy (fuente: ${srcTxt}; actualizado ${when})`;
 
     const star = `<button class="m-star ${isFav?'m-star--on':''}" data-pin="${meta.id}" title="${isFav?'Quitar de favoritos':'Añadir a favoritos'}">★</button>`;
-    const doneHtml = `<span class="m-done ${dt.done?'m-done--on':''}" title="${doneTitle}">${dt.done?'✔':'—'}</span>`;
+
+    // ✔ clickeable sólo si es manual
+    const doneAttrs = manualEligible ? `data-manual="1" data-id="${meta.id}" role="button" tabindex="0"` : '';
+    const doneHtml  = `<span class="m-done ${dt.done?'m-done--on':''}" ${doneAttrs} title="${doneTitle}">${dt.done?'✔':'—'}</span>`;
+
     const wikiHtml = meta.wiki ? `<a class="m-wiki" href="${meta.wiki}" target="_blank" rel="noopener">🔗 Wiki</a>` : '';
 
     // Badge de expansión (normalizada)
@@ -390,8 +487,33 @@
     const expClass = `badge-exp badge-exp--${expKey}`;
     const expBadgeHtml = `<span class="${expClass}" title="Expansión / Temporada: ${meta.expansion}">${meta.expansion}</span>`;
 
+    // NUEVO: línea de contexto
+    const ctx = buildContext(meta);
+    const ctxHtml = ctx ? `<div class="m-context">${ctx}</div>` : '';
+
+    // NUEVO: acciones extra (Mapa + Compartir) — sin tocar index.html
+    const mapHref = meta.map ? `https://maps.gw2.io/#/?q=${encodeURIComponent(meta.map)}` : '';
+    const mapBtn  = mapHref ? `<a class="btn btn--ghost m-map" href="${mapHref}" target="_blank" rel="noopener" title="Abrir mapa (gw2.io)">Mapa</a>` : '';
+    const shareBtn = `<button class="btn btn--ghost m-share" data-id="${meta.id}" title="Copiar texto para compartir">Compartir</button>`;
+
+    // NUEVO: Horarios por tarjeta (si hay ventanas)
+    const hasWins = Array.isArray(meta.windowsUTC) && meta.windowsUTC.length>0;
+    const winBtn  = hasWins ? `<button class="btn btn--ghost m-win__toggle" aria-expanded="false" title="Ver horarios">Horarios</button>` : '';
+    const winPane = hasWins ? buildWindowsChips(meta) : '';
+
+    // Acciones (con WP si existe)
+    const actions = `
+      <div class="m-actions">
+        ${meta.chat ? `<button class="btn btn--ghost m-copy" data-copy="${meta.chat}" title="Copiar waypoint" aria-label="Copiar waypoint">${wpIcon(16)}</button>` : ''}
+        ${wikiHtml}
+        ${mapBtn}
+        ${shareBtn}
+        ${winBtn}
+      </div>
+    `;
+
     return `
-      <article class="m-card" data-id="${meta.id}">
+      <article class="m-card" data-id="${meta.id}" data-type="${meta.type}" data-exp="${meta.expansion}">
         ${star}
         <header class="m-head">
           <h3 class="m-title">${meta.name}</h3>
@@ -401,6 +523,7 @@
             <span class="m-next">${nextTxt}</span>
           </div>
         </header>
+
         <div class="m-sub">
           <span class="m-map">${meta.map ?? '—'}</span>
           <span class="m-sep">•</span>
@@ -410,10 +533,10 @@
           <span class="m-sep">•</span>
           ${doneHtml}
         </div>
-        <div class="m-actions">
-          ${meta.chat ? `<button class="btn btn--ghost m-copy" data-copy="${meta.chat}" title="Copiar waypoint" aria-label="Copiar waypoint">${wpIcon(16)}</button>` : ''}
-          ${wikiHtml}
-        </div>
+
+        ${ctxHtml}
+        ${actions}
+        ${winPane}
         ${footerDropHTML(meta, item)}
       </article>`;
   }
@@ -468,7 +591,7 @@
         if(!v) return;
         navigator.clipboard.writeText(v).then(()=>{
           setStatus('Copiado al portapapeles.','ok');
-          if (typeof toast === 'function') toast('Copiado al portapapeles','ok', 1600);
+          if (typeof toast === 'function') toast('Copiado al portapapapeles','ok', 1600);
         });
       });
     });
@@ -482,6 +605,7 @@
     });
   }
 
+  // ---------- Render principal ----------
   async function render(){
     if(!el.list) return;
 
@@ -527,6 +651,7 @@
     el.list.innerHTML = rest.map(r=>cardHTML(r.meta, r.inst, itemCache.get(r.meta.highlightItemId), false)).join('');
 
     // Acciones de tarjeta
+    // Copiar WP
     $$('.m-copy', el.panel).forEach(btn=>{
       btn.addEventListener('click', ()=>{
         const v = btn.getAttribute('data-copy') ?? '';
@@ -537,6 +662,7 @@
         });
       });
     });
+    // Favorito
     $$('.m-star', el.panel).forEach(btn=>{
       btn.addEventListener('click', ()=>{
         const id = btn.getAttribute('data-pin');
@@ -554,14 +680,57 @@
         render();
       });
     });
+    // ✔ manual
+    $$('.m-done[data-manual="1"]', el.panel).forEach(x=>{
+      const id = x.getAttribute('data-id');
+      if(!id) return;
+      x.addEventListener('click', ()=>{
+        const meta = seed.find(m => m.id===id);
+        if(!meta) return;
+        const state = toggleManual(meta);
+        setStatus(state ? 'Marcado como “Hecho hoy” (manual).' : 'Desmarcado (manual).','ok');
+        render();
+      });
+      x.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter' || e.key===' ') { e.preventDefault(); x.click(); }
+      });
+    });
+    // Compartir
+    $$('.m-share', el.panel).forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const id = btn.getAttribute('data-id');
+        const r = [...rowsRaw, ...rows].find(x => x.meta.id===id) || rowsRaw.find(x=>x.meta.id===id);
+        if(!r) return;
+        const meta = r.meta, inst = r.inst;
+        const now = nowLocal();
+        const minsRemaining = inst?.nextAt ? Math.max(1, Math.floor((inst.nextAt - now)/60000)) : null;
+        const stateTxt = (inst?.state==='active') ? `Activo (${minsRemaining}m)` : (minsRemaining!=null ? `Próx en ${minsRemaining}m` : '—');
+        const piece = `${meta.name} — ${stateTxt}${meta.chat ? ` ${meta.chat}`:''}`;
+        navigator.clipboard.writeText(piece).then(()=>{
+          setStatus('Texto copiado para compartir.','ok');
+          toast?.('Copiado para compartir','ok', 1200);
+        });
+      });
+    });
+    // Horarios (toggle)
+    $$('.m-win__toggle', el.panel).forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const card = btn.closest('.m-card');
+        const pane = card?.querySelector('.m-win');
+        if(!pane) return;
+        const open = !pane.hasAttribute('hidden');
+        pane.toggleAttribute('hidden', open);
+        btn.setAttribute('aria-expanded', String(!open));
+      });
+    });
 
     // Sidebar Top 3
     renderMiniNext(rowsRaw);
 
-    // Tooltips de infusiones (debe correrse DESPUÉS del render)
+    // Infusiones (debe correrse DESPUÉS del render)
     bindInfusionPreviews();
 
-    // NUEVO: Actualizar TS visible
+    // TS visible (API)
     if(el.flagsTs){
       el.flagsTs.textContent = `Actualizado ${accountFlags.lastHuman || '—'}`;
       el.flagsTs.title = `Última actualización de 'Hecho hoy': ${accountFlags.lastHuman || '—'}`;
@@ -577,9 +746,10 @@
     const delta = nextResetUTC().getTime() - Date.now();
     if(delta > 0 && delta < 36*3600*1000){
       midnightTimer = setTimeout(async ()=>{
-        await refreshAccountFlags(true); // forzar nuevo día
+        await refreshAccountFlags(true); // reset diario
+        manualDoneSet = loadManualDone(); // recargar set manual del nuevo día
         render();
-        scheduleMidnightAutoRefresh();   // reprogramar para el siguiente día
+        scheduleMidnightAutoRefresh();
       }, delta + 1200);
     }
   }
@@ -624,6 +794,51 @@
     }
   }
 
+  // ---------- Deluxe toggles (sin tocar index.html) ----------
+  function setDeluxe(on){
+    BODY.setAttribute('data-meta-deluxe', on ? 'on' : 'off');
+  }
+  function setCompact(on){
+    BODY.setAttribute('data-meta-compact', on ? 'on' : 'off');
+  }
+  function injectUIToggles(){
+    const actions = $('#metaPanel .filters-actions');
+    if(!actions) return;
+
+    // Si ya existen, no dupliques
+    if(actions.querySelector('#metaToggleDeluxe')) return;
+
+    const btnDeluxe = document.createElement('button');
+    btnDeluxe.id = 'metaToggleDeluxe';
+    btnDeluxe.className = 'btn btn--ghost';
+    btnDeluxe.type = 'button';
+    btnDeluxe.title = 'Alternar Modo Deluxe / Clásico';
+    btnDeluxe.textContent = (BODY.getAttribute('data-meta-deluxe')==='on') ? 'Modo: Deluxe' : 'Modo: Clásico';
+
+    const btnCompact = document.createElement('button');
+    btnCompact.id = 'metaToggleCompact';
+    btnCompact.className = 'btn btn--ghost';
+    btnCompact.type = 'button';
+    btnCompact.title = 'Alternar Vista compacta / detallada';
+    btnCompact.textContent = (BODY.getAttribute('data-meta-compact')==='on') ? 'Vista detallada' : 'Vista compacta';
+
+    btnDeluxe.addEventListener('click', ()=>{
+      const nowOn = BODY.getAttribute('data-meta-deluxe')!=='on';
+      setDeluxe(nowOn);
+      btnDeluxe.textContent = nowOn ? 'Modo: Deluxe' : 'Modo: Clásico';
+      render();
+    });
+    btnCompact.addEventListener('click', ()=>{
+      const nowOn = BODY.getAttribute('data-meta-compact')!=='on';
+      setCompact(nowOn);
+      btnCompact.textContent = nowOn ? 'Vista detallada' : 'Vista compacta';
+      render();
+    });
+
+    actions.appendChild(btnDeluxe);
+    actions.appendChild(btnCompact);
+  }
+
   // ---------- Inicialización ----------
   async function initOnce(){
     if(!el.panel) return;
@@ -633,11 +848,17 @@
       loadFavs();
       await loadSeed();
       await refreshAccountFlags(); // usa cache si existe, o API si vencido
+      manualDoneSet = loadManualDone();
+      // Deluxe por defecto
+      setDeluxe(DELUXE_DEFAULT);
+      setCompact(COMPACT_DEFAULT);
+      injectUIToggles();
+
       setStatus('Listo.','ok');
       startClock();
       render();
 
-      // Auto-chequeo básico (debug no intrusivo)
+      // Auto-chequeo básico
       setTimeout(()=>{
         const issues = [];
         if(!Array.isArray(seed) || seed.length===0) issues.push('Seed vacío (meta-events.json).');
@@ -660,7 +881,7 @@
   // ---------- Eventos del shell (app.js) ----------
   let inited=false;
 
-  // Navegación por tabs: solo inicializar la PRIMERA vez que entramos a Meta
+  // Navegación por tabs
   document.addEventListener('gn:tabchange', (ev)=>{
     if(ev.detail?.view==='meta' && !inited){
       inited=true;
@@ -668,16 +889,17 @@
     }
   });
 
-  // Caso borde: si el panel ya está visible por defecto
+  // Caso borde: panel visible por defecto
   if($('#metaPanel') && !$('#metaPanel').hasAttribute('hidden')){
     inited=true; initOnce();
   }
 
-  // Cambio de token (refrescar flags y re-render)
+  // Cambio de token (refrescar flags + manual set + re-render)
   document.addEventListener('gn:tokenchange', async ()=>{
     if(!inited) return;
     renderSkeletonMeta(6);
-    await refreshAccountFlags(true); // con cambio de key, forzamos
+    await refreshAccountFlags(true);
+    manualDoneSet = loadManualDone();
     render();
   });
 
@@ -690,13 +912,13 @@
     el.onlyInf?.addEventListener('change', render);
   });
 
-  // ---------- NUEVO: botón Refrescar estado ----------
+  // Refrescar estado manual
   el.refreshFlagsBtn?.addEventListener('click', async ()=>{
     const old = el.refreshFlagsBtn.textContent;
     try{
       el.refreshFlagsBtn.disabled = true;
       el.refreshFlagsBtn.textContent = 'Actualizando…';
-      await refreshAccountFlags(true); // forzar API real
+      await refreshAccountFlags(true);
       render();
       toast?.('Estado “Hecho hoy” actualizado','ok', 1400);
     }finally{
@@ -705,34 +927,31 @@
     }
   });
 
-  // ---------- Tooltips de infusiones (deben correr después del render) ----------
+  // ---------- Tooltips de infusiones ----------
   function bindInfusionPreviews(){
     // Limpiar previos si re-renderizamos
     document.querySelectorAll('.inf-prev').forEach(n=>n.remove());
 
-    const escAttr = (s) => String(s ?? '').replace(/"/g, '&quot;');
+    const escAttr = (s) => String(s ?? '').replace(/"/g, '"');
     const cards = Array.from(document.querySelectorAll('.m-card'));
 
     for (const card of cards) {
       const id = card.getAttribute('data-id');
       const meta = seed.find(m => m.id === id);
       if (!meta) continue;
-
-      // ¿Este meta es de infusión?
       if (!isInfusionMeta(meta)) continue;
 
-      // target: el "item" del pie (icono + nombre del drop)
+      // target: el "item" del pie
       const target = card.querySelector('.m-foot .m-item');
       if (!target) continue;
 
-      // Obtener URL de preview (JSON externo) o fallback al icono del item (API)
       let preview = '';
       if (Array.isArray(meta._extItems) && meta._extItems.length && meta._extItems[0].preview) {
         preview = meta._extItems[0].preview;
       } else if (meta.highlightItemId && itemCache.has(meta.highlightItemId)) {
         preview = itemCache.get(meta.highlightItemId)?.icon ?? '';
       }
-      if (!preview) continue; // Nada que mostrar
+      if (!preview) continue;
 
       let pop = null, hideT = null;
 

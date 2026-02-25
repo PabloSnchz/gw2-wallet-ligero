@@ -688,3 +688,691 @@ select:focus, input:focus{ outline:2px solid #ffffff10; border-color:#334155 }
   .conv2-row{ grid-template-columns:1fr; }
   .conv2-arrow{ order:-1; margin:-4px 0 -2px; }
 }
+
+/* =============================================================================
+   MetaEventos — Refinamiento de tarjetas (rediseño suave)
+   ========================================================================== */
+
+/* Tarjeta: grilla interna simple para separar header / subinfo / acciones / pie */
+.m-card {
+  display: grid;
+  gap: 8px;
+}
+
+/* Header: Título a la izquierda, estado/exp/próximo a la derecha */
+.m-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Título: una línea con elipsis (evita saltos indebidos) */
+.m-title {
+  margin: 0;
+  font-weight: 700;
+  color: #f0f0f4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Pila derecha del header (badge de expansión + estado + “Próximo en …”) */
+.m-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Subinfo: mapa • expansión • tipo • ✔ */
+.m-sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: #a4a4aa;
+  font-size: 13px;
+}
+.m-sep { opacity: .65; }
+
+/* “Próximo en …” y badges (mantienen tu semántica visual) */
+.m-next { color: #c8c8cf; }
+.m-badge { background: #16161a; color: #c8c8cf; border: 1px solid #2a2a2f; }
+
+/* Acciones primarias (WP, Wiki, etc.) en línea con wrapping suave */
+.m-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ✔ Hecho hoy: versión base y estado activo */
+.m-done {
+  display: inline-block;
+  min-width: 20px;
+  text-align: center;
+  border: 1px solid #2a2a2f;
+  border-radius: 6px;
+  padding: 2px 6px;
+  background: #101013;
+  color: #cfcfd6;
+  cursor: default;
+}
+.m-done.m-done--on {
+  background: #1f3328;
+  color: #a7f3d0;
+  border-color: #2f4f3d;
+}
+
+/* ✔ Manual: indica clic/foco claramente */
+.m-done[data-manual="1"] {
+  cursor: pointer;
+  outline: none;
+  transition: box-shadow .15s ease, transform .06s ease;
+}
+.m-done[data-manual="1"]:hover {
+  box-shadow: 0 0 0 1px #34343a, 0 3px 12px rgba(208,71,71,.25);
+}
+.m-done[data-manual="1"]:active {
+  transform: translateY(1px);
+}
+.m-done[data-manual="1"]:focus-visible {
+  outline: 2px solid rgba(255,255,255,.12);
+  outline-offset: 2px;
+}
+
+/* Pie (drops / infusiones) — refina alineación */
+.m-foot { display: flex; align-items: center; gap: 8px; }
+.m-tag { font-size: 12px; line-height: 1; border-radius: 4px; padding: 3px 6px; }
+.m-tag.tag--drop { background: #17171b; color: #cfd0d6; border: 1px solid #2b2b31; }
+.m-tag.tag--inf  { background: #1b212c; color: #c6e2ff; border: 1px solid #2c3a50; }
+
+/* Item en el pie: icono + nombre en línea */
+.m-item { display: inline-flex; align-items: center; gap: 6px; }
+.m-item__name { color: #e6e6ea; }
+
+/* Estrella de favoritos: micro feedback (opcional) */
+.m-star {
+  transition: transform .08s ease;
+}
+.m-star:hover { transform: scale(1.06); }
+.m-star:active { transform: scale(0.98); }
+
+/* Responsive: a <900px, la pila derecha baja con el título en dos líneas */
+@media (max-width: 900px) {
+  .m-right { width: 100%; justify-content: flex-start; }
+  .m-actions { gap: 6px; }
+}
+
+/* ---------------------------------------------------------------------------
+   (Opcional) Ventanas/Horarios si en el futuro sumás el toggle “Horarios”
+   ------------------------------------------------------------------------- */
+.m-win { padding: 4px 0 2px; }
+.chip--ghost { background: #0f0f12; border: 1px dashed #2a2a2f; color: #cfcfd6; }
+.m-win[hidden] { display: none !important; }
+
+/* =============================================================================
+   MetaEventos — Rediseño Deluxe (refinamiento visual)
+   ========================================================================== */
+
+/* --- Tarjeta base (estructura) --- */
+.m-card {
+  display: grid;
+  gap: 8px;
+  border-left: 2px solid transparent;
+}
+
+/* Header: título + pila derecha */
+.m-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.m-title {
+  margin: 0;
+  font-weight: 700;
+  color: #f0f0f4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.m-next { color: #c8c8cf; }
+
+/* Subinfo: mapa • expansión • tipo • ✔ */
+.m-sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: #a4a4aa;
+  font-size: 13px;
+}
+.m-sep { opacity: .65; }
+
+/* Línea de contexto (opcional) */
+.m-context {
+  font-size: 12.5px;
+  color: #b6b6bc;
+  line-height: 1.35;
+}
+
+/* Acciones (WP/Wiki/Mapa/Compartir/Fav) */
+.m-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ✔ Hecho hoy */
+.m-done {
+  display: inline-block;
+  min-width: 20px;
+  text-align: center;
+  border: 1px solid #2a2a2f;
+  border-radius: 6px;
+  padding: 2px 6px;
+  background: #101013;
+  color: #cfcfd6;
+  cursor: default;
+}
+.m-done.m-done--on {
+  background: #1f3328;
+  color: #a7f3d0;
+  border-color: #2f4f3d;
+}
+/* Versión manual (clic/teclado) */
+.m-done[data-manual="1"] {
+  cursor: pointer;
+  outline: none;
+  transition: box-shadow .15s ease, transform .06s ease;
+}
+.m-done[data-manual="1"]:hover {
+  box-shadow: 0 0 0 1px #34343a, 0 3px 12px rgba(208,71,71,.25);
+}
+.m-done[data-manual="1"]:active { transform: translateY(1px); }
+.m-done[data-manual="1"]:focus-visible {
+  outline: 2px solid rgba(255,255,255,.12);
+  outline-offset: 2px;
+}
+
+/* Pie (drops / infusiones) */
+.m-foot { display: flex; align-items: center; gap: 8px; }
+.m-tag { font-size: 12px; line-height: 1; border-radius: 4px; padding: 3px 6px; }
+.m-tag.tag--drop { background: #17171b; color: #cfd0d6; border: 1px solid #2b2b31; }
+.m-tag.tag--inf  { background: #1b212c; color: #c6e2ff; border: 1px solid #2c3a50; }
+.m-item { display: inline-flex; align-items: center; gap: 6px; }
+.m-item__name { color: #e6e6ea; }
+
+/* Favoritos: micro feedback */
+.m-star { transition: transform .08s ease; }
+.m-star:hover { transform: scale(1.06); }
+.m-star:active { transform: scale(0.98); }
+
+/* Horarios (bandeja colapsable) */
+.m-win { padding: 4px 0 2px; }
+.m-win[hidden] { display: none !important; }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { display:inline-flex; align-items:center; padding:4px 8px; border-radius: 999px; border:1px solid #2a2a2f; background:#121216; color:#d6d6dd; font-size:12.5px; }
+.chip--ghost { background: #0f0f12; border: 1px dashed #2a2a2f; color: #cfcfd6; }
+/* Estados de chips de horario */
+.chip--now  { background: #183120; color:#b9f5d0; border-color:#255834; }
+.chip--soon { background: #2f2716; color:#f6e2b8; border-color:#5f4c1c; }
+
+/* Colores por categoría (deluxe) */
+body[data-meta-deluxe="on"] .m-card[data-type="worldboss"] { border-left-color: #7251ff60; }
+body[data-meta-deluxe="on"] .m-card[data-type="meta"]      { border-left-color: #00ffaa33; }
+body[data-meta-deluxe="on"] .m-card[data-type="global"]    { border-left-color: #3aa0ff40; }
+body[data-meta-deluxe="on"] .m-card[data-type="instance"]  { border-left-color: #5cc8ff40; }
+body[data-meta-deluxe="on"] .m-card[data-type="temple"]    { border-left-color: #ffb30040; }
+body[data-meta-deluxe="on"] .m-card[data-type="event"]     { border-left-color: #ffdc6b40; }
+
+/* Vista compacta global (reduce densidad y oculta pie) */
+body[data-meta-compact="on"] .m-card .m-foot,
+body[data-meta-compact="on"] .m-card .m-win { display:none !important; }
+body[data-meta-compact="on"] .m-card { gap: 4px; }
+body[data-meta-compact="on"] .m-title { font-weight: 600; }
+body[data-meta-compact="on"] .m-sub { font-size: 12.5px; }
+body[data-meta-compact="on"] .m-actions { display:none; } /* acciones se ocultan en compacta */
+body[data-meta-compact="on"] .m-context { display:none; }
+
+/* Badges base (mantiene tu semántica) */
+.m-badge { background: #16161a; color: #c8c8cf; border: 1px solid #2a2a2f; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .m-right { width: 100%; justify-content: flex-start; }
+  .m-actions { gap: 6px; }
+}
+
+/* =============================================================================
+   Fix selects en tema oscuro (Meta & Eventos / Wallet)
+   ========================================================================== */
+
+/* 1) Normalización base para todos los <select> dentro de paneles/chips */
+.panel select,
+.chips select,
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: #111116;
+  color: #e8e8ee;
+  border: 1px solid #2a2a2f;
+  border-radius: 8px;
+  padding: 8px 34px 8px 10px; /* espacio extra para caret custom */
+  font: inherit;
+  line-height: 1.2;
+  outline: none;
+  box-shadow: none;
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+
+/* 2) Hover / Focus (foco visible, sin halo blanco del sistema) */
+.panel select:hover,
+.chips select:hover,
+select:hover {
+  border-color: #3a3a40;
+}
+
+.panel select:focus,
+.chips select:focus,
+select:focus {
+  border-color: #5865f2;            /* acento suave */
+  box-shadow: 0 0 0 2px rgba(88,101,242,.25);
+}
+
+/* 3) Disabled (ej.: opciones que aún no soportás o estados bloqueados) */
+.panel select:disabled,
+.chips select:disabled,
+select:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* 4) Caret personalizada (reemplaza la flecha nativa) */
+.panel select,
+.chips select,
+select {
+  background-image:
+    linear-gradient(45deg, transparent 50%, #cfcfd6 50%),
+    linear-gradient(135deg, #cfcfd6 50%, transparent 50%),
+    linear-gradient(to right, #2a2a2f, #2a2a2f); /* separador de caret */
+  background-position:
+    calc(100% - 18px) calc(50% - 2px),
+    calc(100% - 10px) calc(50% - 2px),
+    calc(100% - 28px) 50%;
+  background-size: 8px 8px, 8px 8px, 1px 64%;
+  background-repeat: no-repeat;
+}
+
+/* 5) Quitar el “expand” de IE/Edge Legacy (no rompe en modernos) */
+select::-ms-expand { display:none; }
+
+/* 6) Menú desplegable (lista de opciones) - forzar tema oscuro */
+select option {
+  background-color: #141419;
+  color: #e8e8ee;
+}
+
+/* 7) Placeholder/option deshabilitada dentro del menú (si se usa) */
+select option:disabled {
+  color: #7d7d84;
+}
+
+/* 8) Integración con “chips” (tu contenedor actual) */
+.chip select {
+  background-color: #121217;
+  border-color: #2a2a2f;
+}
+
+/* 9) Soporte sistema: sugerir tema oscuro a los controles nativos */
+:root, body {
+  color-scheme: dark;
+}
+
+/* 10) Ajustes específicos por ID (por si algún estilo heredado los pisa) */
+#metaType, #metaExp, #categorySelect, #sortSelect {
+  background-color: #111116 !important;
+  color: #e8e8ee !important;
+  border-color: #2a2a2f !important;
+}
+
+/* 11) Estados dentro de “chips” para coherencia visual */
+.chip select:focus {
+  box-shadow: 0 0 0 2px rgba(88,101,242,.25);
+}
+
+/* 12) High-contrast en hover del menú (algunas UAs leen esta regla) */
+select option:hover,
+select option:checked {
+  background-color: #1c1c22;
+  color: #ffffff;
+}
+
+/* ============ Opción A: el CHIP es la pastilla (select plano) ============ */
+
+/* El chip toma el protagonismo */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;                 /* altura coherente con tus chips */
+  background: #0f0f14;
+  border: 1px solid #24242a;
+  border-radius: 999px;
+}
+
+/* El select se vuelve "transparente" (sin su propia pastilla) */
+.chip select {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;           /* sin fondo propio */
+  border: 0;                          /* sin borde propio */
+  color: #e8e8ee;
+  padding: 0 22px 0 2px;              /* espacio a la derecha para la caret del chip */
+  font: inherit;
+  line-height: 1.2;
+  outline: none;
+}
+
+/* Foco visual en el CHIP, no en el select */
+.chip:has(select:focus) {
+  border-color: #5865f2;
+  box-shadow: 0 0 0 2px rgba(88,101,242,.25);
+}
+
+/* Caret dibujada sobre el CHIP (no sobre el select) */
+.chip {
+  position: relative;
+}
+.chip::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translateY(-50%) rotate(45deg);
+  border-right: 2px solid #cfcfd6;
+  border-bottom: 2px solid #cfcfd6;
+  opacity: .9;
+}
+
+/* Ajuste para lista de opciones (mantener menú oscuro) */
+.chip select option {
+  background: #141419;
+  color: #e8e8ee;
+}
+
+/* ============ Opción A: el CHIP es la pastilla (select plano) ============ */
+
+/* El chip toma el protagonismo */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;                 /* altura coherente con tus chips */
+  background: #0f0f14;
+  border: 1px solid #24242a;
+  border-radius: 999px;
+}
+
+/* El select se vuelve "transparente" (sin su propia pastilla) */
+.chip select {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;           /* sin fondo propio */
+  border: 0;                          /* sin borde propio */
+  color: #e8e8ee;
+  padding: 0 22px 0 2px;              /* espacio a la derecha para la caret del chip */
+  font: inherit;
+  line-height: 1.2;
+  outline: none;
+}
+
+/* Foco visual en el CHIP, no en el select */
+.chip:has(select:focus) {
+  border-color: #5865f2;
+  box-shadow: 0 0 0 2px rgba(88,101,242,.25);
+}
+
+/* Caret dibujada sobre el CHIP (no sobre el select) */
+.chip {
+  position: relative;
+}
+.chip::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translateY(-50%) rotate(45deg);
+  border-right: 2px solid #cfcfd6;
+  border-bottom: 2px solid #cfcfd6;
+  opacity: .9;
+}
+
+/* Ajuste para lista de opciones (mantener menú oscuro) */
+.chip select option {
+  background: #141419;
+  color: #e8e8ee;
+}
+
+/* ============================================================================
+   Chips con SELECT — Opción A sin flechita (caret)
+   Un solo contorno: el CHIP. El <select> queda plano. Sin caret custom.
+   ========================================================================== */
+
+/* 1) El chip es la pastilla */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #0f0f14;
+  border: 1px solid #24242a;
+  border-radius: 999px;
+}
+
+/* 2) El <select> se ve "plano" (sin su pastilla interna) */
+.chip select {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;   /* sin fondo */
+  border: 0;                 /* sin borde */
+  color: #e8e8ee;
+  padding: 0;                /* SIN padding extra (ya no hay caret) */
+  margin: 0;
+  font: inherit;
+  line-height: 1.2;
+  outline: none;
+  min-width: 10ch;           /* da algo de ancho mínimo, ajustable */
+}
+
+/* 3) Foco/hover visual sobre el CHIP (no sobre el select) */
+.chip:has(select:hover) {
+  border-color: #303038;
+}
+.chip:has(select:focus) {
+  border-color: #5865f2;
+  box-shadow: 0 0 0 2px rgba(88,101,242,.25);
+}
+
+/* 4) IMPORTANTE: NO dibujamos caret en chips con select
+      (si antes tenías .chip::after para la flecha, se anula aquí) */
+.chip:has(select)::after {
+  content: none !important;
+}
+
+/* 5) Menú de opciones en oscuro (cuando se despliega) */
+.chip select option {
+  background: #141419;
+  color: #e8e8ee;
+}
+select option:disabled { color: #7d7d84; }
+
+/* 6) Sistema: sugerir tema oscuro a controles nativos */
+:root, body { color-scheme: dark; }
+
+/* 7) Ajuste puntual por IDs (por si alguna regla previa los pisa) */
+#metaType, #metaExp, #categorySelect, #sortSelect {
+  background: transparent !important;
+  border: 0 !important;
+  color: #e8e8ee !important;
+  padding: 0 !important;     /* evita superposición con texto */
+}
+
+/* =====================================================================
+   FIX: eliminar cualquier caret/flechita sobrante en chips
+   ===================================================================== */
+
+/* 1) Anula cualquier ::after heredado que dibuje flechas en CHIP */
+.chip::after {
+  content: none !important;
+}
+
+/* 2) Chips con select (Opción A — select plano, sin flecha) */
+.chip:has(select)::after {
+  content: none !important; /* asegurar prioridad */
+}
+
+/* 3) Chips con checkbox o radio — jamás deben tener flecha */
+.chip:has(input[type="checkbox"])::after,
+.chip:has(input[type="radio"])::after {
+  content: none !important;
+}
+
+/* 4) (Seguridad extra) si algún chip contiene cualquier INPUT que no sea select */
+.chip:has(input)::after {
+  content: none !important;
+}
+
+/* 5) Para evitar interferencias si existiera un estilo global con background-image,
+      lo anulamos dentro de chips */
+.chip {
+  background-image: none !important;
+}
+
+/* ============================================================================
+   Chips — Hover / Focus sólidos (incluye chips con <select> y con checkbox)
+   ========================================================================== */
+
+/* Base de chip (una sola pastilla) */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #0f0f14;                 /* fondo base oscuro */
+  border: 1px solid #24242a;            /* hairline tenue */
+  border-radius: 999px;
+  transition:
+    background-color .15s ease,
+    border-color .15s ease,
+    box-shadow .15s ease,
+    transform .06s ease;
+}
+
+/* Hover: refuerzo sutil en borde y fondo */
+.chip:hover {
+  border-color: #34343a;                /* +contraste */
+  background: #121219;                  /* +profundidad */
+}
+
+/* Focus accesible SIN halo blanco del sistema */
+.chip:focus-within,
+.chip:has(select:focus),
+.chip:has(input:focus-visible) {
+  border-color: #5865f2;                /* acento suave */
+  box-shadow: 0 0 0 2px rgba(88,101,242,.25);
+}
+
+/* “Pressed” (al clickear) para feedback táctil */
+.chip:active {
+  transform: translateY(1px);
+}
+
+/* Deshabilitado (si se aplica al chip entero) */
+.chip[aria-disabled="true"],
+.chip.is-disabled {
+  opacity: .6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ------- SELECT dentro del chip (Opción A) ------- */
+/* El select se mantiene plano (sin caret ni borde) */
+.chip select {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: #e8e8ee;
+  padding: 0;                           /* sin padding extra */
+  margin: 0;
+  font: inherit;
+  line-height: 1.2;
+  outline: none;
+  min-width: 10ch;                      /* opcional */
+}
+
+/* Menú oscuro en las opciones del select */
+.chip select option {
+  background: #141419;
+  color: #e8e8ee;
+}
+select option:disabled { color: #7d7d84; }
+
+/* ------- CHECKBOX dentro del chip ------- */
+/* Alineación y feedback de estado chequeado */
+.chip input[type="checkbox"] {
+  accent-color: #8ea0ff;                /* mejora de contraste en tema dark */
+  transform: translateY(0.5px);         /* ajuste fino vertical */
+}
+
+/* Estado “activo” del chip si el checkbox está checked */
+.chip:has(input[type="checkbox"]:checked) {
+  background: #151822;                  /* sutilmente más marcado */
+  border-color: #4652c7;                /* refuerza el contorno */
+  box-shadow: 0 0 0 2px rgba(70,82,199,.22);  /* halo contenido */
+}
+
+/* Hover sobre un chip ya activo (checked) */
+.chip:has(input[type="checkbox"]:checked):hover {
+  background: #181b26;
+  border-color: #5562df;
+}
+
+/* Quita cualquier caret heredado (por si hay estilos antiguos) */
+.chip::after,
+.chip:has(select)::after,
+.chip:has(input)::after {
+  content: none !important;
+}
+
+/* Sistema: sugerir modo oscuro para nativos */
+:root, body { color-scheme: dark; }
+
+/* ------- IDs concretos (por si alguna regla previa los pisa) ------- */
+#metaType, #metaExp, #categorySelect, #sortSelect {
+  background: transparent !important;
+  border: 0 !important;
+  color: #e8e8ee !important;
+  padding: 0 !important;
+}

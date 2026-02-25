@@ -121,14 +121,43 @@
     "highlightItemId": 94955
   },
   {
-  "metaId": "secrets_of_the_weald",
-  "items": [
-    {
-      "itemName": "Chromatic Bubbles (cosmetic infusion)",
-      "wiki": "https://wiki.guildwars2.com/wiki/Chromatic_Bubbles",
-      "preview": "https://wiki.guildwars2.com/images/a/a3/Chromatic_Bubbles.jpg"
-    }
-  ],
-  "highlightItemId": 106471
-}
+    "metaId": "secrets_of_the_weald",
+    "items": [
+      {
+        "itemName": "Chromatic Bubbles (cosmetic infusion)",
+        "wiki": "https://wiki.guildwars2.com/wiki/Chromatic_Bubbles",
+        "preview": "https://wiki.guildwars2.com/images/a/a3/Chromatic_Bubbles.jpg"
+      }
+    ],
+    "highlightItemId": 106471
+  },
+  
+  { "metaId": "admiral_taidha_covington", "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "claw_of_jormag",           "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "fire_elemental",            "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "great_jungle_wurm",         "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "inquest_golem_mark_ii",     "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "megadestroyer",             "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "modniir_ulgoth",            "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "svanir_shaman_chief",       "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "triple_trouble_wurm",       "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+
+  { "metaId": "ley_line_anomaly",          "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "convergences",              "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "convergence_mount_balrior", "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "the_twisted_marionette",    "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+
+  { "metaId": "fire_shaman",               "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "dredge_commissar",          "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "eye_of_zhaitan",            "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "foulbear_chieftain",        "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "rhendak_the_crazed",        "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "gates_of_arah",             "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "branded_devourer_queen",    "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+
+  { "metaId": "temple_of_dwayna",          "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "temple_of_grenth",          "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "temple_of_lyssa",           "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "temple_of_melandru",        "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "temple_of_balthazar",       "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null }
 ]
