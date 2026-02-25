@@ -568,3 +568,80 @@ select:focus, input:focus{ outline:2px solid #ffffff10; border-color:#334155 }
   outline:2px solid rgba(255,255,255,0.08);
   box-shadow:0 0 0 1px rgba(255,255,255,0.06) inset;
 }
+
+/* ================================
+   NUEVO: Modal Gestión de API Keys
+   ================================ */
+.modal[hidden]{ display:none !important; }
+.modal{
+  position:fixed; inset:0; z-index:10000;
+}
+.modal__backdrop{
+  position:absolute; inset:0;
+  background:rgba(0,0,0,.55);
+  backdrop-filter: blur(2px);
+}
+.modal__dialog{
+  position:absolute; left:50%; top:50%;
+  transform: translate(-50%,-50%);
+  width: min(720px, calc(100vw - 28px));
+  max-height: calc(100vh - 28px);
+  overflow:auto;
+  background:var(--panel);
+  border:1px solid var(--panel-border);
+  border-radius:12px;
+  box-shadow:0 10px 28px rgba(0,0,0,.5);
+  padding:0;
+  outline:none;
+}
+.modal__header{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:10px 14px; border-bottom:1px solid var(--panel-border);
+}
+.modal__body{ padding:12px 14px 16px; }
+.modal__close{
+  background:var(--btn); border:1px solid var(--btn-border); color:var(--text); border-radius:6px;
+  width:28px; height:28px; cursor:pointer;
+  transition: box-shadow .18s ease, transform .18s ease;
+}
+.modal__close:hover{ box-shadow: 0 0 0 1px #3b1e1e, 0 4px 12px rgba(208,71,71,.35); transform: translateY(-1px); }
+
+/* Lista/Formulario de keys */
+.keys-list{ display:grid; gap:8px; margin:6px 0 12px; }
+.keys-row{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  background:#15151a; border:1px solid #242428; border-radius:8px; padding:8px 10px;
+}
+.keys-name{ font-weight:600; }
+.keys-value{ font-size:12px; }
+.keys-actions{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.keys-form{ display:grid; gap:10px; margin-top:10px; }
+.keys-form .field{ display:grid; gap:6px; }
+.keys-actions .btn--accent{
+  background:var(--btn);
+  border:1px solid var(--accent);
+  color:var(--text);
+}
+.btn--accent:hover{
+  background:var(--btn-hover);
+  box-shadow: 0 0 0 1px #3b1e1e, 0 4px 12px rgba(208,71,71,.35);
+  transform: translateY(-1px);
+}
+
+/* Botón tipo link (header) */
+.an-util-link--btn{
+  background:none; border:0; padding:0; cursor:pointer;
+  color:#cfd3da; font:inherit; text-decoration:underline dotted transparent;
+}
+.an-util-link--btn:hover{ text-decoration-color:#cfd3da; }
+
+/* Accesibilidad */
+.visually-hidden{
+  position:absolute !important; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+}
+
+/* Selector global compacto en header */
+.an-util-left select#keySelectGlobal{
+  font-size:13px; padding:4px 6px; border-radius:7px;
+}
