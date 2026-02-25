@@ -58,12 +58,13 @@
     "expansion": "Core",
     "map": "Southsun Cove",
     "wiki": "https://wiki.guildwars2.com/wiki/Karka_Queen",
-    "chat": "[&BKgBAAA=]",
+    "chat": "[&BNcGAAA=]",
     "windowsUTC": ["02:00","04:00","10:00","14:00","18:00","22:00"],
     "durationMin": 20,
     "api": { "worldBossId": "karka_queen" },
     "highlightItemId": 43772
   },
+
   {
     "id": "verdant_brink",
     "name": "Verdant Brink (Night Bosses)",
@@ -116,6 +117,7 @@
     "api": { "mapChestId": "dragons_stand_heros_choice_chest" },
     "highlightItemId": 80713
   },
+
   {
     "id": "pinata",
     "name": "Casino Blitz / Piñata",
@@ -142,6 +144,7 @@
     "api": { "mapChestId": "domain_of_vabbi_heros_choice_chest" },
     "highlightItemId": 85245
   },
+
   {
     "id": "dragons_end",
     "name": "The Battle for the Jade Sea",
@@ -153,6 +156,7 @@
     "windowsUTC": ["00:00","02:00","04:00","06:00","08:00","10:00","12:00","14:00","16:00","18:00","20:00","22:00"],
     "durationMin": 40,
     "api": {},
+    "manualCheck": true,
     "highlightItemId": 96157
   },
   {
@@ -166,8 +170,10 @@
     "windowsUTC": ["00:00","02:00","04:00","06:00","08:00","10:00","12:00","14:00","16:00","18:00","20:00","22:00"],
     "durationMin": 20,
     "api": {},
+    "manualCheck": true,
     "highlightItemId": 100356
   },
+
   {
     "id": "drakkar",
     "name": "Drakkar",
@@ -179,6 +185,7 @@
     "windowsUTC": ["01:00","05:00","09:00","13:00","17:00","21:00"],
     "durationMin": 20,
     "api": {},
+    "manualCheck": true,
     "highlightItemId": null
   },
   {
@@ -192,6 +199,7 @@
     "windowsUTC": ["00:30","03:30","06:30","09:30","12:30","15:30","18:30","21:30"],
     "durationMin": 25,
     "api": {},
+    "manualCheck": true,
     "highlightItemId": null
   },
   {
@@ -205,6 +213,7 @@
     "windowsUTC": ["00:10","02:10","04:10","06:10","08:10","10:10","12:10","14:10","16:10","18:10","20:10","22:10"],
     "durationMin": 20,
     "api": {},
+    "manualCheck": true,
     "highlightItemId": null
   },
   {
@@ -218,19 +227,366 @@
     "windowsUTC": ["01:30","07:30","13:30","19:30"],
     "durationMin": 20,
     "api": {},
+    "manualCheck": true,
     "highlightItemId": null
   },
   {
-  "id": "secrets_of_the_weald",
-  "name": "Secrets of the Weald",
-  "type": "meta",
-  "expansion": "Visions of Eternity",
-  "map": "Starlit Weald",
-  "wiki": "https://gw2tldr.com/metas/secrets-of-the-weald",
-  "chat": "[&BMwPAAA=]",
-  "windowsUTC": ["01:40","05:40","09:40","13:40","17:40","21:40"],
-  "durationMin": 35,
-  "api": {},
-  "highlightItemId": null
-}
+    "id": "secrets_of_the_weald",
+    "name": "Secrets of the Weald",
+    "type": "meta",
+    "expansion": "Visions of Eternity",
+    "map": "Starlit Weald",
+    "wiki": "https://gw2tldr.com/metas/secrets-of-the-weald",
+    "chat": "[&BMwPAAA=]",
+    "windowsUTC": ["01:40","05:40","09:40","13:40","17:40","21:40"],
+    "durationMin": 35,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+
+  {
+    "id": "admiral_taidha_covington",
+    "name": "Admiral Taidha Covington",
+    "type": "worldboss",
+    "expansion": "Core",
+    "map": "Bloodtide Coast",
+    "wiki": "https://wiki.guildwars2.com/wiki/Admiral_Taidha_Covington",
+    "chat": "[&BKgBAAA=]",
+    "windowsUTC": [],
+    "durationMin": 20,
+    "api": { "worldBossId": "admiral_taidha_covington" },
+    "highlightItemId": null
+  },
+  {
+    "id": "claw_of_jormag",
+    "name": "Claw of Jormag",
+    "type": "worldboss",
+    "expansion": "Core",
+    "map": "Frostgorge Sound",
+    "wiki": "https://wiki.guildwars2.com/wiki/Claw_of_Jormag",
+    "chat": "[&BHoCAAA=]",
+    "windowsUTC": [],
+    "durationMin": 20,
+    "api": { "worldBossId": "claw_of_jormag" },
+    "highlightItemId": null
+  },
+  {
+    "id": "fire_elemental",
+    "name": "Fire Elemental",
+    "type": "worldboss",
+    "expansion": "Core",
+    "map": "Metrica Province",
+    "wiki": "https://wiki.guildwars2.com/wiki/Fire_Elemental",
+    "chat": "[&BEYAAAA=]",
+    "windowsUTC": [],
+    "durationMin": 15,
+    "api": { "worldBossId": "fire_elemental" },
+    "highlightItemId": null
+  },
+  {
+    "id": "great_jungle_wurm",
+    "name": "Jungle Wurm",
+    "type": "worldboss",
+    "expansion": "Core",
+    "map": "Caledon Forest",
+    "wiki": "https://wiki.guildwars2.com/wiki/Great_Jungle_Wurm",
+    "chat": "[&BEEFAAA=]",
+    "windowsUTC": [],
+    "durationMin": 15,
+    "api": { "worldBossId": "great_jungle_wurm" },
+    "highlightItemId": null
+  },
+  {
+    "id": "inquest_golem_mark_ii",
+    "name": "Inquest Golem Mark II",
+    "type": "worldboss",
+    "expansion": "Core",
+    "map": "Mount Maelstrom",
+    "wiki": "https://wiki.guildwars2.com/wiki/Inquest_Golem_Mark_II",
+    "chat": "[&BNQCAAA=]",
+    "windowsUTC": [],
+    "durationMin": 20,
+    "api": { "worldBossId": "inquest_golem_mark_ii" },
+    "highlightItemId": null
+  },
+  {
+    "id": "megadestroyer",
+    "name": "Megadestroyer",
+    "type": "worldboss",
+    "expansion": "Core",
+    "map": "Mount Maelstrom",
+    "wiki": "https://wiki.guildwars2.com/wiki/Megadestroyer",
+    "chat": "[&BM0CAAA=]",
+    "windowsUTC": [],
+    "durationMin": 20,
+    "api": { "worldBossId": "megadestroyer" },
+    "highlightItemId": null
+  },
+  {
+    "id": "modniir_ulgoth",
+    "name": "Modniir Ulgoth",
+    "type": "worldboss",
+    "expansion": "Core",
+    "map": "Harathi Hinterlands",
+    "wiki": "https://wiki.guildwars2.com/wiki/Modniir_Ulgoth",
+    "chat": "[&BLEAAAA=]",
+    "windowsUTC": [],
+    "durationMin": 20,
+    "api": { "worldBossId": "modniir_ulgoth" },
+    "highlightItemId": null
+  },
+  {
+    "id": "svanir_shaman_chief",
+    "name": "The Frozen Maw (Svanir Shaman Chief)",
+    "type": "worldboss",
+    "expansion": "Core",
+    "map": "Wayfarer Foothills",
+    "wiki": "https://wiki.guildwars2.com/wiki/Svanir_Shaman_Chief",
+    "chat": "[&BH4BAAA=]",
+    "windowsUTC": [],
+    "durationMin": 15,
+    "api": { "worldBossId": "svanir_shaman_chief" },
+    "highlightItemId": null
+  },
+  {
+    "id": "triple_trouble_wurm",
+    "name": "Triple Trouble Wurm",
+    "type": "worldboss",
+    "expansion": "Core",
+    "map": "Bloodtide Coast",
+    "wiki": "https://wiki.guildwars2.com/wiki/Triple_Trouble",
+    "chat": "[&BKoBAAA=]",
+    "windowsUTC": [],
+    "durationMin": 40,
+    "api": { "worldBossId": "triple_trouble_wurm" },
+    "highlightItemId": null
+  },
+
+  {
+    "id": "ley_line_anomaly",
+    "name": "Ley-Line Anomaly",
+    "type": "global",
+    "expansion": "Core",
+    "map": "Gendarran / Timberline / Iron",
+    "wiki": "https://wiki.guildwars2.com/wiki/Ley-Line_Anomaly",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 15,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+  {
+    "id": "convergences",
+    "name": "Convergences",
+    "type": "global",
+    "expansion": "SotO",
+    "map": "The Wizard's Tower",
+    "wiki": "https://wiki.guildwars2.com/wiki/Convergences",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 20,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+  {
+    "id": "convergence_mount_balrior",
+    "name": "Convergence: Mount Balrior",
+    "type": "global",
+    "expansion": "SotO",
+    "map": "Lowland Shore",
+    "wiki": "https://wiki.guildwars2.com/wiki/Mount_Balrior",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 20,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+  {
+    "id": "the_twisted_marionette",
+    "name": "The Twisted Marionette",
+    "type": "instance",
+    "expansion": "Core",
+    "map": "Eye of the North (instance)",
+    "wiki": "https://wiki.guildwars2.com/wiki/Twisted_Marionette",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 20,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+
+  {
+    "id": "fire_shaman",
+    "name": "Fire Shaman",
+    "type": "event",
+    "expansion": "Core",
+    "map": "Iron Marches",
+    "wiki": "https://wiki.guildwars2.com/wiki/Fire_Shaman_(event)",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 15,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+  {
+    "id": "dredge_commissar",
+    "name": "Dredge Commissar",
+    "type": "event",
+    "expansion": "Core",
+    "map": "Dredgehaunt Cliffs",
+    "wiki": "https://wiki.guildwars2.com/wiki/Dredge_Commissar",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 15,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+  {
+    "id": "eye_of_zhaitan",
+    "name": "Eye of Zhaitan",
+    "type": "event",
+    "expansion": "Core",
+    "map": "Straits of Devastation",
+    "wiki": "https://wiki.guildwars2.com/wiki/Eye_of_Zhaitan_(event)",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 15,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+  {
+    "id": "foulbear_chieftain",
+    "name": "Foulbear Chieftain",
+    "type": "event",
+    "expansion": "Core",
+    "map": "Fields of Ruin",
+    "wiki": "https://wiki.guildwars2.com/wiki/Foulbear_Chieftain",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 15,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+  {
+    "id": "rhendak_the_crazed",
+    "name": "Rhendak the Crazed",
+    "type": "event",
+    "expansion": "Core",
+    "map": "Diessa Plateau",
+    "wiki": "https://wiki.guildwars2.com/wiki/Rhendak_the_Crazed",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 15,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+  {
+    "id": "gates_of_arah",
+    "name": "Gates of Arah",
+    "type": "event",
+    "expansion": "Core",
+    "map": "Cursed Shore",
+    "wiki": "https://wiki.guildwars2.com/wiki/Temple_of_Balthazar_(dynamic_event)",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 15,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+  {
+    "id": "branded_devourer_queen",
+    "name": "Branded Devourer Queen",
+    "type": "event",
+    "expansion": "Core",
+    "map": "Iron Marches",
+    "wiki": "https://wiki.guildwars2.com/wiki/Branded_Devourer_Queen",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 15,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+
+  {
+    "id": "temple_of_dwayna",
+    "name": "Temple of Dwayna",
+    "type": "temple",
+    "expansion": "Core",
+    "map": "Malchor's Leap",
+    "wiki": "https://wiki.guildwars2.com/wiki/Temple_of_Dwayna",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 30,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+  {
+    "id": "temple_of_grenth",
+    "name": "Temple of Grenth",
+    "type": "temple",
+    "expansion": "Core",
+    "map": "Cursed Shore",
+    "wiki": "https://wiki.guildwars2.com/wiki/Temple_of_Grenth",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 30,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+  {
+    "id": "temple_of_lyssa",
+    "name": "Temple of Lyssa",
+    "type": "temple",
+    "expansion": "Core",
+    "map": "Malchor's Leap",
+    "wiki": "https://wiki.guildwars2.com/wiki/Temple_of_Lyssa",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 30,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+  {
+    "id": "temple_of_melandru",
+    "name": "Temple of Melandru",
+    "type": "temple",
+    "expansion": "Core",
+    "map": "Cursed Shore",
+    "wiki": "https://wiki.guildwars2.com/wiki/Temple_of_Melandru",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 30,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  },
+  {
+    "id": "temple_of_balthazar",
+    "name": "Temple of Balthazar",
+    "type": "temple",
+    "expansion": "Core",
+    "map": "Straits of Devastation",
+    "wiki": "https://wiki.guildwars2.com/wiki/Temple_of_Balthazar",
+    "chat": "",
+    "windowsUTC": [],
+    "durationMin": 30,
+    "api": {},
+    "manualCheck": true,
+    "highlightItemId": null
+  }
 ]
