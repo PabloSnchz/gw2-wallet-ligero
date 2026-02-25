@@ -3,7 +3,7 @@
   const $  = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => [...r.querySelectorAll(s)];
 
-  console.info('%cMetaEventos meta.js v2.5.0','color:#fb0; font-weight:700');
+  console.info('%cMetaEventos meta.js v2.6.1 — done-today: cache + manual refresh + auto-UTC reset','color:#fb0; font-weight:700');
 
   // --------- Elementos del DOM ----------
   const el = {
@@ -19,12 +19,19 @@
     favBlock:   $('#metaFavBlock'),
     favGrid:    $('#metaFavGrid'),
     list:       $('#metaList'),
-    miniNext:   $('#metaMiniNext')
+    miniNext:   $('#metaMiniNext'),
+    // NUEVO
+    refreshFlagsBtn: $('#metaRefreshFlags'),
+    flagsTs:    $('#metaFlagsTs')
   };
 
-    // --------- Constantes / Estado ----------
-  const LS_FAVS  = 'gw2_meta_favs';
-  const SOON_MIN = 20;
+  // --------- Constantes / Estado ----------
+  const LS_FAVS   = 'gw2_meta_favs';
+  const SOON_MIN  = 20;
+
+  // Cache por key (done today)
+  const LS_FLAGS      = 'gw2_meta_flags_v1';
+  const FLAGS_TTL_MS  = 5 * 60 * 1000; // 5 minutos
 
   // Normalización para badge de expansión (coincide con CSS)
   const EXP_MAP = {
@@ -38,16 +45,17 @@
     'janthir': 'janthir'
   };
 
-  let seed = [];                   // metas (desde assets/meta-events.json)
-  let favs = new Set();            // favoritos (ids)
-  let filters = {                  // filtros actuales
+  let seed = [];                 // metas (desde assets/meta-events.json)
+  let favs = new Set();          // favoritos (ids)
+  let filters = {                // filtros actuales
     type: '', exp: '',
     onlyActive: false, onlySoon: false, onlyInf: false
   };
-  let accountFlags = {             // banderas de cuenta (completado hoy)
+  let accountFlags = {           // banderas de cuenta (completado hoy)
     worldbosses: new Set(),
     mapchests:   new Set(),
-    lastTs:      0
+    lastTs:      0,             // epoch ms
+    lastHuman:   '—'            // hh:mm:ss local
   };
 
   // --------- Utilidades ----------
@@ -56,7 +64,6 @@
     el.status.textContent = msg;
     el.status.style.color = (kind==='error') ? '#f28b82' : '#a0a0a6';
   }
-
   const nowLocal = () => new Date();
   const pad2 = (n) => String(n).padStart(2,'0');
   const fmtLocalTime = (d) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
@@ -70,7 +77,7 @@
   }
 
   function updateClock(){
-    if (!el.localTime || !el.reset) return; // FIX condición
+    if (!el.localTime || !el.reset) return;
     el.localTime.textContent = fmtLocalTime(new Date());
     const mins = minutesTo(nextResetUTC());
     const hh = Math.max(0, Math.floor(mins/60));
@@ -79,8 +86,6 @@
   }
 
   // --- SKELETON HELPERS (MetaEventos) ---
-  // Render de tarjetas fantasma durante la carga inicial.
-  // No es intrusivo: el próximo render() sobreescribe su contenido.
   function renderSkeletonMeta(count=8){
     if(!el.list) return;
     const cards = Array.from({length: count}).map(()=>`
@@ -92,35 +97,11 @@
       </article>
     `).join('');
     el.list.innerHTML = `<div class="skel-grid">${cards}</div>`;
-
-    // Mientras hay skeleton, ocultamos el bloque de favoritos
-    if(el.favBlock){
-      el.favBlock.setAttribute('hidden','');
-      el.favGrid.innerHTML = '';
-    }
-  }
-
-  function clearSkeletonMeta(){
-    // noop: el próximo render() sobreescribe el contenido de el.list
-  }
-
-  // --- SKELETON HELPERS (MetaEventos) ---
-  function renderSkeletonMeta(count=8){
-  if(!el.list) return;
-  const cards = Array.from({length: count}).map(()=>`
-    <article class="skel-card skel-anim">
-      <div class="skel-row w70"></div>
-      <div class="skel-row w30"></div>
-      <div class="skel-row"></div>
-      <div class="skel-row w50"></div>
-    </article>
-  `).join('');
-  el.list.innerHTML = `<div class="skel-grid">${cards}</div>`;
-  if(el.favBlock){ el.favBlock.setAttribute('hidden',''); el.favGrid.innerHTML=''; }
+    if(el.favBlock){ el.favBlock.setAttribute('hidden',''); el.favGrid.innerHTML=''; }
   }
   function clearSkeletonMeta(){ /* noop: próximo render sobreescribe */ }
 
-    // --------- Carga de datos (seed + drops) ----------
+  // --------- Carga de datos (seed + drops) ----------
   let externalDrops = new Map();
 
   async function loadExternalDrops(){
@@ -129,7 +110,6 @@
       const r = await fetch('assets/meta-drops.json?v=2.5.0', { headers:{'Accept':'application/json'} });
       if(!r.ok) return;
       const arr = await r.json();
-      // Map por metaId
       externalDrops = new Map(arr.map(x => [String(x.metaId ?? '').trim(), x]));
     }catch(e){
       console.warn('[meta] meta-drops.json no disponible', e);
@@ -149,8 +129,7 @@
       if(!ext) return m;
       const merged = { ...m };
       if (Object.prototype.hasOwnProperty.call(ext, 'highlightItemId')) {
-        // Mantener semántica actual: si viene null, ANULA el seed.
-        merged.highlightItemId = ext.highlightItemId;
+        merged.highlightItemId = ext.highlightItemId; // null anula
       }
       if (Array.isArray(ext.items)) merged._extItems = ext.items;
       return merged;
@@ -159,16 +138,11 @@
 
   // --------- Persistencia de favoritos ----------
   function loadFavs(){
-    try{
-      favs = new Set(JSON.parse(localStorage.getItem(LS_FAVS)) ?? []);
-    }catch{
-      favs = new Set();
-    }
+    try{ favs = new Set(JSON.parse(localStorage.getItem(LS_FAVS)) ?? []); }
+    catch{ favs = new Set(); }
   }
   function saveFavs(){
-    try{
-      localStorage.setItem(LS_FAVS, JSON.stringify([...favs]));
-    }catch{}
+    try{ localStorage.setItem(LS_FAVS, JSON.stringify([...favs])); }catch{}
   }
 
   // --------- API GW2: banderas de cuenta ----------
@@ -187,6 +161,40 @@
     if(r.status===401 || r.status===403) return new Set();
     const arr = await r.json().catch(() => []);
     return new Set(Array.isArray(arr) ? arr : []);
+  }
+
+  // --------- Cache por Key (TTL 5min) ----------
+  function tokenFingerprint(){
+    const t = window.__GN__?.getSelectedToken?.() ?? null;
+    if(!t) return null;
+    return `${t.slice(0,4)}…${t.slice(-4)}`; // no exponemos completa
+  }
+  function loadFlagsFromCache(){
+    try{
+      const all = JSON.parse(localStorage.getItem(LS_FLAGS) || '{}');
+      const fp = tokenFingerprint(); if(!fp) return null;
+      const item = all[fp]; if(!item) return null;
+      if(!item.ts || (Date.now() - item.ts) > FLAGS_TTL_MS) return null;
+      return {
+        worldbosses: new Set(item.worldbosses || []),
+        mapchests: new Set(item.mapchests || []),
+        lastTs: item.ts,
+        lastHuman: item.human || '—'
+      };
+    }catch{ return null; }
+  }
+  function saveFlagsToCache(){
+    try{
+      const all = JSON.parse(localStorage.getItem(LS_FLAGS) || '{}');
+      const fp = tokenFingerprint(); if(!fp) return;
+      all[fp] = {
+        worldbosses: [...accountFlags.worldbosses],
+        mapchests:   [...accountFlags.mapchests],
+        ts:          accountFlags.lastTs,
+        human:       accountFlags.lastHuman
+      };
+      localStorage.setItem(LS_FLAGS, JSON.stringify(all));
+    }catch{}
   }
 
   // --------- API GW2: items (para drops destacados) ----------
@@ -216,11 +224,8 @@
   }
 
   function wpIcon(size=16){
-  // Ícono waypoint estilo “diamante” azul, sin dependencias externas
     const url = "https://wiki.guildwars2.com/images/d/d2/Waypoint_(map_icon).png";
-  return `<img src="${url}" width="${size}" height="${size}" 
-              alt="Waypoint" loading="lazy" decoding="async"
-              referrerpolicy="no-referrer" />`;
+    return `<img src="${url}" width="${size}" height="${size}" alt="Waypoint" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`;
   }
 
   // --------- Instancias y estado temporal ----------
@@ -248,7 +253,6 @@
       }
     }
     if(!nextAt && list.length){
-      // próximo ciclo: sumar 24h al primero
       const first = localDateFromUTC_HHMM(list[0]);
       nextAt = new Date(first.getTime() + 24*3600*1000);
     }
@@ -267,10 +271,16 @@
     filters.onlyInf    = !!el.onlyInf?.checked;
   }
 
+  // --- Hecho hoy (detalle + bool) ---
+  function doneTodayDetail(meta){
+    if(meta.api?.worldBossId && accountFlags.worldbosses.has(meta.api.worldBossId))
+      return { done:true, src:'worldbosses' };
+    if(meta.api?.mapChestId && accountFlags.mapchests.has(meta.api.mapChestId))
+      return { done:true, src:'mapchests' };
+    return { done:false, src:null };
+  }
   function doneToday(meta){
-    if(meta.api?.worldBossId && accountFlags.worldbosses.has(meta.api.worldBossId)) return true;
-    if(meta.api?.mapChestId  && accountFlags.mapchests.has(meta.api.mapChestId))   return true;
-    return false;
+    return doneTodayDetail(meta).done;
   }
 
   function stateBadge(s){
@@ -297,30 +307,24 @@
       return false;
     }catch{ return false; }
   }
-
   function isInfusionNameOrWhitelist(name){
     const n = String(name ?? '').toLowerCase();
     return n.includes('infusión') || n.includes('infusion') || INFUSION_WHITELIST.has(n);
   }
-
   function labelByItemOrName(item, fallbackName){
     if(isInfusionItemObj(item)) return 'Infusión destacada';
     if(isInfusionNameOrWhitelist(fallbackName)) return 'Infusión destacada';
     return 'Drop destacado';
   }
-
   function isInfusionMeta(meta){
-    // 1) Si ya resolvimos item por API, usamos la verdad del objeto
     if (meta.highlightItemId && itemCache.has(meta.highlightItemId)) {
       return isInfusionItemObj(itemCache.get(meta.highlightItemId));
     }
-    // 2) Si no, inferimos por nombre whitelisteado / "infusion"
     const n = Array.isArray(meta._extItems) && meta._extItems.length ? (meta._extItems[0].itemName ?? '') : '';
     return isInfusionNameOrWhitelist(n);
   }
 
   function footerDropHTML(meta, item){
-    // Lista extendida para tooltip (si existe)
     const listFromExt = Array.isArray(meta._extItems) ? meta._extItems : [];
     const tipText = (listFromExt.length
       ? listFromExt.map(it => `• ${it.itemName ?? '—'}${it.wiki ? `\n ${it.wiki}` : ''}`).join('\n')
@@ -328,7 +332,6 @@
     );
     const tipAttr = String(tipText ?? '').replace(/"/g,'&quot;');
 
-    // Con itemId resuelto (icono + nombre)
     if (meta.highlightItemId){
       if (!item){
         return `
@@ -350,7 +353,6 @@
       `;
     }
 
-    // Sin itemId: usar nombre desde meta-drops.json (texto plano + tooltip)
     const nameFromList = listFromExt.length ? (listFromExt[0].itemName ?? '—') : '—';
     const label = labelByItemOrName(null, nameFromList);
     const css   = (label === 'Infusión destacada') ? 'tag--inf' : 'tag--drop';
@@ -370,9 +372,16 @@
       ? `Termina en ${minsRemaining} min`
       : (minsRemaining!=null ? `Próximo en ${minsRemaining} min` : '—');
 
-    const done = doneToday(meta);
+    // NUEVO: detalle de done hoy
+    const dt = doneTodayDetail(meta);
+    const when = accountFlags.lastHuman || '—';
+    const srcTxt = dt.src ? (dt.src==='worldbosses'?'worldbosses':'mapchests') : '—';
+    const doneTitle = dt.done
+      ? `Hecho hoy (fuente: ${srcTxt}; actualizado ${when})`
+      : `No hecho hoy (fuente: ${srcTxt}; actualizado ${when})`;
+
     const star = `<button class="m-star ${isFav?'m-star--on':''}" data-pin="${meta.id}" title="${isFav?'Quitar de favoritos':'Añadir a favoritos'}">★</button>`;
-    const doneHtml = `<span class="m-done ${done?'m-done--on':''}" title="Hecho hoy">${done?'✔':'—'}</span>`;
+    const doneHtml = `<span class="m-done ${dt.done?'m-done--on':''}" title="${doneTitle}">${dt.done?'✔':'—'}</span>`;
     const wikiHtml = meta.wiki ? `<a class="m-wiki" href="${meta.wiki}" target="_blank" rel="noopener">🔗 Wiki</a>` : '';
 
     // Badge de expansión (normalizada)
@@ -412,11 +421,9 @@
   function computeAllInstances(){
     return seed.map(m => ({ meta:m, inst:buildInstance(m), fav:favs.has(m.id) }));
   }
-
   function minutesDiff(d){
     return Math.max(0, Math.floor((d - nowLocal())/60000));
   }
-
   function renderMiniNext(rowsRaw){
     if(!el.miniNext) return;
     const list = rowsRaw
@@ -553,26 +560,67 @@
 
     // Tooltips de infusiones (debe correrse DESPUÉS del render)
     bindInfusionPreviews();
+
+    // NUEVO: Actualizar TS visible
+    if(el.flagsTs){
+      el.flagsTs.textContent = `Actualizado ${accountFlags.lastHuman || '—'}`;
+      el.flagsTs.title = `Última actualización de 'Hecho hoy': ${accountFlags.lastHuman || '—'}`;
+    }
   }
 
-  // ---------- Reloj ----------
+  // ---------- Reloj + Auto-refresh UTC ----------
   let clockT = null;
+  let midnightTimer = null;
+
+  function scheduleMidnightAutoRefresh(){
+    clearTimeout(midnightTimer);
+    const delta = nextResetUTC().getTime() - Date.now();
+    if(delta > 0 && delta < 36*3600*1000){
+      midnightTimer = setTimeout(async ()=>{
+        await refreshAccountFlags(true); // forzar nuevo día
+        render();
+        scheduleMidnightAutoRefresh();   // reprogramar para el siguiente día
+      }, delta + 1200);
+    }
+  }
   function startClock(){
     if(clockT) return;
     updateClock();
     clockT = setInterval(updateClock, 1000);
+    scheduleMidnightAutoRefresh();
   }
 
-  // ---------- Flags de cuenta (al cambiar token) ----------
-  async function refreshAccountFlags(){
+  // ---------- Flags de cuenta ----------
+  async function refreshAccountFlags(force=false){
     const token = window.__GN__?.getSelectedToken?.() ?? null;
+
+    if(!token){
+      accountFlags = { worldbosses:new Set(), mapchests:new Set(), lastTs:0, lastHuman:'—' };
+      if(el.flagsTs) el.flagsTs.textContent = 'Actualizado —';
+      return;
+    }
+
+    // cache (si no es forzado)
+    if(!force){
+      const cached = loadFlagsFromCache();
+      if(cached){
+        accountFlags = cached;
+        return;
+      }
+    }
+
     try{
+      setStatus('Actualizando "Hecho hoy"…');
       const [wb, mc] = await Promise.all([ fetchWorldBosses(token), fetchMapChests(token) ]);
       accountFlags.worldbosses = wb;
       accountFlags.mapchests   = mc;
       accountFlags.lastTs      = Date.now();
+      accountFlags.lastHuman   = fmtLocalTime(new Date(accountFlags.lastTs));
+      saveFlagsToCache();
+      setStatus('Listo.','ok');
     }catch(e){
       console.warn('[meta] account flags', e);
+      setStatus('No se pudo actualizar "Hecho hoy".','error');
     }
   }
 
@@ -584,7 +632,7 @@
       renderSkeletonMeta(8);
       loadFavs();
       await loadSeed();
-      await refreshAccountFlags();
+      await refreshAccountFlags(); // usa cache si existe, o API si vencido
       setStatus('Listo.','ok');
       startClock();
       render();
@@ -605,7 +653,7 @@
     }catch(e){
       console.error(e);
       setStatus('No se pudo cargar MetaEventos.','error');
-      toast?.('No se pudo cargar MetaEventos','error', 2400); // <-- NUEVO
+      toast?.('No se pudo cargar MetaEventos','error', 2400);
     }
   }
 
@@ -627,11 +675,11 @@
 
   // Cambio de token (refrescar flags y re-render)
   document.addEventListener('gn:tokenchange', async ()=>{
-  if(!inited) return;
-  renderSkeletonMeta(6);        // <-- NUEVO (opcional)
-  await refreshAccountFlags();
-  render();
-});
+    if(!inited) return;
+    renderSkeletonMeta(6);
+    await refreshAccountFlags(true); // con cambio de key, forzamos
+    render();
+  });
 
   // Filtros
   ['change','input'].forEach(ev=>{
@@ -640,6 +688,21 @@
     el.onlyActive?.addEventListener(ev, render);
     el.onlySoon?.addEventListener(ev, render);
     el.onlyInf?.addEventListener('change', render);
+  });
+
+  // ---------- NUEVO: botón Refrescar estado ----------
+  el.refreshFlagsBtn?.addEventListener('click', async ()=>{
+    const old = el.refreshFlagsBtn.textContent;
+    try{
+      el.refreshFlagsBtn.disabled = true;
+      el.refreshFlagsBtn.textContent = 'Actualizando…';
+      await refreshAccountFlags(true); // forzar API real
+      render();
+      toast?.('Estado “Hecho hoy” actualizado','ok', 1400);
+    }finally{
+      el.refreshFlagsBtn.disabled = false;
+      el.refreshFlagsBtn.textContent = old;
+    }
   });
 
   // ---------- Tooltips de infusiones (deben correr después del render) ----------
