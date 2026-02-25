@@ -5,6 +5,22 @@ El formato sigue las recomendaciones de
 **Keep a Changelog** (https://keepachangelog.com/)  
 y el versionado **SemVer** (https://semver.org/).
 
+## v2.6.0 — 2026-02-24
+### 🎯 Nuevo
+- Modal completo de API Keys (alta, edición, eliminado, uso, copia).
+- Selector global visible en todas las vistas.
+- Validación automática de permisos `account + wallet`.
+- UX mejorada en gestión de cuentas múltiples.
+
+### 🛠 Cambios técnicos
+- KeyManager centralizado.
+- Limpieza de código legacy en Wallet.
+- Eliminación total del selector viejo.
+- Fix en `onBottomInput()` y mejoras en `updateRef400()`.
+
+### 🔁 Migración
+- El panel Wallet ya no administra API Keys.
+- La gestión se concentra en el header y modal.
 
 ## [v2.5.0] — 2026-02-22
 
