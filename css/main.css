@@ -1376,3 +1376,34 @@ select option:disabled { color: #7d7d84; }
   color: #e8e8ee !important;
   padding: 0 !important;
 }
+
+/* ====== API Keys (util-bar) — oscuro, sin caret, sin solapar texto ====== */
+#keySelectGlobal {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #111116 !important;     /* oscuro */
+  color: #e8e8ee !important;           /* texto claro */
+  border: 1px solid #2a2a2f !important;
+  border-radius: 999px;
+  padding: 6px 12px !important;        /* sin espacio para caret (la quitamos) */
+  line-height: 1.2;
+  font: inherit;
+  outline: none;
+  background-image: none !important;   /* quita caret dibujada por CSS previos */
+  box-shadow: none;
+}
+
+/* Hover/Focus coherentes con el tema */
+#keySelectGlobal:hover {
+  border-color: #34343a;
+}
+#keySelectGlobal:focus {
+  border-color: #5865f2;
+  box-shadow: 0 0 0 2px rgba(88,101,242,.25);
+}
+
+/* Menú desplegable (options) oscuro */
+#keySelectGlobal option {
+  background: #141419;
+  color: #e8e8ee;
+}
