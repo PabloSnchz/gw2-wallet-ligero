@@ -13,7 +13,7 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 
 ---
 
-## ✨ Novedades principales — v2.6.0
+## ✨ Novedades principales — v2.6.1
 
 ### 🔐 Modal “Gestión de API Keys”
 - Alta, edición, eliminación, copia y selección de API Keys  
@@ -37,15 +37,33 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 - Revisión y estabilidad en `updateRef400()`  
 - Limpieza de eventos duplicados
 
+- **MetaEventos**
+  - Cache por API key (TTL **5 min**) para “Hecho hoy”.
+  - **Refrescar estado** manual (bloqueo durante fetch + toast).
+  - **Auto‑refresh** en **00:00 UTC** (reset diario).
+  - **Timestamp** visible y tooltip del ✔ con fuente e ID (cuando aplica).
+- **UI**
+  - Encabezados armonizados (título + hairline).
+  - Filtros en **chips discretos** y acciones alineadas.
+  - Meta topbar con badges (hora, reset, actualizado).
+- **Conversor**
+  - Títulos con color/ícono (Gemas/Oro).
+  - Un único campo por lado; flecha centrada; estado y ref 400.
+
 ---
 
 ## 🧩 Estructura del Proyecto
-## 🔐 API Keys — Cómo funcionan
+index.html — layout y paneles
+css/main.css — estilos
+js/app.js — shell
+js/meta.js — lógica MetaEventos
+assets/ — imágenes y JSON de seed/extras
 
+## 🔐 API Keys — Cómo funcionan
 El sistema requiere una API Key de ArenaNet con permisos:
 
-- `account`
-- `wallet`
+- Navegador moderno (ES2018+).
+- Para “Hecho hoy”: API key con permisos `account` - `wallet`
 
 Podés generarlas acá:  
 https://account.arena.net/applications

@@ -5,6 +5,21 @@ El formato sigue las recomendaciones de
 **Keep a Changelog** (https://keepachangelog.com/)  
 y el versionado **SemVer** (https://semver.org/).
 
+## [2.6.1] - 2026-02-24
+### Added
+- MetaEventos: cache por API key (TTL 5 min) para “Hecho hoy”.
+- Botón **Refrescar estado** con bloqueo y toast.
+- **Auto‑refresh** en 00:00 UTC (reset diario).
+- Timestamp visible `Actualizado hh:mm:ss` y tooltip del ✔ con fuente e ID (cuando aplica).
+- UI: encabezados + filtros en chips; meta‑topbar con badges.
+- Conversor: títulos color/ícono; un único input por lado.
+
+### Changed
+- Alineación de componentes (Wallet/Meta/Conversor) y responsive <900px.
+
+### Fixed
+- Duplicado de `renderSkeletonMeta` y pequeños hardenings en `updateClock`.
+
 ## v2.6.0 — 2026-02-24
 ### 🎯 Nuevo
 - Modal completo de API Keys (alta, edición, eliminado, uso, copia).
