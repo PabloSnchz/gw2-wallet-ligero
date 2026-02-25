@@ -13,44 +13,30 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 
 ---
 
-## ✨ Novedades principales — v2.6.1
+## ✨ Novedades principales — v3.0.0
 
-### 🔐 Modal “Gestión de API Keys”
-- Alta, edición, eliminación, copia y selección de API Keys  
-- Validación de permisos **`account` + `wallet`**  
-- UI moderna, accesible (ESC / backdrop), consistente  
-- Se almacena en **LocalStorage**, sin servidores externos
 
-### 🌐 Selector Global en el Header
-- Permite cambiar de key **desde cualquier pantalla**  
-- Sin necesidad de volver a Wallet  
-- Sincroniza automáticamente con el modal
-
-### 🧹 Limpieza de UI
-- Eliminado el selector viejo del panel Wallet  
-- Código legacy removido  
-- Wallet queda mucho más claro y ordenado
-
-### 🧠 Mejoras internas
-- Nuevo **KeyManager** unificado (JS)  
-- Fix en `onBottomInput()` del conversor  
-- Revisión y estabilidad en `updateRef400()`  
-- Limpieza de eventos duplicados
-
-- **MetaEventos**
-  - Cache por API key (TTL **5 min**) para “Hecho hoy”.
-  - **Refrescar estado** manual (bloqueo durante fetch + toast).
-  - **Auto‑refresh** en **00:00 UTC** (reset diario).
-  - **Timestamp** visible y tooltip del ✔ con fuente e ID (cuando aplica).
-- **UI**
-  - Encabezados armonizados (título + hairline).
-  - Filtros en **chips discretos** y acciones alineadas.
-  - Meta topbar con badges (hora, reset, actualizado).
-- **Conversor**
-  - Títulos con color/ícono (Gemas/Oro).
-  - Un único campo por lado; flecha centrada; estado y ref 400.
+## Tabla de contenidos
+- [Demo / Capturas](#demo--capturas)
+- [Requisitos](#requisitos)
+- [Primeros pasos](#primeros-pasos)
+- [Estructura del proyecto](#estructura-del-proyecto)
+- [MetaEventos (cómo funciona)](#metaventos-cómo-funciona)
+  - [Estado “Hecho hoy” (API + Manual)](#estado-hecho-hoy-api--manual)
+  - [Horarios por tarjeta](#horarios-por-tarjeta)
+  - [Vista Compacta y Modo Deluxe](#vista-compacta-y-modo-deluxe)
+  - [Drops e Infusiones](#drops-e-infusiones)
+- [Cómo agregar/editar eventos](#cómo-agregareditar-eventos)
+- [Filtros y selects (tema oscuro)](#filtros-y-selects-tema-oscuro)
+- [Desarrollo](#desarrollo)
+- [QA / Checklist rápido](#qa--checklist-rápido)
+- [Accesibilidad](#accesibilidad)
+- [Versionado](#versionado)
+- [Contribuir](#contribuir)
+- [Licencia](#licencia)
 
 ---
+
 
 ## 🧩 Estructura del Proyecto
 index.html — layout y paneles
@@ -62,8 +48,9 @@ assets/ — imágenes y JSON de seed/extras
 ## 🔐 API Keys — Cómo funcionan
 El sistema requiere una API Key de ArenaNet con permisos:
 
-- Navegador moderno (ES2018+).
-- Para “Hecho hoy”: API key con permisos `account` - `wallet`
+- Navegador moderno (Chrome/Edge/Firefox/Safari actual).
+- **API Key** de Guild Wars 2 con permisos `account` y `wallet` (y opcionalmente `progression` para endpoints de cuenta).
+- Acceso a Internet para consultar endpoints oficiales de GW2 y la wiki.
 
 Podés generarlas acá:  
 https://account.arena.net/applications
@@ -107,13 +94,132 @@ El **selector global** a su derecha permite cambiar de cuenta instantáneamente.
 - Indicador especial **Ref 400**  
 
 ---
+## MetaEventos (cómo funciona)
+
+### Estado “Hecho hoy” (API + Manual)
+- **Worldbosses**: `GET /v2/account/worldbosses`  
+- **Mapchests** (HoT/PoF): `GET /v2/account/mapchests`  
+- **Manual** para eventos sin API (global/instance/temple/event):  
+  - Se habilita el ✔ **clickeable** cuando `api:{}` y `manualCheck:true` en `meta-events.json`.  
+  - Persiste en `localStorage` **por token** y **por día UTC**.  
+  - Se limpia solo al reset (00:00 UTC).
+
+> Cache de flags por token: TTL **5 minutos**.  
+> Visualización del “Último actualizado” arriba a la derecha.
+
+### Horarios por tarjeta
+- Si un evento incluye `windowsUTC`, la tarjeta muestra el botón **Horarios** (toggle).
+- Los chips resaltan:
+  - **NOW (verde)** si está activo.
+  - **SOON (ámbar)** si empieza en ≤ 20 minutos.
+- Se calcula con `durationMin` por tarjeta.
+
+### Vista Compacta y Modo Deluxe
+- **Modo Deluxe**: bordes de color por `type` (worldboss/meta/global/instance/temple/event).  
+- **Vista Compacta**: reduce densidad (oculta acciones/pie/horarios), ideal para “escaneo masivo”.
+- Ambos toggles se inyectan automáticamente en la barra de filtros:
+  - Cambian atributos en `<body>`:
+    - `data-meta-deluxe="on|off"`
+    - `data-meta-compact="on|off"`
+
+### Drops e Infusiones
+- El pie de tarjeta usa `highlightItemId` (API de items) o `items` del `meta-drops.json`.
+- Si detecta infusión (por nombre o tipo `UpgradeComponent` con `Infusion`), etiqueta como **Infusión destacada** y habilita **preview** (hover).
+
+---
+
+## Cómo agregar/editar eventos
+- **Archivo**: `assets/meta-events.json`  
+- **Tipos admitidos**: `"worldboss" | "meta" | "global" | "instance" | "temple" | "event"`
+- **Campos relevantes**:
+  - `id`, `name`, `type`, `expansion`, `map`, `wiki`, `chat`, `windowsUTC`, `durationMin`
+  - `api`:  
+    - `{"worldBossId": "<id API>"}`
+    - `{"mapChestId": "<id API>"}`  
+    - `{}` (vacío) para eventos sin API
+  - `manualCheck: true` para permitir ✔ manual en eventos sin API.
+- **Waypoints** (`chat`): usá el _chat code_ del mapa/encuentro (p.ej., `[&BPwAAAA=]` para Behemoth).
+- **Drops**: `assets/meta-drops.json` (vincula por `metaId`).  
+  - `highlightItemId` (numérico de item) para obtener ícono/nombre de la API.
+  - `items[]` para listar drops manuales (con `preview` si querés hover).
+
+> **Sugerencia**: para worldbosses, usá los `worldBossId` oficiales de `/v2/worldbosses`; para metas HoT/PoF, usá `mapchests`.
+
+---
+
+## Filtros y selects (tema oscuro)
+- En **Meta & Eventos** (Tipo/Expansión) y **Wallet** (Categoría/Orden) los **selects**:
+  - No tienen caret (se quita la flecha del navegador).
+  - Se ven **oscuros**, con texto claro.
+  - **Una sola pastilla**: el contenedor `.chip` es la pastilla; el `<select>` es plano.
+- Los **chips** tienen hover/focus/pressed/checked sólidos y accesibles.
+
+---
+
 
 ## 🛠 Desarrollo local
 
-No requiere backend.  
-Podés servirlo de manera estática.
+- Sitio **estático** (no requiere _build system_).
+- **Actualización de versión** (_cache bust_):  
+  - Si necesitás invalidar cache duro, actualizá el query param `?v=` en `index.html` para `js/meta.js` y/o `assets/…`.
+- **Console logs**:  
+  - `MetaEventos meta.js v3.0 …` en carga.
+  - `selfcheck` no intrusivo (revisa seed, contenedores y hook de token).
+
+---
 
 ### 1) Clonar repo
 ```bash
 git clone https://github.com/PabloSnchz/gw2-wallet-ligero.git
 cd gw2-wallet-ligero
+
+## QA / Checklist rápido
+**Funcional**
+- Copiar **WP** y **Compartir** (toasts OK).
+- **Wiki** abre en nueva pestaña.
+- **Mapa** abre [maps.gw2.io](https://maps.gw2.io/).
+- **Favoritos**: máximo 6 en “Tus 6 preferidos”.
+- **✔ Manual**: clic/Enter/Barra; persiste hasta 00:00 UTC.
+- **Flags**: refresh manual y cache TTL 5′.
+- **Horarios**: toggle; chips correctamente marcados (NOW/SOON).
+
+**UI/UX**
+- **Selects** oscuros sin caret, legibles (Meta & Wallet).
+- **Chips** sin doble pastilla; hover/focus sólidos.
+- **Vista Compacta** / **Modo Deluxe** toggles OK.
+- **Responsive**: sin desbordes a <900px.
+
+---
+
+## Accesibilidad
+- **Focus visible** en chips y ✔ manual.
+- Acciones clave accesibles por teclado:
+  - ✔ manual (Enter/Espacio)
+  - Favoritos (Enter/Espacio)
+  - Copiar WP / Compartir / Horarios (Enter/Espacio)
+
+---
+
+## Versionado
+Este proyecto sigue **Semantic Versioning** (SemVer).
+
+- `v3.0.0`: MetaEventos Deluxe (este release).
+- `v2.6.2`: Base estable previa a Deluxe (fixes varios + compatibilidad con manual check).
+
+Ver CHANGELOG.md para detalles.
+
+---
+
+## Contribuir
+1. Rama feature: `feature/<nombre>`
+2. Commit convencional:  
+   - `feat(meta): …`  
+   - `fix(ui): …`  
+   - `chore(css): …`
+3. PR con descripción, capturas (si UI), checklist QA.
+4. Review y **squash merge** o **merge commit** según política.
+
+---
+
+## Licencia
+© Comunidad Gato Negro. Uso interno / comunitario. Contacto por Discord para acuerdos de distribución o forks.
