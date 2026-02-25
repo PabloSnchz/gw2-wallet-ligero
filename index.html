@@ -27,10 +27,24 @@
         <a class="an-util-link" href="https://help.guildwars2.com/hc" target="_blank" rel="noopener">Ayuda</a>
         <a class="an-util-link" href="https://www.guildwars2.com/" target="_blank" rel="noopener">Sitio oficial</a>
         <span class="an-sep">|</span>
-        <a class="an-util-link an-link--keys" href="https://account.arena.net/applications" target="_blank" rel="noopener">API Keys</a>
+        <a class="an-util-link an-link--keys" href="https://account.arena.net/applications" target="_blank" rel="noopener">ANet Keys</a>
+
+        <!-- [NUEVO] menú/modal + selector global -->
+        <button id="keysMenuBtn"
+                class="an-util-link an-util-link--btn"
+                type="button"
+                title="Gestión de API Keys"
+                aria-haspopup="dialog"
+                aria-controls="keysModal">
+          Gestión de API Keys ▾
+        </button>
+
+        <label for="keySelectGlobal" class="visually-hidden">Seleccionar API Key</label>
+        <select id="keySelectGlobal" title="Seleccionar API Key (global)" aria-label="Seleccionar API Key (global)"></select>
+        <!-- [/NUEVO] -->
       </div>
 
-      <!-- Redes: íconos en color original + Twitch -->
+      <!-- Redes -->
       <div class="an-util-right" aria-label="Redes">
         <a class="an-social an-social--discord" href="https://discord.gg/ZGNsfsqyKe" target="_blank" rel="noopener" aria-label="Discord" title="Discord">
           <!-- Discord -->
@@ -89,39 +103,11 @@
       <h2 class="panel__title" id="walletTitle">Divisas de la cuenta</h2>
 
       <div class="panel__body">
-        <!-- Owner + KEY -->
+        <!-- Owner (sólo label de cuenta) -->
         <div class="owner">
           <div class="owner-left">
             <span class="muted" id="lblAccount">Cuenta:</span>
             <span id="ownerLabel" class="owner__pill" aria-labelledby="lblAccount">—</span>
-          </div>
-
-          <div class="owner-right" id="ownerRight">
-            <label for="keySelect" class="muted">Seleccionar KEY</label>
-            <select id="keySelect" aria-label="Seleccionar API Key"></select>
-
-            <button id="copyKeyBtn" class="icon-btn" title="Copiar API Key" aria-label="Copiar">⧉</button>
-            <button id="renameKeyBtn" class="icon-btn" title="Renombrar API Key" aria-label="Renombrar">✎</button>
-            <button id="deleteKeyBtn" class="icon-btn" title="Eliminar API Key" aria-label="Eliminar">🗑</button>
-            <button id="refreshBtn" class="icon-btn" title="Actualizar datos" aria-label="Actualizar">↻</button>
-            <button id="addKeyBtn" class="icon-btn" title="Agregar API Key" aria-label="Agregar">＋</button>
-
-            <!-- Popover alta KEY -->
-            <form id="keyPopover" class="key-popover" hidden>
-              <div class="kp-row">
-                <label for="newKeyLabel" class="muted">Nombre</label>
-                <input id="newKeyLabel" type="text" placeholder="Opcional" autocomplete="off">
-              </div>
-              <div class="kp-row">
-                <label for="newKeyValue" class="muted">API key</label>
-                <input id="newKeyValue" type="password" placeholder="pegar API key" required>
-              </div>
-              <div class="kp-actions">
-                <button type="submit" class="btn btn--accent">Guardar</button>
-                <button type="button" id="cancelKeyBtn" class="btn">Cancelar</button>
-              </div>
-              <p class="kp-hint muted">Se guarda localmente. Usar <code>?access_token=</code> evita preflight CORS.</p>
-            </form>
           </div>
         </div>
 
@@ -284,7 +270,7 @@
               </div>
             </div>
 
-            <!-- Controles (sólo botón) -->
+            <!-- Controles -->
             <div class="conv2-controls">
               <button id="cvRefresh" class="btn" title="Actualizar cotización">Actualizar</button>
             </div>
@@ -311,7 +297,7 @@
         </div>
       </section>
 
-      <!-- [NUEVO] Sidebar MetaEventos: Top 3 próximos (visible sólo en Meta) -->
+      <!-- Sidebar MetaEventos: Top 3 próximos (visible sólo en Meta) -->
       <section class="panel" id="metaAsideNext" hidden>
         <h3 class="panel__title">Próximos (Top 3)</h3>
         <div class="panel__body">
@@ -332,6 +318,48 @@
 
   <!-- Toasts (notificaciones no intrusivas) -->
   <div id="toasts" class="toasts" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- [NUEVO] Modal: Gestión de API Keys -->
+  <div id="keysModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="keysModalTitle" hidden>
+    <div class="modal__backdrop" data-close="1"></div>
+    <div class="modal__dialog" role="document" aria-describedby="keysModalDesc" tabindex="-1">
+      <header class="modal__header">
+        <h3 id="keysModalTitle">Gestión de API Keys</h3>
+        <button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button>
+      </header>
+
+      <div class="modal__body">
+        <p id="keysModalDesc" class="muted" style="margin-top:0">
+          Agregá, renombrá, eliminá o copiá tus claves. Se guardan localmente en este navegador.
+        </p>
+
+        <!-- Lista de keys (se completa por JS) -->
+        <div id="keysList" class="keys-list"></div>
+
+        <hr style="border-color:#242428">
+
+        <!-- Alta/Edición -->
+        <form id="keysForm" class="keys-form">
+          <div class="field">
+            <label for="kfLabel">Nombre</label>
+            <input id="kfLabel" type="text" placeholder="Opcional" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="kfValue">API Key</label>
+            <input id="kfValue" type="password" placeholder="pegar API key" autocomplete="off">
+          </div>
+          <div class="keys-actions">
+            <button type="submit" class="btn btn--accent">Guardar / Actualizar</button>
+            <button type="button" id="kfClear" class="btn">Limpiar</button>
+          </div>
+          <p class="muted" style="margin:8px 0 0">
+            Requiere permisos <code>account</code> y <code>wallet</code>. Se usa <code>?access_token=</code> para evitar preflight CORS.
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+  <!-- [/NUEVO] -->
 
   <!-- JS -->
   <script defer src="js/app.js?v=2.5.0"></script>
