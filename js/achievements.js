@@ -355,29 +355,72 @@
 
   function ensureAside(){
     ensureAsideStyles();
-    var host = document.querySelector('aside.col-side');
+
+    const host = document.querySelector('aside.col-side');
     if (!host) return;
 
-    var p = document.getElementById('achAsidePanel');
+    // 1) Asegurar el contenedor #achAsidePanel
+    let p = document.getElementById('achAsidePanel');
     if (!p) {
       p = document.createElement('section');
       p.className = 'panel';
       p.id = 'achAsidePanel';
-      p.innerHTML = [
-        '<h3 class="panel__title">Casi listos (Top 5)</h3>',
-        '<div class="panel__body">',
-          '<ul id="achAsideTop" class="ach-mini-list"></ul>',
-        '</div>',
-        '<hr class="hr-hairline"/>',
-        '<h3 class="panel__title">Categorías</h3>',
-        '<div class="panel__body"><div id="achAsideCats" class="ach-cats-chips"></div></div>'
-      ].join('');
       host.appendChild(p);
+    } else if (p.parentElement !== host) {
+      host.appendChild(p); // mover al contenedor correcto si hiciera falta
     }
+
+    // 2) (Re)construir el esqueleto si está vacío o incompleto
+    const hasTop = !!p.querySelector('#achAsideTop');
+    const hasCats = !!p.querySelector('#achAsideCats');
+    if (!hasTop || !hasCats) {
+      // Limpiar placeholders/estructuras parciales
+      p.innerHTML = '';
+
+      // ====== Bloque "Casi listos (Top 5)" ======
+      const head1 = document.createElement('div');
+      head1.className = 'panel-head';
+      const h3_1 = document.createElement('h3');
+      h3_1.className = 'panel-head__title';
+      h3_1.textContent = 'Casi listos (Top 5)';
+      head1.appendChild(h3_1);
+
+      const hr1 = document.createElement('hr');
+      hr1.className = 'hr-hairline';
+
+      const body1 = document.createElement('div');
+      body1.className = 'panel__body';
+      const ul = document.createElement('ul');
+      ul.id = 'achAsideTop';
+      ul.className = 'ach-mini-list';
+      body1.appendChild(ul);
+
+      // ====== Bloque "Categorías" ======
+      const head2 = document.createElement('div');
+      head2.className = 'panel-head';
+      const h3_2 = document.createElement('h3');
+      h3_2.className = 'panel-head__title';
+      h3_2.textContent = 'Categorías';
+      head2.appendChild(h3_2);
+
+      const hr2 = document.createElement('hr');
+      hr2.className = 'hr-hairline';
+
+      const body2 = document.createElement('div');
+      body2.className = 'panel__body';
+      const cats = document.createElement('div');
+      cats.id = 'achAsideCats';
+      cats.className = 'ach-cats-chips';
+      body2.appendChild(cats);
+
+      // Ensamblar
+      p.append(head1, hr1, body1, head2, hr2, body2);
+    }
+
+    // 3) Guardar refs y asegurar visibilidad
     el.aside = p;
-    el.asideTopList = document.getElementById('achAsideTop');
-    el.asideCats = document.getElementById('achAsideCats');
-    // Asegurar que se vea y ocultar otros asides ya lo hace el router
+    el.asideTopList = p.querySelector('#achAsideTop');
+    el.asideCats = p.querySelector('#achAsideCats');
     p.removeAttribute('hidden');
   }
 
