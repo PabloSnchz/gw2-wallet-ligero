@@ -1,13 +1,12 @@
 /* eslint-disable no-console */
 (function () {
-  const $ = (s, r = document) => r.querySelector(s);
+  const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
   console.info('%cGW2 Wallet app.js v2.5.0 → KeyManager + modal + selector global (limpio)', 'color:#0bf; font-weight:700');
 
   /* ========================= Estado ========================= */
   const state = {
-    // Fuente de verdad de keys es KeyManager; esto queda para compat en algunas partes del render.
     keys: [],
     selected: null,
     accountName: '—',
@@ -19,7 +18,6 @@
     filters: { q: '', cat: '', sort: 'order', onlyPos: false, onlyMain: false },
     favs: new Set(),
 
-    // Vista de Wallet (tarjetas/tabla)
     view: 'cards'
   };
 
@@ -85,7 +83,7 @@
     kfValue:   $('#kfValue'),
     kfClear:   $('#kfClear'),
 
-    // Wallet panel (sólo owner label)
+    // Wallet panel
     ownerLabel: $('#ownerLabel'),
 
     // Filtros Wallet
@@ -112,7 +110,7 @@
     el.status.textContent = m;
   }
   function obfuscate(t) { return !t || t.length < 8 ? 'Key' : `Key ${t.slice(0, 4)}…${t.slice(-4)}`; }
-  function esc(s) { return String(s || '').replace(/[&<>\"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
+  function esc(s) { return String(s || '').replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m])); }
 
   function splitCopper(v) { const g = Math.floor(v / 10000), s = Math.floor((v % 10000) / 100), c = v % 100; return { g, s, c }; }
   function badgesHTMLFromCopper(copper) {
@@ -124,52 +122,85 @@
     return p.length ? p.join('') : '0';
   }
 
-  function toast(msg, kind = 'info', ms = 2500) {
-    try {
-      const host = document.getElementById('toasts');
-      if (!host) return console.info('[toast]', msg);
-      const n = document.createElement('div');
-      const kindClass = kind === 'ok' ? 'toast--ok' : kind === 'warn' ? 'toast--warn' : kind === 'error' ? 'toast--error' : '';
-      n.className = `toast ${kindClass}`;
-      n.textContent = msg;
-      host.appendChild(n);
-      setTimeout(() => { n.style.opacity = '0'; n.style.transform = 'translateY(6px)'; }, Math.max(100, ms - 160));
-      setTimeout(() => n.remove(), Math.max(400, ms));
-    } catch (e) {
-      console.warn('[toast]', e, msg);
+  // === Toasts GLOBAL unificados (exponen window.toast) ===
+  (function (root) {
+    'use strict';
+    if (root.toast && typeof root.toast === 'function') return;
+
+    function ensureHost() {
+      let host = document.getElementById('toasts');
+      if (host) return host;
+      host = document.createElement('div');
+      host.id = 'toasts';
+      host.className = 'toasts';
+      host.setAttribute('aria-live', 'polite');
+      host.setAttribute('aria-atomic', 'true');
+      document.body.appendChild(host);
+      return host;
     }
-  }
-  function fadeIn(node) {
-    if (!node) return;
-    node.classList.remove('fade-in'); void node.offsetWidth; node.classList.add('fade-in');
-  }
+    const normalizeType = (t) => (t==='ok'?'success': (t==='warn'?'warn': (t==='error'?'error': (t==='success'?'success':'info'))));
+    const iconFor = (t) => (t==='success'?'✅': (t==='error'?'⚠️': (t==='warn'?'⚠️':'ℹ️')));
+
+    function makeToastEl(type, msg) {
+      const wrap = document.createElement('div');
+      wrap.className = 'toast toast--' + type;
+      const ic = document.createElement('span'); ic.className='toast__icon'; ic.setAttribute('aria-hidden','true'); ic.textContent=iconFor(type);
+      const tx = document.createElement('div');  tx.className='toast__msg';  tx.textContent=String(msg||'');
+      const btn= document.createElement('button'); btn.className='toast__close'; btn.title='Cerrar'; btn.setAttribute('aria-label','Cerrar'); btn.textContent='×';
+      wrap.append(ic,tx,btn);
+      return wrap;
+    }
+
+    function toast(type, msg, opts) {
+      opts = opts || {};
+      const host = ensureHost();
+      const kind = normalizeType(type);
+      const el = makeToastEl(kind, msg);
+      host.appendChild(el);
+      const ttl = Number(opts.ttl || 3500);
+      const timer = ttl>0 ? setTimeout(close, ttl) : null;
+      function close(){ if(timer) clearTimeout(timer); el.classList.add('toast--out'); setTimeout(()=>el.remove(),180); }
+      el.querySelector('.toast__close')?.addEventListener('click', close);
+      return { close, el };
+    }
+    toast.legacy = (msg, kind, ms) => toast(kind==='ok'?'success':(kind||'info'), msg, { ttl: ms||2500 });
+    root.toast = toast;
+  })(typeof window!=='undefined' ? window : this);
 
   /* =============== Íconos: renderer + check ================= */
   function iconTag(url, size = 22) {
     const u = String(url || '').trim();
     if (!/^https?:\/\//i.test(u)) return '';
     const safe = u.replace(/"/g, '&quot;');
-    // Devolvemos <img> completo como espera el render
-    return `<img src="${safe}" width="${size}" height="${size}" alt="" loading="lazy" referrerpolicy="no-referrer">`;
+    return `<img src="${safe}" width="${size}" height="${size}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
   }
+
+  // No bloqueante: intenta convertir URLs crudas a <img>, pero si falla, no interrumpe render.
   function runIconChecks() {
-    let fixes = 0, pend = 0;
-    // tarjetas
-    $$('.meta-left').forEach(n => {
-      if (/\b<img\b/i.test(n.innerHTML)) return;
-      const txt = n.textContent?.trim() || '';
-      if (/^https?:\/\//i.test(txt)) { n.innerHTML = iconTag(txt, 22); fixes++; }
-      else pend++;
-    });
-    // tabla
-    $$('#walletTable tbody tr td:first-child').forEach(n => {
-      if (/\b<img\b/i.test(n.innerHTML)) return;
-      const txt = n.textContent?.trim() || '';
-      if (/^https?:\/\//i.test(txt)) { n.innerHTML = iconTag(txt, 22); fixes++; }
-      else pend++;
-    });
-    if (pend === 0) console.info(`[render:icons] OK — fixes:${fixes}`);
-    else console.warn(`[render:icons] pendientes:${pend} — fixes:${fixes}`);
+    try {
+      let fixes = 0, pend = 0;
+
+      // Tarjetas (Wallet)
+      $$('.meta-left').forEach(n => {
+        if (n.querySelector('img')) return; // ya hay imagen
+        const txt = (n.textContent || '').trim();
+        if (/^https?:\/\//i.test(txt)) { n.innerHTML = iconTag(txt, 22); fixes++; }
+        else pend++;
+      });
+
+      // Tabla (Wallet)
+      $$('#walletTable tbody tr td:first-child').forEach(n => {
+        if (n.querySelector('img')) return;
+        const txt = (n.textContent || '').trim();
+        if (/^https?:\/\//i.test(txt)) { n.innerHTML = iconTag(txt, 22); fixes++; }
+        else pend++;
+      });
+
+      if (pend) console.warn(`[render:icons] pendientes:${pend} — fixes:${fixes}`);
+      else      console.info(`[render:icons] OK — fixes:${fixes}`);
+    } catch (e) {
+      console.debug('[render:icons] skip (non-blocking)', e);
+    }
   }
 
   /* =================== Render tarjetas ===================== */
@@ -273,7 +304,7 @@
       el.walletCards && (el.walletCards.style.display = 'grid');
       renderCards(rows);
     }
-    runIconChecks();
+    runIconChecks(); // no bloqueante
   }
 
   /* =================== Catálogo (cache) ===================== */
@@ -306,8 +337,8 @@
 
   /* ==================== KeyManager (NUEVO) ================== */
   const KeyManager = {
-    list: [],          // [{label, value}]
-    selected: null,    // string|null
+    list: [],
+    selected: null,
 
     load() {
       try { this.list = JSON.parse(localStorage.getItem(LS_KEYS)) || []; }
@@ -323,11 +354,10 @@
       this.selected = token || null;
       state.selected = this.selected;
 
-      // Sincroniza sólo el selector GLOBAL (ya no existe el local)
       const gs = el.keySelectGlobal;
       if (gs && gs.value !== (this.selected || '')) gs.value = this.selected || '';
 
-      // Avisar a toda la app (MetaEventos lo escucha)
+      // Avisar al resto de módulos (MetaEventos escucha esto)
       document.dispatchEvent(new CustomEvent('gn:tokenchange', { detail: { token: this.selected } }));
     },
     refreshSelects() {
@@ -358,7 +388,7 @@
       await loadAllForToken(value);
 
       setStatus('Key guardada.', 'ok');
-      toast?.('Key guardada', 'ok', 1400);
+      window.toast?.('success','Key guardada', { ttl: 1400 });
     },
     rename(value, newLabel) {
       const item = this.list.find(k => k.value === value);
@@ -431,7 +461,7 @@
     el.keysList.querySelectorAll('.k-copy').forEach(b => b.addEventListener('click', async ev => {
       const row = ev.target.closest('.keys-row'); const val = row?.dataset?.val; if (!val) return;
       await KeyManager.copy(val);
-      setStatus('API Key copiada.', 'ok'); toast?.('API Key copiada', 'ok', 1500);
+      setStatus('API Key copiada.', 'ok'); window.toast?.('success','API Key copiada', { ttl: 1500 });
     }));
     el.keysList.querySelectorAll('.k-rename').forEach(b => b.addEventListener('click', ev => {
       const row = ev.target.closest('.keys-row'); const val = row?.dataset?.val; if (!val) return;
@@ -466,7 +496,7 @@
       } catch (err) {
         console.error(err);
         setStatus(err.message || 'La API key no es válida.', 'error');
-        toast?.('No se pudo validar la key', 'error', 2000);
+        window.toast?.('error','No se pudo validar la key', { ttl: 2000 });
       }
     });
     el.kfClear?.addEventListener('click', () => {
@@ -477,7 +507,7 @@
 
   /* ======================== Eventos ========================= */
   function wireEvents() {
-    // Router tabs
+    // Router tabs (legacy)
     el.overlayTabs.forEach(btn => {
       btn.addEventListener('click', () => {
         const view = btn.getAttribute('data-view'); // 'cards' | 'meta'
@@ -493,14 +523,14 @@
           conv?.setAttribute('hidden', '');
           next?.setAttribute('hidden', '');
           metaAside?.removeAttribute('hidden');
-          fadeIn(el.metaPanel);
+          el.metaPanel?.classList.add('fade-in');
         } else {
           el.metaPanel?.setAttribute('hidden', '');
           el.walletPanel?.removeAttribute('hidden');
           conv?.removeAttribute('hidden');
           next?.removeAttribute('hidden');
           metaAside?.setAttribute('hidden', '');
-          fadeIn(el.walletPanel);
+          el.walletPanel?.classList.add('fade-in');
         }
         document.dispatchEvent(new CustomEvent('gn:tabchange', { detail: { view } }));
       });
@@ -593,7 +623,7 @@
   }
   boot();
 
-  /* ===================== Conversor (estable) ================ */
+  /* ===================== Conversor ========================= */
   function convGet() { try { return JSON.parse(localStorage.getItem(LS_CONV) || '{}'); } catch { return {}; } }
   function convPut(k, v) { try { const m = convGet(); m[k] = { v, ts: Date.now() }; localStorage.setItem(LS_CONV, JSON.stringify(m)); } catch {} }
   function convVal(k) { const m = convGet(); if (!m[k]) return null; if ((Date.now() - m[k].ts) > CONV_TTL) return null; return m[k].v; }
@@ -720,11 +750,11 @@
              ${iconGem}<strong>400</strong>
            </span> ${badgesHTMLFromCopper(copper)}`;
       }
-      toast?.('Referencia 400 actualizada', 'ok', 1500);
+      window.toast?.('success','Referencia 400 actualizada', { ttl: 1500 });
     } catch (e) {
       console.warn('[conv] ref400', e);
       if (el.cvRef400) el.cvRef400.textContent = '—';
-      toast?.('No se pudo actualizar la referencia 400', 'warn', 2000);
+      window.toast?.('warn','No se pudo actualizar la referencia 400', { ttl: 2000 });
     }
   }
 

@@ -5,6 +5,73 @@ El formato sigue las recomendaciones de
 **Keep a Changelog** (https://keepachangelog.com/)  
 y el versionado **SemVer** (https://semver.org/).
 
+## [4.0.0] – 2026-02-27
+Nuevo módulo completo: Cámara del Brujo (Wizard’s Vault)
+
+Objetivos Diarios / Semanales / Especiales.
+Progreso de Meta global de temporada.
+Aclamación Astral: disponible, gastado API, reservado (marcas locales).
+Tienda WV con vista tarjetas/tabla, filtros, buscador, stock y contadores ± persistentes.
+Toolbar PvE / PvP / WvW.
+Manejo de permisos y fallback en caso de tokens sin wizardsvault.
+Integración con endpoints oficiales:
+
+/v2/wizardsvault/seasons
+/v2/account/wizardsvault/categories
+/v2/account/wizardsvault/listings
+
+Nuevo módulo completo: Pantalla de Logros (Achievements)
+
+Vista dedicada en #/account/achievements.
+Barra de progreso por objetivo.
+Filtros PvE / PvP / WvW.
+Rareza, progreso numérico y porcentaje.
+Integración con /v2/account/achievements y /v2/achievements.
+Estilo oscuro, limpio y consistente con el resto del panel.
+
+
+
+Selects (Meta & Eventos / Wallet): tema oscuro real, sin caret, menú desplegable dark, una sola pastilla (chip).
+
+
+Chips sólidos: hover/focus/pressed/checked consistentes y accesibles.
+
+
+Toggles inyectados (sin tocar index.html):
+
+data-meta-deluxe="on|off"
+data-meta-compact="on|off"
+
+
+Integración total con:
+
+Hecho hoy (API): /v2/account/worldbosses, /v2/account/mapchests.
+Hecho hoy (Manual): por id/token/día UTC (localStorage), reset automático 00:00 UTC.
+Cache de flags (TTL 5′), refresh manual.
+
+
+Nuevo sistema de iconografía en el sidebar:
+
+Reemplazo de emojis → íconos reales (Wiki e íconos GW2).
+Preparado para repositorio propio de imágenes.
+
+Cambiado
+
+Refinamiento visual de tarjetas y filtros, sin romper la estructura previa.
+Ordenación por favoritos, estado (activo → próximo → más tarde) y proximidad.
+Router actualizado: navegación por hash y emisión correcta de gn:tabchange para inicialización del módulo MetaEventos.
+Correcta separación de asides según vista (Wallet / MetaEventos / Logros / WV).
+
+Corregido
+
+Selects que se veían con fondo blanco / texto claro (ilegible) en algunos navegadores.
+Flechita (caret) que se superponía en los chips de filtros.
+Error crítico: MetaEventos no iniciaba debido a cambio en la navegación → solucionado.
+Tooltips de infusiones: fix de pop is not defined, escopo correcto y createElement('img') sin CORS.
+Render de íconos: iconTag() / wpIcon() ahora devuelven <img> reales.
+Corrección de enlaces Wiki/Mapa (se mostraban como texto).
+
+
 
 ## [3.0.0] – 2026-02-24
 ### Agregado

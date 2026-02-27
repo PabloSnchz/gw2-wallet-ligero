@@ -21,7 +21,6 @@
     favGrid:    $('#metaFavGrid'),
     list:       $('#metaList'),
     miniNext:   $('#metaMiniNext'),
-    // NUEVO
     refreshFlagsBtn: $('#metaRefreshFlags'),
     flagsTs:    $('#metaFlagsTs')
   };
@@ -30,19 +29,14 @@
   const LS_FAVS   = 'gw2_meta_favs';
   const SOON_MIN  = 20;
 
-  // Cache por key (done today)
   const LS_FLAGS      = 'gw2_meta_flags_v1';
-  const FLAGS_TTL_MS  = 5 * 60 * 1000; // 5 minutos
+  const FLAGS_TTL_MS  = 5 * 60 * 1000;
+  const LS_MANUAL     = 'gw2_meta_manual_v1';
 
-  // Manual done por token / día
-  const LS_MANUAL    = 'gw2_meta_manual_v1';
-
-  // Deluxe toggles
   const BODY = document.body;
-  const DELUXE_DEFAULT  = true;   // activo por defecto
-  const COMPACT_DEFAULT = false;  // desactivado por defecto
+  const DELUXE_DEFAULT  = true;
+  const COMPACT_DEFAULT = false;
 
-  // Normalización para badge de expansión (coincide con CSS)
   const EXP_MAP = {
     'core': 'core', 'core tyria': 'core',
     'hot': 'hot', 'heart of thorns': 'hot',
@@ -54,24 +48,22 @@
     'janthir': 'janthir'
   };
 
-  let seed = [];                 // metas (desde assets/meta-events.json)
+  let seed = [];                 // metas (assets/meta-events.json)
   let favs = new Set();          // favoritos (ids)
-  let filters = {                // filtros actuales
-    type: '', exp: '',
-    onlyActive: false, onlySoon: false, onlyInf: false
-  };
+  let filters = { type: '', exp: '', onlyActive: false, onlySoon: false, onlyInf: false };
+
   let accountFlags = {           // banderas de cuenta (completado hoy)
     worldbosses: new Set(),
     mapchests:   new Set(),
-    lastTs:      0,             // epoch ms
-    lastHuman:   '—'            // hh:mm:ss local
+    lastTs:      0,
+    lastHuman:   '—'
   };
 
   // --------- Utilidades ----------
   function setStatus(msg, kind='info'){
     if(!el.status) return;
     el.status.textContent = msg;
-    el.status.style.color = (kind==='error') ? '#f28b82' : '#a0a0a6';
+    el.status.style.color = (kind==='error') ? '#f28b82' : (kind==='ok' ? '#a7f3d0' : '#a0a0a6');
   }
   const nowLocal = () => new Date();
   const pad2 = (n) => String(n).padStart(2,'0');
@@ -81,7 +73,7 @@
   function nextResetUTC(){
     const n = new Date();
     const reset = new Date(n);
-    reset.setUTCHours(24,0,0,0); // próximo 00:00 UTC
+    reset.setUTCHours(24,0,0,0);
     return reset;
   }
 
@@ -94,7 +86,7 @@
     el.reset.textContent = `Próximo reset en ${pad2(hh)}:${pad2(mm)} h`;
   }
 
-  // --- SKELETON HELPERS (MetaEventos) ---
+  // --- SKELETON HELPERS ---
   function renderSkeletonMeta(count=8){
     if(!el.list) return;
     const cards = Array.from({length: count}).map(()=>`
@@ -108,7 +100,6 @@
     el.list.innerHTML = `<div class="skel-grid">${cards}</div>`;
     if(el.favBlock){ el.favBlock.setAttribute('hidden',''); el.favGrid.innerHTML=''; }
   }
-  function clearSkeletonMeta(){ /* noop: próximo render sobreescribe */ }
 
   // --------- Carga de datos (seed + drops) ----------
   let externalDrops = new Map();
@@ -130,7 +121,7 @@
     seed = await r.json();
     await loadExternalDrops();
 
-    // Merge: seed + externalDrops (mantener semántica de "anular con null" si corresponde)
+    // Merge: seed + externalDrops
     seed = seed.map(m => {
       const ext = externalDrops.get(m.id);
       if(!ext) return m;
@@ -160,11 +151,9 @@
   }
   function todayUTCKey(){
     const d = new Date();
-    const k = `${d.getUTCFullYear()}-${pad2(d.getUTCMonth()+1)}-${pad2(d.getUTCDate())}`;
-    return k;
+    return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth()+1)}-${pad2(d.getUTCDate())}`;
   }
   function manualKeyNamespace(){
-    // namespace por token (o 'anon') y por día
     return `${LS_MANUAL}:${tokenFingerprint() || 'anon'}:${todayUTCKey()}`;
   }
   function loadManualDone(){
@@ -176,21 +165,15 @@
     }
   }
   function saveManualDone(set){
-    try{
-      localStorage.setItem(manualKeyNamespace(), JSON.stringify([...set]));
-    }catch{}
+    try{ localStorage.setItem(manualKeyNamespace(), JSON.stringify([...set])); }catch{}
   }
-  // set en memoria del día
   let manualDoneSet = loadManualDone();
 
   function isManualEligible(meta){
-    // elegible si manualCheck:true y no tiene API
     const hasAPI = !!(meta?.api?.worldBossId || meta?.api?.mapChestId);
     return !!meta?.manualCheck && !hasAPI;
   }
-  function isManualDone(meta){
-    return isManualEligible(meta) && manualDoneSet.has(meta.id);
-  }
+  function isManualDone(meta){ return isManualEligible(meta) && manualDoneSet.has(meta.id); }
   function toggleManual(meta){
     if(!isManualEligible(meta)) return false;
     if(manualDoneSet.has(meta.id)) manualDoneSet.delete(meta.id);
@@ -264,20 +247,23 @@
     return out;
   }
 
-  function iconTag(url, size=18, alt=''){
+  /// === Helpers de ICONOS (siempre devuelven <img>) ===
+  function iconTag(url, size = 18, alt = '') {
     const u = String(url ?? '').trim();
-    if(!/^https?:\/\//i.test(u)) return '';
-    const safe = u.replace(/"/g,'"');
-    const a    = (alt ?? '').replace(/"/g,'"');
-    return `<img src="${safe}" alt="${a}" width="${size}" height="${size}" loading="lazy" decoding="async" style="vertical-align:middle;border-radius:3px">`;
+    if (!/^https?:\/\//i.test(u)) return '';
+    const s = Number(size || 18);
+    const a = String(alt ?? '').replace(/"/g, '&quot;');
+    return `<img src="${u}" width="${s}" height="${s}" alt="${a}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
   }
 
-  function wpIcon(size=16){
-    const url = "https://wiki.guildwars2.com/images/d/d2/Waypoint_(map_icon).png";
-    return `<img src="${url}" width="${size}" height="${size}" alt="Waypoint" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`;
+  function wpIcon(size = 16) {
+    const u = 'https://wiki.guildwars2.com/images/d/d2/Waypoint_(map_icon).png';
+    const s = Number(size || 16);
+    return `<img src="${u}" width="${s}" height="${s}" alt="Waypoint" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
   }
 
-  // --------- Instancias y estado temporal ----------
+
+  // --------- Instancias y estado ----------
   function localDateFromUTC_HHMM(hhmm){
     const [H,M] = hhmm.split(':').map(x=>parseInt(x,10));
     const d = new Date();
@@ -335,51 +321,34 @@
     return '';
   }
 
-  // --- Hecho hoy (detalle + bool) ---
   function doneTodayDetail(meta){
-    // 1) API oficial
     if(meta.api?.worldBossId && accountFlags.worldbosses.has(meta.api.worldBossId))
       return { done:true, src:'worldbosses' };
     if(meta.api?.mapChestId && accountFlags.mapchests.has(meta.api.mapChestId))
       return { done:true, src:'mapchests' };
-
-    // 2) Manual (si elegible)
     if(isManualDone(meta)) return { done:true, src:'manual' };
-
     return { done:false, src:null };
   }
-  function doneToday(meta){
-    return doneTodayDetail(meta).done;
-  }
+  const doneToday = (meta) => doneTodayDetail(meta).done;
 
-  function stateBadge(s){
-    if(s==='active') return `<span class="m-badge m-badge--active">Activo</span>`;
-    if(s==='soon')   return `<span class="m-badge m-badge--soon">Próximo</span>`;
-    return `<span class="m-badge">Más tarde</span>`;
-  }
-
-  // ---------- Heurística Infusiones ----------
   const INFUSION_WHITELIST = new Set([
-    // inglés
     'echo of the dragonvoid','winter\'s heart infusion','frost legion infusion','queen bee infusion',
     'liquid aurillium infusion','chak infusion','festive confetti infusion','crystal infusion',
-    // español
     'infusión de corazón del invierno','infusión de la legión de escarcha','infusión de la reina abeja',
     'infusión de aurilio líquido','infusión chak','infusión festiva de confeti','infusión de cristal'
   ]);
-
-  function isInfusionItemObj(item){
+  const isInfusionItemObj = (item) => {
     try{
       if(!item || typeof item!=='object') return false;
       if(item?.details?.infusion_upgrade_flags?.includes('Infusion')) return true;
       if(item?.type === 'UpgradeComponent') return true;
       return false;
     }catch{ return false; }
-  }
-  function isInfusionNameOrWhitelist(name){
+  };
+  const isInfusionNameOrWhitelist = (name) => {
     const n = String(name ?? '').toLowerCase();
     return n.includes('infusión') || n.includes('infusion') || INFUSION_WHITELIST.has(n);
-  }
+  };
   function labelByItemOrName(item, fallbackName){
     if(isInfusionItemObj(item)) return 'Infusión destacada';
     if(isInfusionNameOrWhitelist(fallbackName)) return 'Infusión destacada';
@@ -433,11 +402,15 @@
     `;
   }
 
-  // ---------- Helpers: Horarios (chips NOW/SOON) ----------
+  function stateBadge(s){
+    if(s==='active') return `<span class="m-badge m-badge--active">Activo</span>`;
+    if(s==='soon')   return `<span class="m-badge m-badge--soon">Próximo</span>`;
+    return `<span class="m-badge">Más tarde</span>`;
+  }
+
   function buildWindowsChips(meta){
     const list = Array.isArray(meta.windowsUTC) ? meta.windowsUTC : [];
     if (!list.length) return '';
-
     const now = nowLocal();
     const chips = list.map(hhmm => {
       const start = localDateFromUTC_HHMM(hhmm);
@@ -461,10 +434,9 @@
       ? `Termina en ${minsRemaining} min`
       : (minsRemaining!=null ? `Próximo en ${minsRemaining} min` : '—');
 
-    // Hecho hoy (fuente)
     const dt = doneTodayDetail(meta);
     const when = accountFlags.lastHuman || '—';
-    const srcTxt = dt.src ? (dt.src==='worldbosses'?'worldbosses': dt.src==='mapchests'?'mapchests':'manual') : '—';
+       const srcTxt = dt.src ? (dt.src==='worldbosses'?'worldbosses': dt.src==='mapchests'?'mapchests':'manual') : '—';
     const manualEligible = isManualEligible(meta);
 
     const doneTitle = dt.done
@@ -475,33 +447,35 @@
 
     const star = `<button class="m-star ${isFav?'m-star--on':''}" data-pin="${meta.id}" title="${isFav?'Quitar de favoritos':'Añadir a favoritos'}">★</button>`;
 
-    // ✔ clickeable sólo si es manual
     const doneAttrs = manualEligible ? `data-manual="1" data-id="${meta.id}" role="button" tabindex="0"` : '';
     const doneHtml  = `<span class="m-done ${dt.done?'m-done--on':''}" ${doneAttrs} title="${doneTitle}">${dt.done?'✔':'—'}</span>`;
 
-    const wikiHtml = meta.wiki ? `<a class="m-wiki" href="${meta.wiki}" target="_blank" rel="noopener">🔗 Wiki</a>` : '';
+    // ✅ Links bien formados
+    const wikiHtml = meta.wiki
+      ? `<a class="m-wiki" href="${meta.wiki}" target="_blank" rel="noopener">🔗 Wiki</a>`
+      : '';
+;
 
-    // Badge de expansión (normalizada)
     const rawExp = String(meta.expansion ?? '').toLowerCase().trim();
     const expKey = EXP_MAP[rawExp] ?? rawExp.replace(/\s+/g,'');
     const expClass = `badge-exp badge-exp--${expKey}`;
     const expBadgeHtml = `<span class="${expClass}" title="Expansión / Temporada: ${meta.expansion}">${meta.expansion}</span>`;
 
-    // NUEVO: línea de contexto
     const ctx = buildContext(meta);
     const ctxHtml = ctx ? `<div class="m-context">${ctx}</div>` : '';
 
-    // NUEVO: acciones extra (Mapa + Compartir) — sin tocar index.html
     const mapHref = meta.map ? `https://maps.gw2.io/#/?q=${encodeURIComponent(meta.map)}` : '';
-    const mapBtn  = mapHref ? `<a class="btn btn--ghost m-map" href="${mapHref}" target="_blank" rel="noopener" title="Abrir mapa (gw2.io)">Mapa</a>` : '';
+    
+    const mapBtn = mapHref
+      ? `<a class="btn btn--ghost m-map" href="${mapHref}" target="_blank" rel="noopener" title="Abrir mapa (gw2.io)">Mapa</a>`
+      : '';
+
     const shareBtn = `<button class="btn btn--ghost m-share" data-id="${meta.id}" title="Copiar texto para compartir">Compartir</button>`;
 
-    // NUEVO: Horarios por tarjeta (si hay ventanas)
     const hasWins = Array.isArray(meta.windowsUTC) && meta.windowsUTC.length>0;
     const winBtn  = hasWins ? `<button class="btn btn--ghost m-win__toggle" aria-expanded="false" title="Ver horarios">Horarios</button>` : '';
     const winPane = hasWins ? buildWindowsChips(meta) : '';
 
-    // Acciones (con WP si existe)
     const actions = `
       <div class="m-actions">
         ${meta.chat ? `<button class="btn btn--ghost m-copy" data-copy="${meta.chat}" title="Copiar waypoint" aria-label="Copiar waypoint">${wpIcon(16)}</button>` : ''}
@@ -544,9 +518,8 @@
   function computeAllInstances(){
     return seed.map(m => ({ meta:m, inst:buildInstance(m), fav:favs.has(m.id) }));
   }
-  function minutesDiff(d){
-    return Math.max(0, Math.floor((d - nowLocal())/60000));
-  }
+  const minutesDiff = (d) => Math.max(0, Math.floor((d - nowLocal())/60000));
+
   function renderMiniNext(rowsRaw){
     if(!el.miniNext) return;
     const list = rowsRaw
@@ -591,7 +564,8 @@
         if(!v) return;
         navigator.clipboard.writeText(v).then(()=>{
           setStatus('Copiado al portapapeles.','ok');
-          if (typeof toast === 'function') toast('Copiado al portapapapeles','ok', 1600);
+          if (typeof toast === 'function' && toast.legacy) toast.legacy('Copiado al portapapeles','ok', 1600);
+          else if (typeof toast === 'function') toast('success','Copiado al portapapeles',{ttl:1600});
         });
       });
     });
@@ -620,7 +594,7 @@
     if(filters.onlySoon)   rows = rows.filter(r => r.inst.state==='soon');
     if(filters.onlyInf)    rows = rows.filter(r => isInfusionMeta(r.meta));
 
-    // Orden: favoritos, estado (active > soon > later), proximidad de nextAt
+    // Orden
     const rankState = (s) => s==='active'?0 : (s==='soon'?1:2);
     rows.sort((a,b)=>{
       if(a.fav!==b.fav) return a.fav? -1 : 1;
@@ -631,12 +605,12 @@
       return an - bn;
     });
 
-    // Resolver items faltantes (para iconos/nombres de drops)
+    // Resolver items para drops
     const ids     = [...new Set(rows.map(x=>x.meta.highlightItemId).filter(Boolean))];
     const missing = ids.filter(id => !itemCache.has(id));
     if(missing.length) await batchItems(missing);
 
-    // Favoritos (máx. 6 en bloque)
+    // Favoritos (máx. 6)
     const favRows = rows.filter(r=>r.fav).slice(0,6);
     if(favRows.length){
       el.favBlock?.removeAttribute('hidden');
@@ -658,7 +632,8 @@
         if(!v) return;
         navigator.clipboard.writeText(v).then(()=>{
           setStatus('Copiado al portapapeles.','ok');
-          if (typeof toast === 'function') toast('Copiado al portapapeles','ok', 1600);
+          if (typeof toast === 'function' && toast.legacy) toast.legacy('Copiado al portapapeles','ok', 1600);
+          else if (typeof toast === 'function') toast('success','Copiado al portapapeles',{ttl:1600});
         });
       });
     });
@@ -708,7 +683,8 @@
         const piece = `${meta.name} — ${stateTxt}${meta.chat ? ` ${meta.chat}`:''}`;
         navigator.clipboard.writeText(piece).then(()=>{
           setStatus('Texto copiado para compartir.','ok');
-          toast?.('Copiado para compartir','ok', 1200);
+          if (typeof toast === 'function' && toast.legacy) toast.legacy('Copiado para compartir','ok', 1200);
+          else if (typeof toast === 'function') toast('success','Copiado para compartir',{ttl:1200});
         });
       });
     });
@@ -727,7 +703,7 @@
     // Sidebar Top 3
     renderMiniNext(rowsRaw);
 
-    // Infusiones (debe correrse DESPUÉS del render)
+    // Tooltips de infusión
     bindInfusionPreviews();
 
     // TS visible (API)
@@ -746,8 +722,8 @@
     const delta = nextResetUTC().getTime() - Date.now();
     if(delta > 0 && delta < 36*3600*1000){
       midnightTimer = setTimeout(async ()=>{
-        await refreshAccountFlags(true); // reset diario
-        manualDoneSet = loadManualDone(); // recargar set manual del nuevo día
+        await refreshAccountFlags(true);
+        manualDoneSet = loadManualDone();
         render();
         scheduleMidnightAutoRefresh();
       }, delta + 1200);
@@ -770,7 +746,6 @@
       return;
     }
 
-    // cache (si no es forzado)
     if(!force){
       const cached = loadFlagsFromCache();
       if(cached){
@@ -794,18 +769,12 @@
     }
   }
 
-  // ---------- Deluxe toggles (sin tocar index.html) ----------
-  function setDeluxe(on){
-    BODY.setAttribute('data-meta-deluxe', on ? 'on' : 'off');
-  }
-  function setCompact(on){
-    BODY.setAttribute('data-meta-compact', on ? 'on' : 'off');
-  }
+  // ---------- Deluxe toggles ----------
+  function setDeluxe(on){ BODY.setAttribute('data-meta-deluxe', on ? 'on' : 'off'); }
+  function setCompact(on){ BODY.setAttribute('data-meta-compact', on ? 'on' : 'off'); }
   function injectUIToggles(){
     const actions = $('#metaPanel .filters-actions');
     if(!actions) return;
-
-    // Si ya existen, no dupliques
     if(actions.querySelector('#metaToggleDeluxe')) return;
 
     const btnDeluxe = document.createElement('button');
@@ -839,109 +808,18 @@
     actions.appendChild(btnCompact);
   }
 
-  // ---------- Inicialización ----------
-  async function initOnce(){
-    if(!el.panel) return;
-    try{
-      setStatus('Cargando MetaEventos…');
-      renderSkeletonMeta(8);
-      loadFavs();
-      await loadSeed();
-      await refreshAccountFlags(); // usa cache si existe, o API si vencido
-      manualDoneSet = loadManualDone();
-      // Deluxe por defecto
-      setDeluxe(DELUXE_DEFAULT);
-      setCompact(COMPACT_DEFAULT);
-      injectUIToggles();
-
-      setStatus('Listo.','ok');
-      startClock();
-      render();
-
-      // Auto-chequeo básico
-      setTimeout(()=>{
-        const issues = [];
-        if(!Array.isArray(seed) || seed.length===0) issues.push('Seed vacío (meta-events.json).');
-        if(!el.list) issues.push('Contenedor de lista no encontrado.');
-        if(typeof window.__GN__?.getSelectedToken !== 'function') issues.push('Hook de token no disponible desde app.js.');
-        if(issues.length){
-          console.warn('[meta:selfcheck] Observaciones:', issues);
-        }else{
-          console.info('[meta:selfcheck] OK');
-        }
-      }, 300);
-
-    }catch(e){
-      console.error(e);
-      setStatus('No se pudo cargar MetaEventos.','error');
-      toast?.('No se pudo cargar MetaEventos','error', 2400);
-    }
-  }
-
-  // ---------- Eventos del shell (app.js) ----------
-  let inited=false;
-
-  // Navegación por tabs
-  document.addEventListener('gn:tabchange', (ev)=>{
-    if(ev.detail?.view==='meta' && !inited){
-      inited=true;
-      initOnce();
-    }
-  });
-
-  // Caso borde: panel visible por defecto
-  if($('#metaPanel') && !$('#metaPanel').hasAttribute('hidden')){
-    inited=true; initOnce();
-  }
-
-  // Cambio de token (refrescar flags + manual set + re-render)
-  document.addEventListener('gn:tokenchange', async ()=>{
-    if(!inited) return;
-    renderSkeletonMeta(6);
-    await refreshAccountFlags(true);
-    manualDoneSet = loadManualDone();
-    render();
-  });
-
-  // Filtros
-  ['change','input'].forEach(ev=>{
-    el.type?.addEventListener(ev, render);
-    el.exp?.addEventListener(ev, render);
-    el.onlyActive?.addEventListener(ev, render);
-    el.onlySoon?.addEventListener(ev, render);
-    el.onlyInf?.addEventListener('change', render);
-  });
-
-  // Refrescar estado manual
-  el.refreshFlagsBtn?.addEventListener('click', async ()=>{
-    const old = el.refreshFlagsBtn.textContent;
-    try{
-      el.refreshFlagsBtn.disabled = true;
-      el.refreshFlagsBtn.textContent = 'Actualizando…';
-      await refreshAccountFlags(true);
-      render();
-      toast?.('Estado “Hecho hoy” actualizado','ok', 1400);
-    }finally{
-      el.refreshFlagsBtn.disabled = false;
-      el.refreshFlagsBtn.textContent = old;
-    }
-  });
-
   // ---------- Tooltips de infusiones ----------
   function bindInfusionPreviews(){
-    // Limpiar previos si re-renderizamos
+    // Limpiar previos
     document.querySelectorAll('.inf-prev').forEach(n=>n.remove());
 
-    const escAttr = (s) => String(s ?? '').replace(/"/g, '"');
     const cards = Array.from(document.querySelectorAll('.m-card'));
-
     for (const card of cards) {
       const id = card.getAttribute('data-id');
       const meta = seed.find(m => m.id === id);
       if (!meta) continue;
       if (!isInfusionMeta(meta)) continue;
 
-      // target: el "item" del pie
       const target = card.querySelector('.m-foot .m-item');
       if (!target) continue;
 
@@ -970,8 +848,12 @@
         if (pop) pop.remove();
         pop = document.createElement('div');
         pop.className = 'inf-prev';
-        const src = escAttr(preview);
-        pop.innerHTML = `<img src="${src}" alt="Preview de infusión" decoding="async" referrerpolicy="no-referrer">`;
+        const a = document.createElement('img');
+        a.src = preview;
+        a.alt = 'Preview de infusión';
+        a.decoding = 'async';
+        a.referrerPolicy = 'no-referrer';
+        pop.appendChild(a);
         document.body.appendChild(pop);
         position(e);
         requestAnimationFrame(() => pop.classList.add('on'));
@@ -991,4 +873,93 @@
       target.addEventListener('mouseleave', hide);
     }
   }
+
+  // ---------- Inicialización ----------
+  async function initOnce(){
+    if(!el.panel) return;
+    try{
+      setStatus('Cargando MetaEventos…');
+      renderSkeletonMeta(8);
+      loadFavs();
+      await loadSeed();
+      await refreshAccountFlags(); // cache o API
+      manualDoneSet = loadManualDone();
+      setDeluxe(DELUXE_DEFAULT);
+      setCompact(COMPACT_DEFAULT);
+      injectUIToggles();
+
+      setStatus('Listo.','ok');
+      startClock();
+      render();
+
+      setTimeout(()=>{
+        const issues = [];
+        if(!Array.isArray(seed) || seed.length===0) issues.push('Seed vacío (meta-events.json).');
+        if(!el.list) issues.push('Contenedor de lista no encontrado.');
+        if(typeof window.__GN__?.getSelectedToken !== 'function') issues.push('Hook de token no disponible desde app.js.');
+        if(issues.length){
+          console.warn('[meta:selfcheck] Observaciones:', issues);
+        }else{
+          console.info('[meta:selfcheck] OK');
+        }
+      }, 300);
+
+    }catch(e){
+      console.error(e);
+      setStatus('No se pudo cargar MetaEventos.','error');
+      if (typeof toast === 'function' && toast.legacy) toast.legacy('No se pudo cargar MetaEventos','error', 2400);
+      else if (typeof toast === 'function') toast('error','No se pudo cargar MetaEventos', { ttl:2400 });
+    }
+  }
+
+  // ---------- Eventos del shell ----------
+  let inited=false;
+
+  // Navegación por tabs (legacy)
+  document.addEventListener('gn:tabchange', (ev)=>{
+    if(ev.detail?.view==='meta' && !inited){
+      inited=true;
+      initOnce();
+    }
+  });
+
+  // Caso borde: visible por defecto
+  if($('#metaPanel') && !$('#metaPanel').hasAttribute('hidden')){
+    inited=true; initOnce();
+  }
+
+  // Cambio de token
+  document.addEventListener('gn:tokenchange', async ()=>{
+    if(!inited) return;
+    renderSkeletonMeta(6);
+    await refreshAccountFlags(true);
+    manualDoneSet = loadManualDone();
+    render();
+  });
+
+  // Filtros
+  ['change','input'].forEach(ev=>{
+    el.type?.addEventListener(ev, render);
+    el.exp?.addEventListener(ev, render);
+    el.onlyActive?.addEventListener(ev, render);
+    el.onlySoon?.addEventListener(ev, render);
+  });
+  el.onlyInf?.addEventListener('change', render);
+
+  // Refrescar estado manual
+  el.refreshFlagsBtn?.addEventListener('click', async ()=>{
+    const old = el.refreshFlagsBtn.textContent;
+    try{
+      el.refreshFlagsBtn.disabled = true;
+      el.refreshFlagsBtn.textContent = 'Actualizando…';
+      await refreshAccountFlags(true);
+      render();
+      if (typeof toast === 'function' && toast.legacy) toast.legacy('Estado “Hecho hoy” actualizado','ok', 1400);
+      else if (typeof toast === 'function') toast('success','Estado “Hecho hoy” actualizado', { ttl:1400 });
+    }finally{
+      el.refreshFlagsBtn.disabled = false;
+      el.refreshFlagsBtn.textContent = old;
+    }
+  });
+
 })();

@@ -15,6 +15,35 @@
 
   <!-- CSS principal -->
   <link rel="stylesheet" href="css/main.css?v=2.5.0"/>
+
+  <!-- ====== Estilos mínimos para la navegación lateral ====== -->
+  <style>
+    /* Chip de ID de cuenta */
+    .side-label { font-size:12px; color:#a0a0a6; }
+    .side-chip {
+      display:inline-flex; align-items:center;
+      padding:3px 8px; border-radius:999px;
+      background:#10131a; border:1px solid #253045;
+      color:#bcd0ff; font-size:12px;
+    }
+    .side-account-item { display:grid; gap:4px; }
+
+    /* Navegación lateral */
+    .side-nav { list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+    .side-nav__link {
+      display:flex; align-items:center; gap:10px;
+      padding:8px 10px; border-radius:10px;
+      background:#111218; border:1px solid #1f2026; color:#dfe3ea;
+      text-decoration:none; transition:background .12s ease, border-color .12s ease;
+    }
+    .side-nav__link:hover { background:#151723; border-color:#2a2c35; }
+    .side-nav__icon { width:18px; height:18px; display:inline-grid; place-items:center; opacity:.9; }
+    .side-nav__link.is-active {
+      border-color:#3b4b7f;
+      box-shadow:0 0 0 1px rgba(82,118,255,.22) inset;
+      background:linear-gradient(180deg,#171a25 0%, #151723 100%);
+    }
+  </style>
 </head>
 <body class="dense">
 
@@ -29,7 +58,7 @@
         <span class="an-sep">|</span>
         <a class="an-util-link an-link--keys" href="https://account.arena.net/applications" target="_blank" rel="noopener">ANet Keys</a>
 
-        <!-- [NUEVO] menú/modal + selector global -->
+        <!-- Gestión + selector global -->
         <button id="keysMenuBtn"
                 class="an-util-link an-util-link--btn"
                 type="button"
@@ -41,34 +70,29 @@
 
         <label for="keySelectGlobal" class="visually-hidden">Seleccionar API Key</label>
         <select id="keySelectGlobal" title="Seleccionar API Key (global)" aria-label="Seleccionar API Key (global)"></select>
-        <!-- [/NUEVO] -->
       </div>
 
       <!-- Redes -->
       <div class="an-util-right" aria-label="Redes">
         <a class="an-social an-social--discord" href="https://discord.gg/ZGNsfsqyKe" target="_blank" rel="noopener" aria-label="Discord" title="Discord">
-          <!-- Discord -->
           <svg viewBox="0 0 24 24" width="18" height="18" role="img" aria-hidden="true">
             <path fill="currentColor" d="M20.317 4.369A19.79 19.79 0 0 0 16.558 3c-.2.36-.43.85-.59 1.234a18.27 18.27 0 0 0-7.936 0C7.371 3.85 7.141 3.36 6.94 3A19.736 19.736 0 0 0 3.182 4.37C.943 7.68.38 10.89.62 14.067c2.07 1.55 4.08 2.5 6.01 3.125.48-.66.91-1.37 1.28-2.12-.71-.27-1.39-.6-2.03-.98.17-.12.33-.25.49-.38 3.93 1.84 8.18 1.84 12.07 0 .17.13.33.26.5.38-.64.38-1.32.71-2.03.98.37.75.8 1.46 1.28 2.12 1.93-.63 3.94-1.58 6.01-3.13.33-4.23-.68-7.41-2.93-9.7zM8.9 13.2c-.79 0-1.44-.73-1.44-1.63 0-.9.64-1.63 1.44-1.63s1.45.73 1.45 1.63c0 .9-.65 1.63-1.45 1.63zm6.2 0c-.79 0-1.44-.73-1.44-1.63 0-.9.64-1.63 1.44-1.63s1.45.73 1.45 1.63c0 .9-.65 1.63-1.45 1.63z"/>
           </svg>
         </a>
 
         <a class="an-social an-social--instagram" href="https://www.instagram.com/pablin.schez/" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">
-          <!-- Instagram -->
           <svg viewBox="0 0 24 24" width="18" height="18" role="img" aria-hidden="true">
             <path fill="currentColor" d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7Zm5 3.5A5.5 5.5 0 1 1 6.5 13 5.5 5.5 0 0 1 12 7.5Zm0 2A3.5 3.5 0 1 0 15.5 13 3.5 3.5 0 0 0 12 9.5Zm5.75-3.25a1.25 1.25 0 1 1-1.25 1.25 1.25 1.25 0 0 1 1.25-1.25Z"/>
           </svg>
         </a>
 
         <a class="an-social an-social--youtube" href="https://www.youtube.com/@pablinschez" target="_blank" rel="noopener" aria-label="YouTube" title="YouTube">
-          <!-- YouTube -->
           <svg viewBox="0 0 24 24" width="18" height="18" role="img" aria-hidden="true">
             <path fill="currentColor" d="M23.5 7.1a4.6 4.6 0 0 0-3.2-3.2C18.5 3.3 12 3.3 12 3.3s-6.5 0-8.3.6A4.6 4.6 0 0 0 .5 7.1 48 48 0 0 0 0 12a48 48 0 0 0 .5 4.9 4.6 4.6 0 0 0 3.2 3.2c1.8.6 8.3.6 8.3.6s6.5 0 8.3-.6a4.6 4.6 0 0 0 3.2-3.2A48 48 0 0 0 24 12a48 48 0 0 0-.5-4.9ZM9.6 15.5v-7L16 12l-6.4 3.5Z"/>
           </svg>
         </a>
 
         <a class="an-social an-social--twitch" href="https://www.twitch.tv/pblsnchz" target="_blank" rel="noopener" aria-label="Twitch" title="Twitch">
-          <!-- Twitch -->
           <svg viewBox="0 0 24 24" width="18" height="18" role="img" aria-hidden="true">
             <path fill="currentColor" d="M4 3h16v10.5L16.5 17H13l-2.5 2.5H8v-2.5H4V3Zm2 2v9h4v2h1.5l2-2H18V5H6Zm8 2h2v4h-2V7Zm-5 0h2v4H9V7Z"/>
           </svg>
@@ -87,10 +111,10 @@
             </h1>
           </div>
 
-          <!-- Tabs hero -->
+          <!-- Tabs hero (si no los querés, podés ocultarlos por CSS) -->
           <nav class="overlay-tabs" aria-label="Vista principal">
             <button class="overlay-tab overlay-tab--active" data-view="cards" type="button">Cartera</button>
-            <button class="overlay-tab" data-view="meta" type="button">Meta&Eventos</button>
+            <button class="overlay-tab" data-view="meta" type="button">Meta&amp;Eventos</button>
           </nav>
         </div>
       </div>
@@ -99,6 +123,7 @@
 
   <!-- ======= MAIN ======= -->
   <main class="container layout" role="main">
+    <!-- ======= Panel Cartera ======= -->
     <section id="walletPanel" class="panel col-main" aria-labelledby="walletTitle">
       <h2 class="panel__title" id="walletTitle">Divisas de la cuenta</h2>
 
@@ -185,10 +210,9 @@
 
     <!-- ======= Panel MetaEventos ======= -->
     <section id="metaPanel" class="panel col-main" aria-labelledby="metaTitle" hidden>
-      <h2 class="panel__title" id="metaTitle">Metas & Eventos</h2>
+      <h2 class="panel__title" id="metaTitle">Metas &amp; Eventos</h2>
       <div class="panel__body">
 
-        <!-- Encabezado refinado: título + hora/reset/actualizado -->
         <div class="panel-head" style="width:100%;">
           <h3 class="panel-head__title">Pendientes / Hecho hoy</h3>
           <div class="meta-topline">
@@ -235,31 +259,177 @@
 
         <p id="metaStatus" class="status" aria-live="polite">Cargando MetaEventos…</p>
 
-        <!-- Favoritos (máx. 6) -->
         <div id="metaFavBlock" class="meta-fav-block" hidden>
           <h3 class="fav-title">Tus 6 preferidos</h3>
           <div id="metaFavGrid" class="meta-grid"></div>
         </div>
 
-        <!-- Lista completa -->
         <div id="metaList" class="meta-list"><!-- JS --></div>
       </div>
     </section>
 
-    <!-- ======= Sidebar ======= -->
-    <aside class="col-side">
+    <!-- ======= LOGROS ======= -->
+    <section id="achievementsPanel" class="panel col-main" aria-labelledby="achievementsTitle" hidden>
+      <h2 class="panel__title" id="achievementsTitle">Logros</h2>
+      <div class="panel__body">
+        <div class="panel-head">
+          <h3 class="panel-head__title">Resumen y próximos a completar</h3>
+          <div class="meta-topline">
+            <span class="meta-stat"><span id="achSummaryStat" class="muted">—</span></span>
+          </div>
+        </div>
+        <hr class="hr-hairline"/>
 
-      <!-- Conversor: refinado, títulos coloreados, sin “box dentro de box” -->
+        <div id="achievementsSummary" class="grid"></div>
+
+        <!-- La toolbar moderna se inyecta por achievements.js -->
+        <div class="chips" aria-label="Filtros de logros" style="display:none">
+          <div class="chip">
+            <label for="achSearch" class="visually-hidden">Buscar logros</label>
+            <input id="achSearch" type="text" placeholder="Buscar logro…"/>
+          </div>
+          <div class="chip">
+            <label for="achPct" class="visualmente-hidden">Umbral %</label>
+            <select id="achPct">
+              <option value="0.8">≥ 80%</option>
+              <option value="0.9">≥ 90%</option>
+              <option value="0.95">≥ 95%</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="achievementsNearly" class="grid"></div>
+      </div>
+    </section>
+
+    <!-- ======= Panel Wizard’s Vault ======= -->
+    <section id="wvPanel" hidden>
+      <div class="panel-head">
+        <h2 class="panel-head__title">Cámara del Brujo</h2>
+        <span id="wvSyncNote" class="muted hidden">Los datos de cuenta pueden tardar tras un login.</span>
+      </div>
+
+      <nav class="tabs">
+        <button id="wvTabBtnDaily"   data-tab="daily"   aria-selected="true">Diarias</button>
+        <button id="wvTabBtnWeekly"  data-tab="weekly">Semanales</button>
+        <button id="wvTabBtnSpecial" data-tab="special">Especiales</button>
+        <button id="wvTabBtnShop"    data-tab="shop">Tienda</button>
+      </nav>
+
+      <div class="tabs-content">
+        <div id="wvTabDaily"   class="tab-panel"></div>
+        <div id="wvTabWeekly"  class="tab-panel" hidden></div>
+        <div id="wvTabSpecial" class="tab-panel" hidden></div>
+        <div id="wvTabShop" class="tab-panel" hidden>
+          <div id="wvShopToolbarHost"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======= SIDEBAR ======= -->
+    <aside class="col-side" id="appSidebar">
+
+      <!-- Cuenta (ID siempre visible) -->
+      <section class="panel" aria-labelledby="sideAccTitle" id="sideAccountPanel">
+        <div class="panel-head">
+          <h3 class="panel-head__title" id="sideAccTitle">
+            <span class="side-head-icon">
+              <!-- Opción A (placeholder):
+              <img class="icon-img" src="" alt="Cuenta" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
+              -->
+              <!-- Opción B (sugerida – icono de “account hero” de la wiki) -->
+              <img class="icon-img" src="https://wiki.guildwars2.com/images/d/d9/Hero.png" alt="Cuenta" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
+            </span>
+            Cuenta
+          </h3>
+        </div>
+        <hr class="hr-hairline"/>
+
+        <div class="panel__body">
+          <div class="side-account-item">
+            <span class="side-label">ID</span>
+            <span class="side-chip" id="accountIdLabel">—</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Navegación unificada -->
+      <section class="panel" aria-labelledby="sideNavTitle" id="sideNavPanel">
+        <div class="panel-head">
+          <h3 class="panel-head__title" id="sideNavTitle">
+            <span class="side-head-icon">
+              <!-- Opción A (placeholder):
+              <img class="icon-img" src="" alt="Navegación" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
+              -->
+              <!-- Opción B (sugerida – icono de brújula/mapa) -->
+              <img class="icon-img" src="https://wiki.guildwars2.com/images/thumb/f/fe/Scout_%28map_icon%29.png/30px-Scout_%28map_icon%29.png" alt="Navegación" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
+            </span>
+            Navegación
+          </h3>
+        </div>
+        <hr class="hr-hairline"/>
+
+        <nav class="panel__body">
+          <ul class="side-nav">
+            <li>
+              <a id="navCards" class="side-nav__link" href="#/cards">
+                <span class="side-nav__icon">
+                  <!-- Opción A (placeholder) -->
+                  <!-- <img class="icon-img" src="" alt="Cartera" width="18" height="18" loading="lazy" referrerpolicy="no-referrer"> -->
+                  <!-- Opción B (sugerida – “Coin” / Moneda) -->
+                  <img class="icon-img" src="https://wiki.guildwars2.com/images/2/2d/Merchant_%28vendor_icon%29.png" alt="Cartera" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
+                </span>
+                <span>Cartera</span>
+              </a>
+            </li>
+
+            <li>
+              <a id="navMeta" class="side-nav__link" href="#/meta">
+                <span class="side-nav__icon">
+                  <!-- <img class="icon-img" src="" alt="Meta & Eventos" width="18" height="18" loading="lazy" referrerpolicy="no-referrer"> -->
+                  <!-- Sugerida – “Calendar icon” (waypoint también sirve, pero calendario va mejor) -->
+                  <img class="icon-img" src="https://wiki.guildwars2.com/images/thumb/b/bb/Event_boss_%28map_icon%29.png/30px-Event_boss_%28map_icon%29.png" alt="Meta & Eventos" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
+                </span>
+                <span>Meta &amp; Eventos</span>
+              </a>
+            </li>
+
+            <li>
+              <a id="navAch" class="side-nav__link" href="#/account/achievements">
+                <span class="side-nav__icon">
+                  <!-- <img class="icon-img" src="" alt="Logros" width="18" height="18" loading="lazy" referrerpolicy="no-referrer"> -->
+                  <!-- Sugerida – “Achievement”/“Laurel” (laurel es muy reconocible) -->
+                  <img class="icon-img" src="https://wiki.guildwars2.com/images/thumb/c/cd/AP.png/30px-AP.png" alt="Logros" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
+                </span>
+                <span>Logros</span>
+              </a>
+            </li>
+
+            <li>
+              <a id="navWV" class="side-nav__link" href="#/account/wizards-vault">
+                <span class="side-nav__icon">
+                  <!-- <img class="icon-img" src="" alt="Cámara del Brujo" width="18" height="18" loading="lazy" referrerpolicy="no-referrer"> -->
+                  <!-- Sugerida – ícono de “Wizard” (báculo/vara). Este es un estandarte que funciona bien visualmente. -->
+                  <img class="icon-img" src="https://wiki.guildwars2.com/images/thumb/a/a7/Astral_Acclaim.png/30px-Astral_Acclaim.png" alt="Cámara del Brujo" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
+                </span>
+                <span>Cámara del Brujo</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </section>
+    
+      <!-- Conversor (intacto) -->
       <section class="panel" aria-labelledby="convTitle" id="asideConvSection">
         <div class="panel-head">
           <h3 class="panel-head__title" id="convTitle">Conversor Gem ↔ Gold</h3>
         </div>
-        <hr class="hr-hairline">
+        <hr class="hr-hairline"/>
 
         <div class="panel__body">
           <div id="convWrap" class="conv2 conv2--clean" aria-live="polite">
 
-            <!-- Arriba: CONSEGUIR GEMAS -->
+            <!-- CONSEGUIR GEMAS -->
             <h4 class="conv2-label conv2-label--gems">
               <span class="conv2-label__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#7dd3fc" d="M5 9 9 3h6l4 6-7 12zM9 3 5 9h14L15 3z"/></svg>
@@ -267,16 +437,12 @@
               <span>Conseguir Gemas</span>
             </h4>
             <div class="conv2-row">
-              <!-- ÚNICO BLOQUE VISIBLE: el input -->
               <input id="cvGems" class="conv2-entry" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Gemas"/>
-
               <div class="conv2-arrow" aria-hidden="true">→</div>
-
-              <!-- Resultado sin contenedor con borde adicional -->
               <div id="cvGemsOut" class="coin-badges coin-badges--lg">—</div>
             </div>
 
-            <!-- Abajo: CONSEGUIR ORO -->
+            <!-- CONSEGUIR ORO -->
             <h4 class="conv2-label conv2-label--gold">
               <span class="conv2-label__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="9" fill="#d7b062"/><circle cx="12" cy="12" r="7" fill="#f1cc7a"/></svg>
@@ -284,22 +450,16 @@
               <span>Conseguir Oro</span>
             </h4>
             <div class="conv2-row">
-              <!-- ÚNICO BLOQUE VISIBLE: el input -->
               <input id="cvGold" class="conv2-entry conv2-gold" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Oro (g)"/>
-
               <div class="conv2-arrow" aria-hidden="true">→</div>
-
-              <!-- Resultado sin contenedor con borde adicional -->
               <output id="cvGoldOut" class="conv2-gems">—</output>
             </div>
 
-            <!-- Controles + Estado -->
             <div class="conv2-actions">
               <button id="cvRefresh" class="btn" title="Actualizar cotización">Actualizar</button>
               <p id="cvState" class="conv2-state muted">Listo.</p>
             </div>
 
-            <!-- Ref 400 -->
             <hr class="hr-hairline">
             <div class="conv2-refline">
               <span id="cvRef400" class="coin-badges coin-badges--lg">—</span>
@@ -309,7 +469,7 @@
         </div>
       </section>
 
-      <!-- Próximas funciones: sólo visible en Tarjetas -->
+      <!-- Próximas funciones -->
       <section class="panel" id="asideNextFeatures">
         <h3 class="panel__title">Próximas funciones</h3>
         <div class="panel__body">
@@ -329,6 +489,9 @@
         </div>
       </section>
 
+      <!-- Aside Logros (lo maneja achievements.js) -->
+      <section id="achAsidePanel" class="panel" hidden></section>
+
     </aside>
   </main>
 
@@ -340,10 +503,10 @@
     </div>
   </footer>
 
-  <!-- Toasts (notificaciones no intrusivas) -->
+  <!-- Toasts -->
   <div id="toasts" class="toasts" aria-live="polite" aria-atomic="true"></div>
 
-  <!-- [NUEVO] Modal: Gestión de API Keys -->
+  <!-- Modal: Gestión de API Keys -->
   <div id="keysModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="keysModalTitle" hidden>
     <div class="modal__backdrop" data-close="1"></div>
     <div class="modal__dialog" role="document" aria-describedby="keysModalDesc" tabindex="-1">
@@ -357,12 +520,9 @@
           Agregá, renombrá, eliminá o copiá tus claves. Se guardan localmente en este navegador.
         </p>
 
-        <!-- Lista de keys (se completa por JS) -->
         <div id="keysList" class="keys-list"></div>
-
         <hr style="border-color:#242428">
 
-        <!-- Alta/Edición -->
         <form id="keysForm" class="keys-form">
           <div class="field">
             <label for="kfLabel">Nombre</label>
@@ -383,10 +543,13 @@
       </div>
     </div>
   </div>
-  <!-- [/NUEVO] -->
 
   <!-- JS -->
+  <script defer src="js/api-gw2.js"></script>
+  <script defer src="js/achievements.js?v=2.5.1"></script>
   <script defer src="js/app.js?v=2.5.0"></script>
   <script defer src="js/meta.js?v=2.5.0"></script>
+  <script defer src="js/sidebar-nav.js?v=1.0.0"></script> <!-- resalta nav y actualiza ID -->
+  <script defer src="js/router.js?v=2.4.0"></script>
 </body>
 </html>
