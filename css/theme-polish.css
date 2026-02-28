@@ -1,0 +1,276 @@
+/* ==========================================================================
+   Bóveda del Gato Negro — Theme Polish (consolidado)
+   - Tokens (colores, radios, sombras, gaps, motion)
+   - Tipografía base + ritmo vertical
+   - Paneles y Tarjetas (elevación y hover)
+   - Botones / Chips / Selects (consistencia y accesibilidad)
+   - Sidebar (estado activo/hover)
+   - Tooltips / Toasts (armonía)
+   - Skeletons y estados vacíos
+   - Motion responsable (prefers-reduced-motion)
+   - Micro-opt de rendering (content-visibility)
+   ========================================================================== */
+
+/* ============================== TOKENS =================================== */
+:root {
+  /* Colores base (modo dark) */
+  --bg-0: #0d0f13; /* canvas */
+  --bg-1: #10131a; /* panel */
+  --bg-2: #111216; /* tarjeta */
+  --bd-1: #23252b; /* borde suave */
+  --bd-2: #2d2f36; /* borde hover */
+  --tx-1: #e9e9f1; /* texto principal */
+  --tx-2: #cfd2d8; /* texto secundario */
+  --tx-3: #a0a0a6; /* texto tenue */
+
+  /* Acentos */
+  --acc-1: #5276ff;   /* primario frío */
+  --acc-2: #a7f3d0;   /* éxito */
+  --acc-warn: #ffd569;/* aviso */
+  --acc-err: #f28b82; /* error */
+
+  /* Geometría */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --gap-sm: 8px;
+  --gap-md: 12px;
+  --gap-lg: 16px;
+
+  /* Elevaciones */
+  --elev-0: none;
+  --elev-1: 0 1px 0 0 #1a1b20 inset, 0 0 0 1px rgba(255,255,255,0.02);
+  --elev-2: 0 6px 16px rgba(0,0,0,.35), 0 0 0 1px rgba(82,118,255,.08);
+
+  /* Motion */
+  --ease-1: cubic-bezier(.2,.7,.2,1);
+  --dur-1: .14s;
+}
+
+/* ============================ TIPOGRAFÍA ================================= */
+html {
+  font-family: Inter, "Segoe UI", Roboto, system-ui, -apple-system, Arial, sans-serif;
+  color: var(--tx-2);
+  background: var(--bg-0);
+}
+
+h1, h2, h3 {
+  color: var(--tx-1);
+  line-height: 1.3;
+  letter-spacing: .2px;
+}
+p, li, span {
+  color: var(--tx-2);
+  line-height: 1.45;
+}
+
+/* =========================== PANELES / CARDS ============================= */
+.panel {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--bd-1);
+  background: var(--bg-1);
+  box-shadow: var(--elev-1);
+}
+
+.card {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--bd-1);
+  /* Luz ambiental muy leve en la parte alta */
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.02) 0%, rgba(255,255,255,0) 40%),
+    var(--bg-2);
+  box-shadow: var(--elev-1);
+  transition:
+    transform var(--dur-1) var(--ease-1),
+    box-shadow var(--dur-1) var(--ease-1),
+    border-color var(--dur-1) var(--ease-1);
+}
+.card:hover {
+  transform: translateY(-1px);
+  border-color: var(--bd-2);
+  box-shadow: var(--elev-2);
+}
+
+/* Comodines de layout para tarjetas (no invasivos) */
+.card .card__head { display:flex; align-items:flex-start; justify-content:space-between; gap: var(--gap-md); }
+.card .card__desc { margin-top: 6px; color: var(--tx-2); }
+.card .card__meta { display:flex; align-items:center; justify-content:space-between; gap: var(--gap-md); flex-wrap:wrap; }
+
+/* Separador suave reusado */
+.sep {
+  height:1px;
+  background: linear-gradient(90deg, transparent, var(--bd-1), transparent);
+  opacity:.85;
+}
+
+/* =================== BOTONES / CHIPS / SELECTS ========================== */
+.btn{
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--bd-1);
+  background: #0f1013;
+  color: var(--tx-1);
+  transition:
+    transform var(--dur-1) var(--ease-1),
+    border-color var(--dur-1) var(--ease-1),
+    background var(--dur-1) var(--ease-1);
+}
+.btn:hover { transform: translateY(-1px); border-color: var(--bd-2); }
+.btn:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--acc-1) 60%, white 0%);
+  outline-offset: 2px;
+}
+
+.chip, .pill {
+  border-radius: 999px;
+  border: 1px solid #253045;
+  background: #10131a;
+  color: #bcd0ff;
+}
+.chip:hover { border-color: #355180; }
+
+select { color: var(--tx-1); background: #0f1013; border: 1px solid var(--bd-1); border-radius: var(--radius-sm); }
+select:focus-visible { outline: 2px solid #355180; outline-offset: 2px; }
+select:disabled { opacity:.55; cursor:not-allowed; }
+
+/* ============================== SIDEBAR ================================== */
+.side-nav__link {
+  display:flex; align-items:center; gap:10px; padding:8px 10px;
+  border-radius: var(--radius-md);
+  border:1px solid transparent;
+  color: var(--tx-2);
+}
+.side-nav__link:hover { background:#11131a; border-color: var(--bd-1); color: var(--tx-1); }
+.side-nav__link.is-active { background:#151723; border-color:#2a2c35; color: var(--tx-1); }
+.side-nav__icon { width:18px; height:18px; display:grid; place-items:center; flex: 0 0 18px; }
+
+.side-head-icon { display:inline-grid; place-items:center; width:18px; height:18px; margin-right:6px; }
+
+.icon-img { width:18px; height:18px; object-fit:contain; border-radius:3px; }
+.icon-img.contrast { filter: drop-shadow(0 0 1px rgba(0,0,0,.4)); }
+
+/* =========================== TOOLTIPS / TOASTS =========================== */
+.inf-prev {
+  position:absolute;
+  z-index: 50;
+  border:1px solid #2b2f3a;
+  background:#0f1117;
+  border-radius: var(--radius-md);
+  box-shadow: var(--elev-2);
+  padding:6px;
+  opacity: 0; transform: translateY(-4px);
+  transition: opacity var(--dur-1) var(--ease-1), transform var(--dur-1) var(--ease-1);
+}
+.inf-prev.on { opacity:1; transform: translateY(0); }
+.inf-prev img { width:auto; height:auto; max-width:260px; max-height:260px; display:block; }
+
+.toasts { display:grid; gap:10px; position:fixed; right:14px; bottom:16px; z-index:60; }
+.toast {
+  border-radius: var(--radius-md);
+  border:1px solid var(--bd-1);
+  background:#10131a;
+  color:var(--tx-1);
+  box-shadow: var(--elev-2);
+  padding:10px 12px;
+}
+
+/* ============================== SKELETONS ================================ */
+.skel-anim{
+  background: linear-gradient(90deg, rgba(255,255,255,.04), rgba(255,255,255,.08), rgba(255,255,255,.04));
+  background-size: 200% 100%;
+  animation: skel 1.1s var(--ease-1) infinite;
+}
+@keyframes skel { to { background-position: -200% 0; } }
+
+.empty { color:var(--tx-3); display:flex; align-items:center; gap:10px; }
+
+/* ========================== MOTION RESPONSABLE =========================== */
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* ============================ MICRO‑PERFORMANCE ========================== */
+/* Si preferís, podés aplicar esto directo en HTML/JS; acá dejamos reglas por id
+   usados en el proyecto (no rompe si no existen en DOM). */
+#metaList, #walletCards {
+  content-visibility: auto;
+  contain-intrinsic-size: 600px;
+}
+
+/* ===================== DETALLE TEMÁTICO (OPCIONAL) ====================== */
+/* Usar con moderación: un micro degradado “bronce” sólo en headings de panel. */
+/*
+.panel-head__title {
+  background: linear-gradient(90deg, #f2e3c1 0%, #d7b980 40%, #9f7a40 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+*/
+
+/* ===================== HERO: altura y superposición ===================== */
+/* Ajustá el selector a tu hero real: .header-hero, .hero, .hero-wrap, etc. */
+.an-hero {
+  /* Altura base más baja */
+  min-height: 240px;            /* antes solía estar arriba de 360px */
+  padding-top: 18px;            /* reduce espacios verticales */
+  padding-bottom: 18px;
+
+  /* Evitar que tape el menú o los paneles */
+  position: relative;
+  z-index: 0;                   /* no elevar por encima del header ni del contenido */
+
+  /* Si tu hero tiene un overlay (::after), mantenelo pero con menor impacto */
+}
+.an-hero::after {
+  /* Si usás brillos/overlays, que no eleven el stacking-context */
+  z-index: 0;
+}
+
+/* HEADER (menú superior): asegurar que quede por encima del hero si se superponen */
+.site-header, .topbar, header[role="banner"] {
+  position: relative;
+  z-index: 2;                   /* más alto que el hero */
+}
+
+/* SEPARACIÓN con el contenido (paneles) */
+/* Aplicá uno de estos dos, no ambos. Te recomiendo este primero: */
+.an-hero { margin-bottom: 12px; }
+
+/* Alternativa si preferís “tirar” del contenido en vez del hero: */
+/*
+main .panel-head:first-of-type,
+#walletPanel .panel-head,
+#metaPanel .panel-head,
+#achievementsPanel .panel-head,
+#wvPanel .panel-head {
+  margin-top: 8px;   // dale un mínimo para respirar
+}
+*/
+
+/* Breakpoints: hero aún más compacto en pantallas chicas */
+@media (max-width: 900px) {
+  .an-hero {
+    min-height: 200px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+    margin-bottom: 10px;
+  }
+}
+
+/* ===================== SIDEBAR — Separación del borde izquierdo ===================== */
+
+aside.col-side .panel-head {
+    padding-left: 14px !important;  /* añadió aire a ícono + texto */
+    padding-right: 10px;            /* simetría */
+}
+
+aside.col-side .panel-head__title {
+    margin-left: 4px;               /* separa el ícono del texto */
+    display: flex;
+    align-items: center;
+    gap: 8px;                       /* espacio entre icono y título */
+}
+
+/* Si los iconos están demasiado pegados independientemente del título */
+aside.col-side .side-head-icon,
+aside.col-side .panel-head img {
+    margin-right: 6px !important;   /* espacio útil icono → título */
+}
