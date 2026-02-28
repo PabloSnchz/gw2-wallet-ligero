@@ -1,21 +1,42 @@
 /*!
- * Router y Vistas (Achievements + Wizard's Vault v2.4.0)
+ * Router y Vistas (Achievements + Wizard's Vault v2.4.0 + active sidebar)
  * - Vista por defecto: Tarjetas (grid) en Tienda.
  * - Botón de cambio de vista (#wvViewToggle) siempre visible (auto-repara toolbars viejas).
  * - Filtros Tienda: Stock, Categoría, Tipo, OR entre (Oro/Laurel/Mística) y (Extra1/Extra2).
  * - Cabecera AA: Disponible (API), Gastado (API), Reservado (marcas), Restante (sim).
  * - Objetivos: toolbar sólo PvE / PvP / WvW.
  * - Rediseño de tarjetas: layout robusto, sin desbordes, mejor legibilidad en dark mode.
+ * - Sidebar: resalta la sección activa con .is-active en los links.
  */
 
 (function () {
   'use strict';
 
-  console.info('[WV] router.js v2.4.0 cargado');
+  console.info('[WV] router.js v2.4.0 + active-sidebar');
 
   // ------------------------------- Utils DOM -------------------------------
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
   var el = function (id) { return document.getElementById(id); };
+
+  // ---------------------- Sidebar: link activo por hash --------------------
+  function setActiveNav(hash) {
+    try {
+      var links = document.querySelectorAll('.side-nav__link');
+      links.forEach(function (a) { a.classList.remove('is-active'); });
+
+      var map = {
+        '#/cards': '#navCards',
+        '#/meta': '#navMeta',
+        '#/account/achievements': '#navAch',
+        '#/account/wizards-vault': '#navWV'
+      };
+
+      var key = map[hash] ? hash : '#/cards';
+      var targetSel = map[key];
+      var node = targetSel ? document.querySelector(targetSel) : null;
+      if (node) node.classList.add('is-active');
+    } catch (_) {}
+  }
 
   // ------------------------------- Estado ----------------------------------
   var __wvShopState = {
@@ -979,6 +1000,7 @@
       renderWVShopFull('wvTabShop', merged, itemsMap, aaValue, aaIconUrl, season);
       ensureWVRefreshButton();
 
+      // Ajustar toolbars según la pestaña actual
       var activeBtn = $('.tabs [aria-selected="true"]', el('wvPanel'));
       var name = activeBtn ? activeBtn.getAttribute('data-tab') : 'daily';
       if (name === 'shop') { setObjToolbarVisibility(false); setShopToolbarVisibility(true); }
@@ -995,17 +1017,24 @@
   function route() {
     var h = (location.hash || '').trim();
 
+    // Normalizar hash vacío a '#/cards' (Wallet)
     if (h === '' || h === '#' || h === '#/' || h === '#/cards') {
       showPanel('walletPanel');
+
+      // Asides
       el('asideConvSection') && el('asideConvSection').removeAttribute('hidden');
       el('asideNextFeatures') && el('asideNextFeatures').removeAttribute('hidden');
       var achAside = el('achAsidePanel'); if (achAside) achAside.setAttribute('hidden','hidden');
       var metaAside = el('metaAsideNext'); if (metaAside) metaAside.setAttribute('hidden','hidden');
+
+      setActiveNav('#/cards');
       return;
     }
 
     if (h === '#/meta') {
       showPanel('metaPanel');
+
+      // Asides
       el('asideConvSection') && el('asideConvSection').setAttribute('hidden','hidden');
       el('asideNextFeatures') && el('asideNextFeatures').setAttribute('hidden','hidden');
       var achAside2 = el('achAsidePanel'); if (achAside2) achAside2.setAttribute('hidden','hidden');
@@ -1014,31 +1043,48 @@
       // 🔥 AVISO AL MÓDULO MetaEventos: inicia / re-renderiza
       document.dispatchEvent(new CustomEvent('gn:tabchange', { detail: { view: 'meta' } }));
 
+      setActiveNav('#/meta');
       return;
     }
 
     if (h === '#/account/achievements') {
       showPanel('achievementsPanel');
       ensureRuntimeStyles();
+
+      // Asides
       el('asideConvSection') && el('asideConvSection').setAttribute('hidden','hidden');
       el('asideNextFeatures') && el('asideNextFeatures').setAttribute('hidden','hidden');
       var metaAside3 = el('metaAsideNext'); if (metaAside3) metaAside3.setAttribute('hidden','hidden');
+      var achAside3 = el('achAsidePanel'); if (achAside3) achAside3.removeAttribute('hidden');
+
       if (window.Achievements && typeof window.Achievements.render === 'function') {
         window.Achievements.render();
       }
+
+      setActiveNav('#/account/achievements');
       return;
     }
 
     if (h === '#/account/wizards-vault') {
-      showPanel('wvPanel'); ensureRuntimeStyles(); ensureWVObjToolbar(); mountWVTabBehavior(); renderWV();
+      showPanel('wvPanel');
+      ensureRuntimeStyles();
+      ensureWVObjToolbar();
+      mountWVTabBehavior();
+      renderWV();
+
+      // Asides
       el('asideConvSection') && el('asideConvSection').setAttribute('hidden','hidden');
       el('asideNextFeatures') && el('asideNextFeatures').setAttribute('hidden','hidden');
       var achAside4 = el('achAsidePanel'); if (achAside4) achAside4.setAttribute('hidden','hidden');
       var metaAside4 = el('metaAsideNext'); if (metaAside4) metaAside4.setAttribute('hidden','hidden');
+
+      setActiveNav('#/account/wizards-vault');
       return;
     }
 
+    // Fallback
     showPanel('walletPanel');
+    setActiveNav('#/cards');
   }
 
   // ----------------------------- Event wiring ------------------------------
@@ -1052,7 +1098,7 @@
     else if (h === '#/account/wizards-vault') {
       renderWV();
     }
-    // Meta no necesita nada aquí: escucha gn:tokenchange desde app.js
+    // Meta escucha gn:tokenchange desde app.js
   }
 
   function onDomReady() {
@@ -1074,7 +1120,7 @@
     }
 
     window.addEventListener('hashchange', route);
-    route();
+    route(); // setActiveNav se dispara dentro de route()
   }
 
   if (document.readyState === 'loading') {
