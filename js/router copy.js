@@ -1,13 +1,13 @@
 /*!
  * Router y Vistas (WV Objetivos cards + Tienda con auto‑refresh + Pin)
- * v2.6.3 (2026‑02‑28)
+ * v2.6.0 (2026‑02‑28) — listo para copiar/pegar
  * Requisitos: api-gw2.js (GW2Api) cargado antes
  */
 
 (function () {
   'use strict';
 
-  console.info('[WV] router.js v2.6.3 — objetivos cards + shop auto‑refresh + pin');
+  console.info('[WV] router.js v2.6.0 — objetivos cards + shop auto‑refresh + pin');
 
   // ------------------------------- Utils DOM -------------------------------
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
@@ -20,17 +20,24 @@
   // ---------------------- Sidebar: link activo por hash (robusto) --------------------
   function setActiveNav(hash) {
     try {
-      var h = String(hash || location.hash || '#/cards').trim().toLowerCase().replace(/\/+$/, '');
+      // Normalizar hash actual
+      var h = String(hash || location.hash || '#/cards')
+        .trim().toLowerCase().replace(/\/+$/, '');
       if (!h || h === '#') h = '#/cards';
 
-      var links = Array.prototype.slice.call(document.querySelectorAll('.side-nav a, .side-nav__link'));
+      // Seleccionar todos los links reales de la sidebar
+      var links = Array.prototype.slice.call(
+        document.querySelectorAll('.side-nav a, .side-nav__link')
+      );
       if (!links.length) return;
 
+      // Limpiar estado previo
       links.forEach(function (a) {
         a.classList.remove('is-active');
         a.removeAttribute('aria-current');
       });
 
+      // Buscar candidato por href o data-hash (tolerante a trailing slash)
       function norm(s) { return String(s||'').toLowerCase().trim().replace(/\/+$/, ''); }
       var activeFound = false;
       links.forEach(function (a) {
@@ -43,6 +50,7 @@
         }
       });
 
+      // Si no encontró por href, probá por data-view (fallback opcional)
       if (!activeFound) {
         var map = {
           '#/cards': 'cards',
@@ -61,9 +69,12 @@
         }
       }
 
+      // Avisar a otros scripts para evitar que re‑pinten por su cuenta
       document.dispatchEvent(new CustomEvent('gn:nav-active', { detail: { hash: h } }));
 
+      // Reparche tardío (por si otro script aplicó activo “tarde”)
       requestAnimationFrame(function () {
+        // Repetimos una pasada rápida (idempotente)
         links.forEach(function (a) {
           var href = norm(a.getAttribute('href'));
           var dh   = norm(a.getAttribute('data-hash'));
@@ -83,36 +94,6 @@
     }
   }
 
-  // ------------------------ Sidebar: layout por vista -----------------------
-  function updateSidebarFor(view /* 'cards'|'meta'|'achievements'|'wv' */) {
-    try {
-      var conv     = el('asideConvSection');
-      var next     = el('asideNextFeatures');
-      var metaNext = el('metaAsideNext');
-      var achPanel = el('achAsidePanel');
-
-      // Reset general
-      if (conv)     conv.hidden = true;
-      if (next)     next.hidden = true;
-      if (metaNext) metaNext.hidden = true;
-      if (achPanel) achPanel.hidden = true;
-
-      // Activar según vista
-      if (view === 'cards') {
-        if (conv) conv.hidden = false;
-        if (next) next.hidden = false;
-      } else if (view === 'meta') {
-        if (metaNext) metaNext.hidden = false;
-      } else if (view === 'achievements') {
-        if (achPanel) achPanel.hidden = false;
-      }
-      // 'wv': sin aside contextuales
-    } catch (e) {
-      console.warn('[router] updateSidebarFor error', e);
-    }
-  }
-
-  // ------------------------------ Panels main ------------------------------
   function showPanel(idToShow) {
     ['walletPanel', 'metaPanel', 'achievementsPanel', 'wvPanel'].forEach(function (id) {
       var node = el(id); if (!node) return;
@@ -134,32 +115,49 @@
     return tok || null;
   }
 
-  function escapeHtml(str) {
-    return String(str || '')
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;')
-      .replace(/'/g,'&#039;');
-  }
+  function escapeHtml(str) { return String(str || '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 
   function fmtNumber(n) { n = Number(n || 0); return n.toLocaleString('es-AR'); }
   function now() { return Date.now(); }
 
+  // -------------------------- Modo / Iconos (externos) ---------------------
+  // Permitimos que el usuario setee rutas desde la wiki:
+  // window.WV_MODE_ICONS = { pve:'https://…', pvp:'https://…', wvw:'https://…' }
+  var MODE_ICONS = (window.WV_MODE_ICONS || {});
+
+  function modeBadge(mode) {
+    var k = String(mode || '').toLowerCase(); // pve|pvp|wvw
+    var baseClass = 'wv-obj-mode wv-obj-mode--' + (k || 'pve');
+    var url = MODE_ICONS[k];
+    var label = (k === 'pvp') ? 'PvP' : (k === 'wvw' ? 'WvW' : 'PvE');
+    if (url) {
+      return '<span class="'+baseClass+'"><img src="'+escapeHtml(url)+'" alt="" loading="lazy"/>'+label+'</span>';
+    }
+    return '<span class="'+baseClass+'">'+label+'</span>';
+  }
+
   // ------------------------------- WV State --------------------------------
   var WV = (function () {
+
     var els = {
       panel:    el('wvPanel'),
       noteSync: el('wvSyncNote'),
+
+      // Tabs
       btnDaily:   el('wvTabBtnDaily'),
       btnWeekly:  el('wvTabBtnWeekly'),
       btnSpecial: el('wvTabBtnSpecial'),
       btnShop:    el('wvTabBtnShop'),
+
       tabDaily:   el('wvTabDaily'),
       tabWeekly:  el('wvTabWeekly'),
       tabSpecial: el('wvTabSpecial'),
       tabShop:    el('wvTabShop'),
       shopToolbarHost: el('wvShopToolbarHost'),
+
+      // Temporada
       seasonTitle: el('wvSeasonTitle'),
       seasonDates: el('wvSeasonDates')
     };
@@ -168,6 +166,7 @@
       inited: false,
       lastTab: 'daily',
       loaded: { daily:false, weekly:false, special:false, shop:false },
+      // Shop
       shop: {
         merged: [],
         itemsById: new Map(),
@@ -175,15 +174,17 @@
         aaIconUrl: null,
         lastSyncTs: 0,
         autoRefreshTimer: null,
-        autoRefreshEveryMs: 75 * 1000,
-        marks: {},
-        pinned: {},
-        view: 'cards',
+        autoRefreshEveryMs: 75 * 1000, // 75s
+        marks: {},    // { [listingId]: number }
+        pinned: {},   // { [listingId]: true }
+        // Filtros básicos (dejamos los avanzados para una iter posterior si querés)
+        view: 'cards', // 'cards' | 'table'
         q: '',
-        sort: 'name'
+        sort: 'name'   // 'name' | 'cost' | 'costDesc' | 'id'
       }
     };
 
+    // -------------------------- Season header -----------------------------
     function setWVSeasonHeader(season) {
       if (!season) return;
       if (els.seasonTitle) els.seasonTitle.textContent = season.title || '—';
@@ -197,6 +198,7 @@
       }
     }
 
+    // ----------------------------- Helpers cache --------------------------
     function marksNamespace() {
       var token = getSelectedToken() || 'anon';
       var fp = token ? (token.slice(0,4) + '…' + token.slice(-4)) : 'anon';
@@ -208,21 +210,30 @@
     var LS_WV_SHOP_VIEW    = 'gw2_wv_view_v1';
     var LS_WV_LAST_TAB     = 'gw2_wv_lasttab_v1';
 
-    function loadMarks(ns) { try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_MARKS) || '{}'); return all[ns] || {}; } catch (_){ return {}; } }
-    function saveMarks(ns, marks) { try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_MARKS) || '{}'); all[ns] = marks || {}; localStorage.setItem(LS_WV_SHOP_MARKS, JSON.stringify(all)); } catch (_){ } }
-    function loadPinned(ns) { try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_PINNED) || '{}'); return all[ns] || {}; } catch (_){ return {}; } }
-    function savePinned(ns, pinned) { try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_PINNED) || '{}'); all[ns] = pinned || {}; localStorage.setItem(LS_WV_SHOP_PINNED, JSON.stringify(all)); } catch (_){ } }
+    function loadMarks(ns) {
+      try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_MARKS) || '{}'); return all[ns] || {}; } catch (_){ return {}; }
+    }
+    function saveMarks(ns, marks) {
+      try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_MARKS) || '{}'); all[ns] = marks || {}; localStorage.setItem(LS_WV_SHOP_MARKS, JSON.stringify(all)); } catch (_){}
+    }
+    function loadPinned(ns) {
+      try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_PINNED) || '{}'); return all[ns] || {}; } catch (_){ return {}; }
+    }
+    function savePinned(ns, pinned) {
+      try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_PINNED) || '{}'); all[ns] = pinned || {}; localStorage.setItem(LS_WV_SHOP_PINNED, JSON.stringify(all)); } catch (_){}
+    }
     function saveView(view) { try { localStorage.setItem(LS_WV_SHOP_VIEW, view); } catch(_){ } }
     function loadView() { try { return localStorage.getItem(LS_WV_SHOP_VIEW) || 'cards'; } catch(_){ return 'cards'; } }
     function saveLastTab(tab) { try { localStorage.setItem(LS_WV_LAST_TAB, tab); } catch(_){ } }
     function loadLastTab() { try { return localStorage.getItem(LS_WV_LAST_TAB) || 'daily'; } catch(_){ return 'daily'; } }
 
+    // --------------------------- Objetivos (cards) -------------------------
     function normalizeObjectives(raw) {
       var arr = (raw && raw.objectives) || [];
       return arr.map(function (o) {
         var id = (o.id != null ? o.id : (o.objective_id != null ? o.objective_id : null));
         var title = o.title || o.name || ('Objetivo #' + id);
-        var track = String(o.track || '').toLowerCase();
+        var track = String(o.track || '').toLowerCase(); // pve|pvp|wvw|?
         var progress = (o.progress_current != null ? o.progress_current : (o.progress != null ? o.progress : 0));
         var total    = (o.progress_complete != null ? o.progress_complete : (o.total != null ? o.total : 0));
         var acclaim  = (o.acclaim != null ? o.acclaim : (o.rewardAA != null ? o.rewardAA : (o.reward_aa != null ? o.reward_aa : 0)));
@@ -239,8 +250,11 @@
         return;
       }
       var list = normalizeObjectives(data);
+
+      // Grid de tarjetas
       var html = ['<div class="wv-obj-grid">'];
 
+      // Meta global (si viene)
       if (typeof data.meta_progress_current === 'number' && typeof data.meta_progress_complete === 'number') {
         var metaPct = (data.meta_progress_complete > 0)
           ? Math.max(0, Math.min(100, Math.round((data.meta_progress_current / data.meta_progress_complete) * 100)))
@@ -268,7 +282,7 @@
               '<div class="wv-obj-title">',
                 escapeHtml(o.title), 
               '</div>',
-              '<span class="wv-obj-mode">'+(o.track||'PvE')+'</span>',
+              modeBadge(o.track || 'pve'),
             '</div>',
 
             '<div class="wv-obj-meta">',
@@ -288,7 +302,7 @@
       host.innerHTML = html.join('');
     }
 
-    // ---- Shop helpers (igual que antes) ----
+    // ----------------------------- Tienda (Shop) ---------------------------
     function shopSyncLine() {
       var ts = state.shop.lastSyncTs;
       if (!ts) return '<div class="wv-syncline"><span class="wv-sync-badge">Sincronizado: —</span></div>';
@@ -317,6 +331,7 @@
           '<div id="wvShopHeader" class="muted" style="margin-top:4px">—</div>',
         '</div>'
       ].join('');
+      // Wire
       var q = el('wvShopSearch');
       var s = el('wvShopSort');
       var v = el('wvShopToggleView');
@@ -330,7 +345,7 @@
         saveView(state.shop.view);
         renderShopArea();
       });
-      if (r) r.addEventListener('click', function(){ refreshShopData(true); });
+      if (r) r.addEventListener('click', function(){ refreshShopData(true/*nocache*/); });
     }
 
     function setShopHeader(aa, spentApi, reservedMarks, iconUrl) {
@@ -380,6 +395,7 @@
                          });
       }
 
+      // Pinned primero
       var pinned = state.shop.pinned || {};
       sorted.sort(function (a,b) {
         var pa = !!pinned[a.id], pb = !!pinned[b.id];
@@ -391,20 +407,37 @@
       return sorted;
     }
 
+    function rarityClass(r) {
+      if (!r) return '';
+      var k = String(r).toLowerCase();
+      if (k === 'junk') return 'rar-junk';
+      if (k === 'basic') return 'rar-basic';
+      if (k === 'fine') return 'rar-fine';
+      if (k === 'masterwork') return 'rar-masterwork';
+      if (k === 'rare') return 'rar-rare';
+      if (k === 'exotic') return 'rar-exotic';
+      if (k === 'ascended') return 'rar-ascended';
+      if (k === 'legendary') return 'rar-legendary';
+      return '';
+    }
+
     function renderShopArea() {
       var host = els.tabShop; if (!host) return;
       ensureShopToolbar();
 
+      // Sincronización (badge)
       var toolbar = els.shopToolbarHost && els.shopToolbarHost.querySelector('.wv-shop-toolbar');
       if (toolbar) {
         var line = toolbar.querySelector('.wv-syncline');
-        if (line) line.outerHTML = shopSyncLine();
+        if (line) line.outerHTML = shopSyncLine(); // reemplazo simple
       }
 
+      // Números
       var st = state.shop;
       var sums = computeShopNumbers(st.merged);
       setShopHeader(st.aa, sums.spentApi, sums.reservedMarks, st.aaIconUrl);
 
+      // Contenido
       var areaId = 'wvShopList';
       var area = host.querySelector('#'+areaId);
       if (!area) {
@@ -430,7 +463,9 @@
           var effectivePurchased = purchasedApi + marked;
           var left = (limit === '∞') ? '∞' : Math.max(0, limit - effectivePurchased);
 
-          var nameHtml = escapeHtml(name);
+          var rc = rarityClass(it && it.rarity);
+          var nameHtml = '<span class="'+rc+'">'+escapeHtml(name)+'</span>';
+
           var pinActive = !!(st.pinned && st.pinned[x.id]);
           var pinCls = 'wv-pin' + (pinActive ? ' wv-pin--active' : '');
           var pinBtn = '<button class="'+pinCls+'" data-pin="'+x.id+'" title="'+(pinActive?'Desfijar':'Fijar')+'">📌</button>';
@@ -447,7 +482,7 @@
 
           return (
             '<tr>' +
-              '<td class="nowrap">'+icon+'<span>'+nameHtml+'</span>'+qty+'</td>' +
+              '<td class="nowrap">'+icon+nameHtml+qty+'</td>' +
               '<td>' + escapeHtml(x.type || '') + '</td>' +
               '<td class="right">' + (x.cost || 0) + '</td>' +
               '<td class="right">' + purchasedApi + ' / ' + limit + '</td>' +
@@ -469,10 +504,12 @@
           '</div>';
 
       } else {
+        // Cards
         var cards = rows.map(function (x) {
           var it = (x.item_id != null) ? itemsById.get(x.item_id) : null;
           var icon = it && it.icon ? it.icon : '';
           var name = it && it.name ? it.name : (x.item_id != null ? ('Item #'+x.item_id) : (x.type || '—'));
+          var rc = rarityClass(it && it.rarity);
 
           var cost = (x.cost || 0);
           var limit = (typeof x.purchase_limit === 'number') ? x.purchase_limit : '∞';
@@ -501,7 +538,7 @@
             '<div class="wv-card">' +
               '<div class="wv-card__top">' +
                 '<div class="wv-card__iconWrap">' + (icon ? ('<img class="wv-card__icon" src="'+escapeHtml(icon)+'" alt="" loading="lazy"/>') : '') + '</div>' +
-                '<div class="wv-card__name" title="'+escapeHtml(name)+'">'+escapeHtml(name)+'</div>' +
+                '<div class="wv-card__name '+rc+'" title="'+escapeHtml(name)+'">'+escapeHtml(name)+'</div>' +
                 pinBtn +
               '</div>' +
               '<div class="wv-card__meta">' +
@@ -524,7 +561,7 @@
         area.innerHTML = '<div class="wv-card-grid">' + cards + '</div>';
       }
 
-      // Wire contadores y pin (igual que antes)
+      // Wire contadores y pin
       $$('.wv-counter', area).forEach(function (host) {
         var id = host.getAttribute('data-id');
         var btnDec = $('.wv-dec', host), btnInc = $('.wv-inc', host);
@@ -580,10 +617,11 @@
     }
 
     function ensureShopAutoRefresh(on) {
+      // Activa/desactiva el polling liviano
       var st = state.shop;
       if (on) {
         if (st.autoRefreshTimer) return;
-        st.autoRefreshTimer = setInterval(function(){ refreshShopData(false); }, st.autoRefreshEveryMs);
+        st.autoRefreshTimer = setInterval(function(){ refreshShopData(false/*nocache*/); }, st.autoRefreshEveryMs);
       } else {
         if (st.autoRefreshTimer) { clearInterval(st.autoRefreshTimer); st.autoRefreshTimer = null; }
       }
@@ -595,6 +633,7 @@
         els.tabShop.innerHTML = '<p class="muted">Seleccioná una API Key para ver la Tienda.</p>';
         return;
       }
+      // Pedimos listados por cuenta + AA y listados públicos (para tipos/ítems)
       Promise.allSettled([
         GW2Api.getAccountWVListings(token, { nocache: !!forceNoCache }),
         GW2Api.getWVAccount(token, { nocache: !!forceNoCache }),
@@ -628,6 +667,7 @@
             state.shop.aaIconUrl = (wvAccRes && wvAccRes.icon) ? wvAccRes.icon : state.shop.aaIconUrl;
             state.shop.lastSyncTs = now();
 
+            // Cargar marks/pinned con namespace actualizado (si cambia de temporada)
             var ns = marksNamespace();
             state.shop.marks  = loadMarks(ns);
             state.shop.pinned = loadPinned(ns);
@@ -639,16 +679,34 @@
       });
     }
 
+    // --------------------------- Tabs wiring --------------------------------
     function setActiveTab(tab) {
       state.lastTab = tab;
       saveLastTab(tab);
 
-      var mapBtns = { daily: els.btnDaily, weekly: els.btnWeekly, special: els.btnSpecial, shop: els.btnShop };
-      var mapTabs = { daily: els.tabDaily, weekly: els.tabWeekly, special: els.tabSpecial, shop: els.tabShop };
+      var mapBtns = {
+        daily:   els.btnDaily,
+        weekly:  els.btnWeekly,
+        special: els.btnSpecial,
+        shop:    els.btnShop
+      };
+      var mapTabs = {
+        daily:   els.tabDaily,
+        weekly:  els.tabWeekly,
+        special: els.tabSpecial,
+        shop:    els.tabShop
+      };
 
-      Object.keys(mapBtns).forEach(function (k) { var b = mapBtns[k]; if (b) b.setAttribute('aria-selected', k===tab ? 'true' : 'false'); });
-      Object.keys(mapTabs).forEach(function (k) { var p = mapTabs[k]; if (p) (k===tab ? show(p) : hide(p)); });
+      Object.keys(mapBtns).forEach(function (k) {
+        var b = mapBtns[k]; if (!b) return;
+        b.setAttribute('aria-selected', k===tab ? 'true' : 'false');
+      });
+      Object.keys(mapTabs).forEach(function (k) {
+        var p = mapTabs[k]; if (!p) return;
+        if (k===tab) show(p); else hide(p);
+      });
 
+      // Mostrar/ocultar auto‑refresh shop
       ensureShopAutoRefresh(tab === 'shop');
     }
 
@@ -670,9 +728,10 @@
     }
 
     function ensureLoadTab(tab) {
-      if (state.loaded[tab] && tab !== 'shop') return;
+      if (state.loaded[tab] && tab !== 'shop') return; // shop se refresca
       var token = getSelectedToken();
 
+      // Temporada (una vez)
       if (!state.loaded.__season) {
         GW2Api.getWVSeason({ nocache:false }).then(function (season) {
           state.shop.season = season;
@@ -683,6 +742,7 @@
 
       if (!token) {
         if (els.noteSync) els.noteSync.classList.remove('hidden');
+        // Mensaje neutro en cada panel
         if (tab === 'daily')   els.tabDaily.innerHTML   = '<p class="muted">Seleccioná una API Key para ver objetivos diarios.</p>';
         if (tab === 'weekly')  els.tabWeekly.innerHTML  = '<p class="muted">Seleccioná una API Key para ver objetivos semanales.</p>';
         if (tab === 'special') els.tabSpecial.innerHTML = '<p class="muted">Seleccioná una API Key para ver objetivos especiales.</p>';
@@ -723,14 +783,19 @@
       }
 
       if (tab === 'shop') {
+        // Preparar toolbar + espacio
         ensureShopToolbar();
+        // Cargar marks/pinned según namespace actual (puede cambiar al cargar season)
         var ns = marksNamespace();
         state.shop.marks  = loadMarks(ns);
         state.shop.pinned = loadPinned(ns);
+        // Vista preferida
         state.shop.view = loadView();
 
         els.tabShop.insertAdjacentHTML('beforeend', '<div class="muted">Cargando Tienda…</div>');
-        refreshShopData(false).finally(function(){ state.loaded.shop = true; });
+        refreshShopData(false /* nocache */).finally(function(){
+          state.loaded.shop = true;
+        });
       }
     }
 
@@ -738,6 +803,7 @@
       if (!state.inited) {
         state.inited = true;
         wireTabsOnce();
+        // Restaurar última sub‑pestaña
         var last = loadLastTab();
         if (['daily','weekly','special','shop'].indexOf(last) === -1) last = 'daily';
         setActiveTab(last);
@@ -748,89 +814,85 @@
     return { activate: activate, setActiveTab: setActiveTab, ensureLoadTab: ensureLoadTab };
   })();
 
-  // ----------------------------- ROUTER ------------------------------------
-  function route() {
-    var h = (location.hash || '').trim();
+    // ----------------------------- ROUTER ------------------------------------
+    function route() {
+      var h = (location.hash || '').trim();
 
-    // ⚠️ Importante: en cada rama usamos try/finally para garantizar
-    // setActiveNav + updateSidebarFor, aún si algo lanza excepción.
-    if (h === '' || h === '#' || h === '#/' || h === '#/cards') {
-      try {
+      if (h === '' || h === '#' || h === '#/' || h === '#/cards') {
         showPanel('walletPanel');
-      } catch (e) {
-        console.warn('[router] show wallet error', e);
-      } finally {
-        updateSidebarFor('cards');
+
+        el('asideConvSection') && el('asideConvSection').removeAttribute('hidden');
+        el('asideNextFeatures') && el('asideNextFeatures').removeAttribute('hidden');
+        var achAside = el('achAsidePanel'); if (achAside) achAside.setAttribute('hidden','hidden');
+        var metaAside = el('metaAsideNext'); if (metaAside) metaAside.setAttribute('hidden','hidden');
+
+        // ⬇️ aquí el cambio
         setActiveNav(location.hash || '#/cards');
+        return;
       }
-      return;
-    }
 
-    if (h === '#/meta') {
-      try {
+      if (h === '#/meta') {
         showPanel('metaPanel');
-        document.dispatchEvent(new CustomEvent('gn:tabchange', { detail: { view: 'meta' } }));
-      } catch (e) {
-        console.warn('[router] show meta error', e);
-      } finally {
-        updateSidebarFor('meta');
-        setActiveNav(location.hash || '#/meta');
-      }
-      return;
-    }
 
-    if (h === '#/account/achievements') {
-      try {
+        el('asideConvSection') && el('asideConvSection').setAttribute('hidden','hidden');
+        el('asideNextFeatures') && el('asideNextFeatures').setAttribute('hidden','hidden');
+        var achAside2 = el('achAsidePanel'); if (achAside2) achAside2.setAttribute('hidden','hidden');
+        var metaAside2 = el('metaAsideNext'); if (metaAside2) metaAside2.removeAttribute('hidden');
+
+        // Avisar a módulo Meta (si escucha)
+        document.dispatchEvent(new CustomEvent('gn:tabchange', { detail: { view: 'meta' } }));
+
+        // ⬇️ aquí el cambio
+        setActiveNav(location.hash || '#/meta');
+        return;
+      }
+
+      if (h === '#/account/achievements') {
         showPanel('achievementsPanel');
+
+        el('asideConvSection') && el('asideConvSection').setAttribute('hidden','hidden');
+        el('asideNextFeatures') && el('asideNextFeatures').setAttribute('hidden','hidden');
+        var metaAside3 = el('metaAsideNext'); if (metaAside3) metaAside3.setAttribute('hidden','hidden');
+        var achAside3 = el('achAsidePanel'); if (achAside3) achAside3.removeAttribute('hidden');
+
         if (window.Achievements && typeof window.Achievements.render === 'function') {
           window.Achievements.render();
         }
-      } catch (e) {
-        console.warn('[router] show achievements error', e);
-      } finally {
-        updateSidebarFor('achievements');
+
+        // ⬇️ aquí el cambio
         setActiveNav(location.hash || '#/account/achievements');
+        return;
       }
-      return;
-    }
 
-    if (h === '#/account/wizards-vault') {
-      try {
+      if (h === '#/account/wizards-vault') {
         showPanel('wvPanel');
-        if (WV && typeof WV.activate === 'function') WV.activate();
-      } catch (e) {
-        console.error('[router] WV.activate error', e);
-      } finally {
-        // Pase lo que pase arriba, el sidebar y la pastilla quedan correctos
-        updateSidebarFor('wv');
-        setActiveNav(location.hash || '#/account/wizards-vault');
-      }
-      return;
-    }
+        WV.activate();
 
-    // Fallback
-    try {
+        el('asideConvSection') && el('asideConvSection').setAttribute('hidden','hidden');
+        el('asideNextFeatures') && el('asideNextFeatures').setAttribute('hidden','hidden');
+        var achAside4 = el('achAsidePanel'); if (achAside4) achAside4.setAttribute('hidden','hidden');
+        var metaAside4 = el('metaAsideNext'); if (metaAside4) metaAside4.setAttribute('hidden','hidden');
+
+        // ⬇️ aquí el cambio
+        setActiveNav(location.hash || '#/account/wizards-vault');
+        return;
+      }
+
+      // Fallback
       showPanel('walletPanel');
-    } catch (e) {
-      console.warn('[router] fallback show wallet error', e);
-    } finally {
-      updateSidebarFor('cards');
+      // ⬇️ aquí el cambio
       setActiveNav(location.hash || '#/cards');
     }
-  }
 
   function onKeySelectChange() {
     var h = (location.hash || '');
-    try {
-      if (h === '#/account/achievements') {
-        if (window.Achievements && typeof window.Achievements.render === 'function') window.Achievements.render();
-      } else if (h === '#/account/wizards-vault') {
-        WV.ensureLoadTab && WV.ensureLoadTab('shop');
-        WV.activate && WV.activate();
-      }
-    } catch (e) {
-      console.warn('[router] onKeySelectChange error', e);
+    if (h === '#/account/achievements') {
+      if (window.Achievements && typeof window.Achievements.render === 'function') window.Achievements.render();
+    } else if (h === '#/account/wizards-vault') {
+      WV.ensureLoadTab && WV.ensureLoadTab('shop'); // refrescá tienda con la nueva key
+      WV.activate && WV.activate();
     }
+    // Meta escucha gn:tokenchange desde app.js (si aplica)
   }
 
   function onDomReady() {
@@ -849,16 +911,7 @@
       sel.addEventListener('change', onKeySelectChange);
     }
 
-    // Route on hashchange + refuerzo de nav activo tardío
-    window.addEventListener('hashchange', function(){
-      try {
-        route();
-      } finally {
-        // Última palabra para el activo en la Sidebar
-        setTimeout(function(){ setActiveNav(location.hash); }, 0);
-      }
-    });
-
+    window.addEventListener('hashchange', route);
     route();
   }
 

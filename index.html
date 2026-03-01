@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="dark light"/>
+  <meta name="theme-color" content="#111218"/>
   <title>Bóveda del Gato Negro — v2.5.0</title>
 
   <!-- Fuente hero: Cinzel Decorative -->
@@ -46,6 +48,12 @@
   </style>
 </head>
 <body class="dense">
+
+  <noscript>
+    <div class="noscript" role="alert" style="margin:8px; padding:10px; border:1px solid #382b2b; border-radius:8px; background:#1c1414; color:#f5dada;">
+      Esta aplicación requiere JavaScript para funcionar correctamente. Por favor activalo en tu navegador.
+    </div>
+  </noscript>
 
   <!-- ======= HEADER ======= -->
   <header class="an-header" role="banner">
@@ -112,9 +120,19 @@
           </div>
 
           <!-- Tabs hero (si no los querés, podés ocultarlos por CSS) -->
-          <nav class="overlay-tabs" aria-label="Vista principal">
-            <button class="overlay-tab overlay-tab--active" data-view="cards" type="button">Cartera</button>
-            <button class="overlay-tab" data-view="meta" type="button">Meta&amp;Eventos</button>
+          <nav class="overlay-tabs" aria-label="Vista principal" role="tablist">
+            <button class="overlay-tab overlay-tab--active"
+                    data-view="cards"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="walletPanel">Cartera</button>
+            <button class="overlay-tab"
+                    data-view="meta"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="metaPanel">Meta&amp;Eventos</button>
           </nav>
         </div>
       </div>
@@ -132,7 +150,7 @@
         <div class="panel-head">
           <h3 class="panel-head__title">Detalle de cartera</h3>
           <div class="meta-topline">
-            <span class="meta-stat"><strong>Cuenta</strong>: <span id="ownerLabel" aria-labelledby="lblAccount">—</span></span>
+            <span class="meta-stat"><span id="lblAccount"><strong>Cuenta</strong>:</span> <span id="ownerLabel" aria-labelledby="lblAccount">—</span></span>
           </div>
         </div>
         <hr class="hr-hairline">
@@ -175,20 +193,22 @@
 
           <div class="filters-actions">
             <button id="clearFiltersBtn" class="btn" title="Reiniciar filtros">Limpiar filtros</button>
-            <button id="toggleViewBtn" class="btn btn--ghost" title="Vista tarjeta/tabla">Vista tabla</button>
+            <button id="toggleViewBtn" class="btn btn--ghost" title="Vista tarjeta/tabla" aria-pressed="false" aria-controls="walletCards walletTableWrap">Vista tabla</button>
           </div>
         </div>
 
         <p class="panel-status" id="status" aria-live="polite">Listo.</p>
 
-        <!-- Favoritas -->
+        <!-- Fijadas (conserva IDs para no romper JS) -->
         <div id="favBlock" class="fav-block" hidden>
-          <h3 class="fav-title">Favoritas</h3>
+          <!-- [NUEVO] solo el rótulo -->
+          <h3 class="fav-title">Fijadas</h3>
           <div id="favCards" class="grid"></div>
         </div>
 
         <!-- Tarjetas -->
-        <div id="walletCards" class="grid" aria-live="polite"></div>
+        <!-- [NUEVO] usar el grid moderno (wallet-card-grid) -->
+        <div id="walletCards" class="wallet-card-grid" aria-live="polite"></div>
 
         <!-- Tabla -->
         <div id="walletTableWrap" class="table-wrap" hidden>
@@ -199,7 +219,8 @@
                 <th>Divisa</th>
                 <th class="right">Cantidad</th>
                 <th>Categorías</th>
-                <th class="right">★</th>
+                <!-- [NUEVO] encabezado de pin -->
+                <th class="right" title="Fijar/Desfijar">📌</th>
               </tr>
             </thead>
             <tbody><!-- JS --></tbody>
@@ -289,7 +310,7 @@
             <input id="achSearch" type="text" placeholder="Buscar logro…"/>
           </div>
           <div class="chip">
-            <label for="achPct" class="visualmente-hidden">Umbral %</label>
+            <label for="achPct" class="visually-hidden">Umbral %</label>
             <select id="achPct">
               <option value="0.8">≥ 80%</option>
               <option value="0.9">≥ 90%</option>
@@ -309,18 +330,29 @@
         <span id="wvSyncNote" class="muted hidden">Los datos de cuenta pueden tardar tras un login.</span>
       </div>
 
-      <nav class="tabs">
-        <button id="wvTabBtnDaily"   data-tab="daily"   aria-selected="true">Diarias</button>
-        <button id="wvTabBtnWeekly"  data-tab="weekly">Semanales</button>
-        <button id="wvTabBtnSpecial" data-tab="special">Especiales</button>
-        <button id="wvTabBtnShop"    data-tab="shop">Tienda</button>
+      <!-- NUEVO: header visible de temporada -->
+      <div class="wv-season">
+        <strong id="wvSeasonTitle">—</strong>
+        <span id="wvSeasonDates">—</span>
+      </div>
+
+      <!-- Tabs WV con roles ARIA -->
+      <nav class="tabs" role="tablist" aria-label="Subsecciones de Cámara del Brujo">
+        <button id="wvTabBtnDaily"   data-tab="daily"   type="button"
+                role="tab" aria-selected="true" aria-controls="wvTabDaily">Diarias</button>
+        <button id="wvTabBtnWeekly"  data-tab="weekly"  type="button"
+                role="tab" aria-selected="false" aria-controls="wvTabWeekly">Semanales</button>
+        <button id="wvTabBtnSpecial" data-tab="special" type="button"
+                role="tab" aria-selected="false" aria-controls="wvTabSpecial">Especiales</button>
+        <button id="wvTabBtnShop"    data-tab="shop"    type="button"
+                role="tab" aria-selected="false" aria-controls="wvTabShop">Tienda</button>
       </nav>
 
       <div class="tabs-content">
-        <div id="wvTabDaily"   class="tab-panel"></div>
-        <div id="wvTabWeekly"  class="tab-panel" hidden></div>
-        <div id="wvTabSpecial" class="tab-panel" hidden></div>
-        <div id="wvTabShop" class="tab-panel" hidden>
+        <div id="wvTabDaily"   class="tab-panel" role="tabpanel" aria-labelledby="wvTabBtnDaily"   tabindex="0"></div>
+        <div id="wvTabWeekly"  class="tab-panel" role="tabpanel" aria-labelledby="wvTabBtnWeekly"  tabindex="0" hidden></div>
+        <div id="wvTabSpecial" class="tab-panel" role="tabpanel" aria-labelledby="wvTabBtnSpecial" tabindex="0" hidden></div>
+        <div id="wvTabShop"    class="tab-panel" role="tabpanel" aria-labelledby="wvTabBtnShop"    tabindex="0" hidden>
           <div id="wvShopToolbarHost"></div>
         </div>
       </div>
@@ -334,9 +366,6 @@
         <div class="panel-head">
           <h3 class="panel-head__title" id="sideAccTitle">
             <span class="side-head-icon">
-              <!-- Opción A (placeholder):
-              <img class="icon-img" src="" alt="Cuenta" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
-              -->
               <!-- Opción B (sugerida – icono de “account hero” de la wiki) -->
               <img class="icon-img" src="https://wiki.guildwars2.com/images/d/d9/Hero.png" alt="Cuenta" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
             </span>
@@ -358,10 +387,7 @@
         <div class="panel-head">
           <h3 class="panel-head__title" id="sideNavTitle">
             <span class="side-head-icon">
-              <!-- Opción A (placeholder):
-              <img class="icon-img" src="" alt="Navegación" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
-              -->
-              <!-- Opción B (sugerida – icono de brújula/mapa) -->
+              <!-- Sugerida – icono de brújula/mapa -->
               <img class="icon-img" src="https://wiki.guildwars2.com/images/thumb/f/fe/Scout_%28map_icon%29.png/30px-Scout_%28map_icon%29.png" alt="Navegación" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
             </span>
             Navegación
@@ -374,9 +400,6 @@
             <li>
               <a id="navCards" class="side-nav__link" href="#/cards">
                 <span class="side-nav__icon">
-                  <!-- Opción A (placeholder) -->
-                  <!-- <img class="icon-img" src="" alt="Cartera" width="18" height="18" loading="lazy" referrerpolicy="no-referrer"> -->
-                  <!-- Opción B (sugerida – “Coin” / Moneda) -->
                   <img class="icon-img" src="https://wiki.guildwars2.com/images/2/2d/Merchant_%28vendor_icon%29.png" alt="Cartera" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
                 </span>
                 <span>Cartera</span>
@@ -386,9 +409,7 @@
             <li>
               <a id="navMeta" class="side-nav__link" href="#/meta">
                 <span class="side-nav__icon">
-                  <!-- <img class="icon-img" src="" alt="Meta & Eventos" width="18" height="18" loading="lazy" referrerpolicy="no-referrer"> -->
-                  <!-- Sugerida – “Calendar icon” (waypoint también sirve, pero calendario va mejor) -->
-                  <img class="icon-img" src="https://wiki.guildwars2.com/images/thumb/b/bb/Event_boss_%28map_icon%29.png/30px-Event_boss_%28map_icon%29.png" alt="Meta & Eventos" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
+                  <img class="icon-img" src="https://wiki.guildwars2.com/images/thumb/b/bb/Event_boss_%28map_icon%29.png/30px-Event_boss_%28map_icon%29.png" alt="Meta &amp; Eventos" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
                 </span>
                 <span>Meta &amp; Eventos</span>
               </a>
@@ -397,8 +418,6 @@
             <li>
               <a id="navAch" class="side-nav__link" href="#/account/achievements">
                 <span class="side-nav__icon">
-                  <!-- <img class="icon-img" src="" alt="Logros" width="18" height="18" loading="lazy" referrerpolicy="no-referrer"> -->
-                  <!-- Sugerida – “Achievement”/“Laurel” (laurel es muy reconocible) -->
                   <img class="icon-img" src="https://wiki.guildwars2.com/images/thumb/c/cd/AP.png/30px-AP.png" alt="Logros" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
                 </span>
                 <span>Logros</span>
@@ -408,8 +427,6 @@
             <li>
               <a id="navWV" class="side-nav__link" href="#/account/wizards-vault">
                 <span class="side-nav__icon">
-                  <!-- <img class="icon-img" src="" alt="Cámara del Brujo" width="18" height="18" loading="lazy" referrerpolicy="no-referrer"> -->
-                  <!-- Sugerida – ícono de “Wizard” (báculo/vara). Este es un estandarte que funciona bien visualmente. -->
                   <img class="icon-img" src="https://wiki.guildwars2.com/images/thumb/a/a7/Astral_Acclaim.png/30px-Astral_Acclaim.png" alt="Cámara del Brujo" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
                 </span>
                 <span>Cámara del Brujo</span>
@@ -545,11 +562,19 @@
   </div>
 
   <!-- JS -->
-  <script defer src="js/api-gw2.js"></script>
-  <script defer src="js/achievements.js?v=2.5.1"></script>
-  <script defer src="js/app.js?v=2.5.0"></script>
-  <script defer src="js/meta.js?v=2.5.0"></script>
-  <script defer src="js/sidebar-nav.js?v=1.0.0"></script> <!-- resalta nav y actualiza ID -->
-  <script defer src="js/router.js?v=2.4.0"></script>
+  <script defer src="js/api-gw2.js?v=2.5.0"></script>
+  <script defer src="js/achievements.js?v=2.6.0"></script>
+  <script defer src="js/app.js?v=2.5.1"></script>
+  <script defer src="js/meta.js?v=3.1.3"></script>
+  <script defer src="js/sidebar-nav.js?v=1.2"></script> <!-- resalta nav y actualiza ID -->
+  <script>
+    window.WV_MODE_ICONS = {
+      pve: 'https://wiki-es.guildwars2.com/images/5/51/C%C3%A1mara_del_Brujo_PvE.png', 
+      pvp: 'https://wiki-es.guildwars2.com/images/3/31/C%C3%A1mara_del_Brujo_PvP.png',
+      wvw: 'https://wiki-es.guildwars2.com/images/a/a3/C%C3%A1mara_del_Brujo_WvW.png'
+    };
+  </script>
+  <script defer src="js/router.js?v=2.6.3"></script>
 </body>
 </html>
+``
