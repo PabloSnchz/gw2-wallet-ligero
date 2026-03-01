@@ -5,6 +5,37 @@ El formato sigue las recomendaciones de
 **Keep a Changelog** (https://keepachangelog.com/)  
 y el versionado **SemVer** (https://semver.org/).
 
+
+## [4.0.0] – 2026-02-228
+
+### Wallet
+- Rework de tarjetas con estética WV (`wallet-card-grid`, `wallet-card*`).
+- Reemplazo de estrella por **📌** con persistencia por cuenta (`LS_WALLET_PINS`) y **migración** desde `LS_FAVS`.
+- **Vista compacta** con persistencia (`LS_WALLET_COMPACT`), toggle inyectado en toolbar.
+- **Delta de cantidades** (↑/↓) contra snapshot por cuenta (`LS_WALLET_SNAPSHOT`), pill verde/roja; en tabla también ±0.
+- Toolbar: botones **“Vista compacta”** y **“Actualizar base”**.
+- Accesibilidad: `aria-pressed` en pins/toggles.
+
+### UI/Index
+- `#walletCards` ahora usa `wallet-card-grid`.
+- “Favoritas” → “Fijadas”.
+- Encabezado de Tabla (última col) ahora es **📌**.
+
+## 2.6.3 (2026‑02‑28)
+### Router / Sidebar
+- `setActiveNav` robusto (sin entidades, normalización de hash, rAF).
+- **`updateSidebarFor(view)`**: sidebar contextual coherente por vista.
+- **`try/finally`** en cada rama de `route()` para garantizar **actualización de nav + sidebar** aun ante excepciones.
+- Refuerzo `hashchange`: rutear + re‑aplicar active al final del ciclo.
+- WV: `WV.activate()` antes del marcado de nav; se corrige el **bug de pastilla** y el **sidebar fantasma**.
+
+## 2.6.1–2.6.2 (2026‑02‑28)
+- Limpieza de entidades HTML fuera de strings en JS (evita errores de sintaxis).
+- Ajustes menores de compatibilidad y logs de diagnóstico.
+
+## 2.5.x (anteriores)
+- A11y en hero tabs, focus trap modal, mejoras de conversor y cache de catálogo.
+
 ## [4.0.0] – 2026-02-27
 Nuevo módulo completo: Cámara del Brujo (Wizard’s Vault)
 
