@@ -5,7 +5,7 @@
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
-  console.info('%cGW2 Wallet app.js v2.6.0 — Wallet rework (pins + tarjetas unificadas)', 'color:#0bf; font-weight:700');
+  console.info('%cGW2 Wallet app.js v2.6.1 — Bootstrap keys + toasts + router sync', 'color:#0bf; font-weight:700');
 
   /* ========================= Estado ========================= */
   const state = {
@@ -118,7 +118,7 @@
     el.status.textContent = m;
   }
   function obfuscate(t) { return !t || t.length < 8 ? 'Key' : `Key ${t.slice(0, 4)}…${t.slice(-4)}`; }
-  function esc(s) { return String(s || '').replace(/[&<>\"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m])); }
+  function esc(s) { return String(s || '').replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m])); }
 
   function splitCopper(v) { const g = Math.floor(v / 10000), s = Math.floor((v % 10000) / 100), c = v % 100; return { g, s, c }; }
   function badgesHTMLFromCopper(copper) {
@@ -469,6 +469,7 @@
   const KeyManager = {
     list: [],
     selected: null,
+    _programmaticChange: false, // << NUEVO: evita bucles en change
 
     load() {
       try { this.list = JSON.parse(localStorage.getItem(LS_KEYS)) || []; }
@@ -480,15 +481,25 @@
       try { localStorage.setItem(LS_KEYS, JSON.stringify(this.list)); } catch { }
       state.keys = this.list.slice();
     },
-    setSelected(token) {
+    setSelected(token, opts) {
+      opts = opts || {};
       this.selected = token || null;
       state.selected = this.selected;
 
       const gs = el.keySelectGlobal;
+      const before = gs ? gs.value : null;
       if (gs && gs.value !== (this.selected || '')) gs.value = this.selected || '';
 
       // Avisar a otros módulos
       document.dispatchEvent(new CustomEvent('gn:tokenchange', { detail: { token: this.selected } }));
+
+      // NUEVO: disparamos un 'change' programático para que el router refresque WV,
+      // y evitamos bucles en nuestro propio handler con _programmaticChange.
+      const changedByCode = gs && before !== (this.selected || '');
+      if (!opts.silent && gs && changedByCode) {
+        this._programmaticChange = true;
+        setTimeout(() => { gs.dispatchEvent(new Event('change', { bubbles: true })); }, 0);
+      }
     },
     refreshSelects() {
       const sel = el.keySelectGlobal;
@@ -514,7 +525,11 @@
 
       this.save();
       this.refreshSelects();
+
+      // Selecciona y notifica (router capturará el 'change' programático)
       this.setSelected(value);
+
+      // Cargar datos de Wallet en paralelo
       await loadAllForToken(value);
 
       setStatus('Key guardada.', 'ok');
@@ -532,6 +547,7 @@
 
       if (this.selected === value) {
         const next = this.list[0]?.value || null;
+        // Importante: setSelected con notify para que el router se entere
         this.setSelected(next);
         if (next) loadAllForToken(next);
         else { state.wallet = []; render(); }
@@ -628,6 +644,7 @@
 
     el.keysList.querySelectorAll('.k-use').forEach(b => b.addEventListener('click', async ev => {
       const row = ev.target.closest('.keys-row'); const val = row?.dataset?.val; if (!val) return;
+      // Al seleccionar por código queremos notificar al router
       KeyManager.setSelected(val);
       await loadAllForToken(val);
       setStatus('API Key seleccionada.', 'ok');
@@ -717,11 +734,17 @@
 
     // Header - Modal y selector global
     el.keysMenuBtn?.addEventListener('click', openKeysModal);
+
+    // Handler del select global con protección anti-bucle:
+    // - Si el cambio viene de KeyManager (programático) => el router igual lo verá,
+    //   pero nosotros NO recargamos otra vez la wallet.
     el.keySelectGlobal?.addEventListener('change', async () => {
+      if (KeyManager._programmaticChange) { KeyManager._programmaticChange = false; return; }
       const token = el.keySelectGlobal.value || null;
-      KeyManager.setSelected(token);
+      KeyManager.setSelected(token, { silent: true }); // ya no disparamos otro 'change'
       if (token) await loadAllForToken(token);
     });
+
     wireKeysForm();
 
     // Filtros Wallet
@@ -787,9 +810,12 @@
 
     // Selección inicial
     if (!KeyManager.selected && KeyManager.list.length) {
+      // NOTA: setSelected dispara 'change' programático para que el router tome la key.
       KeyManager.setSelected(KeyManager.list[0].value);
       await loadAllForToken(KeyManager.selected);
     } else if (KeyManager.selected) {
+      // Igual, re-confirma selección y avisa al router si hace falta
+      KeyManager.setSelected(KeyManager.selected);
       await loadAllForToken(KeyManager.selected);
     } else {
       render();
@@ -803,7 +829,7 @@
     updateRef400().catch(() => {});
     runIconChecks();
 
-    // Avisar token inicial a otros módulos
+    // Avisar token inicial a otros módulos (compat)
     document.dispatchEvent(new CustomEvent('gn:tokenchange', { detail: { token: KeyManager.selected } }));
   }
   boot();
