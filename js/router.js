@@ -1,13 +1,20 @@
 /*!
- * Router y Vistas (WV Objetivos cards + Tienda con auto‑refresh + Pin)
- * v2.6.3 (2026‑02‑28)
- * Requisitos: api-gw2.js (GW2Api) cargado antes
+ * Router y Vistas (WV Objetivos cards + Tienda unificada con getWVShopMerged + auto‑refresh + Pin)
+ * v2.8.4 (2026‑03‑01)
+ *
+ * Novedades v2.8.4:
+ *  - Tarjetas: outline + halo por rareza (borde y glow sutil en el contenedor y el ícono).
+ *
+ * Incluye (v2.8.3 y previos):
+ *  - "Comprado"=(API+Marcas), botón Max, "Limpiar sincronizados", reconciliación automática,
+ *    filtro "Recompensas Legado", títulos y (tabla) nombres coloreados por rareza,
+ *    layout pills, WV global, fixes de promesas/timers.
  */
 
 (function () {
   'use strict';
 
-  console.info('[WV] router.js v2.6.3 — objetivos cards + shop auto‑refresh + pin');
+  console.info('[WV] router-wv.js v2.8.4 — outline + halo por rareza en tarjetas');
 
   // ------------------------------- Utils DOM -------------------------------
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
@@ -17,11 +24,54 @@
   function show(node){ if (node) node.hidden = false; }
   function hide(node){ if (node) node.hidden = true; }
 
-  // ---------------------- Sidebar: link activo por hash (robusto) --------------------
+  function normHash(s) {
+    s = String(s || '').trim();
+    if (!s) return '#/cards';
+    if (s[0] !== '#') { s = (s[0] === '/' ? '#' + s : '#' + s); }
+    s = s.toLowerCase().replace(/\/+$/, '');
+    if (s === '#') s = '#/cards';
+    return s;
+  }
+
+  // ------------------ Colores de rareza (según GW2 Wiki) ------------------
+  // Monobook (claro): Junk #AAAAAA, Basic #000000, Fine #62A4DA, Masterwork #1A9306,
+  //                   Rare #FCD00B, Exotic #FFA405, Ascended #FB3E8D, Legendary #4C139D
+  // Vector (oscuro): ajusta tonos; usamos Legendary #974EFF para mejor contraste.
+  var RARITY_COLORS = {
+    'junk':       '#AAAAAA',
+    'basic':      '#FFFFFF',  // en tema oscuro preferimos blanco
+    'fine':       '#62A4DA',
+    'masterwork': '#1A9306',
+    'rare':       '#FCD00B',
+    'exotic':     '#FFA405',
+    'ascended':   '#FB3E8D',
+    'legendary':  '#974EFF'
+  };
+  function rarityColor(r) {
+    if (!r) return null;
+    var key = String(r).trim().toLowerCase();
+    return RARITY_COLORS[key] || null;
+  }
+
+  // Helper: HEX (#RRGGBB) -> rgba(r,g,b,a)
+  function hexToRGBA(hex, alpha) {
+    try {
+      var h = String(hex || '').trim().replace(/^#/, '');
+      if (h.length === 3) { h = h.split('').map(function(c){return c+c;}).join(''); }
+      if (h.length !== 6) return null;
+      var r = parseInt(h.slice(0,2),16),
+          g = parseInt(h.slice(2,4),16),
+          b = parseInt(h.slice(4,6),16);
+      var a = Math.max(0, Math.min(1, Number(alpha)));
+      if (Number.isNaN(a)) a = 1;
+      return 'rgba('+r+','+g+','+b+','+a+')';
+    } catch { return null; }
+  }
+
+  // ---------------------- Sidebar: link activo por hash --------------------
   function setActiveNav(hash) {
     try {
-      var h = String(hash || location.hash || '#/cards').trim().toLowerCase().replace(/\/+$/, '');
-      if (!h || h === '#') h = '#/cards';
+      var h = normHash(hash || location.hash || '#/cards');
 
       var links = Array.prototype.slice.call(document.querySelectorAll('.side-nav a, .side-nav__link'));
       if (!links.length) return;
@@ -31,19 +81,17 @@
         a.removeAttribute('aria-current');
       });
 
-      function norm(s) { return String(s||'').toLowerCase().trim().replace(/\/+$/, ''); }
-      var activeFound = false;
-      links.forEach(function (a) {
-        var href = norm(a.getAttribute('href'));
-        var dh   = norm(a.getAttribute('data-hash'));
-        if ((href && href === h) || (dh && dh === h)) {
-          a.classList.add('is-active');
-          a.setAttribute('aria-current', 'page');
-          activeFound = true;
-        }
-      });
+      var found = null;
+      var norm = function (s) { return normHash(s); };
 
-      if (!activeFound) {
+      for (var i = 0; i < links.length; i++) {
+        var a = links[i];
+        var href = a.getAttribute('href');
+        var dh   = a.getAttribute('data-hash');
+        if ((href && norm(href) === h) || (dh && norm(dh) === h)) { found = a; break; }
+      }
+
+      if (!found) {
         var map = {
           '#/cards': 'cards',
           '#/meta': 'meta',
@@ -52,32 +100,16 @@
         };
         var dv = map[h];
         if (dv) {
-          links.forEach(function (a) {
-            if (a.getAttribute('data-view') === dv) {
-              a.classList.add('is-active');
-              a.setAttribute('aria-current', 'page');
-            }
-          });
+          found = links.find(function (a) { return (a.getAttribute('data-view') || '').trim().toLowerCase() === dv; }) || null;
         }
       }
 
-      document.dispatchEvent(new CustomEvent('gn:nav-active', { detail: { hash: h } }));
+      if (found) {
+        found.classList.add('is-active');
+        found.setAttribute('aria-current', 'page');
+      }
 
-      requestAnimationFrame(function () {
-        links.forEach(function (a) {
-          var href = norm(a.getAttribute('href'));
-          var dh   = norm(a.getAttribute('data-hash'));
-          var shouldBeActive = (href && href === h) || (dh && dh === h);
-          if (shouldBeActive) {
-            a.classList.add('is-active');
-            a.setAttribute('aria-current', 'page');
-          } else {
-            a.classList.remove('is-active');
-            a.removeAttribute('aria-current');
-          }
-        });
-      });
-
+      document.dispatchEvent(new CustomEvent('gn:nav-active', { detail: { hash: h, link: found } }));
     } catch (e) {
       console.warn('[router] setActiveNav error', e);
     }
@@ -91,13 +123,11 @@
       var metaNext = el('metaAsideNext');
       var achPanel = el('achAsidePanel');
 
-      // Reset general
       if (conv)     conv.hidden = true;
       if (next)     next.hidden = true;
       if (metaNext) metaNext.hidden = true;
       if (achPanel) achPanel.hidden = true;
 
-      // Activar según vista
       if (view === 'cards') {
         if (conv) conv.hidden = false;
         if (next) next.hidden = false;
@@ -106,7 +136,6 @@
       } else if (view === 'achievements') {
         if (achPanel) achPanel.hidden = false;
       }
-      // 'wv': sin aside contextuales
     } catch (e) {
       console.warn('[router] updateSidebarFor error', e);
     }
@@ -118,7 +147,6 @@
       var node = el(id); if (!node) return;
       if (id === idToShow) node.removeAttribute('hidden'); else node.setAttribute('hidden', 'hidden');
     });
-    // Tabs de hero (header)
     $$('.overlay-tab').forEach(function (btn) {
       var view = btn.getAttribute('data-view');
       var active = (idToShow === 'walletPanel' && view === 'cards') ||
@@ -142,7 +170,6 @@
       .replace(/"/g,'&quot;')
       .replace(/'/g,'&#039;');
   }
-
   function fmtNumber(n) { n = Number(n || 0); return n.toLocaleString('es-AR'); }
   function now() { return Date.now(); }
 
@@ -180,10 +207,37 @@
         pinned: {},
         view: 'cards',
         q: '',
-        sort: 'name'
+        sort: 'name',
+        legacyFilter: 'show', // 'show' | 'hide'
+        lastToken: null
       }
     };
 
+    // ---- Persistencia ----
+    var LS_WV_SHOP_MARKS   = 'gw2_wv_marks_v1';
+    var LS_WV_SHOP_PINNED  = 'gw2_wv_pinned_v1';
+    var LS_WV_SHOP_VIEW    = 'gw2_wv_view_v1';
+    var LS_WV_LAST_TAB     = 'gw2_wv_lasttab_v1';
+    var LS_WV_LEGACY_VIS   = 'gw2_wv_legacy_filter_v1';
+
+    function marksNamespace() {
+      var token = getSelectedToken() || 'anon';
+      var fp = token ? (token.slice(0,4) + '…' + token.slice(-4)) : 'anon';
+      var st = state.shop; var seasonId = (st && st.season && (st.season.id || st.season.title)) || 'season';
+      return fp + ':' + seasonId;
+    }
+    function loadMarks(ns) { try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_MARKS) || '{}'); return all[ns] || {}; } catch (_){ return {}; } }
+    function saveMarks(ns, marks) { try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_MARKS) || '{}'); all[ns] = marks || {}; localStorage.setItem(LS_WV_SHOP_MARKS, JSON.stringify(all)); } catch (_){ } }
+    function loadPinned(ns) { try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_PINNED) || '{}'); return all[ns] || {}; } catch (_){ return {}; } }
+    function savePinned(ns, pinned) { try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_PINNED) || '{}'); all[ns] = pinned || {}; localStorage.setItem(LS_WV_SHOP_PINNED, JSON.stringify(all)); } catch (_){ } }
+    function saveView(view) { try { localStorage.setItem(LS_WV_SHOP_VIEW, view); } catch(_){ } }
+    function loadView() { try { return localStorage.getItem(LS_WV_SHOP_VIEW) || 'cards'; } catch(_){ return 'cards'; } }
+    function saveLastTab(tab) { try { localStorage.setItem(LS_WV_LAST_TAB, tab); } catch(_){ } }
+    function loadLastTab() { try { return localStorage.getItem(LS_WV_LAST_TAB) || 'daily'; } catch(_){ return 'daily'; } }
+    function saveLegacyFilter(v) { try { localStorage.setItem(LS_WV_LEGACY_VIS, v); } catch(_){ } }
+    function loadLegacyFilter() { try { return localStorage.getItem(LS_WV_LEGACY_VIS) || 'show'; } catch(_){ return 'show'; } }
+
+    // ---- Temporada (cabecera) ----
     function setWVSeasonHeader(season) {
       if (!season) return;
       if (els.seasonTitle) els.seasonTitle.textContent = season.title || '—';
@@ -197,26 +251,7 @@
       }
     }
 
-    function marksNamespace() {
-      var token = getSelectedToken() || 'anon';
-      var fp = token ? (token.slice(0,4) + '…' + token.slice(-4)) : 'anon';
-      var st = state.shop; var seasonId = (st && st.season && (st.season.id || st.season.title)) || 'season';
-      return fp + ':' + seasonId;
-    }
-    var LS_WV_SHOP_MARKS   = 'gw2_wv_marks_v1';
-    var LS_WV_SHOP_PINNED  = 'gw2_wv_pinned_v1';
-    var LS_WV_SHOP_VIEW    = 'gw2_wv_view_v1';
-    var LS_WV_LAST_TAB     = 'gw2_wv_lasttab_v1';
-
-    function loadMarks(ns) { try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_MARKS) || '{}'); return all[ns] || {}; } catch (_){ return {}; } }
-    function saveMarks(ns, marks) { try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_MARKS) || '{}'); all[ns] = marks || {}; localStorage.setItem(LS_WV_SHOP_MARKS, JSON.stringify(all)); } catch (_){ } }
-    function loadPinned(ns) { try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_PINNED) || '{}'); return all[ns] || {}; } catch (_){ return {}; } }
-    function savePinned(ns, pinned) { try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_PINNED) || '{}'); all[ns] = pinned || {}; localStorage.setItem(LS_WV_SHOP_PINNED, JSON.stringify(all)); } catch (_){ } }
-    function saveView(view) { try { localStorage.setItem(LS_WV_SHOP_VIEW, view); } catch(_){ } }
-    function loadView() { try { return localStorage.getItem(LS_WV_SHOP_VIEW) || 'cards'; } catch(_){ return 'cards'; } }
-    function saveLastTab(tab) { try { localStorage.setItem(LS_WV_LAST_TAB, tab); } catch(_){ } }
-    function loadLastTab() { try { return localStorage.getItem(LS_WV_LAST_TAB) || 'daily'; } catch(_){ return 'daily'; } }
-
+    // ---- Objetivos (igual a previos) ----
     function normalizeObjectives(raw) {
       var arr = (raw && raw.objectives) || [];
       return arr.map(function (o) {
@@ -266,7 +301,7 @@
           '<div class="wv-obj-card">',
             '<div class="wv-obj-head">',
               '<div class="wv-obj-title">',
-                escapeHtml(o.title), 
+                escapeHtml(o.title),
               '</div>',
               '<span class="wv-obj-mode">'+(o.track||'PvE')+'</span>',
             '</div>',
@@ -288,7 +323,7 @@
       host.innerHTML = html.join('');
     }
 
-    // ---- Shop helpers (igual que antes) ----
+    // ---- Toolbar ----
     function shopSyncLine() {
       var ts = state.shop.lastSyncTs;
       if (!ts) return '<div class="wv-syncline"><span class="wv-sync-badge">Sincronizado: —</span></div>';
@@ -296,12 +331,20 @@
       return '<div class="wv-syncline"><span class="wv-sync-badge">Sincronizado hace '+secs+'s</span></div>';
     }
 
+    function syncShopToggleLabel() {
+      var v = el('wvShopToggleView');
+      if (v) v.textContent = 'Vista: ' + (state.shop.view === 'cards' ? 'Tarjetas' : 'Tabla');
+    }
+
     function ensureShopToolbar() {
       if (!els.shopToolbarHost || els.shopToolbarHost.__wired) return;
       els.shopToolbarHost.__wired = true;
+
+      var legacyVis = state.shop.legacyFilter || 'show';
+
       els.shopToolbarHost.innerHTML = [
         '<div class="wv-shop-toolbar">',
-          '<div class="group">',
+          '<div class="group" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">',
             '<strong style="margin-right:6px">Tienda:</strong>',
             '<input id="wvShopSearch" type="text" placeholder="Buscar (nombre o ID)…" />',
             '<select id="wvShopSort">',
@@ -312,32 +355,71 @@
             '</select>',
             '<button id="wvShopToggleView" class="btn btn--ghost">Vista: '+(state.shop.view==='cards'?'Tarjetas':'Tabla')+'</button>',
             '<button id="wvShopRefresh" class="btn btn--ghost">Refrescar</button>',
+            '<label for="wvLegacyFilter" class="muted" style="margin-left:8px;">Recompensas Legado:</label>',
+            '<select id="wvLegacyFilter">',
+              '<option value="show"'+(legacyVis==='show'?' selected':'')+'>Mostrar</option>',
+              '<option value="hide"'+(legacyVis==='hide'?' selected':'')+'>Ocultar</option>',
+            '</select>',
+            '<button id="wvClearSynced" class="btn btn--ghost" title="Borrar o recortar marcas ya cubiertas por el API">Limpiar sincronizados</button>',
           '</div>',
           shopSyncLine(),
           '<div id="wvShopHeader" class="muted" style="margin-top:4px">—</div>',
         '</div>'
       ].join('');
+
       var q = el('wvShopSearch');
       var s = el('wvShopSort');
       var v = el('wvShopToggleView');
       var r = el('wvShopRefresh');
+      var lf = el('wvLegacyFilter');
+      var cls = el('wvClearSynced');
 
       if (q) q.addEventListener('input', function(){ state.shop.q = (q.value||'').trim().toLowerCase(); renderShopArea(); });
       if (s) s.addEventListener('change', function(){ state.shop.sort = s.value; renderShopArea(); });
       if (v) v.addEventListener('click', function(){
         state.shop.view = (state.shop.view === 'cards') ? 'table' : 'cards';
-        v.textContent = 'Vista: ' + (state.shop.view==='cards'?'Tarjetas':'Tabla');
         saveView(state.shop.view);
+        syncShopToggleLabel();
         renderShopArea();
       });
       if (r) r.addEventListener('click', function(){ refreshShopData(true); });
+
+      if (lf) lf.addEventListener('change', function(){
+        state.shop.legacyFilter = lf.value || 'show';
+        saveLegacyFilter(state.shop.legacyFilter);
+        renderShopArea();
+      });
+
+      if (cls) cls.addEventListener('click', function(){
+        var st = state.shop, marks = st.marks || {}, changed = false;
+        (st.merged || []).forEach(function(row){
+          var id = String(row.id);
+          var limit = (typeof row.purchase_limit === 'number') ? row.purchase_limit : null;
+          var purchasedApi = (typeof row.purchased === 'number') ? row.purchased : 0;
+          var m = +marks[id] || 0;
+          if (limit == null) return;
+          if (purchasedApi >= limit && m) { delete marks[id]; changed = true; }
+          else if (m > 0 && purchasedApi + m > limit) { marks[id] = Math.max(0, limit - purchasedApi); changed = true; }
+        });
+        if (changed) {
+          state.shop.marks = marks;
+          saveMarks(marksNamespace(), marks);
+          renderShopArea();
+          window.toast?.('success', 'Marcas sincronizadas con el API', { ttl: 1800 });
+        } else {
+          window.toast?.('info', 'No hay marcas para limpiar', { ttl: 1500 });
+        }
+      });
+
+      syncShopToggleLabel();
     }
 
+    // ---- Cabecera (AA) ----
     function setShopHeader(aa, spentApi, reservedMarks, iconUrl) {
       var host = el('wvShopHeader'); if (!host) return;
       var icon = iconUrl ? ('<img src="'+escapeHtml(iconUrl)+'" alt="" width="16" height="16" style="vertical-align:middle;margin-right:6px;" loading="lazy"/>') : '';
       var aaLeft = Math.max(0, Number(aa||0) - Number(reservedMarks||0));
-      host.innerHTML = icon + 
+      host.innerHTML = icon +
         '<strong>Aclamación Astral</strong> — Disponible: <strong>'+fmtNumber(aa||0)+'</strong>' +
         ' • Gastado (API): <strong>'+fmtNumber(spentApi||0)+'</strong>' +
         ' • Reservado (marcas): <strong>'+fmtNumber(reservedMarks||0)+'</strong>' +
@@ -357,12 +439,15 @@
       return { spentApi: spentApi, reservedMarks: reserved };
     }
 
+    // ---- Filtro + Orden ----
     function passSearchAndSort(list) {
       var q = (state.shop.q || '').toLowerCase();
       var sort = state.shop.sort || 'name';
+      var legacy = state.shop.legacyFilter || 'show';
       var itemsById = state.shop.itemsById || new Map();
 
       var filtered = (list||[]).filter(function (x) {
+        if (legacy === 'hide' && String(x.type||'').toLowerCase() === 'legacy') return false;
         if (!q) return true;
         var it = (x.item_id != null) ? itemsById.get(x.item_id) : null;
         var name = it && it.name ? String(it.name) : '';
@@ -391,9 +476,11 @@
       return sorted;
     }
 
+    // ---- Render principal de Tienda ----
     function renderShopArea() {
       var host = els.tabShop; if (!host) return;
       ensureShopToolbar();
+      syncShopToggleLabel();
 
       var toolbar = els.shopToolbarHost && els.shopToolbarHost.querySelector('.wv-shop-toolbar');
       if (toolbar) {
@@ -416,26 +503,33 @@
       var itemsById = st.itemsById || new Map();
       var rows = passSearchAndSort(st.merged).slice(0, 1200);
 
+      // (debug) publicar en WV para inspección
+      try { if (typeof window !== 'undefined' && window.WV) window.WV.__debugRows = rows; } catch (_){}
+
       if (st.view === 'table') {
         var trs = rows.map(function (x) {
           var it = (x.item_id != null) ? itemsById.get(x.item_id) : null;
           var icon = it && it.icon ? ('<img class="wv-item-icon" src="'+escapeHtml(it.icon)+'" alt="" loading="lazy"/> ') : '';
           var name = it && it.name ? it.name : (x.item_id != null ? ('Item #'+x.item_id) : (x.type || '—'));
+          var rarity = it && it.rarity ? String(it.rarity) : null;
+          var color  = rarityColor(rarity);
           var qty  = (x.item_count && x.item_count>1) ? (' <span class="muted">×'+x.item_count+'</span>') : '';
-          var limit = (typeof x.purchase_limit === 'number') ? x.purchase_limit : '∞';
+          var limit = (typeof x.purchase_limit === 'number') ? x.purchase_limit : null;
           var purchasedApi = (typeof x.purchased === 'number') ? x.purchased : 0;
 
           var marks = st.marks || {};
           var marked = Number(marks[x.id] || 0);
-          var effectivePurchased = purchasedApi + marked;
-          var left = (limit === '∞') ? '∞' : Math.max(0, limit - effectivePurchased);
+          var purchasedEff = purchasedApi + marked;
+          var leftVal = (limit == null) ? '∞' : GW2Api.wvComputeRemaining(limit, purchasedApi, marked);
 
-          var nameHtml = escapeHtml(name);
+          // nombre coloreado por rareza
+          var nameHtml = '<span'+(color?' style="color:'+color+'"':'')+'>'+escapeHtml(name)+'</span>';
+
           var pinActive = !!(st.pinned && st.pinned[x.id]);
           var pinCls = 'wv-pin' + (pinActive ? ' wv-pin--active' : '');
           var pinBtn = '<button class="'+pinCls+'" data-pin="'+x.id+'" title="'+(pinActive?'Desfijar':'Fijar')+'">📌</button>';
 
-          var ctr = (limit === '∞')
+          var ctr = (limit == null)
             ? '<span class="wv-counter"><span class="muted" style="min-width:24px; display:inline-block; text-align:center;">—</span></span>'
             : (
                 '<span class="wv-counter" data-id="'+x.id+'">' +
@@ -445,14 +539,18 @@
                 '</span>'
               );
 
+          var maxBtn = (limit != null && purchasedEff < limit)
+            ? '<button class="btn btn--ghost wv-markall" data-id="'+x.id+'" title="Marcar todo (llenar hasta el máximo)">Max</button>'
+            : '';
+
           return (
-            '<tr>' +
-              '<td class="nowrap">'+icon+'<span>'+nameHtml+'</span>'+qty+'</td>' +
+            '<tr data-id="'+x.id+'">' +
+              '<td class="nowrap">'+icon+ nameHtml + qty +'</td>' +
               '<td>' + escapeHtml(x.type || '') + '</td>' +
               '<td class="right">' + (x.cost || 0) + '</td>' +
-              '<td class="right">' + purchasedApi + ' / ' + limit + '</td>' +
-              '<td class="right">' + left + '</td>' +
-              '<td class="right">' + ctr + '</td>' +
+              '<td class="right">' + purchasedEff + ' / ' + (limit==null?'∞':limit) + '</td>' +
+              '<td class="right">' + leftVal + '</td>' +
+              '<td class="right">' + ctr + (maxBtn ? ' ' + maxBtn : '') + '</td>' +
               '<td class="right">' + pinBtn + '</td>' +
             '</tr>'
           );
@@ -473,17 +571,29 @@
           var it = (x.item_id != null) ? itemsById.get(x.item_id) : null;
           var icon = it && it.icon ? it.icon : '';
           var name = it && it.name ? it.name : (x.item_id != null ? ('Item #'+x.item_id) : (x.type || '—'));
+          var rarity = it && it.rarity ? String(it.rarity) : null;
+          var color = rarityColor(rarity);
 
           var cost = (x.cost || 0);
-          var limit = (typeof x.purchase_limit === 'number') ? x.purchase_limit : '∞';
+          var limit = (typeof x.purchase_limit === 'number') ? x.purchase_limit : null;
           var purchasedApi = (typeof x.purchased === 'number') ? x.purchased : 0;
 
           var marks = st.marks || {};
           var marked = Number(marks[x.id] || 0);
-          var effectivePurchased = purchasedApi + marked;
-          var left = (limit === '∞') ? '∞' : Math.max(0, limit - effectivePurchased);
+          var purchasedEff = purchasedApi + marked;
+          var leftVal = (limit == null) ? '∞' : GW2Api.wvComputeRemaining(limit, purchasedApi, marked);
 
-          var ctr = (limit === '∞')
+          // ---- NUEVO: outline + halo por rareza (card + icon) ----
+          var b1 = color ? hexToRGBA(color, 0.32) : null;  // borde interior
+          var g1 = color ? hexToRGBA(color, 0.36) : null;  // glow exterior
+          var cardDeco = (b1 && g1)
+            ? ' style="border:1px solid '+b1+'; box-shadow: 0 0 0 1px '+b1+' inset, 0 0 14px '+g1+';"'
+            : '';
+          var iconDeco = (b1 && g1)
+            ? ' style="box-shadow: 0 0 0 2px '+b1+', 0 0 10px '+g1+'; border-radius:6px;"'
+            : '';
+
+          var ctr = (limit == null)
             ? '<span class="wv-counter wv-counter--card wv-counter--disabled"><span class="muted">—</span></span>'
             : (
               '<span class="wv-counter wv-counter--card" data-id="'+x.id+'">' +
@@ -493,15 +603,21 @@
               '</span>'
             );
 
+          var maxBtn = (limit != null && purchasedEff < limit)
+            ? '<button class="btn btn--ghost wv-markall" data-id="'+x.id+'" title="Marcar todo (llenar hasta el máximo)">Max</button>'
+            : '';
+
           var pinActive = !!(st.pinned && st.pinned[x.id]);
           var pinCls = 'wv-pin' + (pinActive ? ' wv-pin--active' : '');
           var pinBtn = '<button class="'+pinCls+'" data-pin="'+x.id+'" title="'+(pinActive?'Desfijar':'Fijar')+'">📌</button>';
 
+          var rowStyle = 'display:flex;justify-content:space-between;align-items:center;gap:8px;';
+
           return (
-            '<div class="wv-card">' +
+            '<div class="wv-card" data-id="'+x.id+'"'+cardDeco+'>' +
               '<div class="wv-card__top">' +
-                '<div class="wv-card__iconWrap">' + (icon ? ('<img class="wv-card__icon" src="'+escapeHtml(icon)+'" alt="" loading="lazy"/>') : '') + '</div>' +
-                '<div class="wv-card__name" title="'+escapeHtml(name)+'">'+escapeHtml(name)+'</div>' +
+                '<div class="wv-card__iconWrap"'+iconDeco+'>' + (icon ? ('<img class="wv-card__icon" src="'+escapeHtml(icon)+'" alt="" loading="lazy"/>') : '') + '</div>' +
+                '<div class="wv-card__name" title="'+escapeHtml(name)+'"'+(color?' style="color:'+color+'"':'')+'>'+escapeHtml(name)+'</div>' +
                 pinBtn +
               '</div>' +
               '<div class="wv-card__meta">' +
@@ -510,12 +626,12 @@
               '</div>' +
               '<div class="wv-card__body">' +
                 '<div class="sep"></div>' +
-                '<div class="wv-card__row"><span class="muted">Comprado:</span><span class="pill">'+purchasedApi+' / '+limit+'</span></div>' +
-                '<div class="wv-card__row"><span class="muted">Restante:</span><span class="pill">'+left+'</span></div>' +
+                '<div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Comprado:</span><span class="pill">'+purchasedEff+' / '+(limit==null?'∞':limit)+'</span></div>' +
+                '<div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Restante:</span><span class="pill">'+leftVal+'</span></div>' +
               '</div>' +
-              '<div class="wv-card__bottom">' +
+              '<div class="wv-card__bottom" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
                 '<span class="wv-id">ID '+x.id+'</span>' +
-                ctr +
+                '<span>'+ctr + (maxBtn ? ' ' + maxBtn : '') + '</span>' +
               '</div>' +
             '</div>'
           );
@@ -524,13 +640,13 @@
         area.innerHTML = '<div class="wv-card-grid">' + cards + '</div>';
       }
 
-      // Wire contadores y pin (igual que antes)
+      // Wire contadores y pin
       $$('.wv-counter', area).forEach(function (host) {
         var id = host.getAttribute('data-id');
         var btnDec = $('.wv-dec', host), btnInc = $('.wv-inc', host);
         var spanVal = $('span.muted', host);
         var findRow = function(){ return state.shop.merged.find(function(x){ return String(x.id)===String(id); }); };
-        var limitOf = function(row){ return (typeof row.purchase_limit === 'number') ? row.purchase_limit : Infinity; };
+        var limitOf = function(row){ return (typeof row.purchase_limit === 'number') ? row.purchase_limit : null; };
         var purchasedApiOf = function(row){ return (typeof row.purchased === 'number') ? row.purchased : 0; };
 
         function refresh(val){ spanVal.textContent = String(val); renderShopArea(); }
@@ -555,7 +671,8 @@
             var row = findRow(); if (!row) return;
             var marks = state.shop.marks || {};
             var cur = +marks[id] || 0;
-            var cap = Math.max(0, limitOf(row) - purchasedApiOf(row));
+            var lim = limitOf(row); // null => ilimitado
+            var cap = (lim == null) ? Infinity : Math.max(0, lim - purchasedApiOf(row));
             if (cur >= cap) return;
             cur += 1; marks[id] = cur;
             state.shop.marks = marks;
@@ -565,6 +682,26 @@
         }
       });
 
+      // Wire botón MAX (Marcar todo)
+      $$('.wv-markall', area).forEach(function (btn) {
+        if (btn.__wired) return; btn.__wired = true;
+        btn.addEventListener('click', function(){
+          var id = btn.getAttribute('data-id');
+          var row = state.shop.merged.find(function(x){ return String(x.id) === String(id); });
+          if (!row) return;
+          var limit = (typeof row.purchase_limit === 'number') ? row.purchase_limit : null;
+          var purchasedApi = (typeof row.purchased === 'number') ? row.purchased : 0;
+          if (limit == null) return; // ilimitado: no aplica
+          var cap = Math.max(0, limit - purchasedApi);
+          var marks = state.shop.marks || {};
+          marks[id] = cap;
+          state.shop.marks = marks;
+          saveMarks(marksNamespace(), marks);
+          renderShopArea();
+        });
+      });
+
+      // Wire PIN
       $$('[data-pin]', area).forEach(function (btn) {
         if (btn.__wired) return; btn.__wired = true;
         btn.addEventListener('click', function(){
@@ -589,54 +726,54 @@
       }
     }
 
+    // Retorna Promise para permitir .finally()
     function refreshShopData(forceNoCache) {
       var token = getSelectedToken();
       if (!token) {
-        els.tabShop.innerHTML = '<p class="muted">Seleccioná una API Key para ver la Tienda.</p>';
-        return;
+        if (els.tabShop) els.tabShop.innerHTML = '<p class="muted">Seleccioná una API Key para ver la Tienda.</p>';
+        return Promise.resolve();
       }
-      Promise.allSettled([
-        GW2Api.getAccountWVListings(token, { nocache: !!forceNoCache }),
-        GW2Api.getWVAccount(token, { nocache: !!forceNoCache }),
-        GW2Api.getWVListings({ nocache: !!forceNoCache })
-      ]).then(function (arr) {
-        var accShopRes = arr[0].status === 'fulfilled' ? (arr[0].value || []) : [];
-        var wvAccRes   = arr[1].status === 'fulfilled' ? arr[1].value : null;
-        var globalList = arr[2].status === 'fulfilled' ? (arr[2].value || []) : [];
+      state.shop.lastToken = token;
 
-        var mapGlobalById  = new Map(globalList.map(function (g) { return [g.id, g]; }));
+      return GW2Api.getWVShopMerged(token, { nocache: !!forceNoCache })
+        .then(function (pkg) {
+          state.shop.merged    = pkg.rows || [];
+          state.shop.itemsById = pkg.itemsById || new Map();
+          state.shop.aa        = pkg.aa || 0;
+          state.shop.aaIconUrl = pkg.aaIconUrl || null;
+          state.shop.lastSyncTs = now();
 
-        var merged = (accShopRes || []).map(function (acc) {
-          var g = mapGlobalById.get(acc.id) || {};
-          return {
-            id: acc.id,
-            item_id: g.item_id != null ? g.item_id : null,
-            item_count: g.item_count != null ? g.item_count : null,
-            type: g.type || null,
-            cost: g.cost != null ? g.cost : null,
-            purchased: acc.purchased != null ? acc.purchased : 0,
-            purchase_limit: acc.purchase_limit != null ? acc.purchase_limit : null
-          };
+          // Restaurar prefs
+          state.shop.view = loadView();
+          state.shop.legacyFilter = loadLegacyFilter();
+
+          // Cargar marcas/pins por namespace
+          var ns = marksNamespace();
+          state.shop.marks  = loadMarks(ns);
+          state.shop.pinned = loadPinned(ns);
+
+          // Reconciliación suave (API vs marcas)
+          (function(){
+            var st = state.shop, marks = st.marks || {}, changed = false;
+            (st.merged || []).forEach(function(row){
+              var id = String(row.id);
+              var limit = (typeof row.purchase_limit === 'number') ? row.purchase_limit : null;
+              var purchasedApi = (typeof row.purchased === 'number') ? row.purchased : 0;
+              var m = +marks[id] || 0;
+              if (limit == null) return;
+              if (purchasedApi >= limit && m) { delete marks[id]; changed = true; }
+              else if (m > 0 && purchasedApi + m > limit) { marks[id] = Math.max(0, limit - purchasedApi); changed = true; }
+            });
+            if (changed) { st.marks = marks; saveMarks(marksNamespace(), marks); }
+          })();
+
+          try { if (typeof window !== 'undefined' && window.WV) window.WV.__debugRows = state.shop.merged.slice(); } catch(_){}
+
+          renderShopArea();
+        })
+        .catch(function (e) {
+          console.warn('[WV] refresh shop error:', e);
         });
-
-        var itemIds = merged.map(function (m) { return m.item_id; }).filter(function (x) { return x != null; });
-        return GW2Api.getItemsMany(Array.from(new Set(itemIds)), { nocache: !!forceNoCache })
-          .then(function (items) {
-            state.shop.merged = merged;
-            state.shop.itemsById = GW2Api.__indexArrayByKey(items, 'id');
-            state.shop.aa = (wvAccRes && typeof wvAccRes.astral_acclaim === 'number') ? wvAccRes.astral_acclaim : state.shop.aa;
-            state.shop.aaIconUrl = (wvAccRes && wvAccRes.icon) ? wvAccRes.icon : state.shop.aaIconUrl;
-            state.shop.lastSyncTs = now();
-
-            var ns = marksNamespace();
-            state.shop.marks  = loadMarks(ns);
-            state.shop.pinned = loadPinned(ns);
-
-            renderShopArea();
-          });
-      }).catch(function (e) {
-        console.warn('[WV] refresh shop error:', e);
-      });
     }
 
     function setActiveTab(tab) {
@@ -723,14 +860,16 @@
       }
 
       if (tab === 'shop') {
+        state.shop.view = loadView();
+        state.shop.legacyFilter = loadLegacyFilter();
         ensureShopToolbar();
+
         var ns = marksNamespace();
         state.shop.marks  = loadMarks(ns);
         state.shop.pinned = loadPinned(ns);
-        state.shop.view = loadView();
 
-        els.tabShop.insertAdjacentHTML('beforeend', '<div class="muted">Cargando Tienda…</div>');
-        refreshShopData(false).finally(function(){ state.loaded.shop = true; });
+        if (els.tabShop) els.tabShop.insertAdjacentHTML('beforeend', '<div class="muted">Cargando Tienda…</div>');
+        return refreshShopData(false).finally(function(){ state.loaded.shop = true; });
       }
     }
 
@@ -745,24 +884,56 @@
       ensureLoadTab(state.lastTab || 'daily');
     }
 
-    return { activate: activate, setActiveTab: setActiveTab, ensureLoadTab: ensureLoadTab };
+    function deactivate() { ensureShopAutoRefresh(false); }
+
+    function onVisibilityChange(hidden) {
+      if (state.lastTab === 'shop') {
+        if (hidden) {
+          ensureShopAutoRefresh(false);
+        } else {
+          ensureShopAutoRefresh(true);
+          refreshShopData(false);
+        }
+      }
+    }
+
+    function onTokenChanged(newToken) {
+      var prev = state.shop.lastToken || null;
+      state.shop.lastToken = newToken || null;
+      if (state.lastTab === 'shop' && prev !== state.shop.lastToken) {
+        state.loaded.shop = false;
+        if (els.tabShop) els.tabShop.innerHTML = '';
+        refreshShopData(true);
+      }
+    }
+
+    // PUBLICAR WV PARA CONSOLA/DEBUG
+    var api = {
+      activate: activate,
+      setActiveTab: setActiveTab,
+      ensureLoadTab: ensureLoadTab,
+      deactivate: deactivate,
+      onVisibilityChange: onVisibilityChange,
+      onTokenChanged: onTokenChanged,
+      __debugRows: []
+    };
+    try { if (typeof window !== 'undefined') window.WV = api; } catch (_){}
+
+    return api;
   })();
 
   // ----------------------------- ROUTER ------------------------------------
   function route() {
-    var h = (location.hash || '').trim();
+    var h = normHash(location.hash || '#/cards');
 
-    // ⚠️ Importante: en cada rama usamos try/finally para garantizar
-    // setActiveNav + updateSidebarFor, aún si algo lanza excepción.
-    if (h === '' || h === '#' || h === '#/' || h === '#/cards') {
-      try {
-        showPanel('walletPanel');
-      } catch (e) {
-        console.warn('[router] show wallet error', e);
-      } finally {
-        updateSidebarFor('cards');
-        setActiveNav(location.hash || '#/cards');
-      }
+    if (h !== '#/account/wizards-vault' && WV && typeof WV.deactivate === 'function') {
+      WV.deactivate();
+    }
+
+    if (h === '#/cards') {
+      try { showPanel('walletPanel'); }
+      catch (e) { console.warn('[router] show wallet error', e); }
+      finally { updateSidebarFor('cards'); setActiveNav(h); }
       return;
     }
 
@@ -770,12 +941,8 @@
       try {
         showPanel('metaPanel');
         document.dispatchEvent(new CustomEvent('gn:tabchange', { detail: { view: 'meta' } }));
-      } catch (e) {
-        console.warn('[router] show meta error', e);
-      } finally {
-        updateSidebarFor('meta');
-        setActiveNav(location.hash || '#/meta');
-      }
+      } catch (e) { console.warn('[router] show meta error', e); }
+      finally { updateSidebarFor('meta'); setActiveNav(h); }
       return;
     }
 
@@ -785,12 +952,8 @@
         if (window.Achievements && typeof window.Achievements.render === 'function') {
           window.Achievements.render();
         }
-      } catch (e) {
-        console.warn('[router] show achievements error', e);
-      } finally {
-        updateSidebarFor('achievements');
-        setActiveNav(location.hash || '#/account/achievements');
-      }
+      } catch (e) { console.warn('[router] show achievements error', e); }
+      finally { updateSidebarFor('achievements'); setActiveNav(h); }
       return;
     }
 
@@ -798,33 +961,25 @@
       try {
         showPanel('wvPanel');
         if (WV && typeof WV.activate === 'function') WV.activate();
-      } catch (e) {
-        console.error('[router] WV.activate error', e);
-      } finally {
-        // Pase lo que pase arriba, el sidebar y la pastilla quedan correctos
-        updateSidebarFor('wv');
-        setActiveNav(location.hash || '#/account/wizards-vault');
-      }
+      } catch (e) { console.error('[router] WV.activate error', e); }
+      finally { updateSidebarFor('wv'); setActiveNav(h); }
       return;
     }
 
-    // Fallback
-    try {
-      showPanel('walletPanel');
-    } catch (e) {
-      console.warn('[router] fallback show wallet error', e);
-    } finally {
-      updateSidebarFor('cards');
-      setActiveNav(location.hash || '#/cards');
-    }
+    try { showPanel('walletPanel'); }
+    catch (e) { console.warn('[router] fallback show wallet error', e); }
+    finally { updateSidebarFor('cards'); setActiveNav('#/cards'); }
   }
 
   function onKeySelectChange() {
-    var h = (location.hash || '');
+    var h = normHash(location.hash || '#/cards');
+    var token = getSelectedToken();
+
     try {
       if (h === '#/account/achievements') {
         if (window.Achievements && typeof window.Achievements.render === 'function') window.Achievements.render();
       } else if (h === '#/account/wizards-vault') {
+        WV.onTokenChanged && WV.onTokenChanged(token);
         WV.ensureLoadTab && WV.ensureLoadTab('shop');
         WV.activate && WV.activate();
       }
@@ -834,7 +989,6 @@
   }
 
   function onDomReady() {
-    // Hero tabs del header
     $$('.overlay-tab').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var view = btn.getAttribute('data-view');
@@ -849,13 +1003,11 @@
       sel.addEventListener('change', onKeySelectChange);
     }
 
-    // Route on hashchange + refuerzo de nav activo tardío
-    window.addEventListener('hashchange', function(){
-      try {
-        route();
-      } finally {
-        // Última palabra para el activo en la Sidebar
-        setTimeout(function(){ setActiveNav(location.hash); }, 0);
+    window.addEventListener('hashchange', route);
+
+    document.addEventListener('visibilitychange', function(){
+      if (WV && typeof WV.onVisibilityChange === 'function') {
+        WV.onVisibilityChange(document.hidden);
       }
     });
 

@@ -1,7 +1,7 @@
 /* =======================================================================
- * js/api-gw2.js  —  Capa API con fallbacks + caché persistente
+ * js/api-gw2.js  —  Capa API con fallbacks + caché persistente + helpers WV
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 2.5.0-fallbacks (2026-02-27)
+ * Versión: 2.6.0-merged (2026-03-01)
  *
  * Cobertura:
  *  - Token / permisos (tokeninfo)
@@ -10,9 +10,14 @@
  *  - Items batch (con caché por id)
  *  - Achievements (cuenta + metadatos)
  *
+ * Novedades 2.6.0:
+ *  - Normalización de tipos numéricos en WV (cost, purchased, purchase_limit, item_count).
+ *  - Helpers públicos: wvComputeRemaining, wvMergeShopListings, getWVShopMerged().
+ *  - Mantiene compatibilidad con API pública previa (añade funciones, no rompe).
+ *
  * Notas:
  *  - Se usa ?access_token= para evitar preflight CORS (apps estáticas).
- *  - Fallbacks para rutas WV: "wizardsvault" y "wizards-vault", con/ sin "account".
+ *  - Fallbacks para rutas WV: "wizardsvault" y "wizards-vault", con/sin "account".
  *  - Caché en memoria + localStorage con TTL por clave (incluye por-token).
  *  - Todos los métodos aceptan { nocache: true } para forzar salto de caché.
  * ======================================================================= */
@@ -28,12 +33,12 @@
     TOKENINFO:   10 * 60 * 1000,            // 10 min
     WV_SEASON:    6 * 60 * 60 * 1000,       // 6 h
     WV_LISTINGS: 30 * 60 * 1000,            // 30 min
-    WV_ACCOUNT:   5 * 60 * 1000,            // 5 min (cuenta WV, AA, objetivos, listados por cuenta)
+    WV_ACCOUNT:   5 * 60 * 1000,            // 5 min (cuenta WV, AA)
     WV_OBJ:       5 * 60 * 1000,            // 5 min
     ITEMS:       24 * 60 * 60 * 1000,       // 24 h (por id)
     CURR:         7 * 24 * 60 * 60 * 1000,  // 7 días
     WALLET:       2 * 60 * 1000,            // 2 min
-    ACH_ACC:      2 * 60 * 1000,            // 2 min (account achievements)
+    ACH_ACC:      2 * 60 * 1000,            // 2 min
     ACH_META:    12 * 60 * 60 * 1000        // 12 h
   };
 
@@ -62,6 +67,10 @@
   function kMem(base, token) { return token ? (base + '::' + fpToken(token)) : base; }
   function kLS(base, token)  { return token ? (base + ':'  + fpToken(token)) : base; }
 
+  // Coerciones seguras
+  function toNum(v, d) { var n = (v == null || v === '') ? NaN : +v; return isFinite(n) ? n : (d == null ? 0 : d); }
+  function toNullableNum(v) { var n = (v == null || v === '') ? NaN : +v; return isFinite(n) ? n : null; }
+
   // HTTP helpers
   function withToken(url, token) {
     var u = new URL(url);
@@ -87,7 +96,7 @@
       });
     });
   }
-  // Igual que jfetch pero si 404 devuelve null (para hacer fallback)
+  // 404 -> null (para encadenar fallbacks)
   function jtry(url, opts) {
     return jfetch(url, opts).catch(function (e) {
       if (e && e.status === 404) return null;
@@ -108,8 +117,7 @@
     var lkey = kLS(baseKey, token);
     var lval = lsGet(lkey);
     if (isFresh(lval, ttl)) {
-      // rehidratar a memoria
-      __mem.set(mkey, { ts: lval.ts, data: lval.data });
+      __mem.set(mkey, { ts: lval.ts, data: lval.data }); // rehidratar a memoria
       return lval.data;
     }
     return null;
@@ -138,7 +146,7 @@
   function tokenHasWVPermissions(tokenInfo) {
     try {
       var p = new Set((tokenInfo && tokenInfo.permissions) || []);
-      // Suficiente tener 'wizardsvault' o 'progression'
+      // Con tener 'wizardsvault' o 'progression' ya alcanza para WV
       return p.has('wizardsvault') || p.has('progression');
     } catch (_){ return false; }
   }
@@ -180,7 +188,7 @@
       // Intento robusto: buscar por nombre/fragmento
       var aaMeta = currs.find(function (c) {
         var n = String(c && c.name || '').toLowerCase();
-        return n.includes('astral') || n.includes('reconocimiento'); // es/es-ES
+        return n.includes('astral') || n.includes('reconocimiento');
       });
       if (!aaMeta) return { value: 0, meta: { icon: null, id: null } };
       var w = wallet.find(function (x) { return x.id === aaMeta.id; });
@@ -211,7 +219,6 @@
     var out = [];
     var chunk = 200;
 
-    // No hacemos per-id persistente (serían demasiadas claves); chunk por petición
     var chain = Promise.resolve();
     for (var i=0; i<ids.length; i+=chunk) {
       (function (slice) {
@@ -231,18 +238,15 @@
   }
 
   // ========================================================================
-  // Wizard’s Vault — fallbacks
+  // Wizard’s Vault — season / objectives / account
   // ========================================================================
-
-  // Season (público) — intenta varias rutas
   function getWVSeason(opts) {
     opts = opts || {};
     var key = 'wv_season';
     var cached = getCache(key, TTL.WV_SEASON, null, opts.nocache);
     if (cached) return Promise.resolve(cached);
 
-    // Intentos en orden:
-    var u1 = API_BASE + '/v2/wizardsvault';             // algunos devuelven season directo
+    var u1 = API_BASE + '/v2/wizardsvault';
     var u2 = API_BASE + '/v2/wizardsvault/season';
     var u3 = API_BASE + '/v2/wizards-vault/season';
 
@@ -260,7 +264,6 @@
     });
   }
 
-  // Objetivos (privado) — helper con fallbacks
   function _getWVObjectives(kind, token, opts) {
     opts = opts || {};
     if (!token) return Promise.reject(new Error('Falta access_token'));
@@ -269,11 +272,8 @@
     var cached = getCache(key, TTL.WV_OBJ, token, opts.nocache);
     if (cached) return Promise.resolve(cached);
 
-    // 1) Ruta de cuenta sin guion (tu implementación original)
     var u1 = withToken(API_BASE + '/v2/account/wizardsvault/' + kind, token) + '&lang=es';
-    // 2) Ruta moderna (sin account)
     var u2 = withToken(API_BASE + '/v2/wizardsvault/objectives/' + kind, token) + '&lang=es';
-    // 3) Con guion
     var u3 = withToken(API_BASE + '/v2/account/wizards-vault/' + kind, token) + '&lang=es';
     var u4 = withToken(API_BASE + '/v2/wizards-vault/objectives/' + kind, token) + '&lang=es';
 
@@ -297,7 +297,6 @@
   function getWVWeekly(token, opts)  { return _getWVObjectives('weekly',  token, opts); }
   function getWVSpecial(token, opts) { return _getWVObjectives('special', token, opts); }
 
-  // Cuenta WV (AA + icon) — fallbacks
   function getWVAccount(token, opts) {
     opts = opts || {};
     if (!token) return Promise.reject(new Error('Falta access_token'));
@@ -319,12 +318,18 @@
         });
       });
     }).then(function (data) {
+      // Normalizar AA por si llega string
+      if (data && typeof data.astral_acclaim !== 'number') {
+        data.astral_acclaim = toNum(data.astral_acclaim, 0);
+      }
       putCache(key, data, token, TTL.WV_ACCOUNT);
       return data;
     });
   }
 
-  // Listados públicos — fallbacks (con y sin ?ids=all)
+  // ========================================================================
+  // Wizard’s Vault — listados (catálogo público y por cuenta)
+  // ========================================================================
   function getWVListings(opts) {
     opts = opts || {};
     var key = 'wv_listings_all';
@@ -348,12 +353,21 @@
         });
       });
     }).then(function (arr) {
-      putCache(key, arr, null, TTL.WV_LISTINGS);
-      return arr;
+      // Normalizar tipos numéricos
+      var norm = (arr || []).map(function (x) {
+        return {
+          id: toNum(x.id, null),
+          item_id: toNullableNum(x.item_id),
+          item_count: toNullableNum(x.item_count),
+          type: x.type || null,
+          cost: toNullableNum(x.cost)
+        };
+      });
+      putCache(key, norm, null, TTL.WV_LISTINGS);
+      return norm;
     });
   }
 
-  // Listados por cuenta — fallbacks
   function getAccountWVListings(token, opts) {
     opts = opts || {};
     if (!token) return Promise.reject(new Error('Falta access_token'));
@@ -375,8 +389,20 @@
         });
       });
     }).then(function (arr) {
-      putCache(key, arr, token, TTL.WV_OBJ);
-      return arr;
+      // Normalizar tipos numéricos (clave para “Restante” correcto)
+      var norm = (arr || []).map(function (x) {
+        return {
+          id: toNum(x.id, null),
+          item_id: toNullableNum(x.item_id),
+          item_count: toNullableNum(x.item_count),
+          type: x.type || null,
+          cost: toNullableNum(x.cost),
+          purchased: (x.purchased == null ? 0 : toNum(x.purchased, 0)),
+          purchase_limit: (x.purchase_limit == null ? null : toNum(x.purchase_limit, null))
+        };
+      });
+      putCache(key, norm, token, TTL.WV_OBJ);
+      return norm;
     });
   }
 
@@ -388,7 +414,6 @@
     ids = Array.isArray(ids) ? Array.from(new Set(ids)).filter(function (x) { return x != null; }) : [];
     if (!ids.length) return Promise.resolve([]);
 
-    // Caché por-id en LS (para no recargar lo mismo siempre)
     var lkey = 'items_cache_v1';
     var bag = lsGet(lkey) || { ts: 0, data: {} };
     var per = bag.data || {}; // { [id]: { ts, val } }
@@ -424,9 +449,70 @@
     }
 
     return chain.then(function () {
-      // Persistir bolsa
       lsSet(lkey, { ts: now(), data: per });
       return out;
+    });
+  }
+
+  // ========================================================================
+  // Helpers WV: merge + cálculo de restante
+  // ========================================================================
+  function wvComputeRemaining(purchase_limit, purchased, marked) {
+    var limit = (purchase_limit == null ? null : toNum(purchase_limit, null));
+    var bought = toNum(purchased, 0) + toNum(marked, 0);
+    if (limit == null) return Infinity; // ilimitado ("∞")
+    var left = Math.max(0, limit - bought);
+    return left;
+  }
+
+  function wvMergeShopListings(accountListings, globalListings) {
+    var byId = new Map((globalListings || []).map(function (g) { return [g.id, g]; }));
+    var merged = (accountListings || []).map(function (acc) {
+      var g = byId.get(acc.id) || {};
+      return {
+        id: acc.id,
+        item_id: (acc.item_id != null ? acc.item_id : g.item_id != null ? g.item_id : null),
+        item_count: (acc.item_count != null ? acc.item_count : g.item_count != null ? g.item_count : null),
+        type: acc.type || g.type || null,
+        cost: (acc.cost != null ? acc.cost : g.cost != null ? g.cost : null),
+        purchased: acc.purchased || 0,
+        purchase_limit: (acc.purchase_limit != null ? acc.purchase_limit : null)
+      };
+    });
+    return merged;
+  }
+
+  /**
+   * (Nuevo) Devuelve estructura completa y normalizada para renderizar Shop:
+   *  - rows: [{ id, item_id, item_count, type, cost, purchased, purchase_limit }]
+   *  - itemsById: Map(idItem -> item)
+   *  - aa, aaIconUrl
+   */
+  function getWVShopMerged(token, opts) {
+    opts = opts || {};
+    if (!token) return Promise.reject(new Error('Falta access_token'));
+
+    return Promise.all([
+      getAccountWVListings(token, { nocache: !!opts.nocache }),
+      getWVListings({ nocache: !!opts.nocache }),
+      getWVAccount(token, { nocache: !!opts.nocache })
+    ]).then(function (arr) {
+      var accShop = arr[0] || [];
+      var catalog = arr[1] || [];
+      var wvAcc   = arr[2] || null;
+
+      var merged = wvMergeShopListings(accShop, catalog);
+
+      var itemIds = merged.map(function (m) { return m.item_id; }).filter(function (x) { return x != null; });
+      return getItemsMany(Array.from(new Set(itemIds)), { nocache: !!opts.nocache })
+        .then(function (items) {
+          return {
+            rows: merged,
+            itemsById: indexArrayByKey(items, 'id'),
+            aa: (wvAcc && typeof wvAcc.astral_acclaim === 'number') ? wvAcc.astral_acclaim : 0,
+            aaIconUrl: (wvAcc && wvAcc.icon) ? wvAcc.icon : null
+          };
+        });
     });
   }
 
@@ -440,11 +526,6 @@
   }
   function cacheClear() {
     try { __mem.clear(); } catch (_){}
-    try {
-      // opcional: limpiar solo nuestras keys conocidas (no borramos todo el LS)
-      // Si querés un reset total, descomenta:
-      // localStorage.clear();
-    } catch (_){}
   }
 
   // ========================================================================
@@ -472,6 +553,11 @@
     getWVAccount: getWVAccount,
     getWVListings: getWVListings,
     getAccountWVListings: getAccountWVListings,
+
+    // Shop helpers (nuevos)
+    wvComputeRemaining: wvComputeRemaining,
+    wvMergeShopListings: wvMergeShopListings,
+    getWVShopMerged: getWVShopMerged,
 
     // Items
     getItemsMany: getItemsMany,
