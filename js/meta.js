@@ -1,10 +1,12 @@
 /* eslint-disable no-console */
 (function(){
-  const $  = (s, r=document) => r.querySelector(s);
-  const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+  'use strict';
 
-  console.info('%cMetaEventos meta.js v3.0 — Deluxe: horarios + compacta + contexto + acciones',
-    'color:#fb0; font-weight:700');
+  const $  = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from((r||document).querySelectorAll(s));
+
+  console.info('%cMetaEventos meta.js v3.1.3 — Tarjetas estilo WV (pin + estado + tint) [stable]',
+    'color:#7dd3fc; font-weight:700');
 
   // --------- Elementos del DOM ----------
   const el = {
@@ -26,16 +28,20 @@
   };
 
   // --------- Constantes / Estado ----------
-  const LS_FAVS   = 'gw2_meta_favs';
+  const LS_FAVS   = 'gw2_meta_favs';      // fijados (antes favoritos)
   const SOON_MIN  = 20;
 
   const LS_FLAGS      = 'gw2_meta_flags_v1';
   const FLAGS_TTL_MS  = 5 * 60 * 1000;
   const LS_MANUAL     = 'gw2_meta_manual_v1';
 
+  // Persistencia de toggles de UI
+  const LS_META_DELUXE  = 'gw2_meta_deluxe';
+  const LS_META_COMPACT = 'gw2_meta_compact';
+
   const BODY = document.body;
-  const DELUXE_DEFAULT  = true;
-  const COMPACT_DEFAULT = false;
+  const DELUXE_DEFAULT  = (localStorage.getItem(LS_META_DELUXE)  ?? 'on')  === 'on';
+  const COMPACT_DEFAULT = (localStorage.getItem(LS_META_COMPACT) ?? 'off') === 'on';
 
   const EXP_MAP = {
     'core': 'core', 'core tyria': 'core',
@@ -48,8 +54,19 @@
     'janthir': 'janthir'
   };
 
+  // Tinte por expansión (para el título)
+  const EXP_TINT = {
+    core:    '#dddddd',
+    hot:     '#b9f3c8',
+    pof:     '#fbc49e',
+    eod:     '#9cd6e4',
+    soto:    '#d7caff',
+    janthir: '#c5ddff',
+    livingworlds4: '#d7caff'
+  };
+
   let seed = [];                 // metas (assets/meta-events.json)
-  let favs = new Set();          // favoritos (ids)
+  let favs = new Set();          // fijados (ids)
   let filters = { type: '', exp: '', onlyActive: false, onlySoon: false, onlyInf: false };
 
   let accountFlags = {           // banderas de cuenta (completado hoy)
@@ -60,6 +77,15 @@
   };
 
   // --------- Utilidades ----------
+  function esc(s){
+    return String(s ?? '')
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  }
+
   function setStatus(msg, kind='info'){
     if(!el.status) return;
     el.status.textContent = msg;
@@ -134,7 +160,7 @@
     });
   }
 
-  // --------- Persistencia de favoritos ----------
+  // --------- Persistencia de fijados ----------
   function loadFavs(){
     try{ favs = new Set(JSON.parse(localStorage.getItem(LS_FAVS)) ?? []); }
     catch{ favs = new Set(); }
@@ -247,12 +273,12 @@
     return out;
   }
 
-  /// === Helpers de ICONOS (siempre devuelven <img>) ===
+  /// === Helpers de ICONOS (devuelven <img>) ===
   function iconTag(url, size = 18, alt = '') {
     const u = String(url ?? '').trim();
     if (!/^https?:\/\//i.test(u)) return '';
     const s = Number(size || 18);
-    const a = String(alt ?? '').replace(/"/g, '&quot;');
+    const a = esc(String(alt ?? ''));
     return `<img src="${u}" width="${s}" height="${s}" alt="${a}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
   }
 
@@ -261,7 +287,6 @@
     const s = Number(size || 16);
     return `<img src="${u}" width="${s}" height="${s}" alt="Waypoint" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
   }
-
 
   // --------- Instancias y estado ----------
   function localDateFromUTC_HHMM(hhmm){
@@ -273,7 +298,7 @@
 
   function buildInstance(meta){
     const list = Array.isArray(meta.windowsUTC) ? meta.windowsUTC : [];
-    const now = nowLocal();
+    const now = nowLocal();                // FIX parseo
     let nextAt = null, state='later';
 
     for(const w of list){
@@ -368,7 +393,12 @@
       ? listFromExt.map(it => `• ${it.itemName ?? '—'}${it.wiki ? `\n ${it.wiki}` : ''}`).join('\n')
       : (item && item.name ? `• ${item.name}` : '—')
     );
-    const tipAttr = String(tipText ?? '').replace(/"/g,'"');
+    const tipAttr = String(tipText ?? '')
+      .replace(/&/g,'&amp;')
+      .replace(/"/g,'&quot;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/\n/g,'&#10;');
 
     if (meta.highlightItemId){
       if (!item){
@@ -381,7 +411,7 @@
       }
       const label = labelByItemOrName(item, item.name);
       const icon  = iconTag(item.icon, 18, item.name ?? 'Drop');
-      const name  = item.name ?? '—';
+      const name  = esc(item.name ?? '—');
       const css   = (label === 'Infusión destacada') ? 'tag--inf' : 'tag--drop';
       return `
         <div class="m-foot" data-tip="${tipAttr}">
@@ -391,7 +421,7 @@
       `;
     }
 
-    const nameFromList = listFromExt.length ? (listFromExt[0].itemName ?? '—') : '—';
+    const nameFromList = listFromExt.length ? esc(listFromExt[0].itemName ?? '—') : '—';
     const label = labelByItemOrName(null, nameFromList);
     const css   = (label === 'Infusión destacada') ? 'tag--inf' : 'tag--drop';
     return `
@@ -402,11 +432,148 @@
     `;
   }
 
-  function stateBadge(s){
-    if(s==='active') return `<span class="m-badge m-badge--active">Activo</span>`;
-    if(s==='soon')   return `<span class="m-badge m-badge--soon">Próximo</span>`;
-    return `<span class="m-badge">Más tarde</span>`;
+  // ---------- NUEVO: chips y color por expansión ----------
+  function expKeyOf(meta){
+    const raw = String(meta.expansion ?? '').toLowerCase().trim();
+    return EXP_MAP[raw] ?? raw.replace(/\s+/g,'');
   }
+  function expTintColor(meta){
+    const k = expKeyOf(meta);
+    return EXP_TINT[k] || '#e9e9f1';
+  }
+  function chipForExp(meta){
+    const k = expKeyOf(meta);
+    const cls = `meta-chip meta-chip--${k}`;
+    const label = esc(meta.expansion || '—');
+    return `<span class="${cls}" title="Expansión / Temporada: ${label}">${label}</span>`;
+  }
+
+  function chipsForTiming(inst, minsRemaining){
+    if(inst.state === 'active'){
+      return [
+        '<span class="meta-chip">Activo</span>',
+        `<span class="meta-chip">Termina en ${minsRemaining} min</span>`
+      ];
+    }
+    if(minsRemaining != null){
+      return [
+        '<span class="meta-chip">Más tarde</span>',
+        `<span class="meta-chip">Próximo en ${minsRemaining} min</span>`
+      ];
+    }
+    return ['<span class="meta-chip">Más tarde</span>'];
+  }
+
+  // ---------- Render ----------
+  function cardHTML(meta, inst, item, isFav){
+    const now = nowLocal();
+    const minsRemaining = inst?.nextAt ? Math.max(1, Math.floor((inst.nextAt - now)/60000)) : null;
+
+    const dt = doneTodayDetail(meta);
+    const when = accountFlags.lastHuman || '—';
+    const srcTxt = dt.src
+      ? (dt.src === 'worldbosses' ? 'worldbosses' : (dt.src === 'mapchests' ? 'mapchests' : 'manual'))
+      : '—';
+    const manualEligible = isManualEligible(meta);
+
+    const doneTitle = dt.done
+      ? `Hecho hoy (fuente: ${srcTxt}; actualizado ${when})${manualEligible ? ' — Click para desmarcar' : ''}`
+      : manualEligible
+        ? `No hecho hoy (fuente: ${srcTxt}) — Click para marcar manualmente`
+        : `No hecho hoy (fuente: ${srcTxt}; actualizado ${when})`;
+
+    // Estado al estilo WV (verde/amarillo)
+    const doneAttrs = manualEligible
+      ? `data-manual="1" data-id="${meta.id}" role="button" tabindex="0" aria-pressed="${dt.done?'true':'false'}"`
+      : '';
+    const statusHtml = dt.done
+      ? `<span class="meta-status meta-status--done" ${doneAttrs} title="${esc(doneTitle)}">✅ Hecho hoy</span>`
+      : `<span class="meta-status meta-status--pending" ${doneAttrs} title="${esc(doneTitle)}">Pendiente</span>`;
+
+    // Acciones (wiki/mapa/compartir/horarios)
+    const wikiHtml = meta.wiki
+      ? `<a class="m-wiki" href="${esc(meta.wiki)}" target="_blank" rel="noopener">Wiki</a>`
+      : '';
+
+    const mapHref = meta.map ? `https://maps.gw2.io/#/?q=${encodeURIComponent(meta.map)}` : '';
+    const mapBtn  = mapHref
+      ? `<a class="btn btn--ghost m-map" href="${mapHref}" target="_blank" rel="noopener" title="Abrir mapa (gw2.io)">Mapa</a>`
+      : '';
+    const shareBtn = `<button class="btn btn--ghost m-share" data-id="${meta.id}" title="Copiar texto para compartir">Compartir</button>`;
+
+    const hasWins = Array.isArray(meta.windowsUTC) && meta.windowsUTC.length>0;
+    const winBtn  = hasWins ? `<button class="btn btn--ghost m-win__toggle" aria-expanded="false" title="Ver horarios">Horarios</button>` : '';
+    const winPane = hasWins ? buildWindowsChips(meta) : '';
+
+    const ctx = buildContext(meta);
+    const ctxHtml = ctx ? `<div class="m-context">${esc(ctx)}</div>` : '';
+
+    // Botón pin (en lugar de estrella)
+    const pinBtn = `<button class="wv-pin ${isFav?'wv-pin--active':''}" data-pin="${meta.id}" aria-pressed="${isFav?'true':'false'}" title="${isFav?'Desfijar':'Fijar'}">📌</button>`;
+
+    // Chips (expansión, timing)
+    const chips = [ chipForExp(meta), ...chipsForTiming(inst, minsRemaining) ].join('');
+
+    // Tinte de título por expansión
+    const tint = expTintColor(meta);
+    const styleTint = tint ? ` style="--meta-title-color:${tint}"` : '';
+
+    // Línea secundaria (mapa/exp/tipo + estado)
+    const subLine = `
+      <div class="meta-tags">
+        <span class="meta-pill">${meta.map ? esc(meta.map) : '—'}</span>
+        <span class="meta-pill">${esc(meta.expansion)}</span>
+        <span class="meta-pill">${esc(meta.type)}</span>
+        ${statusHtml}
+      </div>
+    `;
+
+    // Acciones
+    const actions = `
+      <div class="meta-linkbar">
+        ${meta.chat ? `<button class="btn btn--ghost m-copy" data-copy="${esc(meta.chat)}" title="Copiar waypoint" aria-label="Copiar waypoint">${wpIcon(16)}</button>` : ''}
+        ${wikiHtml}
+        ${mapBtn}
+        ${shareBtn}
+        ${winBtn}
+      </div>
+    `;
+
+    // Footer drops (con imagen/tooltip)
+    const foot = footerDropHTML(meta, item);
+
+    // Estructura final (conserva .m-card para compat)
+    return `
+      <article class="m-card meta-card meta-card--tint-title" data-id="${meta.id}" data-type="${esc(meta.type)}" data-exp="${esc(meta.expansion)}"${styleTint}>
+        <div class="meta-card__top">
+          <div>
+            <div class="meta-card__title">${esc(meta.name)}</div>
+            <div class="meta-card__subtitle">${chips}</div>
+          </div>
+            ${pinBtn}
+        </div>
+
+        <div class="meta-sep"></div>
+
+        <div class="meta-body">
+          ${subLine}
+          ${ctxHtml}
+          ${actions}
+          ${winPane}
+        </div>
+
+        <div class="meta-sep"></div>
+
+        <div class="meta-footer">
+          ${foot}
+        </div>
+      </article>`;
+  }
+
+  function computeAllInstances(){
+    return seed.map(m => ({ meta:m, inst:buildInstance(m), fav:favs.has(m.id) }));
+  }
+  const minutesDiff = (d) => Math.max(0, Math.floor((d - nowLocal())/60000));
 
   function buildWindowsChips(meta){
     const list = Array.isArray(meta.windowsUTC) ? meta.windowsUTC : [];
@@ -426,100 +593,6 @@
     return `<div class="m-win" hidden><div class="chips">${chips}</div></div>`;
   }
 
-  // ---------- Render ----------
-  function cardHTML(meta, inst, item, isFav){
-    const now = nowLocal();
-    const minsRemaining = inst?.nextAt ? Math.max(1, Math.floor((inst.nextAt - now)/60000)) : null;
-    const nextTxt = (inst?.state==='active')
-      ? `Termina en ${minsRemaining} min`
-      : (minsRemaining!=null ? `Próximo en ${minsRemaining} min` : '—');
-
-    const dt = doneTodayDetail(meta);
-    const when = accountFlags.lastHuman || '—';
-       const srcTxt = dt.src ? (dt.src==='worldbosses'?'worldbosses': dt.src==='mapchests'?'mapchests':'manual') : '—';
-    const manualEligible = isManualEligible(meta);
-
-    const doneTitle = dt.done
-      ? `Hecho hoy (fuente: ${srcTxt}; actualizado ${when})${manualEligible ? ' — Click para desmarcar' : ''}`
-      : manualEligible
-        ? `No hecho hoy (fuente: ${srcTxt}) — Click para marcar manualmente`
-        : `No hecho hoy (fuente: ${srcTxt}; actualizado ${when})`;
-
-    const star = `<button class="m-star ${isFav?'m-star--on':''}" data-pin="${meta.id}" title="${isFav?'Quitar de favoritos':'Añadir a favoritos'}">★</button>`;
-
-    const doneAttrs = manualEligible ? `data-manual="1" data-id="${meta.id}" role="button" tabindex="0"` : '';
-    const doneHtml  = `<span class="m-done ${dt.done?'m-done--on':''}" ${doneAttrs} title="${doneTitle}">${dt.done?'✔':'—'}</span>`;
-
-    // ✅ Links bien formados
-    const wikiHtml = meta.wiki
-      ? `<a class="m-wiki" href="${meta.wiki}" target="_blank" rel="noopener">🔗 Wiki</a>`
-      : '';
-;
-
-    const rawExp = String(meta.expansion ?? '').toLowerCase().trim();
-    const expKey = EXP_MAP[rawExp] ?? rawExp.replace(/\s+/g,'');
-    const expClass = `badge-exp badge-exp--${expKey}`;
-    const expBadgeHtml = `<span class="${expClass}" title="Expansión / Temporada: ${meta.expansion}">${meta.expansion}</span>`;
-
-    const ctx = buildContext(meta);
-    const ctxHtml = ctx ? `<div class="m-context">${ctx}</div>` : '';
-
-    const mapHref = meta.map ? `https://maps.gw2.io/#/?q=${encodeURIComponent(meta.map)}` : '';
-    
-    const mapBtn = mapHref
-      ? `<a class="btn btn--ghost m-map" href="${mapHref}" target="_blank" rel="noopener" title="Abrir mapa (gw2.io)">Mapa</a>`
-      : '';
-
-    const shareBtn = `<button class="btn btn--ghost m-share" data-id="${meta.id}" title="Copiar texto para compartir">Compartir</button>`;
-
-    const hasWins = Array.isArray(meta.windowsUTC) && meta.windowsUTC.length>0;
-    const winBtn  = hasWins ? `<button class="btn btn--ghost m-win__toggle" aria-expanded="false" title="Ver horarios">Horarios</button>` : '';
-    const winPane = hasWins ? buildWindowsChips(meta) : '';
-
-    const actions = `
-      <div class="m-actions">
-        ${meta.chat ? `<button class="btn btn--ghost m-copy" data-copy="${meta.chat}" title="Copiar waypoint" aria-label="Copiar waypoint">${wpIcon(16)}</button>` : ''}
-        ${wikiHtml}
-        ${mapBtn}
-        ${shareBtn}
-        ${winBtn}
-      </div>
-    `;
-
-    return `
-      <article class="m-card" data-id="${meta.id}" data-type="${meta.type}" data-exp="${meta.expansion}">
-        ${star}
-        <header class="m-head">
-          <h3 class="m-title">${meta.name}</h3>
-          <div class="m-right">
-            ${expBadgeHtml}
-            ${stateBadge(inst.state)}
-            <span class="m-next">${nextTxt}</span>
-          </div>
-        </header>
-
-        <div class="m-sub">
-          <span class="m-map">${meta.map ?? '—'}</span>
-          <span class="m-sep">•</span>
-          <span class="m-exp">${meta.expansion}</span>
-          <span class="m-sep">•</span>
-          <span class="m-type">${meta.type}</span>
-          <span class="m-sep">•</span>
-          ${doneHtml}
-        </div>
-
-        ${ctxHtml}
-        ${actions}
-        ${winPane}
-        ${footerDropHTML(meta, item)}
-      </article>`;
-  }
-
-  function computeAllInstances(){
-    return seed.map(m => ({ meta:m, inst:buildInstance(m), fav:favs.has(m.id) }));
-  }
-  const minutesDiff = (d) => Math.max(0, Math.floor((d - nowLocal())/60000));
-
   function renderMiniNext(rowsRaw){
     if(!el.miniNext) return;
     const list = rowsRaw
@@ -536,17 +609,17 @@
     const html = list.map(r=>{
       const mins = minutesDiff(r.nextAt);
       const nextTxt = (r.inst.state==='active') ? '¡Activo!' : `En ${mins} min`;
-      const copyBtn = r.meta.chat ? `<button class="btn btn--ghost meta-mini_copy" data-copy="${r.meta.chat}" title="Copiar waypoint" aria-label="Copiar waypoint">${wpIcon(14)}</button>` : '';
+      const copyBtn = r.meta.chat ? `<button class="btn btn--ghost meta-mini_copy" data-copy="${esc(r.meta.chat)}" title="Copiar waypoint" aria-label="Copiar waypoint">${wpIcon(14)}</button>` : '';
       return `
         <li class="meta-mini">
           <div class="meta-mini__top">
-            <span class="meta-mini__name">${r.meta.name}</span>
+            <span class="meta-mini__name">${esc(r.meta.name)}</span>
             <span class="meta-mini__next">${nextTxt}</span>
           </div>
           <div class="meta-mini__sub">
-            <span>${r.meta.map ?? '—'}</span>
+            <span>${r.meta.map ? esc(r.meta.map) : '—'}</span>
             <span>•</span>
-            <span>${r.meta.expansion}</span>
+            <span>${esc(r.meta.expansion)}</span>
           </div>
           <div class="meta-mini__actions">
             ${copyBtn}
@@ -594,7 +667,7 @@
     if(filters.onlySoon)   rows = rows.filter(r => r.inst.state==='soon');
     if(filters.onlyInf)    rows = rows.filter(r => isInfusionMeta(r.meta));
 
-    // Orden
+    // Orden (fijados primero, luego estado, luego proximidad)
     const rankState = (s) => s==='active'?0 : (s==='soon'?1:2);
     rows.sort((a,b)=>{
       if(a.fav!==b.fav) return a.fav? -1 : 1;
@@ -610,11 +683,13 @@
     const missing = ids.filter(id => !itemCache.has(id));
     if(missing.length) await batchItems(missing);
 
-    // Favoritos (máx. 6)
+    // Fijados (máx. 6)
     const favRows = rows.filter(r=>r.fav).slice(0,6);
     if(favRows.length){
       el.favBlock?.removeAttribute('hidden');
-      el.favGrid.innerHTML = favRows.map(r=>cardHTML(r.meta, r.inst, itemCache.get(r.meta.highlightItemId), true)).join('');
+      el.favGrid.innerHTML = favRows
+        .map(r=>cardHTML(r.meta, r.inst, itemCache.get(r.meta.highlightItemId), true))
+        .join('');
     }else{
       el.favBlock?.setAttribute('hidden','');
       el.favGrid.innerHTML='';
@@ -622,7 +697,9 @@
 
     // Resto
     const rest = rows.filter(r=>!r.fav);
-    el.list.innerHTML = rest.map(r=>cardHTML(r.meta, r.inst, itemCache.get(r.meta.highlightItemId), false)).join('');
+    el.list.innerHTML = rest
+      .map(r=>cardHTML(r.meta, r.inst, itemCache.get(r.meta.highlightItemId), false))
+      .join('');
 
     // Acciones de tarjeta
     // Copiar WP
@@ -637,8 +714,9 @@
         });
       });
     });
-    // Favorito
-    $$('.m-star', el.panel).forEach(btn=>{
+
+    // PIN (reemplaza estrella). Mantengo límite 6 fijados
+    $$('.wv-pin', el.panel).forEach(btn=>{
       btn.addEventListener('click', ()=>{
         const id = btn.getAttribute('data-pin');
         if(!id) return;
@@ -646,7 +724,7 @@
           favs.delete(id);
         }else{
           if(favs.size>=6){
-            if(!confirm('Ya tenés 6 favoritos. ¿Reemplazar alguno?')) return;
+            if(!confirm('Ya tenés 6 fijados. ¿Reemplazar alguno?')) return;
             const last=[...favs][favs.size-1]; favs.delete(last);
           }
           favs.add(id);
@@ -655,14 +733,16 @@
         render();
       });
     });
-    // ✔ manual
-    $$('.m-done[data-manual="1"]', el.panel).forEach(x=>{
+
+    // ✔ manual (con aria-pressed) — soporta selector viejo (.m-done) y nuevo (.meta-status)
+    $$('.m-done[data-manual="1"], .meta-status[data-manual="1"]', el.panel).forEach(x=>{
       const id = x.getAttribute('data-id');
       if(!id) return;
       x.addEventListener('click', ()=>{
         const meta = seed.find(m => m.id===id);
         if(!meta) return;
         const state = toggleManual(meta);
+        x.setAttribute('aria-pressed', String(state));
         setStatus(state ? 'Marcado como “Hecho hoy” (manual).' : 'Desmarcado (manual).','ok');
         render();
       });
@@ -670,6 +750,7 @@
         if(e.key==='Enter' || e.key===' ') { e.preventDefault(); x.click(); }
       });
     });
+
     // Compartir
     $$('.m-share', el.panel).forEach(btn=>{
       btn.addEventListener('click', ()=>{
@@ -679,7 +760,9 @@
         const meta = r.meta, inst = r.inst;
         const now = nowLocal();
         const minsRemaining = inst?.nextAt ? Math.max(1, Math.floor((inst.nextAt - now)/60000)) : null;
-        const stateTxt = (inst?.state==='active') ? `Activo (${minsRemaining}m)` : (minsRemaining!=null ? `Próx en ${minsRemaining}m` : '—');
+        const stateTxt = (inst?.state==='active')
+          ? `Activo (${minsRemaining}m)`
+          : (minsRemaining != null ? `Próx en ${minsRemaining}m` : '—');
         const piece = `${meta.name} — ${stateTxt}${meta.chat ? ` ${meta.chat}`:''}`;
         navigator.clipboard.writeText(piece).then(()=>{
           setStatus('Texto copiado para compartir.','ok');
@@ -688,6 +771,7 @@
         });
       });
     });
+
     // Horarios (toggle)
     $$('.m-win__toggle', el.panel).forEach(btn=>{
       btn.addEventListener('click', ()=>{
@@ -795,12 +879,14 @@
       const nowOn = BODY.getAttribute('data-meta-deluxe')!=='on';
       setDeluxe(nowOn);
       btnDeluxe.textContent = nowOn ? 'Modo: Deluxe' : 'Modo: Clásico';
+      localStorage.setItem(LS_META_DELUXE, nowOn ? 'on' : 'off');
       render();
     });
     btnCompact.addEventListener('click', ()=>{
       const nowOn = BODY.getAttribute('data-meta-compact')!=='on';
       setCompact(nowOn);
       btnCompact.textContent = nowOn ? 'Vista detallada' : 'Vista compacta';
+      localStorage.setItem(LS_META_COMPACT, nowOn ? 'on' : 'off');
       render();
     });
 
@@ -916,25 +1002,11 @@
   let inited=false;
 
   // Navegación por tabs (legacy)
-  document.addEventListener('gn:tabchange', (ev)=>{
-    if(ev.detail?.view==='meta' && !inited){
-      inited=true;
-      initOnce();
+  document.addEventListener('gn:tabchange', (ev) => {
+    if (ev.detail?.view === 'meta' && !inited) {
+      inited = true;
+      initOnce();   // inicializa el panel MetaEventos
     }
-  });
-
-  // Caso borde: visible por defecto
-  if($('#metaPanel') && !$('#metaPanel').hasAttribute('hidden')){
-    inited=true; initOnce();
-  }
-
-  // Cambio de token
-  document.addEventListener('gn:tokenchange', async ()=>{
-    if(!inited) return;
-    renderSkeletonMeta(6);
-    await refreshAccountFlags(true);
-    manualDoneSet = loadManualDone();
-    render();
   });
 
   // Filtros

@@ -3,9 +3,9 @@
   'use strict';
 
   const $  = (s, r = document) => r.querySelector(s);
-  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const $$ = (s, r = document) => [...(r || document).querySelectorAll(s)];
 
-  console.info('%cGW2 Wallet app.js v2.6.0 — Wallet rework (pins + tarjetas unificadas)', 'color:#0bf; font-weight:700');
+  console.info('%cGW2 Wallet app.js v2.7.1 — Pins + Delta + Vista compacta', 'color:#0bf; font-weight:700');
 
   /* ========================= Estado ========================= */
   const state = {
@@ -19,15 +19,16 @@
 
     filters: { q: '', cat: '', sort: 'order', onlyPos: false, onlyMain: false },
 
-    // Back-compat: se carga LS_FAVS pero ya no se usa para UI (sólo migración a pins)
+    // Legacy favs (sólo migración a pins)
     favs: new Set(),
 
+    // UI
     view: 'cards'
   };
 
   /* ==================== Constantes LS/API ==================== */
   const LS_KEYS = 'gw2_keys';
-  const LS_FAVS = 'gw2_favs'; // legado → migraremos a pins por cuenta
+  const LS_FAVS = 'gw2_favs'; // legado → migra a pins
 
   const LS_CURR = 'gw2_currencies_cache_v1';
   const CURR_TTL = 1000 * 60 * 60 * 24 * 7;
@@ -35,8 +36,14 @@
   const LS_CONV = 'gw2_conv_cache_v3';
   const CONV_TTL = 1000 * 60 * 30;
 
-  // NUEVO: Pins por cuenta (como WV/Meta)
+  // Pins por cuenta (como WV/Meta)
   const LS_WALLET_PINS = 'gw2_wallet_pins_v1';
+
+  // Snapshot de cantidades por cuenta (para deltas)
+  const LS_WALLET_SNAPSHOT = 'gw2_wallet_snapshot_v1';
+
+  // Vista compacta por cuenta
+  const LS_WALLET_COMPACT = 'gw2_wallet_compact_v1';
 
   /* ========================== API =========================== */
   const API = {
@@ -74,7 +81,7 @@
 
   /* ======================= Elementos ======================== */
   const el = {
-    // Router hero tabs (legacy dentro del header)
+    // Hero tabs (legacy)
     overlayTabs: $$('.overlay-tab'),
     walletPanel: $('#walletPanel'),
     metaPanel:   $('#metaPanel'),
@@ -172,40 +179,27 @@
   })(typeof window!=='undefined' ? window : this);
 
   /* =============== Íconos: renderer ================= */
-  function iconTag(url, size = 22) {
+  function iconTag(url, size = 22, alt = '') {
     const u = String(url || '').trim();
     if (!/^https?:\/\//i.test(u)) return '';
     const safe = u.replace(/"/g, '&quot;');
-    return `<img src="${safe}" width="${size}" height="${size}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
+    const a = esc(alt || '');
+    return `<img src="${safe}" width="${size}" height="${size}" alt="${a}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
   }
 
-  // (No-op ahora; lo dejo por back-compat si hay html crudo)
   function runIconChecks() {
-    try {
-      let fixes = 0, pend = 0;
-      $$('.meta-left').forEach(n => {
-        if (n.querySelector('img')) return;
-        const txt = (n.textContent || '').trim();
-        if (/^https?:\/\//i.test(txt)) { n.innerHTML = iconTag(txt, 22); fixes++; }
-        else pend++;
-      });
-      $$('#walletTable tbody tr td:first-child').forEach(n => {
-        if (n.querySelector('img')) return;
-        const txt = (n.textContent || '').trim();
-        if (/^https?:\/\//i.test(txt)) { n.innerHTML = iconTag(txt, 22); fixes++; }
-        else pend++;
-      });
-      if (pend) console.warn(`[render:icons] pendientes:${pend} — fixes:${fixes}`); else console.info(`[render:icons] OK — fixes:${fixes}`);
-    } catch (e) { console.debug('[render:icons] skip (non-blocking)', e); }
+    // Mantener por compat; hoy todos los íconos ya salen como <img>
   }
 
-  /* =================== Wallet Pins por cuenta ===================== */
+  /* =================== Persistencias por cuenta ===================== */
   function fpToken() {
     try {
       const t = state.selected || el.keySelectGlobal?.value || '';
       return t ? `${t.slice(0,4)}…${t.slice(-4)}` : 'anon';
     } catch { return 'anon'; }
   }
+
+  // Pins
   function pinsLoad() {
     try { const all = JSON.parse(localStorage.getItem(LS_WALLET_PINS) || '{}'); return all[fpToken()] || {}; }
     catch { return {}; }
@@ -214,7 +208,6 @@
     try { const all = JSON.parse(localStorage.getItem(LS_WALLET_PINS) || '{}'); all[fpToken()] = pins || {}; localStorage.setItem(LS_WALLET_PINS, JSON.stringify(all)); }
     catch{}
   }
-  // Migración: si hay favs legacy y no hay pins para esta cuenta, migra
   function migrateFavsToPinsIfNeeded() {
     const pins = pinsLoad();
     if (Object.keys(pins).length) return;            // ya hay pins
@@ -223,6 +216,57 @@
     state.favs.forEach(id => { out[String(id)] = true; });
     pinsSave(out);
     console.info('[wallet] Migración favs→pins aplicada:', out);
+  }
+
+  // Snapshot (deltas)
+  function snapshotLoad() {
+    try {
+      const all = JSON.parse(localStorage.getItem(LS_WALLET_SNAPSHOT) || '{}');
+      return all[fpToken()]?.data || {};
+    } catch { return {}; }
+  }
+  function snapshotSave(map) {
+    try {
+      const all = JSON.parse(localStorage.getItem(LS_WALLET_SNAPSHOT) || '{}');
+      all[fpToken()] = { ts: Date.now(), data: map || {} };
+      localStorage.setItem(LS_WALLET_SNAPSHOT, JSON.stringify(all));
+    } catch {}
+  }
+  function snapshotSaveFromRows(rows) {
+    const base = {};
+    rows.forEach(r => { base[String(r.id)] = Number(r.amount || 0); });
+    snapshotSave(base);
+  }
+  function snapshotTsHuman() {
+    try {
+      const all = JSON.parse(localStorage.getItem(LS_WALLET_SNAPSHOT) || '{}');
+      const ts = all[fpToken()]?.ts || 0;
+      if (!ts) return '—';
+      const d = new Date(ts);
+      const pad = (n)=>String(n).padStart(2,'0');
+      return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    } catch { return '—'; }
+  }
+
+  // Vista compacta
+  function compactLoad() {
+    try {
+      const all = JSON.parse(localStorage.getItem(LS_WALLET_COMPACT) || '{}');
+      const v = all[fpToken()];
+      return v === true || v === 'on';
+    } catch { return false; }
+  }
+  function compactSave(on) {
+    try {
+      const all = JSON.parse(localStorage.getItem(LS_WALLET_COMPACT) || '{}');
+      all[fpToken()] = !!on;
+      localStorage.setItem(LS_WALLET_COMPACT, JSON.stringify(all));
+    } catch {}
+  }
+  function setCompact(on) {
+    document.body.setAttribute('data-wallet-compact', on ? 'on' : 'off');
+    compactSave(on);
+    updateCompactBtnLabel(on);
   }
 
   /* =================== Categorización / helpers ===================== */
@@ -243,22 +287,48 @@
   }
   function isCoins(cur) { const n = (cur?.name || '').toLowerCase(); return cur?.id === 1 || n.includes('moneda') || n.includes('coin'); }
 
-  /* =================== Rows (filtrado/orden) ===================== */
+  function formatDeltaNumber(delta) {
+    const abs = Math.abs(delta).toLocaleString('es-AR');
+    if (delta > 0)  return { html: `<span class="wallet-delta wallet-delta--up">+${abs}</span>`, cls: 'up' };
+    if (delta < 0)  return { html: `<span class="wallet-delta wallet-delta--down">−${abs}</span>`, cls: 'down' };
+    return { html: `<span class="wallet-delta wallet-delta--zero">±0</span>`, cls: 'zero' };
+  }
+  function formatDeltaCopper(deltaCopper) {
+    if (!Number.isFinite(deltaCopper) || deltaCopper === 0) return formatDeltaNumber(0);
+    const sign = deltaCopper > 0 ? '+' : '−';
+    const { g, s, c } = splitCopper(Math.abs(deltaCopper));
+    const parts = [];
+    if (g) parts.push(`${g} g`);
+    if (s) parts.push(`${s} s`);
+    if (c) parts.push(`${c} c`);
+    const txt = parts.length ? parts.join(' ') : '0';
+    return (deltaCopper > 0)
+      ? { html: `<span class="wallet-delta wallet-delta--up">${sign}${txt}</span>`, cls: 'up' }
+      : { html: `<span class="wallet-delta wallet-delta--down">${sign}${txt}</span>`, cls: 'down' };
+  }
+
+  /* =================== Rows (filtros, orden, delta) ===================== */
   function buildRows() {
     if (!state.currenciesLoaded || state.currencies.size === 0) return [];
     const pins = pinsLoad();
+    const snap = snapshotLoad();
 
     const rows = state.wallet.map(w => {
       const c = state.currencies.get(w.id) || { id: w.id, name: `#${w.id}`, order: 9999, icon: '', description: '' };
+      const amt = Number(w.value || 0);
+      const prev = Number(snap[String(w.id)] || 0);
+      const delta = amt - prev;
+
       return {
         id: w.id,
-        amount: w.value,
+        amount: amt,
         name: c.name || `#${w.id}`,
         desc: c.description || '',
         order: Number.isFinite(c.order) ? c.order : 9999,
         cats: categorize(c),
         isMain: isMainCurrency(c),
         isPinned: !!pins[String(w.id)],
+        delta,
         _cur: c
       };
     });
@@ -269,7 +339,7 @@
     if (f.cat)      list = list.filter(r => r.cats.includes(f.cat));
     if (f.q) { const q = f.q.toLowerCase(); list = list.filter(r => r.name.toLowerCase().includes(q) || r.desc.toLowerCase().includes(q)); }
 
-    // Orden elegido (SIN mezclar pins aún; eso lo manejamos al pintar)
+    // Orden elegido (sin mezclar pins aún; los separamos al pintar)
     if (f.sort === 'name')        list.sort((a, b) => a.name.localeCompare(b.name, 'es'));
     else if (f.sort === 'amount') list.sort((a, b) => b.amount - a.amount);
     else                          list.sort((a, b) => a.order - b.order);
@@ -277,28 +347,32 @@
     return list;
   }
 
-  /* =================== Tarjetas modernas ===================== */
+  /* =================== Tarjetas modernas (con delta) ===================== */
   function walletCardHTML(r) {
-    const iconHTML = iconTag(r._cur?.icon, 30);
+    const iconHTML = iconTag(r._cur?.icon, 30, r.name);
     const pills = r.cats?.length ? r.cats.slice(0,4).map(t => `<span class="wallet-pill">${esc(t)}</span>`).join('') : '';
-    const kind = ''; // si querés, podés mapear r.cats/kind a wallet-kind--*
     function fmt(n){ return Number(n||0).toLocaleString('es-AR'); }
     const pinCls = 'wv-pin' + (r.isPinned ? ' wv-pin--active' : '');
-
-    // Para Moneda (oro), mostramos badges además del número
     const coinsBadges = isCoins(r._cur) ? (`<div class="coin-badges" style="margin-top:6px">${badgesHTMLFromCopper(r.amount)}</div>`) : '';
+
+    const deltaHtml = isCoins(r._cur)
+      ? formatDeltaCopper(r.delta).html
+      : formatDeltaNumber(r.delta).html;
+
+    // Ocultamos ±0 por defecto en tarjetas (se ve más limpio)
+    const deltaSpan = r.delta !== 0 ? deltaHtml : '';
 
     return `
       <article class="wallet-card" data-id="${r.id}">
         <div class="wallet-card__top">
           <div class="wallet-card__iconWrap">${iconHTML}</div>
-          <div class="wallet-card__name${kind}">${esc(r.name)}</div>
+          <div class="wallet-card__name">${esc(r.name)}</div>
           <button class="${pinCls}" data-wallet-pin="${r.id}" title="${r.isPinned?'Desfijar':'Fijar'}" aria-pressed="${r.isPinned?'true':'false'}">📌</button>
         </div>
 
         <div class="wallet-card__meta">
           <span class="wallet-amount" title="Cantidad disponible">${fmt(r.amount)}</span>
-          ${r.isMain ? '<span class="wallet-sub">principal</span>' : ''}
+          ${deltaSpan}
         </div>
 
         <div class="wallet-sep"></div>
@@ -314,11 +388,10 @@
   function renderCards(rows) {
     if (!el.walletCards) return;
 
-    // Separar fijadas / resto (respetando el orden del sort actual dentro de cada grupo)
     const pinned = rows.filter(r => r.isPinned);
     const rest   = rows.filter(r => !r.isPinned);
 
-    // Bloque “Fijadas” (arriba)
+    // Fijadas (arriba)
     if (el.favBlock && el.favCards) {
       if (pinned.length) {
         el.favBlock.removeAttribute('hidden');
@@ -333,7 +406,7 @@
     el.walletCards.classList.add('wallet-card-grid');
     el.walletCards.innerHTML = rest.map(walletCardHTML).join('');
 
-    // Wire de pins (ambos contenedores)
+    // Wire pins (ambos contenedores)
     function wirePins(host) {
       host?.querySelectorAll('[data-wallet-pin]')?.forEach(btn => {
         if (btn.__wired) return; btn.__wired = true;
@@ -342,7 +415,7 @@
           const pins = pinsLoad();
           if (pins[id]) delete pins[id]; else pins[id] = true;
           pinsSave(pins);
-          render(); // reordena y refresca
+          render();
         });
       });
     }
@@ -350,21 +423,24 @@
     wirePins(el.walletCards);
   }
 
-  /* =================== Tabla (columna 📌) ===================== */
+  /* =================== Tabla (columna 📌 + delta) ===================== */
   function rowHTML(r) {
-    const icon  = iconTag(r._cur?.icon, 22);
+    const icon  = iconTag(r._cur?.icon, 22, r.name);
     const cats  = (r.cats && r.cats.length) ? r.cats.join(', ') : '—';
     const amount = isCoins(r._cur)
-      ? (() => { const { g, s, c } = splitCopper(r.amount); return `${g.toLocaleString()} g ${s} s ${c} c`; })()
+      ? (() => { const { g, s, c } = splitCopper(r.amount); return `${g.toLocaleString('es-AR')} g ${s} s ${c} c`; })()
       : r.amount.toLocaleString('es-AR');
 
     const pinCls = 'wv-pin' + (r.isPinned ? ' wv-pin--active' : '');
     const pinBtn = `<button class="${pinCls}" data-wallet-pin="${r.id}" title="${r.isPinned?'Desfijar':'Fijar'}" aria-pressed="${r.isPinned?'true':'false'}">📌</button>`;
 
+    // En tabla sí mostramos ±0 (chico, al lado de la cantidad)
+    const deltaHtml = isCoins(r._cur) ? formatDeltaCopper(r.delta).html : formatDeltaNumber(r.delta).html;
+
     return `<tr data-id="${r.id}">
       <td>${icon}</td>
       <td>${esc(r.name)}</td>
-      <td class="right">${amount}</td>
+      <td class="right">${amount}${deltaHtml ? `<span class="wallet-delta-table">${deltaHtml}</span>` : ''}</td>
       <td>${esc(cats)}</td>
       <td class="right">${pinBtn}</td>
     </tr>`;
@@ -373,7 +449,6 @@
   function renderTable(rows) {
     if (!el.tableBody) return;
 
-    // Orden: pins primero (manteniendo el orden de sort actual dentro de cada grupo)
     const pinned = rows.filter(r => r.isPinned);
     const rest   = rows.filter(r => !r.isPinned);
     const final  = pinned.concat(rest);
@@ -414,6 +489,54 @@
       renderCards(rows);
     }
     runIconChecks(); // no bloqueante
+  }
+
+  /* ======== Toolbar extra: Vista compacta + Actualizar base ======== */
+  function injectWalletToolbarExtras() {
+    const host = $('#walletPanel .filters-actions');
+    if (!host) return;
+
+    // Botón Vista compacta
+    if (!$('#walletCompactBtn')) {
+      const b = document.createElement('button');
+      b.id = 'walletCompactBtn';
+      b.className = 'btn btn--ghost';
+      b.type = 'button';
+      b.title = 'Alternar Vista compacta (tarjetas)';
+      const on = compactLoad();
+      document.body.setAttribute('data-wallet-compact', on ? 'on' : 'off');
+      updateCompactBtnLabel(on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.addEventListener('click', () => {
+        const nowOn = document.body.getAttribute('data-wallet-compact') !== 'on';
+        setCompact(nowOn);
+        $('#walletCompactBtn')?.setAttribute('aria-pressed', nowOn ? 'true' : 'false');
+      });
+      host.appendChild(b);
+    }
+
+    // Botón Actualizar base (snapshot)
+    if (!$('#walletSnapshotBtn')) {
+      const a = document.createElement('button');
+      a.id = 'walletSnapshotBtn';
+      a.className = 'btn btn--ghost';
+      a.type = 'button';
+      a.title = 'Actualizar base de comparación (delta)';
+      a.textContent = 'Actualizar base';
+      a.addEventListener('click', () => {
+        const rows = buildRows();
+        snapshotSaveFromRows(rows);
+        setStatus(`Base actualizada (${snapshotTsHuman()}).`, 'ok');
+        window.toast?.('success', 'Base de comparación actualizada', { ttl: 1400 });
+        render(); // recalcular deltas (quedarán ±0)
+      });
+      host.appendChild(a);
+    }
+  }
+  function updateCompactBtnLabel(on) {
+    const b = $('#walletCompactBtn');
+    if (!b) return;
+    b.textContent = on ? 'Vista normal' : 'Vista compacta';
   }
 
   /* ============ A11y helpers: hero tabs & view toggle ============ */
@@ -759,7 +882,7 @@
 
   /* ========================= Boot ========================== */
   async function boot() {
-    // Cargar favs legacy (sólo para migración)
+    // Favs legacy (migración)
     try { state.favs = new Set(JSON.parse(localStorage.getItem(LS_FAVS)) || []); }
     catch { state.favs = new Set(); }
 
@@ -785,7 +908,7 @@
       try { localStorage.setItem(LS_CURR, JSON.stringify({ ts: Date.now(), items: list })); } catch {}
     }
 
-    // Selección inicial
+    // Selección inicial de Key
     if (!KeyManager.selected && KeyManager.list.length) {
       KeyManager.setSelected(KeyManager.list[0].value);
       await loadAllForToken(KeyManager.selected);
@@ -794,6 +917,12 @@
     } else {
       render();
     }
+
+    // Inyectar toolbar extra (compacta + snapshot)
+    injectWalletToolbarExtras();
+
+    // Aplicar estado de compacta inicial
+    setCompact(compactLoad());
 
     // Sincronizar A11y inicial
     setHeroTabsSelected('cards');     // por defecto
@@ -809,34 +938,62 @@
   boot();
 
   /* ===================== Conversor ========================= */
-  function convGet() { try { return JSON.parse(localStorage.getItem(LS_CONV) || '{}'); } catch { return {}; } }
-  function convPut(k, v) { try { const m = convGet(); m[k] = { v, ts: Date.now() }; localStorage.setItem(LS_CONV, JSON.stringify(m)); } catch {} }
-  function convVal(k) { const m = convGet(); if (!m[k]) return null; if ((Date.now() - m[k].ts) > CONV_TTL) return null; return m[k].v; }
+  function convGet() {
+    try { return JSON.parse(localStorage.getItem(LS_CONV) || '{}'); }
+    catch { return {}; }
+  }
+  function convPut(k, v) {
+    try {
+      const m = convGet();
+      m[k] = { v, ts: Date.now() };
+      localStorage.setItem(LS_CONV, JSON.stringify(m));
+    } catch {}
+  }
+  function convVal(k) {
+    const m = convGet();
+    if (!m[k]) return null;
+    if ((Date.now() - m[k].ts) > CONV_TTL) return null;
+    return m[k].v;
+  }
 
   async function gemsForCoins(copper) {
-    const k = `coins2gems_${copper}`; let v = convVal(k);
+    const k = `coins2gems_${copper}`;
+    let v = convVal(k);
     if (v != null) return v;
+
     const o = await API.coinsRaw(copper);
     let gems = Number.isFinite(+o?.quantity) ? +o.quantity
       : Number.isFinite(+o?.gems) ? +o.gems
       : (Number.isFinite(+o?.coins_per_gem) ? Math.floor(+copper / +o.coins_per_gem) : NaN);
+
     if (!Number.isFinite(gems)) throw new Error('Respuesta inválida coins->gems');
-    convPut(k, gems); return gems;
+    convPut(k, gems);
+    return gems;
   }
+
   async function coinsForGems(gems) {
-    const k = `gems2coins_${gems}`; let v = convVal(k);
+    const k = `gems2coins_${gems}`;
+    let v = convVal(k);
     if (v != null) return v;
+
     const o = await API.gemsRaw(gems);
     let copper = Number.isFinite(+o?.quantity) ? +o.quantity
       : Number.isFinite(+o?.coins) ? +o.coins
       : (Number.isFinite(+o?.coins_per_gem) ? Math.floor(+gems * +o.coins_per_gem) : NaN);
+
     if (!Number.isFinite(copper)) throw new Error('Respuesta inválida gems->coins');
-    convPut(k, copper); return copper;
+    convPut(k, copper);
+    return copper;
   }
+
   async function costToBuyGems_coinsMarket(targetGems) {
     if (targetGems <= 0) return 0;
+
     let lo = 0, hi = 10000;
-    while (await gemsForCoins(hi) < targetGems) { hi = Math.min(hi * 2, 5e11); if (hi >= 5e11) break; }
+    while (await gemsForCoins(hi) < targetGems) {
+      hi = Math.min(hi * 2, 5e11);
+      if (hi >= 5e11) break;
+    }
     while (lo < hi) {
       const mid = Math.floor((lo + hi) / 2);
       const g = await gemsForCoins(mid);
@@ -844,10 +1001,15 @@
     }
     return lo;
   }
+
   async function gemsToBuyGold_gemsMarket(targetCopper) {
     if (targetCopper <= 0) return 0;
+
     let lo = 0, hi = 100;
-    while (await coinsForGems(hi) < targetCopper) { hi = Math.min(hi * 2, 3e6); if (hi >= 3e6) break; }
+    while (await coinsForGems(hi) < targetCopper) {
+      hi = Math.min(hi * 2, 3e6);
+      if (hi >= 3e6) break;
+    }
     while (lo < hi) {
       const mid = Math.floor((lo + hi) / 2);
       const c = await coinsForGems(mid);
@@ -862,10 +1024,15 @@
     el.cvState.style.color = (kind === 'error') ? '#f28b82' : '#a0a0a6';
     console.info('[conv:state]', msg);
   }
+
   function setGemsOut(val) {
-    if (!Number.isFinite(val) || val <= 0) { el.cvGoldOut && (el.cvGoldOut.textContent = '—'); return; }
+    if (!Number.isFinite(val) || val <= 0) {
+      el.cvGoldOut && (el.cvGoldOut.textContent = '—');
+      return;
+    }
     el.cvGoldOut.textContent = String(Math.floor(val));
   }
+
   function setBadges(container, copper) {
     if (!container) return;
     if (!Number.isFinite(copper) || copper <= 0) { container.innerHTML = '—'; return; }
@@ -942,11 +1109,4 @@
       window.toast?.('warn','No se pudo actualizar la referencia 400', { ttl: 2000 });
     }
   }
-
-  // Hooks públicos (MetaEventos los usa)
-  window.__GN__ = {
-    render, runIconChecks,
-    getSelectedToken: () => KeyManager.selected || null
-  };
 })();
-``

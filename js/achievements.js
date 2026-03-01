@@ -54,8 +54,8 @@
   function pct100(x){ return Math.round(x*1000)/10; }
   function fmtPct(x){ return pct100(x).toFixed(1) + '%'; }
   function esc(s) {
-    return String(s || '').replace(/[&<>"']/g, function (m) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+    return String(s || '').replace(/[&<>\"']/g, function (m) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m];
     });
   }
   function norm(s){
@@ -87,13 +87,16 @@
     var done = parsed.params.get('done') || ''; // 'hide' | ''
     var pNum = pct != null ? parseFloat(pct) : NaN;
 
-    state.q = String(q || '');
+    // 🔧 Mejora: normalizamos para filtrar, mostramos crudo en el input
+    var rawQ = String(q || '');
+    state.q = norm(rawQ);
+
     if (isFinite(pNum) && pNum > 0 && pNum <= 1) state.pct = pNum;
     state.cat = cat ? String(cat) : '';
     state.hideDone = (done === 'hide');
 
     // Sincronizar UI
-    if (el.search) el.search.value = state.q;
+    if (el.search) el.search.value = rawQ;
     if (el.pct) {
       var allowed = ['0.8','0.9','0.95'];
       el.pct.value = allowed.includes(String(state.pct)) ? String(state.pct) : '0.8';
@@ -105,7 +108,9 @@
   function writeFiltersToHashSilently(){
     var base = '#/account/achievements';
     var params = new URLSearchParams();
-    if (state.q) params.set('q', state.q);
+    // Guardamos el query SIN normalizar (lo que ve el usuario)
+    var qRaw = el.search ? (el.search.value || '') : state.q;
+    if (qRaw) params.set('q', qRaw);
     if (state.pct && state.pct !== 0.8) params.set('pct', String(state.pct));
     if (state.cat) params.set('cat', String(state.cat));
     if (state.hideDone) params.set('done', 'hide');
@@ -218,6 +223,7 @@
 
     return (
       '<article class="card a-card" data-id="' + r.id + '">' +
+        '<button class="star" data-star="'+r.id+'" title="Favorito" style="display:none">★</button>' + // reservado
         '<div class="card__head a-head">' +
           '<h3 class="card__title a-title">' + icon + name + '</h3>' +
           '<div class="card__amount-wrap a-amount">' + badge + '</div>' +
@@ -232,40 +238,40 @@
   }
 
   function renderSummary(){
-  if (!el.summaryGrid) return;
+    if (!el.summaryGrid) return;
 
-  var rows = [];
-  (state.acc || []).forEach(function (r) {
-    var meta = state.metaById.get(r.id);
-    if (!meta) return;
+    var rows = [];
+    (state.acc || []).forEach(function (r) {
+      var meta = state.metaById.get(r.id);
+      if (!meta) return;
 
-    var pr = computeProgress(r, meta);
+      var pr = computeProgress(r, meta);
 
-    // 🔥 NUEVO: si “Ocultar completados” está activo → excluimos pct = 1
-    if (state.hideDone && pr.pct >= 1) return;
+      // 🔥 NUEVO: si “Ocultar completados” está activo → excluimos pct = 1
+      if (state.hideDone && pr.pct >= 1) return;
 
-    rows.push({ r: r, meta: meta, pr: pr });
-  });
+      rows.push({ r: r, meta: meta, pr: pr });
+    });
 
-  // Orden descendente por % completado
-  rows.sort(function(a,b){ return b.pr.pct - a.pr.pct; });
+    // Orden descendente por % completado
+    rows.sort(function(a,b){ return b.pr.pct - a.pr.pct; });
 
-  // TOP 12 incompletos
-  var top = rows.slice(0, 12);
+    // TOP 12 incompletos
+    var top = rows.slice(0, 12);
 
-  el.summaryGrid.innerHTML = top.map(function(x){
-    return cardSummaryHTML(x.meta, x.r, x.pr);
-  }).join('');
+    el.summaryGrid.innerHTML = top.map(function(x){
+      return cardSummaryHTML(x.meta, x.r, x.pr);
+    }).join('');
 
-  // Recalcular estadísticas solo con el subset filtrado
-  var total = rows.length;
-  var completed = rows.filter(x => x.pr.pct >= 1).length;
-  var pct = total ? completed / total : 0;
+    // Recalcular estadísticas solo con el subset filtrado
+    var total = rows.length;
+    var completed = rows.filter(x => x.pr.pct >= 1).length;
+    var pct = total ? completed / total : 0;
 
-  if (el.summaryStat)
-    el.summaryStat.textContent =
-      'Completados: ' + completed + '/' + total + ' (' + fmtPct(pct) + ')';
-}
+    if (el.summaryStat)
+      el.summaryStat.textContent =
+        'Completados: ' + completed + '/' + total + ' (' + fmtPct(pct) + ')';
+  }
 
   function rowNearlyHTML(meta, r, pr){
     var icon = iconImg(meta?.icon, 18, meta?.name);
@@ -290,28 +296,28 @@
   }
 
   function passesFilters(meta, pr, achId){
-  // Filtro por categoría
-  if (state.cat) {
-    var cid = state.achIdToCat.get(String(achId)) || '';
-    if (String(cid) !== String(state.cat)) return false;
+    // Filtro por categoría
+    if (state.cat) {
+      var cid = state.achIdToCat.get(String(achId)) || '';
+      if (String(cid) !== String(state.cat)) return false;
+    }
+
+    // Filtro por búsqueda
+    if (state.q) {
+      var q = state.q;
+      var name = norm(meta?.name);
+      var desc = norm(meta?.description || '');
+      var cat  = norm(String(meta?.category || ''));
+      if (!(name.includes(q) || desc.includes(q) || cat.includes(q))) return false;
+    }
+
+    // Ocultar completados (sin afectar el panel resumen)
+    if (state.hideDone && pr.pct >= 1) return false;
+
+    // “Casi listos”: >= umbral y < 100%
+    if (pr.pct < state.pct) return false;
+    return pr.pct < 1;
   }
-
-  // Filtro por búsqueda
-  if (state.q) {
-    var q = state.q;
-    var name = norm(meta?.name);
-    var desc = norm(meta?.description || '');
-    var cat  = norm(String(meta?.category || ''));
-    if (!(name.includes(q) || desc.includes(q) || cat.includes(q))) return false;
-  }
-
-  // Ocultar completados (sin afectar el panel resumen)
-  if (state.hideDone && pr.pct >= 1) return false;
-
-  // “Casi listos”: >= umbral y < 100%
-  if (pr.pct < state.pct) return false;
-  return pr.pct < 1;
-}
 
   function renderNearly(){
     if (!el.nearlyGrid) return;
@@ -643,6 +649,10 @@
     el.summaryGrid = document.getElementById('achievementsSummary');
     el.summaryStat = document.getElementById('achSummaryStat');
     el.nearlyGrid  = document.getElementById('achievementsNearly');
+
+    // ♿ A11y: notificar cambios a lectores de pantalla
+    if (el.summaryGrid) el.summaryGrid.setAttribute('aria-live','polite');
+    if (el.nearlyGrid)  el.nearlyGrid.setAttribute('aria-live','polite');
   }
 
   function setLoading(on){
@@ -744,4 +754,3 @@
   console.info(LOGP, 'OK: toolbar + aside + wiki + hideDone + categorias + anti-overflow');
 
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
-``

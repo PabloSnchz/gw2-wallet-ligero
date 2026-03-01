@@ -25,16 +25,16 @@
 
   // TTLs (ms)
   var TTL = {
-    TOKENINFO:   10 * 60 * 1000,       // 10 min
-    WV_SEASON:    6 * 60 * 60 * 1000,  // 6 h
-    WV_LISTINGS: 30 * 60 * 1000,       // 30 min
-    WV_ACCOUNT:   5 * 60 * 1000,       // 5 min (cuenta WV, AA, objetivos, listados por cuenta)
-    WV_OBJ:       5 * 60 * 1000,       // 5 min
-    ITEMS:       24 * 60 * 60 * 1000,  // 24 h (por id)
-    CURR:         7 * 24 * 60 * 60 * 1000, // 7 días
-    WALLET:       2 * 60 * 1000,       // 2 min
-    ACH_ACC:      2 * 60 * 1000,       // 2 min (account achievements)
-    ACH_META:    12 * 60 * 60 * 1000   // 12 h
+    TOKENINFO:   10 * 60 * 1000,            // 10 min
+    WV_SEASON:    6 * 60 * 60 * 1000,       // 6 h
+    WV_LISTINGS: 30 * 60 * 1000,            // 30 min
+    WV_ACCOUNT:   5 * 60 * 1000,            // 5 min (cuenta WV, AA, objetivos, listados por cuenta)
+    WV_OBJ:       5 * 60 * 1000,            // 5 min
+    ITEMS:       24 * 60 * 60 * 1000,       // 24 h (por id)
+    CURR:         7 * 24 * 60 * 60 * 1000,  // 7 días
+    WALLET:       2 * 60 * 1000,            // 2 min
+    ACH_ACC:      2 * 60 * 1000,            // 2 min (account achievements)
+    ACH_META:    12 * 60 * 60 * 1000        // 12 h
   };
 
   // Caché en memoria

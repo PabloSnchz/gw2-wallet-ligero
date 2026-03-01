@@ -45,6 +45,21 @@
   /* Motion */
   --ease-1: cubic-bezier(.2,.7,.2,1);
   --dur-1: .14s;
+
+  /* Sugerencia de esquema oscuro a controles nativos */
+  color-scheme: dark;
+}
+
+/* ===== Bridge de tokens (compat con main.css) ===== */
+:root {
+  --panel: var(--bg-1);
+  --panel-border: var(--bd-1);
+  --panel-outline: var(--bd-1);
+  --text: var(--tx-1);
+  --muted: var(--tx-3);
+  --btn: #0f1013;
+  --btn-border: var(--bd-1);
+  --btn-hover: #151722;
 }
 
 /* ============================ TIPOGRAFÍA ================================= */
@@ -115,9 +130,22 @@ p, li, span {
     background var(--dur-1) var(--ease-1);
 }
 .btn:hover { transform: translateY(-1px); border-color: var(--bd-2); }
+
+/* Foco accesible — Fallback universal */
 .btn:focus-visible {
-  outline: 2px solid color-mix(in oklab, var(--acc-1) 60%, white 0%);
+  outline: 2px solid var(--acc-1);
   outline-offset: 2px;
+}
+/* Refinar si hay soporte de color-mix */
+@supports (outline: color-mix(in srgb, red 50%, white 50%)) {
+  .btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--acc-1) 75%, white 25%);
+    outline-offset: 2px;
+  }
+}
+/* Alto contraste (Windows) */
+@media (forced-colors: active) {
+  .btn:focus-visible { outline: 2px solid Highlight; }
 }
 
 .chip, .pill {
@@ -128,7 +156,21 @@ p, li, span {
 }
 .chip:hover { border-color: #355180; }
 
-select { color: var(--tx-1); background: #0f1013; border: 1px solid var(--bd-1); border-radius: var(--radius-sm); }
+/* El chip muestra el foco interno (inputs/selects) */
+.chip:focus-within {
+  border-color: #5865f2;
+  box-shadow: 0 0 0 2px rgba(88,101,242,.25);
+}
+@media (forced-colors: active) {
+  .chip:focus-within { outline: 2px solid Highlight; outline-offset: 2px; }
+}
+
+select {
+  color: var(--tx-1);
+  background: #0f1013;
+  border: 1px solid var(--bd-1);
+  border-radius: var(--radius-sm);
+}
 select:focus-visible { outline: 2px solid #355180; outline-offset: 2px; }
 select:disabled { opacity:.55; cursor:not-allowed; }
 
@@ -142,6 +184,16 @@ select:disabled { opacity:.55; cursor:not-allowed; }
 .side-nav__link:hover { background:#11131a; border-color: var(--bd-1); color: var(--tx-1); }
 .side-nav__link.is-active { background:#151723; border-color:#2a2c35; color: var(--tx-1); }
 .side-nav__icon { width:18px; height:18px; display:grid; place-items:center; flex: 0 0 18px; }
+
+/* Foco visible en links del sidebar */
+.side-nav__link:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--acc-1) 60%, white 15%);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+@media (forced-colors: active) {
+  .side-nav__link:focus-visible { outline: 2px solid Highlight; }
+}
 
 .side-head-icon { display:inline-grid; place-items:center; width:18px; height:18px; margin-right:6px; }
 
@@ -193,7 +245,7 @@ select:disabled { opacity:.55; cursor:not-allowed; }
    usados en el proyecto (no rompe si no existen en DOM). */
 #metaList, #walletCards {
   content-visibility: auto;
-  contain-intrinsic-size: 600px;
+  contain-intrinsic-size: 720px; /* ajuste fino para reducir "saltito" inicial */
 }
 
 /* ===================== DETALLE TEMÁTICO (OPCIONAL) ====================== */
@@ -209,15 +261,13 @@ select:disabled { opacity:.55; cursor:not-allowed; }
 /* Ajustá el selector a tu hero real: .header-hero, .hero, .hero-wrap, etc. */
 .an-hero {
   /* Altura base más baja */
-  min-height: 240px;            /* antes solía estar arriba de 360px */
-  padding-top: 18px;            /* reduce espacios verticales */
+  min-height: 240px;
+  padding-top: 18px;
   padding-bottom: 18px;
 
   /* Evitar que tape el menú o los paneles */
   position: relative;
-  z-index: 0;                   /* no elevar por encima del header ni del contenido */
-
-  /* Si tu hero tiene un overlay (::after), mantenelo pero con menor impacto */
+  z-index: 0;
 }
 .an-hero::after {
   /* Si usás brillos/overlays, que no eleven el stacking-context */
@@ -227,25 +277,24 @@ select:disabled { opacity:.55; cursor:not-allowed; }
 /* HEADER (menú superior): asegurar que quede por encima del hero si se superponen */
 .site-header, .topbar, header[role="banner"] {
   position: relative;
-  z-index: 2;                   /* más alto que el hero */
+  z-index: 2;
 }
 
 /* SEPARACIÓN con el contenido (paneles) */
-/* Aplicá uno de estos dos, no ambos. Te recomiendo este primero: */
 .an-hero { margin-bottom: 12px; }
 
-/* Alternativa si preferís “tirar” del contenido en vez del hero: */
+/* Alternativa (si preferís tirar del contenido, no del hero) */
 /*
 main .panel-head:first-of-type,
 #walletPanel .panel-head,
 #metaPanel .panel-head,
 #achievementsPanel .panel-head,
 #wvPanel .panel-head {
-  margin-top: 8px;   // dale un mínimo para respirar
+  margin-top: 8px;
 }
 */
 
-/* Breakpoints: hero aún más compacto en pantallas chicas */
+/* Breakpoints: hero más compacto en pantallas chicas */
 @media (max-width: 900px) {
   .an-hero {
     min-height: 200px;
@@ -256,21 +305,20 @@ main .panel-head:first-of-type,
 }
 
 /* ===================== SIDEBAR — Separación del borde izquierdo ===================== */
-
 aside.col-side .panel-head {
-    padding-left: 14px !important;  /* añadió aire a ícono + texto */
-    padding-right: 10px;            /* simetría */
+  padding-left: 14px !important;  /* aire a ícono + texto */
+  padding-right: 10px;            /* simetría */
 }
 
 aside.col-side .panel-head__title {
-    margin-left: 4px;               /* separa el ícono del texto */
-    display: flex;
-    align-items: center;
-    gap: 8px;                       /* espacio entre icono y título */
+  margin-left: 4px;               /* separa el ícono del texto */
+  display: flex;
+  align-items: center;
+  gap: 8px;                       /* espacio entre icono y título */
 }
 
 /* Si los iconos están demasiado pegados independientemente del título */
 aside.col-side .side-head-icon,
 aside.col-side .panel-head img {
-    margin-right: 6px !important;   /* espacio útil icono → título */
+  margin-right: 6px !important;   /* espacio útil icono → título */
 }
