@@ -1265,3 +1265,485 @@ display: -webkit-box;
 .wallet-kind--competitive{ color:#9fd6ff; }
 .wallet-kind--map       { color:#b9f3c8; }
 .wallet-kind--bl        { color:#fbc49e; }  /* Black Lion */
+
+/* Conversor — Índice de conveniencia */
+.conv2-score{ display:grid; gap:8px; }
+.conv2-score__head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.conv2-score__label{ font-weight:700; color:#cfd2d8; }
+
+.conv2-meter{
+  position:relative; height:10px; border-radius:999px;
+  background:#16161a; border:1px solid #2a2a2f; overflow:hidden;
+}
+.conv2-meter__fill{
+  position:absolute; left:0; top:0; bottom:0; width:0%;
+  transition: width .2s ease, background-color .2s ease, box-shadow .2s ease;
+  background: linear-gradient(90deg, #6b7280, #9ca3af); /* neutral */
+  box-shadow: 0 0 0 1px rgba(255,255,255,.03) inset;
+}
+
+/* Estados por nivel (colores sugeridos) */
+.conv2-meter__fill.is-bad     { background: linear-gradient(90deg, #ef4444, #f97316); } /* rojo → naranja */
+.conv2-meter__fill.is-low     { background: linear-gradient(90deg, #f59e0b, #fbbf24); } /* naranja → ámbar */
+.conv2-meter__fill.is-mid     { background: linear-gradient(90deg, #facc15, #fde047); } /* amarillo */
+.conv2-meter__fill.is-good    { background: linear-gradient(90deg, #34d399, #22c55e); } /* verde */
+.conv2-meter__fill.is-exc     { background: linear-gradient(90deg, #22c55e, #10b981); } /* verde intenso */
+
+/* =========================================================
+   Conversor Gem ↔ Gold — Rediseño visual unificado
+   ========================================================= */
+
+/* ---------- Helpers generales ---------- */
+:root{
+  /* Ajustables si querés tunear el skin global */
+  --conv-halo-inset: .26;
+  --conv-halo-outer: .34;
+
+  --conv-blue-1: #2b7bd3;   /* azul gemas (borde)  */
+  --conv-blue-2: #4bbdf0;   /* azul gemas (glow)   */
+  --conv-gold-1: #d7b062;   /* dorado (borde)      */
+  --conv-gold-2: #f4c542;   /* dorado (glow)       */
+
+  /* Barra neutral y estados */
+  --conv-neutral-a:#6b7280; --conv-neutral-b:#9ca3af;
+  --conv-bad-a:#ef4444;     --conv-bad-b:#f97316;
+  --conv-low-a:#f59e0b;     --conv-low-b:#fbbf24;
+  --conv-mid-a:#facc15;     --conv-mid-b:#fde047;
+  --conv-good-a:#34d399;    --conv-good-b:#22c55e;
+  --conv-exc-a:#22c55e;     --conv-exc-b:#10b981;
+}
+
+/* Halo utilitario (como Wallet/Meta) */
+.conv2-halo {
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.06);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.02) inset,
+    0 0 0 1px rgba(255,255,255,.02),
+    0 6px 16px rgba(0,0,0,.35);
+}
+.conv2-halo--blue {
+  border-color: color-mix(in srgb, var(--conv-blue-1) 40%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--conv-blue-1) calc(var(--conv-halo-inset)*100%), transparent) inset,
+    0 0 16px color-mix(in srgb, var(--conv-blue-2) calc(var(--conv-halo-outer)*100%), transparent);
+}
+.conv2-halo--gold {
+  border-color: color-mix(in srgb, var(--conv-gold-1) 40%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--conv-gold-1) calc(var(--conv-halo-inset)*100%), transparent) inset,
+    0 0 16px color-mix(in srgb, var(--conv-gold-2) calc(var(--conv-halo-outer)*100%), transparent);
+}
+
+/* ---------- Cabeceras del conversor ---------- */
+#asideConvSection .conv2-label{
+  display:flex; align-items:center; gap:10px; margin:10px 0 6px;
+  font-weight:700; letter-spacing:.2px;
+}
+#asideConvSection .conv2-label--gems{ color:#bfe7ff; text-shadow:0 0 6px rgba(75,189,240,.28); }
+#asideConvSection .conv2-label--gold{ color:#ffecb3; text-shadow:0 0 6px rgba(244,197,66,.22); }
+
+#asideConvSection .conv2-label__icon{
+  display:inline-grid; place-items:center; width:20px; height:20px;
+  filter: drop-shadow(0 0 6px rgba(255,255,255,.06));
+}
+
+/* ---------- Filas de entrada/salida ---------- */
+#asideConvSection .conv2-row{
+  display:grid; grid-template-columns: 1fr auto auto; gap:10px; align-items:center;
+  margin-bottom:8px;
+}
+#asideConvSection .conv2-entry{
+  appearance:textfield;
+  background:#0f1116; border:1px solid #26262b; color:#e8ecf3;
+  border-radius:10px; padding:10px 12px; font-weight:600; outline:none;
+  transition:border-color .12s ease, box-shadow .12s ease;
+}
+#asideConvSection .conv2-entry:focus{
+  border-color:#355180;
+  box-shadow: 0 0 0 1px rgba(82,118,255,.18) inset, 0 0 10px rgba(82,118,255,.18);
+}
+#asideConvSection .conv2-arrow{ opacity:.6; }
+
+/* Badges de oro grandes (ya existentes) */
+#asideConvSection .coin-badges--lg { transform: translateY(1px); }
+
+/* ---------- Acciones ---------- */
+#asideConvSection .conv2-actions{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  margin:8px 0;
+}
+#asideConvSection .conv2-state{ margin:0; }
+
+/* ---------- Línea de referencia 400 ---------- */
+#asideConvSection .conv2-refline{
+  display:flex; align-items:center; gap:8px; justify-content:flex-start;
+}
+
+/* ---------- Índice de conveniencia ---------- */
+#asideConvSection .conv2-score{ display:grid; gap:8px; }
+#asideConvSection .conv2-score__head{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+}
+#asideConvSection .conv2-score__label{ font-weight:700; color:#cfd2d8; }
+
+/* Meter */
+#asideConvSection .conv2-meter{
+  position:relative; height:10px; border-radius:999px;
+  background:#16161a; border:1px solid #2a2a2f; overflow:hidden;
+}
+#asideConvSection .conv2-meter__fill{
+  position:absolute; inset:0 auto 0 0; width:0%;
+  transition: width .2s ease, background .2s ease, box-shadow .2s ease;
+  background: linear-gradient(90deg, var(--conv-neutral-a), var(--conv-neutral-b));
+  box-shadow: 0 0 0 1px rgba(255,255,255,.03) inset;
+}
+/* Estados */
+#asideConvSection .conv2-meter__fill.is-bad  { background:linear-gradient(90deg,var(--conv-bad-a), var(--conv-bad-b)); }
+#asideConvSection .conv2-meter__fill.is-low  { background:linear-gradient(90deg,var(--conv-low-a), var(--conv-low-b)); }
+#asideConvSection .conv2-meter__fill.is-mid  { background:linear-gradient(90deg,var(--conv-mid-a), var(--conv-mid-b)); }
+#asideConvSection .conv2-meter__fill.is-good { background:linear-gradient(90deg,var(--conv-good-a),var(--conv-good-b)); }
+#asideConvSection .conv2-meter__fill.is-exc  { background:linear-gradient(90deg,var(--conv-exc-a), var(--conv-exc-b)); }
+
+/* ---------- “Tarjetas espejo” con halo ---------- */
+#asideConvSection .conv2-label--gems + .conv2-row,
+#asideConvSection .conv2-label--gold + .conv2-row{
+  padding:10px; border-radius:12px;
+}
+#asideConvSection .conv2-label--gems + .conv2-row { box-shadow: 0 0 0 1px rgba(43,123,211,.28) inset, 0 0 12px rgba(75,189,240,.18); }
+#asideConvSection .conv2-label--gold + .conv2-row { box-shadow: 0 0 0 1px rgba(215,176,98,.28) inset, 0 0 12px rgba(244,197,66,.18); }
+
+/* ---------- Micro-ajustes responsive ---------- */
+@media (max-width: 420px){
+  #asideConvSection .conv2-row{ grid-template-columns: 1fr auto; }
+  #asideConvSection .conv2-arrow{ display:none; }
+}
+
+/* =========================
+   Conversor – Ajustes finos
+   ========================= */
+
+/* 1) Subtítulos: icono y “caret” alineados a grid */
+#asideConvSection .conv2-label{
+  margin: 8px 0 8px;
+}
+#asideConvSection .conv2-label .conv2-label__icon{
+  transform: translateY(1px);
+}
+
+/* 2) Filas – grid simétrico por tipo de bloque */
+#asideConvSection .conv2-row{
+  display:grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap:12px; align-items:center;
+  padding:10px; border-radius:12px;
+}
+
+/* Gemas → Oro: input + salida badges (como “output”) */
+#asideConvSection .conv2-label--gems + .conv2-row{
+  box-shadow:
+    0 0 0 1px rgba(43,123,211,.24) inset,
+    0 0 12px rgba(75,189,240,.16);
+}
+#asideConvSection .conv2-label--gems + .conv2-row .coin-badges--lg{
+  justify-self:end;
+}
+
+/* Oro → Gemas: input + salida gems (output alineado derecha) */
+#asideConvSection .conv2-label--gold + .conv2-row{
+  box-shadow:
+    0 0 0 1px rgba(215,176,98,.22) inset,
+    0 0 12px rgba(244,197,66,.14);
+}
+#asideConvSection .conv2-label--gold + .conv2-row .conv2-gems{
+  justify-self:end;
+  font-weight:700; color:#e8ecf3;
+  padding:4px 8px; border-radius:8px;
+  background:#0f1116; border:1px solid #26262b;
+}
+
+/* Flecha – se vuelve un divisor discreto dentro de la fila */
+#asideConvSection .conv2-arrow{
+  display:none; /* la flecha ya no es necesaria con el layout nuevo */
+}
+
+/* Inputs */
+#asideConvSection .conv2-entry{
+  background:#0f1116; border:1px solid #26262b; color:#e8ecf3;
+  border-radius:10px; padding:12px 12px; font-weight:700; font-size:15px;
+  outline:none; transition:border-color .12s ease, box-shadow .12s ease;
+}
+#asideConvSection .conv2-entry:focus{
+  border-color:#355180;
+  box-shadow: 0 0 0 1px rgba(82,118,255,.18) inset, 0 0 10px rgba(82,118,255,.14);
+}
+
+/* Badges más compactos (g/s/c) cuando aparecen dentro del conversor */
+#asideConvSection .coin-badges--lg .coin{
+  font-size:14px; line-height:18px;
+}
+#asideConvSection .coin-badges--lg .coin--g,
+#asideConvSection .coin-badges--lg .coin--s,
+#asideConvSection .coin-badges--lg .coin--c{
+  padding:2px 8px; border-radius:8px;
+}
+
+/* 3) Acciones – botón + estado alineados */
+#asideConvSection .conv2-actions{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+#asideConvSection .conv2-actions .btn{
+  background:#11131b; border:1px solid #26262b; color:#dfe3ea;
+  padding:8px 12px; border-radius:10px;
+}
+#asideConvSection .conv2-actions .btn:hover{
+  border-color:#355180; box-shadow:0 0 10px rgba(82,118,255,.12);
+}
+#asideConvSection .conv2-state{ margin:0; }
+
+/* 4) Bloque de referencia (400) y barra – cohesión visual */
+#asideConvSection .conv2-refline{
+  display:flex; align-items:center; gap:10px;
+  margin:6px 0 2px;
+}
+#asideConvSection #cvRef400 .coin{ font-size:14px; }
+
+/* Título + label a la derecha dentro de conv2-score */
+#asideConvSection .conv2-score{ display:grid; gap:8px; }
+#asideConvSection .conv2-score__head{
+  display:flex; gap:8px; align-items:center; justify-content:space-between;
+}
+#asideConvSection .conv2-score__label{
+  font-weight:700; color:#e5e9f2;
+}
+
+/* Barra (meter) ya está, sólo afinamos radio y sombra */
+#asideConvSection .conv2-meter{
+  height:10px; border-radius:999px;
+  background:#151922; border:1px solid #242a36;
+}
+#asideConvSection .conv2-meter__fill{
+  border-radius:999px;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.03) inset, 0 4px 10px rgba(0,0,0,.25);
+}
+
+/* Hint más compacto y pegado a la barra */
+#asideConvSection #convScoreHint{
+  margin:6px 0 0; line-height:1.35;
+  color:#aab0ba;
+}
+
+/* 5) Separadores – menos “corte” visual */
+#asideConvSection .hr-hairline{
+  border-color:#20232c;
+  margin:12px 0;
+}
+
+/* 6) Responsive estrecho: mantener simetría */
+@media (max-width: 420px){
+  #asideConvSection .conv2-row{
+    grid-template-columns: 1fr; gap:8px;
+  }
+  #asideConvSection .conv2-label--gems + .conv2-row .coin-badges--lg,
+  #asideConvSection .conv2-label--gold + .conv2-row .conv2-gems{
+    justify-self:start; /* en móvil, salida debajo del input */
+  }
+}
+
+/* =========================================================
+   Conversor Gem ↔ Gold — v2.0 Visual Pack
+   (Pegar al final de css/main.css)
+   ========================================================= */
+
+/* ---------- Variables de color (ajustables) ---------- */
+:root{
+  --conv-blue-1:#2b7bd3;  --conv-blue-2:#4bbdf0;
+  --conv-gold-1:#d7b062;  --conv-gold-2:#f4c542;
+
+  --conv-neutral-a:#6b7280; --conv-neutral-b:#9ca3af;
+  --conv-bad-a:#ef4444;     --conv-bad-b:#f97316;
+  --conv-low-a:#f59e0b;     --conv-low-b:#fbbf24;
+  --conv-mid-a:#facc15;     --conv-mid-b:#fde047;
+  --conv-good-a:#34d399;    --conv-good-b:#22c55e;
+  --conv-exc-a:#22c55e;     --conv-exc-b:#10b981;
+}
+
+/* ======================================================
+   1) Layout fino y halos de los dos bloques
+   ====================================================== */
+#asideConvSection .conv2-label{
+  display:flex; align-items:center; gap:10px;
+  margin:8px 0 8px; font-weight:700; letter-spacing:.2px;
+}
+#asideConvSection .conv2-label__icon{
+  display:inline-grid; place-items:center; width:20px; height:20px;
+  transform: translateY(1px);
+  filter: drop-shadow(0 0 6px rgba(255,255,255,.06));
+}
+#asideConvSection .conv2-label--gems{ color:#bfe7ff; text-shadow:0 0 6px rgba(75,189,240,.28); }
+#asideConvSection .conv2-label--gold{ color:#ffecb3; text-shadow:0 0 6px rgba(244,197,66,.22); }
+
+/* Filas simétricas (input | output) */
+#asideConvSection .conv2-row{
+  display:grid; grid-template-columns:minmax(0,1fr) auto;
+  gap:12px; align-items:center; padding:10px; border-radius:12px;
+  max-width:100%;
+}
+
+/* Halo azul (Gemas → Oro) */
+#asideConvSection .conv2-label--gems + .conv2-row{
+  box-shadow:
+    0 0 0 1px rgba(43,123,211,.26) inset,
+    0 0 12px rgba(75,189,240,.16);
+}
+
+/* Halo dorado reforzado (Oro → Gemas) */
+#asideConvSection .conv2-label--gold + .conv2-row{
+  box-shadow:
+    0 0 0 1px rgba(245,190,82,.32) inset,
+    0 0 14px rgba(245,190,82,.24);
+}
+
+/* Inputs */
+#asideConvSection .conv2-entry{
+  appearance:textfield;
+  background:#0f1116; border:1px solid #26262b; color:#e8ecf3;
+  border-radius:10px; padding:12px 12px; font-weight:700; font-size:15px;
+  outline:none; transition:border-color .12s ease, box-shadow .12s ease;
+}
+#asideConvSection .conv2-entry:hover{
+  border-color:#415b9c; box-shadow:0 0 8px rgba(82,118,255,.12);
+}
+#asideConvSection .conv2-entry:focus{
+  border-color:#355180;
+  box-shadow:0 0 0 1px rgba(82,118,255,.18) inset, 0 0 10px rgba(82,118,255,.14);
+}
+
+/* Output badges (Gemas → Oro) */
+#asideConvSection .coin-badges--lg{ justify-self:end; transform: translateY(1px); }
+#asideConvSection .coin-badges--lg .coin{ font-size:14px; line-height:18px; }
+#asideConvSection .coin-badges--lg .coin--g,
+#asideConvSection .coin-badges--lg .coin--s,
+#asideConvSection .coin-badges--lg .coin--c{
+  padding:2px 8px; border-radius:8px;
+}
+
+/* Output “gems” como badge (Oro → Gemas) */
+#asideConvSection .conv2-gems{
+  justify-self:end; font-weight:700; color:#e8ecf3;
+  padding:8px 12px; border-radius:10px; min-width:56px; text-align:center;
+  background:#0f1116; border:1px solid #26262b;
+}
+
+/* Oculta flechas del layout anterior (si quedaran) */
+#asideConvSection .conv2-arrow{ display:none; }
+
+/* ======================================================
+   2) Acciones y estado
+   ====================================================== */
+#asideConvSection .conv2-actions{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  margin:8px 0;
+}
+#asideConvSection .conv2-actions .btn{
+  background:#11131b; border:1px solid #26262b; color:#dfe3ea;
+  padding:8px 12px; border-radius:10px;
+}
+#asideConvSection .conv2-actions .btn:hover{
+  border-color:#355180; box-shadow:0 0 10px rgba(82,118,255,.12);
+}
+
+/* Badge “Actualizado.” más limpio */
+#asideConvSection #cvState{
+  margin:0; background:#1a1d27; padding:2px 8px; border-radius:6px;
+  color:#b6bccd !important; border:1px solid #242a33;
+}
+
+/* Separadores suaves */
+#asideConvSection .hr-hairline{ border-color:#20232c; margin:12px 0; }
+
+/* ======================================================
+   3) Quick‑chips (Gemas y Oro)
+   ====================================================== */
+#asideConvSection .conv2-quick{
+  display:flex; gap:6px; margin:6px 0 2px; flex-wrap:wrap;
+}
+#asideConvSection .conv2-quick .btn{
+  background:#13161f; border:1px solid #20242f; color:#cfd6e3;
+  padding:4px 10px; border-radius:8px; font-size:12px; line-height:1;
+}
+#asideConvSection .conv2-quick .btn:hover{
+  border-color:#355180; box-shadow:0 0 8px rgba(82,118,255,.12);
+}
+
+/* ======================================================
+   4) Referencia 400 + Índice de conveniencia
+   ====================================================== */
+#asideConvSection .conv2-refline{
+  display:flex; align-items:center; gap:10px; margin:6px 0 2px;
+}
+#asideConvSection #cvRef400 .coin{ font-size:14px; }
+
+/* Title + label del índice */
+#asideConvSection .conv2-score{ display:grid; gap:8px; }
+#asideConvSection .conv2-score__head{
+  display:flex; gap:8px; align-items:center; justify-content:space-between;
+}
+#asideConvSection .conv2-score__head strong{
+  font-size:1.05rem; letter-spacing:.2px; color:#e8ecf3;
+}
+#asideConvSection .conv2-score__label{ font-weight:700; color:#e5e9f2; }
+
+/* Meter */
+#asideConvSection .conv2-meter{
+  position:relative; height:10px; border-radius:999px;
+  background:#151922; border:1px solid #242a36; overflow:hidden;
+}
+#asideConvSection .conv2-meter__fill{
+  position:absolute; inset:0 auto 0 0; width:0%;
+  transition: width .22s ease, background .22s ease, box-shadow .22s ease, transform .22s ease;
+  border-radius:999px;
+  background: linear-gradient(90deg, var(--conv-neutral-a), var(--conv-neutral-b));
+  box-shadow: 0 0 0 1px rgba(255,255,255,.03) inset, 0 4px 10px rgba(0,0,0,.25);
+}
+
+/* Estados + sombras dinámicas */
+#asideConvSection .conv2-meter__fill.is-bad  { background:linear-gradient(90deg,var(--conv-bad-a), var(--conv-bad-b));  box-shadow:0 0 14px rgba(255,80,70,.20); }
+#asideConvSection .conv2-meter__fill.is-low  { background:linear-gradient(90deg,var(--conv-low-a), var(--conv-low-b));  box-shadow:0 0 12px rgba(244,180,70,.18); }
+#asideConvSection .conv2-meter__fill.is-mid  { background:linear-gradient(90deg,var(--conv-mid-a), var(--conv-mid-b));  box-shadow:0 0 12px rgba(245,220,70,.16); }
+#asideConvSection .conv2-meter__fill.is-good { background:linear-gradient(90deg,var(--conv-good-a),var(--conv-good-b)); box-shadow:0 0 12px rgba(25,210,120,.20); }
+#asideConvSection .conv2-meter__fill.is-exc  { background:linear-gradient(90deg,var(--conv-exc-a), var(--conv-exc-b));  box-shadow:0 0 14px rgba(0,255,155,.28); }
+
+/* Hint compacto */
+#asideConvSection #convScoreHint{
+  margin:6px 0 0; line-height:1.35; color:#aab0ba;
+}
+
+/* ======================================================
+   5) Micro‑animaciones (.updated)
+   ====================================================== */
+/* Anim pop sutil hacia arriba + fade */
+@keyframes convUpdated {
+  0%   { transform: translateY(2px); opacity:.65; }
+  100% { transform: translateY(0);   opacity:1;   }
+}
+#asideConvSection .updated{
+  animation: convUpdated .22s ease-out;
+}
+
+/* Aseguramos que badges y output participen de la anim */
+#asideConvSection .coin-badges--lg.updated .coin { will-change: transform, opacity; }
+#asideConvSection .conv2-gems.updated,
+#asideConvSection .conv2-meter__fill.updated{ will-change: transform, opacity; }
+
+/* ======================================================
+   6) Responsive
+   ====================================================== */
+@media (max-width: 420px){
+  #asideConvSection .conv2-row{
+    grid-template-columns: 1fr; gap:8px;
+  }
+  #asideConvSection .coin-badges--lg,
+  #asideConvSection .conv2-gems{ justify-self:start; }
+  #asideConvSection .conv2-quick{ gap:8px; }
+}

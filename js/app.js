@@ -108,7 +108,11 @@
     cvGems: $('#cvGems'), cvGemsOut: $('#cvGemsOut'),
     cvGold: $('#cvGold'), cvGoldOut: $('#cvGoldOut'),
     cvRefresh: $('#cvRefresh'),
-    cvState: $('#cvState'), cvRef400: $('#cvRef400')
+    cvState: $('#cvState'), cvRef400: $('#cvRef400'),
+
+    // NUEVO: quick‑chips
+    cvGemsQuick: $('#cvGemsQuick'),
+    cvGoldQuick: $('#cvGoldQuick')
   };
 
   /* ========================= Utils ========================= */
@@ -118,7 +122,7 @@
     el.status.textContent = m;
   }
   function obfuscate(t) { return !t || t.length < 8 ? 'Key' : `Key ${t.slice(0, 4)}…${t.slice(-4)}`; }
-  function esc(s) { return String(s || '').replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m])); }
+  function esc(s) { return String(s || '').replace(/[&<>\"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m])); }
 
   function splitCopper(v) { const g = Math.floor(v / 10000), s = Math.floor((v % 10000) / 100), c = v % 100; return { g, s, c }; }
   function badgesHTMLFromCopper(copper) {
@@ -128,6 +132,19 @@
     if (s) p.push(`<span class="coin coin--s">${s}</span>`);
     if (c) p.push(`<span class="coin coin--c">${c}</span>`);
     return p.length ? p.join('') : '0';
+  }
+
+  // Micro-anim: marca un nodo como actualizado
+  function markUpdated(node, ttl = 220) {
+    try {
+      if (!node) return;
+      node.classList.remove('updated'); // reinicio rápido
+      // fuerza reflow para reiniciar anim si se aplica de seguido
+      // eslint-disable-next-line no-unused-expressions
+      node.offsetHeight;
+      node.classList.add('updated');
+      setTimeout(() => node.classList.remove('updated'), ttl);
+    } catch {}
   }
 
   // Toasts global
@@ -189,7 +206,7 @@
         if (/^https?:\/\//i.test(txt)) { n.innerHTML = iconTag(txt, 22); fixes++; }
         else pend++;
       });
-      $$('#walletTable tbody tr td:first-child').forEach(n => {
+      $('#walletTable tbody')?.querySelectorAll('tr td:first-child').forEach(n => {
         if (n.querySelector('img')) return;
         const txt = (n.textContent || '').trim();
         if (/^https?:\/\//i.test(txt)) { n.innerHTML = iconTag(txt, 22); fixes++; }
@@ -278,6 +295,62 @@
   }
 
   /* =================== Tarjetas modernas ===================== */
+
+  // === NUEVO: clave determinista para las 6 divisas con color oficial ===
+  function resolveWalletKeyByName(name) {
+    // normalización básica (lower, sin tildes, trim)
+    const n = String(name || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/\p{Diacritic}/gu,'')
+      .replace(/[^\w\s]/g,'')
+      .replace(/\s+/g,' ')
+      .trim();
+
+    // EXACT (ES/EN; singular / plural)
+    const exact = new Map([
+      // Gems / Gemas
+      ['gema', 'gems'], ['gemas', 'gems'], ['gem', 'gems'], ['gems', 'gems'],
+      // Coins / Monedas (oro/plata/cobre)
+      ['moneda', 'coins'], ['monedas', 'coins'], ['coin', 'coins'], ['coins', 'coins'],
+      // Karma
+      ['karma', 'karma'],
+      // Laurels / Laureles
+      ['laurel', 'laurels'], ['laureles', 'laurels'], ['laurels', 'laurels'],
+      // Trade Contracts / Contratos comerciales
+      ['contrato comercial', 'trade_contracts'], ['contratos comerciales', 'trade_contracts'],
+      ['trade contract', 'trade_contracts'], ['trade contracts', 'trade_contracts'],
+      // Elegy Mosaic / Mosaicos de elegía
+      ['mosaico de elegia', 'elegy_mosaic'], ['mosaicos de elegia', 'elegy_mosaic'],
+      ['elegy mosaic', 'elegy_mosaic'], ['elegy mosaics', 'elegy_mosaic']
+    ]);
+    if (exact.has(n)) return exact.get(n);
+
+    // STARTS WITH (p.ej., "Moneda (oro/plata/cobre)")
+    const starts = [
+      ['gema', 'gems'], ['gem', 'gems'],
+      ['moneda', 'coins'], ['coin', 'coins'],
+      ['contrato comercial', 'trade_contracts'], ['trade contract', 'trade_contracts'],
+      ['mosaico de elegia', 'elegy_mosaic'], ['elegy mosaic', 'elegy_mosaic']
+    ];
+    for (const [p, key] of starts) {
+      if (n.startsWith(p)) return key;
+    }
+
+    // TOKENS (oro/plata/cobre → coins, etc.)
+    const tokens = new Map([
+      ['oro', 'coins'], ['gold', 'coins'], ['plata', 'coins'], ['silver', 'coins'], ['cobre', 'coins'], ['copper', 'coins'],
+      ['karma', 'karma'],
+      ['laurel', 'laurels'], ['laurels', 'laurels'],
+      ['contrato', 'trade_contracts'], ['contracts', 'trade_contracts'],
+      ['elegia', 'elegy_mosaic'], ['elegy', 'elegy_mosaic']
+    ]);
+    for (const t of n.split(' ')) {
+      if (tokens.has(t)) return tokens.get(t);
+    }
+
+    return ''; // no definida → fallback blanco en el theme
+  }
+
   function walletCardHTML(r) {
     const iconHTML = iconTag(r._cur?.icon, 30);
     const pills = r.cats?.length ? r.cats.slice(0,4).map(t => `<span class="wallet-pill">${esc(t)}</span>`).join('') : '';
@@ -288,8 +361,11 @@
     // Para Moneda (oro), mostramos badges además del número
     const coinsBadges = isCoins(r._cur) ? (`<div class="coin-badges" style="margin-top:6px">${badgesHTMLFromCopper(r.amount)}</div>`) : '';
 
+    // === NUEVO: clave determinista (para wallet-theme.js) ===
+    const curKey = resolveWalletKeyByName(r.name); // '' si no aplica (glow blanco)
+
     return `
-      <article class="wallet-card" data-id="${r.id}">
+      <article class="wallet-card" data-id="${r.id}"${curKey ? ` data-cur="${curKey}"` : ''}>
         <div class="wallet-card__top">
           <div class="wallet-card__iconWrap">${iconHTML}</div>
           <div class="wallet-card__name${kind}">${esc(r.name)}</div>
@@ -735,13 +811,11 @@
     // Header - Modal y selector global
     el.keysMenuBtn?.addEventListener('click', openKeysModal);
 
-    // Handler del select global con protección anti-bucle:
-    // - Si el cambio viene de KeyManager (programático) => el router igual lo verá,
-    //   pero nosotros NO recargamos otra vez la wallet.
+    // Handler del select global con protección anti-bucle
     el.keySelectGlobal?.addEventListener('change', async () => {
       if (KeyManager._programmaticChange) { KeyManager._programmaticChange = false; return; }
       const token = el.keySelectGlobal.value || null;
-      KeyManager.setSelected(token, { silent: true }); // ya no disparamos otro 'change'
+      KeyManager.setSelected(token, { silent: true });
       if (token) await loadAllForToken(token);
     });
 
@@ -764,19 +838,39 @@
       render();
     });
 
-    // Alternar vista (tarjetas/tabla) + A11y (aria-pressed)
+    // Alternar vista (tarjetas/tabla)
     el.toggleViewBtn?.addEventListener('click', () => {
       state.view = (state.view === 'cards') ? 'table' : 'cards';
       setViewTogglePressed();
       render();
     });
 
-    // Conversor (debounce)
+    // Conversor (debounce para tipeo)
     if ($('#convWrap')) {
       let t = null; const deb = (fn, ms = 300) => (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
       el.cvGems?.addEventListener('input', deb(onTopInput));
       el.cvGold?.addEventListener('input', deb(onBottomInput));
       el.cvRefresh?.addEventListener('click', () => { updateRef400().catch(() => { }); onTopInput(); onBottomInput(); });
+
+      // NUEVO: quick‑chips
+      el.cvGemsQuick?.querySelectorAll('[data-gems]')?.forEach(btn => {
+        if (btn.__wired) return; btn.__wired = true;
+        btn.addEventListener('click', () => {
+          const n = Number(btn.getAttribute('data-gems')) || 0;
+          if (el.cvGems) el.cvGems.value = String(n);
+          // cálculo inmediato sin debounce
+          onTopInput();
+        });
+      });
+      el.cvGoldQuick?.querySelectorAll('[data-gold]')?.forEach(btn => {
+        if (btn.__wired) return; btn.__wired = true;
+        btn.addEventListener('click', () => {
+          const n = Number(btn.getAttribute('data-gold')) || 0;
+          if (el.cvGold) el.cvGold.value = String(n);
+          // cálculo inmediato sin debounce
+          onBottomInput();
+        });
+      });
     }
   }
 
@@ -810,11 +904,9 @@
 
     // Selección inicial
     if (!KeyManager.selected && KeyManager.list.length) {
-      // NOTA: setSelected dispara 'change' programático para que el router tome la key.
       KeyManager.setSelected(KeyManager.list[0].value);
       await loadAllForToken(KeyManager.selected);
     } else if (KeyManager.selected) {
-      // Igual, re-confirma selección y avisa al router si hace falta
       KeyManager.setSelected(KeyManager.selected);
       await loadAllForToken(KeyManager.selected);
     } else {
@@ -891,11 +983,84 @@
   function setGemsOut(val) {
     if (!Number.isFinite(val) || val <= 0) { el.cvGoldOut && (el.cvGoldOut.textContent = '—'); return; }
     el.cvGoldOut.textContent = String(Math.floor(val));
+    markUpdated(el.cvGoldOut);
   }
   function setBadges(container, copper) {
     if (!container) return;
     if (!Number.isFinite(copper) || copper <= 0) { container.innerHTML = '—'; return; }
     container.innerHTML = badgesHTMLFromCopper(copper);
+    markUpdated(container);
+  }
+
+  /* ===== NUEVO: Conveniencia (400 gemas) ======================
+     Mapea el precio (en ORO) de 400 gemas a un score 0..1 según referencias:
+       - Excelente: <=108 oro
+       - Bueno: 120–130 oro (meseta alta fija)
+       - Actual poco conveniente: ~160 oro (score bajo)
+  */
+  function scoreFromPrice400(priceGold) {
+    const p = Number(priceGold || 0);
+    if (!Number.isFinite(p) || p <= 0) return { score: 0, tier: 'bad' };
+
+    if (p <= 108)            return { score: 1.00, tier: 'exc' };
+    if (p > 108 && p < 120)  return { score: 1.00 - ((p - 108) / (120 - 108)) * 0.15, tier: 'good' }; // 1.00→0.85
+    if (p >= 120 && p <=130) return { score: 0.85, tier: 'good' };                                     // meseta alta
+    if (p > 130 && p < 160)  return { score: 0.85 - ((p - 130) / (160 - 130)) * 0.65, tier: 'mid' };   // 0.85→0.20
+    return { score: 0.05, tier: 'bad' }; // 160+
+  }
+  function labelForScore(score){
+    if (score >= 0.95) return 'Excelente';
+    if (score >= 0.80) return 'Muy conveniente';
+    if (score >= 0.65) return 'Bueno';
+    if (score >= 0.45) return 'Normal';
+    if (score >= 0.25) return 'Bajo';
+    return 'Muy bajo';
+  }
+  function classForScore(score){
+    if (score >= 0.95) return 'is-exc';
+    if (score >= 0.80) return 'is-good';
+    if (score >= 0.65) return 'is-good';
+    if (score >= 0.45) return 'is-mid';
+    if (score >= 0.25) return 'is-low';
+    return 'is-bad';
+  }
+  function renderConvenience(priceCopperFor400){
+    try{
+      const elBar  = document.getElementById('convScoreBar');
+      const elLbl  = document.getElementById('convScoreLabel');
+      const elHint = document.getElementById('convScoreHint');
+      const meter  = document.querySelector('.conv2-meter');
+      if (!elBar || !elLbl || !elHint || !meter) return;
+
+      const gold = Number(priceCopperFor400 || 0) / 10000; // cobre -> oro
+      if (!Number.isFinite(gold) || gold <= 0){
+        elBar.style.width = '0%';
+        elBar.className = 'conv2-meter__fill';
+        elLbl.textContent = '—';
+        elHint.textContent = 'Sin datos de referencia aún.';
+        meter.setAttribute('aria-valuenow', '0');
+        return;
+      }
+
+      const { score } = scoreFromPrice400(gold);
+      const pct = Math.round(score * 100);
+      const cls = classForScore(score);
+      const lbl = labelForScore(score);
+
+      elBar.className = 'conv2-meter__fill ' + cls;
+      elBar.style.width = pct + '%';
+      elLbl.textContent = `${lbl} (${gold.toFixed(2)} o / 400)`;
+      elHint.textContent = (score >= 0.65)
+        ? 'Es un buen momento según la referencia definida (120–130 o/400).'
+        : (score >= 0.45)
+          ? 'En línea con valores normales.'
+          : 'Poco conveniente frente a la referencia (120–130 o/400).';
+
+      meter.setAttribute('aria-valuenow', String(pct));
+
+      // micro-anim en la barra
+      markUpdated(elBar);
+    }catch(_){}
   }
 
   async function onTopInput() {
@@ -905,6 +1070,8 @@
         el.cvGems.value = '';
         setBadges(el.cvGemsOut, 0);
         setConvState('Ingresá gemas.');
+        // Reinicia barra si el input queda vacío
+        renderConvenience(0);
         return;
       }
       const gems = Math.max(0, Math.floor(Number(gs)));
@@ -913,10 +1080,17 @@
       const copper = await costToBuyGems_coinsMarket(gems);
       setBadges(el.cvGemsOut, copper);
       setConvState('Actualizado.');
+
+      // normalizar a referencia /400 para evaluar conveniencia
+      if (gems > 0) {
+        const copperFor400 = Math.round((copper / gems) * 400);
+        renderConvenience(copperFor400);
+      }
     } catch (e) {
       console.error('[conv] top', e);
       setBadges(el.cvGemsOut, 0);
       setConvState('No se pudo calcular costo.', 'error');
+      renderConvenience(0);
     }
   }
 
@@ -936,6 +1110,8 @@
       const gems = await gemsToBuyGold_gemsMarket(copper);
       setGemsOut(gems);
       setConvState('Actualizado.');
+      // Nota: la barra refleja conveniencia de COMPRAR gemas con oro (coins->gems),
+      // por eso no la actualizamos aquí (dirección inversa). La referencia /400 se cubre en updateRef400 y onTopInput.
     } catch (e) {
       console.error('[conv] bottom', e);
       setGemsOut(0);
@@ -960,11 +1136,17 @@
           `<span style="display:inline-flex;gap:6px;align-items:center;margin-right:8px">
              ${iconGem}<strong>400</strong>
            </span> ${badgesHTMLFromCopper(copper)}`;
+        markUpdated(el.cvRef400);
       }
+
+      // pintar barra de conveniencia con la referencia real /400
+      renderConvenience(copper);
+
       window.toast?.('success','Referencia 400 actualizada', { ttl: 1500 });
     } catch (e) {
       console.warn('[conv] ref400', e);
       if (el.cvRef400) el.cvRef400.textContent = '—';
+      renderConvenience(0);
       window.toast?.('warn','No se pudo actualizar la referencia 400', { ttl: 2000 });
     }
   }
@@ -975,4 +1157,3 @@
     getSelectedToken: () => KeyManager.selected || null
   };
 })();
-``
