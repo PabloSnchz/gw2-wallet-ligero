@@ -15,6 +15,29 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 
 ---
 
+## Conversor Gem ↔ Gold — v2.0
+- Quick‑chips: Gemas (100/400/800/1200) y Oro (10/100/250).
+- Micro‑animaciones (`.updated`) en badges, output y barra.
+- Halo dorado reforzado; estado “Actualizado.” en pill.
+- Barra de conveniencia (ref 400) con sombras por estado.
+
+**Integración**: Los chips están en `index.html`. Los estilos se agregan al final de `css/main.css`. `js/app.js` escucha los chips y ejecuta el cálculo inmediato.
+
+---
+
+## Cámara del Brujo (WV) — Pastillas PvE/PvP/WvW
+Definí en `index.html` (antes de `router.js`):
+```html
+<script>
+  window.WV_MODE_ICONS = {
+    pve: 'https://wiki-es.guildwars2.com/images/5/51/C%C3%A1mara_del_Brujo_PvE.png', 
+    pvp: 'https://wiki-es.guildwars2.com/images/3/31/C%C3%A1mara_del_Brujo_PvP.png',
+    wvw: 'https://wiki-es.guildwars2.com/images/a/a3/C%C3%A1mara_del_Brujo_WvW.png'
+  };
+</script>
+
+
+
 ## ✨ Novedades principales — v5.0.0
 
 Refactor — Cámara del Brujo (WV)
