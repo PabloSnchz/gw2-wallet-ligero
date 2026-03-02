@@ -14,7 +14,7 @@
 (function () {
   'use strict';
 
-  console.info('[WV] router-wv.js v2.8.4 — outline + halo por rareza en tarjetas');
+  console.info('[WV] router-wv.js v2.8.4 — outline + halo por rareza en tarjetas + hydrateWVModePills');
 
   // ------------------------------- Utils DOM -------------------------------
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
@@ -65,7 +65,75 @@
       var a = Math.max(0, Math.min(1, Number(alpha)));
       if (Number.isNaN(a)) a = 1;
       return 'rgba('+r+','+g+','+b+','+a+')';
-    } catch { return null; }
+    } catch (e) { return null; }
+  }
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#039;');
+  }
+  function fmtNumber(n) { n = Number(n || 0); return n.toLocaleString('es-AR'); }
+  function now() { return Date.now(); }
+
+  // ------------------------------------------------------------------------
+  // WV: Hydrate de pastillas de modo (PvE / PvP / WvW)
+  // ------------------------------------------------------------------------
+  // Usa window.WV_MODE_ICONS (definido en index.html) para reemplazar texto por <img>.
+  function hydrateWVModePills(scope) {
+    try {
+      var ICONS = (window.WV_MODE_ICONS || {});
+      if (!ICONS || typeof ICONS !== 'object') return;
+      var root = scope || document;
+      // Soportamos varios selectores por robustez, pero la clase real en tus tarjetas es .wv-obj-mode
+      var nodes = root.querySelectorAll('.wv-obj-mode, .wv-mode-pill, [data-wv-mode], [data-mode]');
+      if (!nodes || !nodes.length) return;
+
+      Array.prototype.forEach.call(nodes, function (node) {
+        try {
+          if (!node || node.__wvIconHydrated) return;
+
+          // Leer modo: prioridad a data-wv-mode -> data-mode -> texto del nodo
+          var raw = (node.getAttribute('data-wv-mode')
+                  || node.getAttribute('data-mode')
+                  || (node.textContent || '')).trim().toLowerCase();
+
+          // Normalización simple (por si llega "pve"/"pvp"/"wvw" con casing raro)
+          var mode = (raw === 'pvp' || raw === 'pve' || raw === 'wvw') ? raw : (
+            raw.indexOf('pvp') >= 0 ? 'pvp' :
+            raw.indexOf('wvw') >= 0 ? 'wvw' : 'pve' // fallback
+          );
+
+          var url = ICONS[mode];
+          if (!url) return; // si no hay icono para ese modo, no tocamos el contenido (deja texto)
+
+          // Si ya hay una imagen dentro y coincide, no duplicar
+          var hasImg = node.querySelector('img');
+          if (hasImg) { node.__wvIconHydrated = true; return; }
+
+          // Limpiar texto y colocar <img> accesible
+          node.textContent = '';
+          var img = document.createElement('img');
+          img.src = url;
+          img.alt = mode.toUpperCase();
+          img.width = 16; img.height = 16;
+          img.decoding = 'async';
+          img.loading = 'lazy';
+          img.referrerPolicy = 'no-referrer';
+          img.className = 'wv-mode-pill__img';
+          node.appendChild(img);
+
+          // Marcas auxiliares
+          node.setAttribute('data-mode', mode);
+          node.classList.add('wv-mode-pill--hydrated');
+
+          node.__wvIconHydrated = true;
+        } catch (_e) {}
+      });
+    } catch (_eAll) {}
   }
 
   // ---------------------- Sidebar: link activo por hash --------------------
@@ -161,17 +229,6 @@
     var tok = (sel.value || '').trim();
     return tok || null;
   }
-
-  function escapeHtml(str) {
-    return String(str || '')
-      .replace(/&/g,'&amp;')
-      .replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;')
-      .replace(/'/g,'&#039;');
-  }
-  function fmtNumber(n) { n = Number(n || 0); return n.toLocaleString('es-AR'); }
-  function now() { return Date.now(); }
 
   // ------------------------------- WV State --------------------------------
   var WV = (function () {
@@ -297,13 +354,17 @@
       list.forEach(function (o) {
         var statusClass = o.claimed ? '' : (o.pct >= 100 ? '' : ' wv-obj-status--pending');
         var statusText  = o.claimed ? '✅ Reclamado' : (o.pct >= 100 ? '✔️ Completado' : '… En progreso');
+        // o.track ya viene en lower-case; si está vacío, mostramos PvE
+        var pillText = (o.track || 'pve').toUpperCase();
+
         html.push(
           '<div class="wv-obj-card">',
             '<div class="wv-obj-head">',
               '<div class="wv-obj-title">',
                 escapeHtml(o.title),
               '</div>',
-              '<span class="wv-obj-mode">'+(o.track||'PvE')+'</span>',
+              // Pastilla: la hidratamos luego para reemplazar por <img>
+              '<span class="wv-obj-mode" data-wv-mode="'+escapeHtml(o.track || 'pve')+'">'+pillText+'</span>',
             '</div>',
 
             '<div class="wv-obj-meta">',
@@ -321,6 +382,9 @@
 
       html.push('</div>');
       host.innerHTML = html.join('');
+
+      // —— HIDRATAR pastillas de modo ahora que ya están en el DOM ——
+      hydrateWVModePills(host);
     }
 
     // ---- Toolbar ----
@@ -907,7 +971,7 @@
       }
     }
 
-    // PUBLICAR WV PARA CONSOLA/DEBUG
+    // PUBLICAR WV PARA CONSOLA/DEBUG (y exponer hidratación de pastillas)
     var api = {
       activate: activate,
       setActiveTab: setActiveTab,
@@ -915,9 +979,23 @@
       deactivate: deactivate,
       onVisibilityChange: onVisibilityChange,
       onTokenChanged: onTokenChanged,
+      hydrateModePills: function(scope){ hydrateWVModePills(scope || el('wvPanel')); },
       __debugRows: []
     };
     try { if (typeof window !== 'undefined') window.WV = api; } catch (_){}
+
+    // Observer para re-hidratar si el panel cambia dinámicamente
+    try {
+      var wvPanel = els.panel || el('wvPanel');
+      if (wvPanel && 'MutationObserver' in window) {
+        var mo = new MutationObserver(function(muts){
+          for (var i=0;i<muts.length;i++){
+            if (muts[i].addedNodes && muts[i].addedNodes.length) { hydrateWVModePills(wvPanel); break; }
+          }
+        });
+        mo.observe(wvPanel, { childList:true, subtree:true });
+      }
+    } catch (_obsErr) {}
 
     return api;
   })();
@@ -961,6 +1039,8 @@
       try {
         showPanel('wvPanel');
         if (WV && typeof WV.activate === 'function') WV.activate();
+        // por si el contenido ya estaba, hidratamos rápidamente
+        hydrateWVModePills(el('wvPanel'));
       } catch (e) { console.error('[router] WV.activate error', e); }
       finally { updateSidebarFor('wv'); setActiveNav(h); }
       return;
@@ -982,6 +1062,7 @@
         WV.onTokenChanged && WV.onTokenChanged(token);
         WV.ensureLoadTab && WV.ensureLoadTab('shop');
         WV.activate && WV.activate();
+        hydrateWVModePills(el('wvPanel'));
       }
     } catch (e) {
       console.warn('[router] onKeySelectChange error', e);
@@ -1012,6 +1093,8 @@
     });
 
     route();
+    // Hidratación defensiva por si WV ya está visible al cargar
+    hydrateWVModePills(el('wvPanel'));
   }
 
   if (document.readyState === 'loading') {

@@ -1,7 +1,7 @@
 /* ===========================================================================
  * js/achievements.js — Achievements con toolbar, aside, wiki links,
  * ocultar completados, categorías e iconos (logro+categoría) + deep‑links.
- * Versión: 2.6.0 (2026‑02‑27)
+ * Versión: 2.6.0 (2026‑02‑27)  + UI polish (títulos robustos + barra de progreso + anti-overflow)
  * =========================================================================== */
 
 (function (root) {
@@ -54,7 +54,7 @@
   function pct100(x){ return Math.round(x*1000)/10; }
   function fmtPct(x){ return pct100(x).toFixed(1) + '%'; }
   function esc(s) {
-    return String(s || '').replace(/[&<>\"']/g, function (m) {
+    return String(s || '').replace(/[&\<\>\"']/g, function (m) {
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m];
     });
   }
@@ -63,7 +63,7 @@
   }
   function getSelectedToken(){ try { return root.__GN__?.getSelectedToken?.() || null; } catch(_){ return null; } }
 
-  // Icons helper (directo del API). Si querés usar GW2 Treasures 16/32/64, reescribí acá.
+  // Icons helper (directo del API)
   function iconImg(url, size, alt){
     if(!url) return '';
     var s = Number(size||18);
@@ -71,7 +71,6 @@
   }
 
   // --------------------------- Deep‑links (hash) ----------------------------
-  // hash: #/account/achievements?q=...&pct=0.9&cat=123&done=hide
   function parseHashParams(){
     var h = String(location.hash || '');
     var idx = h.indexOf('?');
@@ -108,7 +107,6 @@
   function writeFiltersToHashSilently(){
     var base = '#/account/achievements';
     var params = new URLSearchParams();
-    // Guardamos el query SIN normalizar (lo que ve el usuario)
     var qRaw = el.search ? (el.search.value || '') : state.q;
     if (qRaw) params.set('q', qRaw);
     if (state.pct && state.pct !== 0.8) params.set('pct', String(state.pct));
@@ -158,11 +156,29 @@
     return { total: total, completed: completed, pct: ratio };
   }
 
+  // === NUEVO: helpers barra de progreso ===================================
+  function progressSeverity(pr){
+    var pct = Math.round((pr?.pct || 0) * 100);
+    if (pct >= 100) return 'done'; // Verde
+    if (pct > 90)   return '90';   // Amarillo
+    if (pct > 80)   return '80';   // Naranja
+    return ''; // Neutral (<= 80%)
+  }
+  function progressBarHTML(pr){
+    var pct = Math.round((pr?.pct || 0) * 100);
+    var sev = progressSeverity(pr);
+    var cls = 'ach-prog__bar' + (sev ? (' ach-prog--' + sev) : '');
+    return (
+      '<div class="ach-prog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'" aria-label="Progreso '+pct+'%">'+
+        '<div class="'+cls+'" style="width:'+pct+'%;"></div>'+
+      '</div>'
+    );
+  }
+
   // ---------------------------- Carga categorías ----------------------------
   async function ensureCategories(){
     if (state.catsLoaded) return;
     try {
-      // /v2/achievements/categories: name + icon + achievements (por categoría)
       var url = 'https://api.guildwars2.com/v2/achievements/categories?ids=all&lang=es';
       var res = await fetch(url, { headers: { 'Accept': 'application/json' } });
       var arr = await res.json().catch(function(){ return []; });
@@ -170,7 +186,6 @@
       state.categories = arr.slice();
       state.catById = new Map(arr.map(function(c){ return [String(c.id), c]; }));
 
-      // achievementId -> categoryId (primera coincidencia)
       var map = new Map();
       arr.forEach(function(cat){
         var list = Array.isArray(cat.achievements) ? cat.achievements : [];
@@ -210,99 +225,85 @@
     return '<a class="btn btn--ghost" href="'+href+'" target="_blank" rel="noopener" title="Abrir en la Wiki">Wiki</a>';
   }
 
+  // === Resumen (Top 12) ====================================================
   function cardSummaryHTML(meta, r, pr){
     var icon = iconImg(meta?.icon, 18, meta?.name);
     var name = esc(meta?.name || ('#' + r.id));
     var catBadge = categoryBadgeHTML(r.id);
-    var ptxt = pr.cur + '/' + pr.max + ' (' + fmtPct(pr.pct) + ')';
-    var badge = (pr.pct >= 1)
-      ? '<span class="pill pill--ok">Completado</span>'
-      : '<span class="pill">' + fmtPct(pr.pct) + '</span>';
 
+    var pctTxt = fmtPct(pr.pct);
+    var ratioTxt = pr.cur + '/' + pr.max;
+    var badge = (pr.pct >= 1) ? '<span class="pill pill--ok">Completado</span>' : '';
     var wiki = wikiLinkHTML(meta);
 
     return (
       '<article class="card a-card" data-id="' + r.id + '">' +
-        '<button class="star" data-star="'+r.id+'" title="Favorito" style="display:none">★</button>' + // reservado
         '<div class="card__head a-head">' +
           '<h3 class="card__title a-title">' + icon + name + '</h3>' +
           '<div class="card__amount-wrap a-amount">' + badge + '</div>' +
         '</div>' +
         (catBadge ? ('<div class="card__desc a-desc">' + catBadge + '</div>') : '<div class="card__desc a-desc"></div>') +
         '<div class="card__meta a-meta">' +
-          '<span class="cats">' + esc(pr.label) + ' • ' + ptxt + '</span>' +
+          '<span class="cats">' + esc(pr.label) + ' • ' + ratioTxt + '</span>' +
           (wiki ? ('<span class="a-actions">' + wiki + '</span>') : '') +
         '</div>' +
+        '<div class="ach-progline"><span>Progreso</span><span>'+ pctTxt +'</span></div>' +
+        progressBarHTML(pr) +
       '</article>'
     );
   }
 
-  function renderSummary(){
-    if (!el.summaryGrid) return;
-
-    var rows = [];
-    (state.acc || []).forEach(function (r) {
-      var meta = state.metaById.get(r.id);
-      if (!meta) return;
-
-      var pr = computeProgress(r, meta);
-
-      // 🔥 NUEVO: si “Ocultar completados” está activo → excluimos pct = 1
-      if (state.hideDone && pr.pct >= 1) return;
-
-      rows.push({ r: r, meta: meta, pr: pr });
-    });
-
-    // Orden descendente por % completado
-    rows.sort(function(a,b){ return b.pr.pct - a.pr.pct; });
-
-    // TOP 12 incompletos
-    var top = rows.slice(0, 12);
-
-    el.summaryGrid.innerHTML = top.map(function(x){
-      return cardSummaryHTML(x.meta, x.r, x.pr);
-    }).join('');
-
-    // Recalcular estadísticas solo con el subset filtrado
-    var total = rows.length;
-    var completed = rows.filter(x => x.pr.pct >= 1).length;
-    var pct = total ? completed / total : 0;
-
-    if (el.summaryStat)
-      el.summaryStat.textContent =
-        'Completados: ' + completed + '/' + total + ' (' + fmtPct(pct) + ')';
-  }
-
+  // === Casi listos =========================================================
   function rowNearlyHTML(meta, r, pr){
     var icon = iconImg(meta?.icon, 18, meta?.name);
     var name = esc(meta?.name || ('#' + r.id));
     var catBadge = categoryBadgeHTML(r.id);
-    var ptxt = pr.cur + '/' + pr.max + ' • ' + fmtPct(pr.pct);
+
+    var pctTxt = fmtPct(pr.pct);
+    var ratioTxt = pr.cur + '/' + pr.max;
     var wiki = wikiLinkHTML(meta);
 
     return (
       '<article class="card a-card" data-id="' + r.id + '">' +
         '<div class="card__head a-head">' +
           '<h3 class="card__title a-title">' + icon + name + '</h3>' +
-          '<div class="card__amount-wrap a-amount"><span class="pill">' + fmtPct(pr.pct) + '</span></div>' +
+          '<div class="card__amount-wrap a-amount"></div>' +
         '</div>' +
         (catBadge ? ('<div class="card__desc a-desc">' + catBadge + '</div>') : '<div class="card__desc a-desc"></div>') +
         '<div class="card__meta a-meta">' +
-          '<span class="cats">' + ptxt + '</span>' +
+          '<span class="cats">' + ratioTxt + '</span>' +
           (wiki ? ('<span class="a-actions">' + wiki + '</span>') : '') +
         '</div>' +
+        '<div class="ach-progline"><span>Progreso</span><span>'+ pctTxt +'</span></div>' +
+        progressBarHTML(pr) +
       '</article>'
     );
   }
 
+  function renderSummary(){
+    if (!el.summaryGrid) return;
+    var rows = [];
+    (state.acc || []).forEach(function (r) {
+      var meta = state.metaById.get(r.id);
+      if (!meta) return;
+      var pr = computeProgress(r, meta);
+      if (state.hideDone && pr.pct >= 1) return;
+      rows.push({ r: r, meta: meta, pr: pr });
+    });
+    rows.sort(function(a,b){ return b.pr.pct - a.pr.pct; });
+    var top = rows.slice(0, 12);
+    el.summaryGrid.innerHTML = top.map(function(x){ return cardSummaryHTML(x.meta, x.r, x.pr); }).join('');
+    var total = rows.length;
+    var completed = rows.filter(x => x.pr.pct >= 1).length;
+    var pct = total ? completed / total : 0;
+    if (el.summaryStat) el.summaryStat.textContent = 'Completados: ' + completed + '/' + total + ' (' + fmtPct(pct) + ')';
+  }
+
   function passesFilters(meta, pr, achId){
-    // Filtro por categoría
     if (state.cat) {
       var cid = state.achIdToCat.get(String(achId)) || '';
       if (String(cid) !== String(state.cat)) return false;
     }
-
-    // Filtro por búsqueda
     if (state.q) {
       var q = state.q;
       var name = norm(meta?.name);
@@ -310,11 +311,7 @@
       var cat  = norm(String(meta?.category || ''));
       if (!(name.includes(q) || desc.includes(q) || cat.includes(q))) return false;
     }
-
-    // Ocultar completados (sin afectar el panel resumen)
     if (state.hideDone && pr.pct >= 1) return false;
-
-    // “Casi listos”: >= umbral y < 100%
     if (pr.pct < state.pct) return false;
     return pr.pct < 1;
   }
@@ -329,14 +326,11 @@
     });
     rows.sort(function(a,b){ return b.pr.pct - a.pr.pct; });
     rows = rows.slice(0, 60);
-
     if (!rows.length) {
       el.nearlyGrid.innerHTML = '<p class="muted">No hay logros que coincidan con los filtros.</p>';
     } else {
       el.nearlyGrid.innerHTML = rows.map(function(x){ return rowNearlyHTML(x.meta, x.r, x.pr); }).join('');
     }
-
-    // Actualiza aside también
     renderAside(rows);
   }
 
@@ -361,11 +355,8 @@
 
   function ensureAside(){
     ensureAsideStyles();
-
     const host = document.querySelector('aside.col-side');
     if (!host) return;
-
-    // 1) Asegurar el contenedor #achAsidePanel
     let p = document.getElementById('achAsidePanel');
     if (!p) {
       p = document.createElement('section');
@@ -373,57 +364,30 @@
       p.id = 'achAsidePanel';
       host.appendChild(p);
     } else if (p.parentElement !== host) {
-      host.appendChild(p); // mover al contenedor correcto si hiciera falta
+      host.appendChild(p);
     }
-
-    // 2) (Re)construir el esqueleto si está vacío o incompleto
     const hasTop = !!p.querySelector('#achAsideTop');
     const hasCats = !!p.querySelector('#achAsideCats');
     if (!hasTop || !hasCats) {
-      // Limpiar placeholders/estructuras parciales
       p.innerHTML = '';
-
-      // ====== Bloque "Casi listos (Top 5)" ======
       const head1 = document.createElement('div');
       head1.className = 'panel-head';
       const h3_1 = document.createElement('h3');
       h3_1.className = 'panel-head__title';
       h3_1.textContent = 'Casi listos (Top 5)';
       head1.appendChild(h3_1);
-
-      const hr1 = document.createElement('hr');
-      hr1.className = 'hr-hairline';
-
-      const body1 = document.createElement('div');
-      body1.className = 'panel__body';
-      const ul = document.createElement('ul');
-      ul.id = 'achAsideTop';
-      ul.className = 'ach-mini-list';
+      const hr1 = document.createElement('hr'); hr1.className = 'hr-hairline';
+      const body1 = document.createElement('div'); body1.className = 'panel__body';
+      const ul = document.createElement('ul'); ul.id = 'achAsideTop'; ul.className = 'ach-mini-list';
       body1.appendChild(ul);
-
-      // ====== Bloque "Categorías" ======
-      const head2 = document.createElement('div');
-      head2.className = 'panel-head';
-      const h3_2 = document.createElement('h3');
-      h3_2.className = 'panel-head__title';
-      h3_2.textContent = 'Categorías';
-      head2.appendChild(h3_2);
-
-      const hr2 = document.createElement('hr');
-      hr2.className = 'hr-hairline';
-
-      const body2 = document.createElement('div');
-      body2.className = 'panel__body';
-      const cats = document.createElement('div');
-      cats.id = 'achAsideCats';
-      cats.className = 'ach-cats-chips';
+      const head2 = document.createElement('div'); head2.className = 'panel-head';
+      const h3_2 = document.createElement('h3'); h3_2.className = 'panel-head__title'; h3_2.textContent = 'Categorías'; head2.appendChild(h3_2);
+      const hr2 = document.createElement('hr'); hr2.className = 'hr-hairline';
+      const body2 = document.createElement('div'); body2.className = 'panel__body';
+      const cats = document.createElement('div'); cats.id = 'achAsideCats'; cats.className = 'ach-cats-chips';
       body2.appendChild(cats);
-
-      // Ensamblar
       p.append(head1, hr1, body1, head2, hr2, body2);
     }
-
-    // 3) Guardar refs y asegurar visibilidad
     el.aside = p;
     el.asideTopList = p.querySelector('#achAsideTop');
     el.asideCats = p.querySelector('#achAsideCats');
@@ -432,7 +396,6 @@
 
   function renderAside(rowsNearly){
     ensureAside();
-    // Top 5 “casi listos”
     var top = (rowsNearly || []).slice(0,5);
     if (el.asideTopList) {
       if (!top.length) {
@@ -450,7 +413,6 @@
         }).join('');
       }
     }
-    // Chips de categorías
     if (el.asideCats) {
       var list = state.categories.slice().sort(function(a,b){ return String(a?.name||'').localeCompare(String(b?.name||'')); }).slice(0,30);
       el.asideCats.innerHTML = list.map(function(c){
@@ -458,8 +420,6 @@
         var active = (String(state.cat) === String(c.id));
         return '<button class="ach-chip" data-cid="'+esc(String(c.id))+'" title="'+esc(c.name||'')+'"'+(active?' style="outline:1px solid #355180"':'')+'>'+icon+esc(c.name||('#'+c.id))+'</button>';
       }).join('');
-
-      // Wire
       el.asideCats.querySelectorAll('.ach-chip').forEach(function(btn){
         btn.addEventListener('click', function(){
           var cid = btn.getAttribute('data-cid') || '';
@@ -484,16 +444,66 @@
       .ach-toolbar .group{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
       .ach-toolbar input[type="text"]{min-width:220px}
       .ach-toolbar select{min-width:160px}
+
+      /* FIX verde “Completado” */
       .ach-toolbar .pill--ok{background:#172318;border-color:#284c36;color:#b9f3c8}
-      /* FIX: restablecer verde para “Completado” */
       .pill--ok {background:#172318 !important;border-color:#284c36 !important;color:#b9f3c8 !important;}
-      /* Anti‑overflow en tarjetas */
-      .a-card{overflow:hidden}
-      .a-head{align-items:flex-start}
-      .a-title{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-      .a-desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-      .a-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-      .a-actions{display:inline-flex;gap:8px}
+
+      /* ===== Layout robusto para .a-card (flex, no grid) ===== */
+      .card.a-card{ padding-right:12px !important; }              /* limpia padding heredado */
+      .a-card{
+        display:flex; flex-direction:column; gap:6px;             /* columna */
+        overflow:visible;                                         /* no recortar contenido */
+      }
+      .a-card *{ min-width:0; }                                   /* evita desbordes en flex */
+      .a-head{ display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap; }
+      .a-head .a-title{ flex:1 1 auto; min-width:0; }
+      .a-head .a-amount{ flex:0 0 auto; }
+
+      .a-title{
+        display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+        overflow:hidden; overflow-wrap:anywhere;
+      }
+      .a-desc{
+        display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+        overflow:hidden; overflow-wrap:anywhere;
+      }
+
+      .a-meta{
+        display:flex; align-items:center; justify-content:space-between;
+        gap:8px; flex-wrap:wrap; width:100%;
+      }
+      .a-meta .cats{
+        flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; overflow-wrap:anywhere;
+      }
+      .a-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+      .a-actions .btn{ white-space:nowrap; flex:0 0 auto; }
+
+      /* ===== Barra de progreso ===== */
+      .ach-progline{
+        display:grid; grid-template-columns:1fr auto; align-items:center;
+        gap:8px; color:#cfd2d8; font-size:12px; margin-top:2px;
+      }
+      .ach-prog{
+        position:relative; height:8px; background:#16161a; border:1px solid #2d2a2f;
+        border-radius:999px; overflow:hidden; width:100%; box-sizing:border-box;
+      }
+      .ach-prog__bar{
+        position:absolute; left:0; top:0; bottom:0; width:0;
+        transition:width .18s ease;
+        background:linear-gradient(90deg, #f81313 0%, #ff4000 100%); /* neutral <=80% */
+      }
+      
+      .ach-prog__bar.ach-prog--80{
+        background: linear-gradient(90deg, #ff4000 0%, #ffa733 100%);
+      }   /* naranja >80% */
+      .ach-prog__bar.ach-prog--90{
+        background: linear-gradient(90deg, #ffa733 0%, #f6e100 100%);
+      }   /* amarillo >90% */
+      .ach-prog__bar.ach-prog--done{
+        background: linear-gradient(90deg, #7ff600 0%, #04ff4b 100%);
+      }   /* verde 100% */
+
     `;
     var s = document.createElement('style'); s.id='ach-toolbar-styles'; s.textContent=css;
     document.head.appendChild(s);
@@ -501,22 +511,15 @@
 
   function ensureRefreshButton(){
     if (!el.panel) return;
-    if (!el.head) {
-      el.head = el.panel.querySelector('.panel-head');
-      if (!el.head) return;
-    }
+    if (!el.head) el.head = el.panel.querySelector('.panel-head');
     if (el.head.querySelector('#achRefreshBtn')) return;
-
     var btn = document.createElement('button');
     btn.id = 'achRefreshBtn';
     btn.className = 'btn btn--ghost';
     btn.textContent = 'Refrescar';
     btn.title = 'Volver a consultar (sin caché)';
     btn.style.marginLeft = '8px';
-    btn.addEventListener('click', function () {
-      loadAll({ nocache: true }).catch(function(){});
-    });
-
+    btn.addEventListener('click', function () { loadAll({ nocache: true }).catch(function(){}); });
     var titleHost = el.head.querySelector('.panel-head__title');
     if (titleHost && titleHost.parentNode) titleHost.parentNode.appendChild(btn);
     else el.head.appendChild(btn);
@@ -529,7 +532,6 @@
     if (!el.body) el.body = el.panel.querySelector('.panel__body');
     var hostAfter = el.head || el.panel;
 
-    // Ocultar chips originales si existen
     if (!el.chipsOld) el.chipsOld = $('#achievementsPanel .chips');
     if (el.chipsOld) el.chipsOld.style.display = 'none';
 
@@ -540,7 +542,6 @@
     tb.innerHTML = [
       '<div class="group">',
         '<strong style="margin-right:6px">Logros:</strong>',
-        // Search (si existían los nodos originales, los adoptamos)
         '<input type="text" id="achSearch_alt" placeholder="Buscar logro…">',
       '</div>',
       '<div class="group">',
@@ -558,13 +559,11 @@
       '</div>'
     ].join('');
 
-    // Insertar inmediatamente debajo del header
     if (hostAfter && hostAfter.parentNode) hostAfter.parentNode.insertBefore(tb, hostAfter.nextSibling);
     else el.panel.insertBefore(tb, el.panel.firstChild);
 
     el.toolbar = tb;
 
-    // Reusar nodos originales si existen
     var oldSearch = document.getElementById('achSearch');
     var oldPct = document.getElementById('achPct');
 
@@ -580,7 +579,6 @@
   function fillCategorySelect(){
     if (!el.cat) return;
     if (el.cat.__filled) return;
-
     var frag = document.createDocumentFragment();
     var list = state.categories.slice().sort(function(a,b){
       return String(a?.name || '').localeCompare(String(b?.name || ''));
@@ -593,8 +591,6 @@
     });
     el.cat.appendChild(frag);
     el.cat.__filled = true;
-
-    // Sincronizar valor desde state/hash
     el.cat.value = state.cat || '';
   }
 
@@ -633,7 +629,6 @@
       el.hideDoneChk.addEventListener('change', function(){
         state.hideDone = !!el.hideDoneChk.checked;
         writeFiltersToHashSilently();
-        // 🔥 IMPORTANTE: volver a renderizar AMBAS vistas
         renderSummary();
         renderNearly();
       });
@@ -649,8 +644,6 @@
     el.summaryGrid = document.getElementById('achievementsSummary');
     el.summaryStat = document.getElementById('achSummaryStat');
     el.nearlyGrid  = document.getElementById('achievementsNearly');
-
-    // ♿ A11y: notificar cambios a lectores de pantalla
     if (el.summaryGrid) el.summaryGrid.setAttribute('aria-live','polite');
     if (el.nearlyGrid)  el.nearlyGrid.setAttribute('aria-live','polite');
   }
@@ -658,8 +651,7 @@
   function setLoading(on){
     state.loading = !!on;
     if (el.panel) {
-      var p = el.body;
-      if (!p) return;
+      var p = el.body; if (!p) return;
       if (on) p.setAttribute('aria-busy', 'true');
       else p.removeAttribute('aria-busy');
     }
@@ -680,8 +672,6 @@
     ensureDomRefs();
     ensureRefreshButton();
     ensureToolbar();
-
-    // Leer deep‑links antes de cargar
     readFiltersFromHashIntoState();
 
     var token = getSelectedToken();
@@ -695,22 +685,14 @@
 
     setLoading(true);
     try {
-      // Datos de cuenta
       var acc = await root.GW2Api.getAccountAchievements(token, { nocache: !!opts.nocache });
       state.acc = Array.isArray(acc) ? acc : [];
-
-      // Metadatos de logros
       var ids = pickIdsFromAccount(state.acc);
       var metas = ids.length ? await root.GW2Api.getAchievementsMeta(ids, { nocache: !!opts.nocache }) : [];
       state.metaById = buildMetaMap(metas);
-
-      // Categorías
       await ensureCategories();
       fillCategorySelect();
-
-      // Aside visible
       ensureAside();
-
       state.loaded = true;
       renderSummary();
       renderNearly();
@@ -751,6 +733,6 @@
   };
 
   root.Achievements = Achievements;
-  console.info(LOGP, 'OK: toolbar + aside + wiki + hideDone + categorias + anti-overflow');
+  console.info(LOGP, 'OK: toolbar + aside + wiki + hideDone + categorias + barras + FIX overflow');
 
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

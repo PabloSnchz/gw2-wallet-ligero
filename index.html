@@ -436,7 +436,7 @@
         </nav>
       </section>
     
-      <!-- Conversor (intacto) -->
+      <!-- Conversor -->
       <section class="panel" aria-labelledby="convTitle" id="asideConvSection">
         <div class="panel-head">
           <h3 class="panel-head__title" id="convTitle">Conversor Gem ↔ Gold</h3>
@@ -455,8 +455,14 @@
             </h4>
             <div class="conv2-row">
               <input id="cvGems" class="conv2-entry" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Gemas"/>
-              <div class="conv2-arrow" aria-hidden="true">→</div>
               <div id="cvGemsOut" class="coin-badges coin-badges--lg">—</div>
+            </div>
+            <!-- QUICK-CHIPS: Gemas -->
+            <div class="conv2-quick" id="cvGemsQuick" aria-label="Atajos de gemas">
+              <button type="button" data-gems="100" class="btn btn--ghost">100</button>
+              <button type="button" data-gems="400" class="btn btn--ghost">400</button>
+              <button type="button" data-gems="800" class="btn btn--ghost">800</button>
+              <button type="button" data-gems="1200" class="btn btn--ghost">1200</button>
             </div>
 
             <!-- CONSEGUIR ORO -->
@@ -468,8 +474,13 @@
             </h4>
             <div class="conv2-row">
               <input id="cvGold" class="conv2-entry conv2-gold" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Oro (g)"/>
-              <div class="conv2-arrow" aria-hidden="true">→</div>
               <output id="cvGoldOut" class="conv2-gems">—</output>
+            </div>
+            <!-- QUICK-CHIPS: Oro -->
+            <div class="conv2-quick" id="cvGoldQuick" aria-label="Atajos de oro">
+              <button type="button" data-gold="10" class="btn btn--ghost">10 g</button>
+              <button type="button" data-gold="100" class="btn btn--ghost">100 g</button>
+              <button type="button" data-gold="250" class="btn btn--ghost">250 g</button>
             </div>
 
             <div class="conv2-actions">
@@ -481,6 +492,20 @@
             <div class="conv2-refline">
               <span id="cvRef400" class="coin-badges coin-badges--lg">—</span>
             </div>
+
+            <!-- NUEVO: Índice de conveniencia -->
+            <hr class="hr-hairline">
+            <div id="convScore" class="conv2-score" aria-live="polite">
+              <div class="conv2-score__head">
+                <strong>Índice de conveniencia (400 gemas)</strong>
+                <span id="convScoreLabel" class="conv2-score__label">—</span>
+              </div>
+              <div class="conv2-meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Conveniencia para comprar gemas">
+                <div id="convScoreBar" class="conv2-meter__fill" style="width:0%"></div>
+              </div>
+              <p id="convScoreHint" class="muted" style="margin:6px 0 0">Calculando…</p>
+            </div>
+            <!-- /NUEVO -->
 
           </div>
         </div>
@@ -576,6 +601,7 @@
   </script>
   <script defer src="js/router.js?v=2.8.4"></script>
   <script src="js/wallet-theme.js?v=1.0.2"></script>
+  <script src="js/meta-theme.js?v=1.0.0"></script>
+  <script src="js/achievements-theme.js?v=1.0.0"></script>
 </body>
 </html>
-``
