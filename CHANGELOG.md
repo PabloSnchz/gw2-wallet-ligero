@@ -6,6 +6,22 @@ El formato sigue las recomendaciones de
 y el versionado **SemVer** (https://semver.org/).
 
 
+## CHANGELOG 
+
+```markdown
+# Changelog
+
+## [5.2.0] - 2026-03-01
+### Added
+- **UI Overhaul**: rediseño de tarjetas y layouts de Wallet, Meta & Logros; unificación de barras de progreso.
+- **Conversor v2.0**: quick‑chips (gemas/oro), micro‑animaciones, halo dorado reforzado, estado “Actualizado.” en pill, sombras dinámicas de la barra y layout simétrico.
+
+### Fixed
+- **WV**: pastillas de modo (PvE/PvP/WvW) muestran iconos correctamente. Se incorpora `hydrateWVModePills(scope)` y se llama tras render, cambios de tab y de token. Se añade `MutationObserver` en `#wvPanel`.
+
+### Changed
+- Pulidos de estilo en `theme-polish.css`, halos por rareza y coherencia de tonos/pills.
+
 ## [4.0.0] – 2026-02-228
 
 ### Wallet
