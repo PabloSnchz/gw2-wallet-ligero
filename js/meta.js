@@ -5,7 +5,7 @@
   const $  = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => Array.from((r||document).querySelectorAll(s));
 
-  console.info('%cMetaEventos meta.js v3.1.3 — Tarjetas estilo WV (pin + estado + tint) [stable]',
+  console.info('%cMetaEventos meta.js v3.2.1 — Recuadro + logo de expansión (borde del color del título)',
     'color:#7dd3fc; font-weight:700');
 
   // --------- Elementos del DOM ----------
@@ -43,27 +43,92 @@
   const DELUXE_DEFAULT  = (localStorage.getItem(LS_META_DELUXE)  ?? 'on')  === 'on';
   const COMPACT_DEFAULT = (localStorage.getItem(LS_META_COMPACT) ?? 'off') === 'on';
 
-  const EXP_MAP = {
-    'core': 'core', 'core tyria': 'core',
-    'hot': 'hot', 'heart of thorns': 'hot',
-    'pof': 'pof', 'path of fire': 'pof',
-    'eod': 'eod', 'end of dragons': 'eod',
-    'soto': 'soto', 'secrets of the obscure': 'soto',
-    'ls4': 'livingworlds4', 'living world s4': 'livingworlds4',
-    'living world season 4': 'livingworlds4', 'livingworlds4': 'livingworlds4',
-    'janthir': 'janthir'
-  };
+  
+// --------- Normalización de expansiones/temporadas ----------
+const EXP_MAP = {
+  // Core
+  'core':'core', 'core tyria':'core',
 
-  // Tinte por expansión (para el título)
-  const EXP_TINT = {
-    core:    '#dddddd',
-    hot:     '#b9f3c8',
-    pof:     '#fbc49e',
-    eod:     '#9cd6e4',
-    soto:    '#d7caff',
-    janthir: '#c5ddff',
-    livingworlds4: '#d7caff'
-  };
+  // Heart of Thorns
+  'hot':'hot', 'heart of thorns':'hot',
+
+  // Path of Fire
+  'pof':'pof', 'path of fire':'pof',
+
+  // End of Dragons
+  'eod':'eod', 'end of dragons':'eod',
+
+  // Secrets of the Obscure
+  'soto':'soto', 'secrets of the obscure':'soto',
+
+  // Janthir
+  'janthir':'janthir',
+
+  // Visions of Eternity
+  'voe':'visionseternity', 'visions of eternity':'visionseternity',
+
+  // Living World Season 2
+  'lw2':'livingworlds2', 'living world s2':'livingworlds2',
+  'living world season 2':'livingworlds2', 'livingworlds2':'livingworlds2',
+
+  // Living World Season 3
+  'lw3':'livingworlds3', 'living world s3':'livingworlds3',
+  'living world season 3':'livingworlds3', 'livingworlds3':'livingworlds3',
+
+  // Living World Season 4 (ya existía, lo mantenemos)
+  'ls4':'livingworlds4', 'living world s4':'livingworlds4',
+  'living world season 4':'livingworlds4', 'livingworlds4':'livingworlds4',
+
+  // The Icebrood Saga (Living World Season 5)
+  'ibs':'icebroodsaga', 'icebrood saga':'icebroodsaga',
+  'the icebrood saga':'icebroodsaga', 'living world season 5':'icebroodsaga',
+  'lw5':'icebroodsaga',
+
+  // Agrupadores/aliases comunes dentro de IBS
+  'visions of the past':'icebroodsaga',
+  'steel and fire':'icebroodsaga'
+};
+
+
+  // --------- Tinte/colores por expansión/temporada ----------
+const EXP_TINT = {
+  // Core (rojo oficial del logo)
+  core: '#DC241F',     // fuente: página del logo oficial GW2
+
+  // Expansions (paleta práctica y consistente en UI)
+  hot: '#1E8D39',      // verde Maguuma
+  pof: '#f5a14c',      // magenta del desierto
+  eod: '#15C3B7',      // jade/teal Cantha
+  soto: '#A6A75A',     // violeta/azul “sky”
+  janthir: '#3A6EEB',  // verde-oliva/“wilds”
+  visionseternity: '#C28E0E', // azul “castoran/mist”
+
+  // Living World / Saga
+  livingworlds2: '#f6654f',   // dorado (pre-HoT, Tyria central)
+  livingworlds3: '#1E8D39',   // sigue paleta HoT
+  livingworlds4: '#e545ca',   // sigue paleta PoF
+  icebroodsaga: '#7EC3FF'     // azul “ice/tundra”
+};
+
+  // --------- Iconos oficiales (páginas File:/artículos de la wiki) ----------
+const EXP_ICON = {
+  // Core (Tyria base)
+  core: 'https://wiki.guildwars2.com/images/thumb/d/df/GW2Logo_new.png/600px-GW2Logo_new.png',
+
+  // Expansions
+  hot: 'https://wiki.guildwars2.com/images/thumb/5/52/HoT_Texture_Centered_Trans.png/600px-HoT_Texture_Centered_Trans.png',
+  pof: 'https://wiki.guildwars2.com/images/thumb/0/0e/GW2-PoF_Texture_Centered_Trans.png/600px-GW2-PoF_Texture_Centered_Trans.png',
+  eod: 'https://wiki.guildwars2.com/images/thumb/c/cc/EoD_Texture_Trans.png/600px-EoD_Texture_Trans.png',
+  soto: 'https://wiki.guildwars2.com/images/4/44/Secrets_of_the_Obscure_logo.png',
+  janthir: 'https://wiki.guildwars2.com/images/thumb/6/60/Janthir_Wilds_logo.png/600px-Janthir_Wilds_logo.png',
+  visionseternity: 'https://wiki.guildwars2.com/images/thumb/c/cd/Visions_of_Eternity_logo.png/600px-Visions_of_Eternity_logo.png',
+
+  // Living World / Saga
+  livingworlds2: 'https://wiki.guildwars2.com/images/e/e8/Living_World_logo.png',
+  livingworlds3: 'https://wiki.guildwars2.com/images/thumb/c/ca/Living_World_Season_3_logo.png/450px-Living_World_Season_3_logo.png',
+  livingworlds4: 'https://wiki.guildwars2.com/images/thumb/a/a1/Living_World_Season_4_logo.png/450px-Living_World_Season_4_logo.png',
+  icebroodsaga: 'https://wiki.guildwars2.com/images/thumb/1/19/Living_World_Season_5_logo.png/450px-Living_World_Season_5_logo.png'
+};
 
   let seed = [];                 // metas (assets/meta-events.json)
   let favs = new Set();          // fijados (ids)
@@ -75,6 +140,10 @@
     lastTs:      0,
     lastHuman:   '—'
   };
+
+  // >>> NUEVO: control de concurrencia para flags
+  let _flagsSeq = 0;
+  let _flagsAbort = null;
 
   // --------- Utilidades ----------
   function esc(s){
@@ -175,6 +244,10 @@
     if(!t) return null;
     return `${t.slice(0,4)}…${t.slice(-4)}`; // no exponemos completa
   }
+  function tokenFingerprintFrom(t){
+    if(!t) return null;
+    return `${t.slice(0,4)}…${t.slice(-4)}`;
+  }
   function todayUTCKey(){
     const d = new Date();
     return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth()+1)}-${pad2(d.getUTCDate())}`;
@@ -209,28 +282,29 @@
   }
 
   // --------- API GW2: banderas de cuenta ----------
-  async function fetchWorldBosses(token){
+  async function fetchWorldBosses(token, opts = {}){
     if(!token) return new Set();
     const url = `https://api.guildwars2.com/v2/account/worldbosses?access_token=${encodeURIComponent(token)}`;
-    const r = await fetch(url, { headers:{'Accept':'application/json'} });
-    if(r.status===401 || r.status===403) return new Set();
+    const r = await fetch(url, { headers:{'Accept':'application/json'}, signal: opts.signal });
+    if (r.status === 401 || r.status === 403) return new Set();
     const arr = await r.json().catch(() => []);
     return new Set(Array.isArray(arr) ? arr : []);
   }
-  async function fetchMapChests(token){
+  async function fetchMapChests(token, opts = {}){
     if(!token) return new Set();
     const url = `https://api.guildwars2.com/v2/account/mapchests?access_token=${encodeURIComponent(token)}`;
-    const r = await fetch(url, { headers:{'Accept':'application/json'} });
-    if(r.status===401 || r.status===403) return new Set();
+    const r = await fetch(url, { headers:{'Accept':'application/json'}, signal: opts.signal });
+    if (r.status === 401 || r.status === 403) return new Set();
     const arr = await r.json().catch(() => []);
     return new Set(Array.isArray(arr) ? arr : []);
   }
 
   // --------- Cache por Key (TTL 5min) ----------
-  function loadFlagsFromCache(){
+  function loadFlagsFromCache(tokenOpt){
     try{
       const all = JSON.parse(localStorage.getItem(LS_FLAGS) || '{}');
-      const fp = tokenFingerprint(); if(!fp) return null;
+      const fp = tokenFingerprintFrom(tokenOpt ?? (window.__GN__?.getSelectedToken?.() ?? null));
+      if(!fp) return null;
       const item = all[fp]; if(!item) return null;
       if(!item.ts || (Date.now() - item.ts) > FLAGS_TTL_MS) return null;
       return {
@@ -241,10 +315,11 @@
       };
     }catch{ return null; }
   }
-  function saveFlagsToCache(){
+  function saveFlagsToCache(tokenOpt){
     try{
       const all = JSON.parse(localStorage.getItem(LS_FLAGS) || '{}');
-      const fp = tokenFingerprint(); if(!fp) return;
+      const fp = tokenFingerprintFrom(tokenOpt ?? (window.__GN__?.getSelectedToken?.() ?? null));
+      if(!fp) return;
       all[fp] = {
         worldbosses: [...accountFlags.worldbosses],
         mapchests:   [...accountFlags.mapchests],
@@ -441,11 +516,19 @@
     const k = expKeyOf(meta);
     return EXP_TINT[k] || '#e9e9f1';
   }
+
+  // >>> MOD: chip (recuadro) por expansión con logo + clase específica
   function chipForExp(meta){
     const k = expKeyOf(meta);
-    const cls = `meta-chip meta-chip--${k}`;
-    const label = esc(meta.expansion || '—');
-    return `<span class="${cls}" title="Expansión / Temporada: ${label}">${label}</span>`;
+    const cls = `meta-chip meta-chip--exp meta-chip--${k}`;
+    const label = String(meta.expansion || '—');
+    const url = EXP_ICON[k] || '';
+    if (url) {
+      // img + title para accesibilidad; sin texto redundante
+      return `<span class="${cls}" title="Expansión / Temporada: ${esc(label)}" aria-label="Expansión / Temporada: ${esc(label)}">${iconTag(url, 16, label)}</span>`;
+    }
+    // Fallback textual si aún no definiste el logo
+    return `<span class="${cls}" title="Expansión / Temporada: ${esc(label)}" aria-label="Expansión / Temporada: ${esc(label)}">${esc(label)}</span>`;
   }
 
   function chipsForTiming(inst, minsRemaining){
@@ -511,18 +594,17 @@
     // Botón pin (en lugar de estrella)
     const pinBtn = `<button class="wv-pin ${isFav?'wv-pin--active':''}" data-pin="${meta.id}" aria-pressed="${isFav?'true':'false'}" title="${isFav?'Desfijar':'Fijar'}">📌</button>`;
 
-    // Chips (expansión, timing)
+    // Chips (expansión [logo], timing)
     const chips = [ chipForExp(meta), ...chipsForTiming(inst, minsRemaining) ].join('');
 
     // Tinte de título por expansión
     const tint = expTintColor(meta);
     const styleTint = tint ? ` style="--meta-title-color:${tint}"` : '';
 
-    // Línea secundaria (mapa/exp/tipo + estado)
+    // >>> MOD: Línea secundaria SIN el pill textual de "expansión"
     const subLine = `
       <div class="meta-tags">
         <span class="meta-pill">${meta.map ? esc(meta.map) : '—'}</span>
-        <span class="meta-pill">${esc(meta.expansion)}</span>
         <span class="meta-pill">${esc(meta.type)}</span>
         ${statusHtml}
       </div>
@@ -806,7 +888,8 @@
     const delta = nextResetUTC().getTime() - Date.now();
     if(delta > 0 && delta < 36*3600*1000){
       midnightTimer = setTimeout(async ()=>{
-        await refreshAccountFlags(true);
+        // >>> usar el pipeline con control de concurrencia
+        await window.Meta.refresh({ token: window.__GN__?.getSelectedToken?.() ?? null, nocache: true });
         manualDoneSet = loadManualDone();
         render();
         scheduleMidnightAutoRefresh();
@@ -821,8 +904,8 @@
   }
 
   // ---------- Flags de cuenta ----------
-  async function refreshAccountFlags(force=false){
-    const token = window.__GN__?.getSelectedToken?.() ?? null;
+  async function refreshAccountFlags(force=false, opts = {}){
+    const token = opts.token ?? (window.__GN__?.getSelectedToken?.() ?? null);
 
     if(!token){
       accountFlags = { worldbosses:new Set(), mapchests:new Set(), lastTs:0, lastHuman:'—' };
@@ -831,23 +914,38 @@
     }
 
     if(!force){
-      const cached = loadFlagsFromCache();
+      const cached = loadFlagsFromCache(token);
       if(cached){
         accountFlags = cached;
         return;
       }
     }
 
+    // Concurrencia: abortar petición anterior y marcar secuencia
+    _flagsSeq += 1;
+    const seq = _flagsSeq;
     try{
+      if (_flagsAbort) _flagsAbort.abort();
+      _flagsAbort = new AbortController();
+
       setStatus('Actualizando "Hecho hoy"…');
-      const [wb, mc] = await Promise.all([ fetchWorldBosses(token), fetchMapChests(token) ]);
+
+      const [wb, mc] = await Promise.all([
+        fetchWorldBosses(token, { signal: _flagsAbort.signal }),
+        fetchMapChests(token, { signal: _flagsAbort.signal })
+      ]);
+
+      // Si llegó una respuesta vieja, la descartamos (última gana)
+      if (seq !== _flagsSeq || _flagsAbort.signal.aborted) return;
+
       accountFlags.worldbosses = wb;
       accountFlags.mapchests   = mc;
       accountFlags.lastTs      = Date.now();
       accountFlags.lastHuman   = fmtLocalTime(new Date(accountFlags.lastTs));
-      saveFlagsToCache();
+      saveFlagsToCache(token);
       setStatus('Listo.','ok');
     }catch(e){
+      if (e?.name === 'AbortError') return; // fue reemplazada por otra actualización: OK
       console.warn('[meta] account flags', e);
       setStatus('No se pudo actualizar "Hecho hoy".','error');
     }
@@ -968,7 +1066,10 @@
       renderSkeletonMeta(8);
       loadFavs();
       await loadSeed();
-      await refreshAccountFlags(); // cache o API
+
+      // >>> primer pass de flags (usa cache si hay)
+      await refreshAccountFlags(false, { token: window.__GN__?.getSelectedToken?.() ?? null });
+
       manualDoneSet = loadManualDone();
       setDeluxe(DELUXE_DEFAULT);
       setCompact(COMPACT_DEFAULT);
@@ -998,6 +1099,19 @@
     }
   }
 
+  // ---------- API pública (refresh con single-flight) ----------
+  window.Meta = window.Meta || {};
+  window.Meta.refresh = async function metaRefresh({ token, nocache = false } = {}){
+    try {
+      await refreshAccountFlags(!!nocache, { token: token ?? (window.__GN__?.getSelectedToken?.() ?? null) });
+      manualDoneSet = loadManualDone();
+      await render();
+    } catch (e) {
+      if (e?.name === 'AbortError') return;
+      console.warn('[Meta.refresh] error', e);
+    }
+  };
+
   // ---------- Eventos del shell ----------
   let inited=false;
 
@@ -1024,8 +1138,10 @@
     try{
       el.refreshFlagsBtn.disabled = true;
       el.refreshFlagsBtn.textContent = 'Actualizando…';
-      await refreshAccountFlags(true);
-      render();
+
+      // >>> canal único de refresco (single-flight)
+      await window.Meta.refresh({ token: window.__GN__?.getSelectedToken?.() ?? null, nocache: true });
+
       if (typeof toast === 'function' && toast.legacy) toast.legacy('Estado “Hecho hoy” actualizado','ok', 1400);
       else if (typeof toast === 'function') toast('success','Estado “Hecho hoy” actualizado', { ttl:1400 });
     }finally{
@@ -1033,5 +1149,36 @@
       el.refreshFlagsBtn.textContent = old;
     }
   });
+
+  /* === Auto-refresh Meta & Eventos al cambiar de API Key (Opción A) === */
+  (function () {
+    // Evitamos registrar múltiples veces si meta.js se evalúa de nuevo.
+    var FLAG = '__gn_meta_autorefresh_wired__';
+    if (window[FLAG]) return;
+    window[FLAG] = true;
+
+    document.addEventListener('gn:meta-refresh', function (ev) {
+      try {
+        // Feedback inmediato
+        var status = document.getElementById('metaStatus');
+        if (status) {
+          status.textContent = 'Cargando…';
+          status.classList.remove('error');
+          status.classList.add('muted');
+        }
+
+        var token = (ev && ev.detail && ev.detail.token)
+                 || (window.__GN__ && typeof window.__GN__.getSelectedToken === 'function'
+                      ? window.__GN__.getSelectedToken()
+                      : null);
+
+        // >>> canal único de refresco (single-flight)
+        window.Meta.refresh({ token: token, nocache: true });
+
+      } catch (e) {
+        console.warn('[Meta] auto-refresh error:', e);
+      }
+    });
+  })();
 
 })();

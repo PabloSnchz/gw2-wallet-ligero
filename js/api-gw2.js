@@ -1,7 +1,7 @@
 /* =======================================================================
  * js/api-gw2.js  —  Capa API con fallbacks + caché persistente + helpers WV
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 2.6.0-merged (2026-03-01)
+ * Versión: 2.6.1-merged (2026-03-02) — + WV Targets refresh hook (key change)
  *
  * Cobertura:
  *  - Token / permisos (tokeninfo)
@@ -10,10 +10,11 @@
  *  - Items batch (con caché por id)
  *  - Achievements (cuenta + metadatos)
  *
- * Novedades 2.6.0:
- *  - Normalización de tipos numéricos en WV (cost, purchased, purchase_limit, item_count).
- *  - Helpers públicos: wvComputeRemaining, wvMergeShopListings, getWVShopMerged().
- *  - Mantiene compatibilidad con API pública previa (añade funciones, no rompe).
+ * Novedades 2.6.1:
+ *  - Listener 'gn:wv-targets-refresh' (desde app.js) para invalidar cachés por token
+ *    y precargar objetivos/cuenta con nocache=true.
+ *  - Helpers públicos: wvInvalidateTargets, wvPreloadTargets.
+ *  - Sin cambios de firma en API existentes; totalmente retrocompatible.
  *
  * Notas:
  *  - Se usa ?access_token= para evitar preflight CORS (apps estáticas).
@@ -51,6 +52,9 @@
   }
   function lsSet(key, val) {
     try { localStorage.setItem(key, JSON.stringify(val)); } catch (_) {}
+  }
+  function lsDel(key) {
+    try { localStorage.removeItem(key); } catch (_) {}
   }
   function now() { return Date.now(); }
   function isFresh(entry, ttl) {
@@ -126,6 +130,10 @@
     var entry = { ts: now(), data: data };
     __mem.set(kMem(baseKey, token), entry);
     lsSet(kLS(baseKey, token), entry);
+  }
+  function delCache(baseKey, token) {
+    __mem.delete(kMem(baseKey, token));
+    lsDel(kLS(baseKey, token));
   }
 
   // ========================================================================
@@ -529,6 +537,57 @@
   }
 
   // ========================================================================
+  // 🔁 WV Targets: invalidación & precarga (nuevas)
+  // ========================================================================
+  function wvInvalidateTargets(token) {
+    // Invalidamos objetivos y cuenta (por token)
+    delCache('wv_obj_daily', token);
+    delCache('wv_obj_weekly', token);
+    delCache('wv_obj_special', token);
+    delCache('wv_account', token);
+    // (No tocamos season ni listings globales; el panel de objetivos no los usa)
+  }
+
+  function wvPreloadTargets(token, opts) {
+    opts = opts || {};
+    if (!token) return Promise.resolve({ daily:null, weekly:null, special:null, account:null });
+    // Forzamos fresh con nocache
+    var force = { nocache: true };
+    return Promise.all([
+      getWVDaily(token, force),
+      getWVWeekly(token, force),
+      getWVSpecial(token, force),
+      getWVAccount(token, force)
+    ]).then(function (arr) {
+      return { daily: arr[0], weekly: arr[1], special: arr[2], account: arr[3] };
+    }).catch(function (e) {
+      console.warn(LOGP, 'wvPreloadTargets error', e);
+      return { daily:null, weekly:null, special:null, account:null, error: e };
+    });
+  }
+
+  // Listener: app.js emite gn:wv-targets-refresh al cambiar/restaurar key
+  if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('gn:wv-targets-refresh', function (ev) {
+      try {
+        var token = (ev && ev.detail && ev.detail.token) || null;
+        var src   = (ev && ev.detail && ev.detail.source) || 'unknown';
+        wvInvalidateTargets(token);
+        // Precalentamos para mejorar TTI del panel (no bloqueante)
+        wvPreloadTargets(token, { nocache: true }).then(function () {
+          // Aviso opcional de fin de precarga (por si el router quiere enganchar)
+          document.dispatchEvent(new CustomEvent('gn:wv-targets-refreshed', {
+            detail: { token: token, source: src, ts: Date.now() }
+          }));
+        });
+        console.info(LOGP, 'WV targets invalidated + preloaded for', fpToken(token), 'src:', src);
+      } catch (e) {
+        console.warn(LOGP, 'wv-targets-refresh handler error', e);
+      }
+    });
+  }
+
+  // ========================================================================
   // API pública
   // ========================================================================
   var API = {
@@ -561,6 +620,10 @@
 
     // Items
     getItemsMany: getItemsMany,
+
+    // WV targets helpers (nuevos)
+    wvInvalidateTargets: wvInvalidateTargets,
+    wvPreloadTargets: wvPreloadTargets,
 
     // Debug / util
     __cfg: { API_BASE: API_BASE, TTL: TTL },

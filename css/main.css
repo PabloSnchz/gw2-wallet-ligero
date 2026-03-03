@@ -1747,3 +1747,59 @@ display: -webkit-box;
   #asideConvSection .conv2-gems{ justify-self:start; }
   #asideConvSection .conv2-quick{ gap:8px; }
 }
+
+/* === CHIP DE EXPANSIÓN: solo icono === */
+.meta-card .meta-chip--exp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;          
+  min-width: auto;     
+  height: auto;        
+  border: none;        
+  background: none;    
+  box-shadow: none;    
+  border-radius: 0;    
+  vertical-align: middle;
+}
+
+/* Tamaño del icono con variable por expansión */
+.meta-card .meta-chip--exp img {
+  height: var(--logo-h, 40px); /* fallback = 40px, tu valor actual */
+  width: auto;
+  display: block;
+  filter: none;
+}
+
+/* Overrides por expansión: ajustá los valores que quieras */
+.meta-chip--core            { --logo-h: 30px; }
+.meta-chip--hot             { --logo-h: 46px; }
+.meta-chip--pof             { --logo-h: 40px; }
+.meta-chip--eod             { --logo-h: 42px; }
+.meta-chip--soto            { --logo-h: 38px; }
+.meta-chip--janthir         { --logo-h: 40px; }
+.meta-chip--visionseternity { --logo-h: 42px; }
+
+.meta-chip--livingworlds2   { --logo-h: 34px; }
+.meta-chip--livingworlds3   { --logo-h: 34px; }
+.meta-chip--livingworlds4   { --logo-h: 34px; }
+.meta-chip--icebroodsaga    { --logo-h: 36px; }
+
+/* Desactivar efectos hover */
+.meta-card .meta-chip--exp:hover,
+.meta-card .meta-chip--exp:focus-visible {
+  background: none;
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
+/* Desplaza el logo unos píxeles hacia abajo sin mover los chips de tiempo */
+.meta-card .meta-chip--exp {
+  transform: translateY(0px); /* probá 2–3px */
+}
+
+/* Baja el bloque (logo + chips de tiempo) respecto del título */
+.meta-card .meta-card__subtitle {
+  margin-top: 6px; /* probá 6–10px hasta que te quede cómodo */
+}
