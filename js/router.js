@@ -1,23 +1,19 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.9.0 (2026‑03‑02)
+ * v2.9.1 (2026‑03‑03)
  *
- * Cambios v2.9.0:
- *  - WV Objetivos: refresh automático al cambiar/restaurar API key.
- *  - Soporte de eventos globales: gn:wv-targets-refresh / gn:wv-targets-refreshed.
- *  - NUEVO: Scheduler de resets (Daily 00:00 UTC, Weekly lunes 07:30 UTC, Special en fin de Season).
- *    Al disparar, resetea visualmente el progreso a 0 y refresca datos con nocache:true.
- *
- * Referencias de horarios:
- *  - Daily reset 00:00 UTC y Weekly reset lunes 07:30 UTC (reset global del juego). Fuente: GW2 Wiki - Server reset.
- *  - Special/Season: cambia al terminar la temporada (contador visible en la WV y sitios trackers).
- *    Estas fuentes se citan en la capa superior de orquestación (documentación adjunta).
+ * Cambios v2.9.1:
+ *  - [HARDEN] Debounce en route() para evitar múltiples renders en hashchange “rápidos”.
+ *  - [HARDEN] Guardias de idempotencia en WV.activate()/deactivate() (no duplicar timers).
+ *  - [HARDEN] Limpieza robusta de placeholders/cargas al cambiar de tab/clave.
+ *  - [HARDEN] Listeners globales cableados una sola vez, con try/catch defensivo.
+ *  - Mantiene compatibilidad total con app.js, api-gw2.js y wizards-vault.js.
  */
 
 (function () {
   'use strict';
 
-  console.info('[WV] router-wv.js v2.9.0 — WV targets auto-refresh + scheduled resets + loading placeholder único + season-first + toolbar resiliente');
+  console.info('[WV] router-wv.js v2.9.1 — hardening (debounce + idempotencia + listeners robustos)');
 
   // ------------------------------- Utils DOM -------------------------------
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
@@ -56,8 +52,8 @@
   }
   function escapeHtml(str) {
     return String(str || '')
-      .replace(/&amp;/g,'&amp;amp;').replace(/&lt;/g,'&amp;lt;').replace(/&gt;/g,'&amp;gt;')
-      .replace(/"/g,'&amp;quot;').replace(/'/g,'&amp;#039;');
+      .replace(/&amp;amp;/g,'&amp;amp;amp;').replace(/&amp;lt;/g,'&amp;amp;lt;').replace(/&amp;gt;/g,'&amp;amp;gt;')
+      .replace(/"/g,'&amp;amp;quot;').replace(/'/g,'&amp;amp;#039;');
   }
   function fmtNumber(n) { n = Number(n || 0); return n.toLocaleString('es-AR'); }
   function now() { return Date.now(); }
@@ -155,24 +151,22 @@
 
     var state = {
       inited:false, lastTab:'daily',
-      loaded:{ daily:false, weekly:false, special:false, shop:false },
+      loaded:{ daily:false, weekly:false, special:false, shop:false, __season:false },
       shop:{
         merged:[], itemsById:new Map(), aa:0, aaIconUrl:null,
         lastSyncTs:0, autoRefreshTimer:null, autoRefreshEveryMs:75*1000,
         marks:{}, pinned:{}, view:'cards', q:'', sort:'name', legacyFilter:'show', lastToken:null, season:null
       },
-      // NUEVO: recuerdan último render normalizado por tab (para poder resetear a 0 inmediatamente)
       obj:{ daily:null, weekly:null, special:null },
-      // NUEVO: timers de reset programado
       resetTimers:{ daily:null, weekly:null, special:null },
-      // NUEVO: saltear el fetch de objetivos de ensureLoadTab UNA sola vez (evita carrera)
-      skipObjFetchOnce: false
+      skipObjFetchOnce: false,
+      // [HARDEN] flags de idempotencia
+      _active:false
     };
 
-    // guard de secuencia para “última gana” en refreshObjectives
     var _objFetchSeq = 0;
 
-    // ---- Persistencia ----
+    // guardado en LS (igual que antes)
     var LS_WV_SHOP_MARKS='gw2_wv_marks_v1', LS_WV_SHOP_PINNED='gw2_wv_pinned_v1', LS_WV_SHOP_VIEW='gw2_wv_view_v1',
         LS_WV_LAST_TAB='gw2_wv_lasttab_v1', LS_WV_LEGACY_VIS='gw2_wv_legacy_filter_v1';
 
@@ -192,7 +186,6 @@
     function saveLegacyFilter(v){ try{ localStorage.setItem(LS_WV_LEGACY_VIS,v); }catch(_){ } }
     function loadLegacyFilter(){ try{ return localStorage.getItem(LS_WV_LEGACY_VIS)||'show'; }catch(_){ return 'show'; } }
 
-    // ---- Temporada (cabecera) ----
     function setWVSeasonHeader(season){
       if (!season) return;
       if (els.seasonTitle) els.seasonTitle.textContent = season.title || '—';
@@ -213,10 +206,8 @@
           node = document.createElement('div');
           node.id = 'wvShopLoading';
           node.className = 'muted';
-          // lo insertamos antes del listado, pero después de la toolbar
           var afterToolbar = host.querySelector('.wv-shop-toolbar');
           if (afterToolbar && afterToolbar.parentElement === els.shopToolbarHost) {
-            // toolbar está dentro de shopToolbarHost; insertamos justo después del host
             els.shopToolbarHost.insertAdjacentElement('afterend', node);
           } else {
             host.prepend(node);
@@ -225,11 +216,10 @@
         node.textContent = String(msg || 'Cargando Tienda…');
         node.hidden = false;
       } else {
-        if (node) node.hidden = true; // ocultar (no borrar) para no re‑flow excesivo
+        if (node) node.hidden = true;
       }
     }
 
-    // ---- Objetivos: normalización y render ----
     function normalizeObjectives(raw){
       var arr=(raw && raw.objectives)||[];
       return arr.map(function(o){
@@ -255,7 +245,7 @@
       }
 
       var list=normalizeObjectives(data);
-      if (kind) state.obj[kind] = list; // guardamos foto para reseteo visual inmediato
+      if (kind) state.obj[kind] = list;
 
       var html=['<div class="wv-obj-grid">'];
 
@@ -282,16 +272,16 @@
         html.push(
           '<div class="wv-obj-card">',
             '<div class="wv-obj-head">',
-              '<div class="wv-obj-title">', escapeHtml(o.title), '</div>',
+              '<div class="wv-obj-title">'+ escapeHtml(o.title) +'</div>',
               '<span class="wv-obj-mode" data-wv-mode="'+escapeHtml(o.track||'pve')+'">'+pillText+'</span>',
             '</div>',
             '<div class="wv-obj-meta">',
-              '<span class="wv-obj-reward">', (o.acclaim?('+'+fmtNumber(o.acclaim)+' AA'):'') ,'</span>',
-              '<span class="wv-obj-status'+statusClass+'">', statusText ,'</span>',
+              '<span class="wv-obj-reward">'+ (o.acclaim?('+'+fmtNumber(o.acclaim)+' AA'):'') +'</span>',
+              '<span class="wv-obj-status'+statusClass+'">'+ statusText +'</span>',
             '</div>',
             '<div class="wv-obj-prog">',
               '<div class="wv-obj-bar"><div class="wv-obj-bar__fill" style="width:'+o.pct+'%;"></div></div>',
-              '<div class="wv-obj-stats"><span>', (o.total?(fmtNumber(o.progress)+' / '+fmtNumber(o.total)):fmtNumber(o.progress)) ,'</span><span>'+o.pct+'%</span></div>',
+              '<div class="wv-obj-stats"><span>'+ (o.total?(fmtNumber(o.progress)+' / '+fmtNumber(o.total)):fmtNumber(o.progress)) +'</span><span>'+o.pct+'%</span></div>',
             '</div>',
           '</div>'
         );
@@ -302,7 +292,6 @@
       hydrateWVModePills(host);
     }
 
-    // NUEVO: reseteo visual a 0 (sin esperar API)
     function renderObjectivesZero(kind){
       var host = (kind==='daily')   ? els.tabDaily
                : (kind==='weekly')  ? els.tabWeekly
@@ -320,16 +309,16 @@
         html.push(
           '<div class="wv-obj-card">',
             '<div class="wv-obj-head">',
-              '<div class="wv-obj-title">', escapeHtml(o.title), '</div>',
+              '<div class="wv-obj-title">'+ escapeHtml(o.title) +'</div>',
               '<span class="wv-obj-mode" data-wv-mode="'+escapeHtml(o.track||'pve')+'">'+pillText+'</span>',
             '</div>',
             '<div class="wv-obj-meta">',
-              '<span class="wv-obj-reward">', (o.acclaim?('+'+fmtNumber(o.acclaim)+' AA'):'') ,'</span>',
+              '<span class="wv-obj-reward">'+ (o.acclaim?('+'+fmtNumber(o.acclaim)+' AA'):'') +'</span>',
               '<span class="wv-obj-status wv-obj-status--pending">… En progreso</span>',
             '</div>',
             '<div class="wv-obj-prog">',
               '<div class="wv-obj-bar"><div class="wv-obj-bar__fill" style="width:0%;"></div></div>',
-              '<div class="wv-obj-stats"><span>0', (o.total?(' / '+fmtNumber(o.total)):'') ,'</span><span>0%</span></div>',
+              '<div class="wv-obj-stats"><span>0'+ (o.total?(' / '+fmtNumber(o.total)):'') +'</span><span>0%</span></div>',
             '</div>',
           '</div>'
         );
@@ -339,7 +328,6 @@
       hydrateWVModePills(host);
     }
 
-    // ---- Toolbar host resiliente ----
     function ensureShopHost(){
       if (!els.shopToolbarHost || !els.shopToolbarHost.isConnected) {
         els.shopToolbarHost = document.getElementById('wvShopToolbarHost');
@@ -353,7 +341,6 @@
       return els.shopToolbarHost;
     }
 
-    // ---- Toolbar ----
     function shopSyncLine(){
       var ts=state.shop.lastSyncTs;
       if (!ts) return '<div class="wv-syncline"><span class="wv-sync-badge">Sincronizado: —</span></div>';
@@ -418,7 +405,6 @@
       syncShopToggleLabel();
     }
 
-    // ---- Cabecera (AA) ----
     function setShopHeader(aa, spentApi, reservedMarks, iconUrl){
       var host=el('wvShopHeader'); if (!host) return;
       var icon=iconUrl?('<img src="'+escapeHtml(iconUrl)+'" alt="" width="16" height="16" style="vertical-align:middle;margin-right:6px;" loading="lazy"/>'):'';
@@ -432,7 +418,6 @@
       return { spentApi:spentApi, reservedMarks:reserved };
     }
 
-    // ---- Filtro + Orden ----
     function passSearchAndSort(list){
       var q=(state.shop.q||'').toLowerCase(), sort=state.shop.sort||'name', legacy=state.shop.legacyFilter||'show', itemsById=state.shop.itemsById||new Map();
       var filtered=(list||[]).filter(function(x){
@@ -454,7 +439,6 @@
       return sorted;
     }
 
-    // ---- Render principal de Tienda ----
     function renderShopArea(){
       var host=els.tabShop; if (!host) return;
 
@@ -472,7 +456,6 @@
       var itemsById=st.itemsById||new Map(), rows=passSearchAndSort(st.merged).slice(0,1200);
       try { if (typeof window!=='undefined' && window.WV) window.WV.__debugRows=rows; } catch {}
 
-      // Ya tenemos datos: ocultar placeholder de carga
       setShopLoading(false);
 
       if (st.view==='table'){
@@ -527,7 +510,7 @@
           var pinActive=!!(st.pinned && st.pinned[x.id]), pinCls='wv-pin'+(pinActive?' wv-pin--active':''), pinBtn='<button class="'+pinCls+'" data-pin="'+x.id+'" title="'+(pinActive?'Desfijar':'Fijar')+'">📌</button>';
           var rowStyle='display:flex;justify-content:space-between;align-items:center;gap:8px;';
 
-          return '<div class="wv-card" data-id="'+x.id+'"'+cardDeco+'><div class="wv-card__top"><div class="wv-card__iconWrap"'+iconDeco+'>'+(icon?('<img class="wv-card__icon" src="'+escapeHtml(icon)+'" alt="" loading="lazy"/>'):'')+'</div><div class="wv-card__name" title="'+escapeHtml(name)+'"'+(color?' style="color:'+color+'"':'')+'>'+escapeHtml(name)+'</div>'+pinBtn+'</div><div class="wv-card__meta"><span class="wv-badge">Costo: <strong>'+cost+'</strong> AA</span><span class="wv-type">'+escapeHtml(x.type||'—')+'</span></div><div class="wv-card__body"><div class="sep"></div><div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Comprado:</span><span class="pill">'+purchasedEff+' / '+(limit==null?'∞':limit)+'</span></div><div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Restante:</span><span class="pill">'+leftVal+'</span></div></div><div class="wv-card__bottom" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span class="wv-id">ID '+x.id+'</span><span>'+ctr+(maxBtn?' '+maxBtn:'')+'</span></div></div>';
+          return '<div class="wv-card" data-id="'+x.id+'"'+cardDeco+'><div class="wv-card__top"><div class="wv-card__iconWrap"'+iconDeco+'>'+ (icon?('<img class="wv-card__icon" src="'+escapeHtml(icon)+'" alt="" loading="lazy"/>'):'') +'</div><div class="wv-card__name" title="'+escapeHtml(name)+'"'+(color?' style="color:'+color+'"':'')+'>'+escapeHtml(name)+'</div>'+pinBtn+'</div><div class="wv-card__meta"><span class="wv-badge">Costo: <strong>'+cost+'</strong> AA</span><span class="wv-type">'+escapeHtml(x.type||'—')+'</span></div><div class="wv-card__body"><div class="sep"></div><div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Comprado:</span><span class="pill">'+purchasedEff+' / '+(limit==null?'∞':limit)+'</span></div><div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Restante:</span><span class="pill">'+leftVal+'</span></div></div><div class="wv-card__bottom" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span class="wv-id">ID '+x.id+'</span><span>'+ctr+(maxBtn?' '+maxBtn:'')+'</span></div></div>';
         }).join('');
 
         area.innerHTML = '<div class="wv-card-grid">'+cards+'</div>';
@@ -539,7 +522,7 @@
         var findRow=function(){ return state.shop.merged.find(function(x){ return String(x.id)===String(id); }); };
         var limitOf=function(row){ return (typeof row.purchase_limit==='number')?row.purchase_limit:null; };
         var purchasedApiOf=function(row){ return (typeof row.purchased==='number')?row.purchased:0; };
-        function refresh(val){ spanVal.textContent=String(val); renderShopArea(); }
+        function refresh(val){ if (spanVal) spanVal.textContent=String(val); renderShopArea(); }
         if (btnDec && !btnDec.__wired){ btnDec.__wired=true; btnDec.addEventListener('click',function(){ var row=findRow(); if(!row) return; var marks=state.shop.marks||{}; var cur=+marks[id]||0; if(cur<=0) return; cur-=1; marks[id]=cur; state.shop.marks=marks; saveMarks(marksNamespace(),marks); refresh(cur); }); }
         if (btnInc && !btnInc.__wired){ btnInc.__wired=true; btnInc.addEventListener('click',function(){ var row=findRow(); if(!row) return; var marks=state.shop.marks||{}; var cur=+marks[id]||0; var lim=limitOf(row); var cap=(lim==null)?Infinity:Math.max(0, lim - purchasedApiOf(row)); if(cur>=cap) return; cur+=1; marks[id]=cur; state.shop.marks=marks; saveMarks(marksNamespace(),marks); refresh(cur); }); }
       });
@@ -549,7 +532,7 @@
           var id=btn.getAttribute('data-id'); var row=state.shop.merged.find(function(x){ return String(x.id)===String(id); }); if(!row) return;
           var limit=(typeof row.purchase_limit==='number')?row.purchase_limit:null; var purchasedApi=(typeof row.purchased==='number')?row.purchased:0;
           if (limit==null) return; var cap=Math.max(0, limit - purchasedApi);
-          var marks=state.shop.marks||{}; marks[id]=cap; state.shop.marks=marks; saveMarks(marksNamespace(),marks); renderShopArea();
+          var marks=state.shop.marks||{}; marks[id]=cap; state.shop.marks=marks; saveMarks(marksNamespace(), marks); renderShopArea();
         });
       });
       $$('[data-pin]', area).forEach(function(btn){
@@ -573,7 +556,6 @@
       if (!token){ if (els.tabShop) els.tabShop.innerHTML='<p class="muted">Seleccioná una API Key para ver la Tienda.</p>'; return Promise.resolve(); }
       state.shop.lastToken=token;
 
-      // Mostrar placeholder único de carga
       setShopLoading(true, 'Cargando Tienda…');
 
       var ensureSeason=(state.shop.season)
@@ -600,18 +582,16 @@
           if (changed){ st.marks=marks; saveMarks(marksNamespace(), marks); }
         })();
 
-        renderShopArea(); // aquí se oculta el loading
+        renderShopArea();
       }).catch(function(e){
         console.warn('[WV] refresh shop error:', e);
-        // en error, ocultar el placeholder para no apilarlo
         setShopLoading(false);
         window.toast?.('error','No se pudo cargar Tienda',{ ttl: 2000 });
       });
     }
 
-    // ===== Refresh de OBJETIVOS (daily/weekly/special) =====
     function refreshObjectives(forceNoCache){
-      const mySeq = ++_objFetchSeq; // última llamada gana
+      const mySeq = ++_objFetchSeq;
       var token=getSelectedToken();
       if (!token){
         if (els.tabDaily)   els.tabDaily.innerHTML   = '<p class="muted">Seleccioná una API Key para ver objetivos diarios.</p>';
@@ -621,18 +601,15 @@
       }
       if (els.noteSync) els.noteSync.classList.add('hidden');
 
-      // Placeholders rápidos (sin apilar)
       if (els.tabDaily)   els.tabDaily.innerHTML   = '<p class="muted">Cargando…</p>';
       if (els.tabWeekly)  els.tabWeekly.innerHTML  = '<p class="muted">Cargando…</p>';
       if (els.tabSpecial) els.tabSpecial.innerHTML = '<p class="muted">Cargando…</p>';
 
-      // Cargar en paralelo
       Promise.allSettled([
         GW2Api.getWVDaily(token,   { nocache: !!forceNoCache }),
         GW2Api.getWVWeekly(token,  { nocache: !!forceNoCache }),
         GW2Api.getWVSpecial(token, { nocache: !!forceNoCache })
       ]).then(function(res){
-        // abortar si hay una llamada más nueva
         if (mySeq !== _objFetchSeq) return;
 
         var rDaily   = res[0] && res[0].status==='fulfilled'   ? res[0].value   : null;
@@ -643,12 +620,10 @@
         if (els.tabWeekly)  (rWeekly ? renderObjectivesTab(els.tabWeekly,  rWeekly, 'weekly') : els.tabWeekly.innerHTML  = '<p class="error">Error al cargar semanales.</p>');
         if (els.tabSpecial) (rSpecial ? renderObjectivesTab(els.tabSpecial, rSpecial,'special'): els.tabSpecial.innerHTML = '<p class="error">Error al cargar especiales.</p>');
 
-        // Marca de tabs ya cargados
         if (rDaily)   state.loaded.daily   = true;
         if (rWeekly)  state.loaded.weekly  = true;
         if (rSpecial) state.loaded.special = true;
       }).catch(function(e){
-        // si vino una más nueva, evitamos sobre-escribir con error
         if (mySeq !== _objFetchSeq) return;
         console.warn('[WV] refresh objectives error:', e);
       });
@@ -692,8 +667,6 @@
         return;
       } else { if (els.noteSync) els.noteSync.classList.add('hidden'); }
 
-      // IMPORTANTE: si acabamos de disparar WV.refreshObjectives(true),
-      // salteamos el fetch del tab activo una sola vez para evitar carrera.
       var skipOnce = !!state.skipObjFetchOnce;
 
       if (tab==='daily'){
@@ -723,42 +696,37 @@
 
         var ns=marksNamespace(); state.shop.marks=loadMarks(ns); state.shop.pinned=loadPinned(ns);
 
-        // Mostrar placeholder único (reemplaza cualquier previo)
         setShopLoading(true, 'Cargando Tienda…');
 
-        // preservar toolbar, borrar solo el listado previo
         if (els.tabShop){ var list=els.tabShop.querySelector('#wvShopList'); if (list) list.remove(); }
 
         return refreshShopData(false).finally(function(){ state.loaded.shop=true; });
       }
     }
 
-    // ===== NUEVO: Scheduler de resets (daily/weekly/season) =====
+    // ===== Scheduler de resets =====
     function msUntil(dateUtc){
       var t = (dateUtc instanceof Date) ? dateUtc.getTime() : Number(dateUtc||0);
       var d = t - Date.now();
       return Math.max(0, d);
     }
     function nextDailyResetUTC(){
-      // Próximo 00:00 UTC
       var nowUtc = new Date();
       var y=nowUtc.getUTCFullYear(), m=nowUtc.getUTCMonth(), d=nowUtc.getUTCDate();
-      var next = new Date(Date.UTC(y, m, d, 24, 0, 0, 0)); // 24:00 del mismo día => 00:00 del siguiente
+      var next = new Date(Date.UTC(y, m, d, 24, 0, 0, 0));
       if (next.getTime() <= nowUtc.getTime()) next = new Date(Date.UTC(y, m, d+1, 0, 0, 0, 0));
       return next;
     }
     function nextWeeklyResetUTC(){
-      // Lunes 07:30 UTC
       var nowUtc = new Date();
-      var day = nowUtc.getUTCDay(); // 0..6 (0=Dom)
-      var daysUntilMonday = (1 - day + 7) % 7; // 0 si ya es lunes
+      var day = nowUtc.getUTCDay();
+      var daysUntilMonday = (1 - day + 7) % 7;
       var base = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate(), 7, 30, 0, 0));
       var next = new Date(base.getTime() + daysUntilMonday*24*60*60*1000);
       if (next.getTime() <= nowUtc.getTime()) next = new Date(next.getTime() + 7*24*60*60*1000);
       return next;
     }
     function nextSeasonResetUTC(){
-      // Si tenemos season.end usamos esa fecha; de lo contrario, no programamos
       var s = state.shop && state.shop.season;
       if (!s || !s.end) return null;
       var end = new Date(s.end);
@@ -777,26 +745,22 @@
 
     function scheduleDailyReset(){
       try{
-        if (!els.panel || els.panel.hasAttribute('hidden')) return; // sólo cuando WV está visible
+        if (!state._active) return; // [HARDEN] solo si WV visible/activo
         var at = nextDailyResetUTC(); if (!at) return;
         var ms = msUntil(at);
-        if (ms === 0) ms = 500; // colchón mínimo
+        if (ms === 0) ms = 500;
         if (state.resetTimers.daily) clearTimeout(state.resetTimers.daily);
         state.resetTimers.daily = setTimeout(function(){
-          // 1) reset visual a 0
           renderObjectivesZero('daily');
-          // 2) invalidar caches por token (si existe helper)
           try{ if (GW2Api && typeof GW2Api.wvInvalidateTargets==='function') GW2Api.wvInvalidateTargets(getSelectedToken()); }catch(_){}
-          // 3) refrescar objetivos (nocache) — “última gana” en api
           refreshObjectives(true);
-          // 4) reprogramar próximo
           scheduleDailyReset();
         }, ms);
       }catch(e){ console.warn('[WV] scheduleDailyReset error', e); }
     }
     function scheduleWeeklyReset(){
       try{
-        if (!els.panel || els.panel.hasAttribute('hidden')) return;
+        if (!state._active) return;
         var at = nextWeeklyResetUTC(); if (!at) return;
         var ms = msUntil(at);
         if (ms === 0) ms = 500;
@@ -811,8 +775,8 @@
     }
     function scheduleSeasonReset(){
       try{
-        if (!els.panel || els.panel.hasAttribute('hidden')) return;
-        var at = nextSeasonResetUTC(); if (!at) return; // si no hay end, no programamos
+        if (!state._active) return;
+        var at = nextSeasonResetUTC(); if (!at) return;
         var ms = msUntil(at);
         if (ms === 0) ms = 500;
         if (state.resetTimers.special) clearTimeout(state.resetTimers.special);
@@ -820,7 +784,6 @@
           renderObjectivesZero('special');
           try{ if (GW2Api && typeof GW2Api.wvInvalidateTargets==='function') GW2Api.wvInvalidateTargets(getSelectedToken()); }catch(_){}
           refreshObjectives(true);
-          // Volver a consultar la season y reprogramar si corresponde
           GW2Api.getWVSeason({ nocache:true }).then(function(season){ state.shop.season=season; setWVSeasonHeader(season); scheduleSeasonReset(); }).catch(function(){});
         }, ms);
       }catch(e){ console.warn('[WV] scheduleSeasonReset error', e); }
@@ -833,6 +796,10 @@
     }
 
     function activate(){
+      // [HARDEN] idempotencia: no activar dos veces
+      if (state._active) return;
+      state._active = true;
+
       if (!state.inited){
         state.inited=true;
         wireTabsOnce();
@@ -841,28 +808,22 @@
         setActiveTab(last);
       }
 
-      // === Auto-refresh al abrir WV Objetivos ===
       try {
         const token = window.__GN__?.getSelectedToken?.() ?? null;
-        // Invalida caché de objetivos por token (si está disponible)
         if (GW2Api?.wvInvalidateTargets && token) GW2Api.wvInvalidateTargets(token);
-        // Marcar que salteamos el fetch “stale” del tab activo UNA vez
         state.skipObjFetchOnce = true;
-        // Trae estado real desde la API (nocache) y repinta tabs
         if (typeof WV?.refreshObjectives === 'function') WV.refreshObjectives(true);
       } catch (e) {
         console.warn('[WV] auto-refresh on activate error', e);
       }
 
-      // Asegurar tab (toolbar/shop, etc.). Para objetivos, el flag evita doble fetch.
       ensureLoadTab(state.lastTab||'daily');
-
-      // NUEVO: programar resets cuando el panel WV está activo
       scheduleAllResets();
     }
     function deactivate(){
+      if (!state._active) return; // [HARDEN]
+      state._active = false;
       ensureShopAutoRefresh(false);
-      // Al salir de WV, cancelamos timers para no refrescar en background
       clearResetTimers();
     }
 
@@ -871,8 +832,7 @@
         if (hidden) ensureShopAutoRefresh(false);
         else { ensureShopAutoRefresh(true); refreshShopData(false); }
       }
-      // Re-schedule cuando vuelve a estar visible (por seguridad)
-      if (!hidden && (!els.panel || !els.panel.hasAttribute('hidden'))) {
+      if (!hidden && state._active) {
         scheduleAllResets();
       }
     }
@@ -880,31 +840,22 @@
     function onTokenChanged(newToken){
       var prev=state.shop.lastToken||null; state.shop.lastToken=newToken||null;
 
-      // Objetivos: siempre refrescar ante cambio de key
       state.loaded.daily=false; state.loaded.weekly=false; state.loaded.special=false;
       refreshObjectives(true);
-
-      // Reprogramar resets (cambia namespacing por token)
       scheduleAllResets();
 
-      // Tienda: mantener flujo previo
       if (state.lastTab==='shop' && prev!==state.shop.lastToken){
         state.loaded.shop=false;
-        // borrar sólo el listado pero NO la toolbar; reinstalar placeholder único
         if (els.tabShop){ var list=els.tabShop.querySelector('#wvShopList'); if (list) list.remove(); }
         setShopLoading(true, 'Cargando Tienda…');
         refreshShopData(true);
       }
     }
 
-    // ===== manejador para eventos globales de WV Targets =====
     function onTargetsRefresh(evToken){
-      // Marcamos como no cargados para forzar rehidratación si el usuario entra luego
       state.loaded.daily=false; state.loaded.weekly=false; state.loaded.special=false;
-      // Si estamos en la vista de WV, refrescamos en caliente (nocache:true)
       var onWV = normHash(location.hash||'#/cards') === '#/account/wizards-vault';
       if (onWV) refreshObjectives(true);
-      // Reprogramamos timers (por si cambia de token/season)
       scheduleAllResets();
     }
 
@@ -928,74 +879,57 @@
   })();
 
   // ----------------------------- ROUTER ------------------------------------
+  var _routeT = null; // [HARDEN] debounce
   function route(){
-    var h=normHash(location.hash||'#/cards');
-    if (h!=='#/account/wizards-vault' && WV && typeof WV.deactivate==='function') WV.deactivate();
+    // [HARDEN] Debounce leve: agrupar posibles cambios de hash/back-to-back
+    clearTimeout(_routeT);
+    _routeT = setTimeout(function(){
+      var h=normHash(location.hash||'#/cards');
+      if (h!=='#/account/wizards-vault' && WV && typeof WV.deactivate==='function') WV.deactivate();
 
-    if (h==='#/cards'){ try{ showPanel('walletPanel'); }catch(e){ console.warn('[router] show wallet error',e); } finally{ updateSidebarFor('cards'); setActiveNav(h); } return; }
-    if (h==='#/meta'){ try{ showPanel('metaPanel'); document.dispatchEvent(new CustomEvent('gn:tabchange',{detail:{view:'meta'}})); }catch(e){ console.warn('[router] show meta error',e); } finally{ updateSidebarFor('meta'); setActiveNav(h); } return; }
-    if (h==='#/account/achievements'){ try{ showPanel('achievementsPanel'); if (window.Achievements && typeof window.Achievements.render==='function'){ window.Achievements.render(); } }catch(e){ console.warn('[router] show achievements error',e); } finally{ updateSidebarFor('achievements'); setActiveNav(h); } return; }
-    if (h==='#/account/wizards-vault'){ try{ showPanel('wvPanel'); if (WV && typeof WV.activate==='function') WV.activate(); hydrateWVModePills(el('wvPanel')); }catch(e){ console.error('[router] WV.activate error',e); } finally{ updateSidebarFor('wv'); setActiveNav(h); } return; }
+      if (h==='#/cards'){ try{ showPanel('walletPanel'); }catch(e){ console.warn('[router] show wallet error',e); } finally{ updateSidebarFor('cards'); setActiveNav(h); } return; }
+      if (h==='#/meta'){ try{ showPanel('metaPanel'); document.dispatchEvent(new CustomEvent('gn:tabchange',{detail:{view:'meta'}})); }catch(e){ console.warn('[router] show meta error',e); } finally{ updateSidebarFor('meta'); setActiveNav(h); } return; }
+      if (h==='#/account/achievements'){ try{ showPanel('achievementsPanel'); if (window.Achievements && typeof window.Achievements.render==='function'){ window.Achievements.render(); } }catch(e){ console.warn('[router] show achievements error',e); } finally{ updateSidebarFor('achievements'); setActiveNav(h); } return; }
+      if (h==='#/account/wizards-vault'){ try{ showPanel('wvPanel'); if (WV && typeof WV.activate==='function') WV.activate(); hydrateWVModePills(el('wvPanel')); }catch(e){ console.error('[router] WV.activate error',e); } finally{ updateSidebarFor('wv'); setActiveNav(h); } return; }
 
-    try{ showPanel('walletPanel'); }catch(e){ console.warn('[router] fallback show wallet error',e); } finally{ updateSidebarFor('cards'); setActiveNav('#/cards'); }
+      try{ showPanel('walletPanel'); }catch(e){ console.warn('[router] fallback show wallet error',e); } finally{ updateSidebarFor('cards'); setActiveNav('#/cards'); }
+    }, 35);
   }
 
   function onKeySelectChange() {
     var h = normHash(location.hash || '#/cards');
-    var token = getSelectedToken();
+    var token = (function(){ var s=el('keySelectGlobal'); return s?(s.value||'').trim():null; })();
 
     try {
-
-      /* ============================================================
-       * META & EVENTOS — Auto‑refresh al cambiar la API Key
-       * ============================================================ */
       if (h === '#/meta') {
-
-        // 1) Camino preferido: usar la API pública de meta.js
         if (window.Meta && typeof window.Meta.refresh === 'function') {
           window.Meta.refresh({ token: token, nocache: false });
-
         } else {
-          // 2) Fallback: simular el click en el botón "Refrescar estado"
           var btn = document.getElementById('metaRefreshFlags');
-          if (btn && typeof btn.click === 'function') {
-            btn.click();
-          }
-
-          // 3) Como mínimo: mostrar un "Cargando…" en el status si existe
+          if (btn && typeof btn.click === 'function') btn.click();
           var status = document.getElementById('metaStatus');
-          if (status) {
-            status.textContent = 'Cargando…';
-            status.classList.remove('error');
-            status.classList.add('muted');
-          }
+          if (status) { status.textContent = 'Cargando…'; status.classList.remove('error'); status.classList.add('muted'); }
         }
-
-      /* ============================================================
-       * LOGROS
-       * ============================================================ */
       } else if (h === '#/account/achievements') {
         if (window.Achievements && typeof window.Achievements.render === 'function') {
           window.Achievements.render();
         }
-
-      /* ============================================================
-       * WIZARD'S VAULT
-       * ============================================================ */
       } else if (h === '#/account/wizards-vault') {
         if (WV && typeof WV.onTokenChanged === 'function') WV.onTokenChanged(token);
         if (WV && typeof WV.ensureLoadTab === 'function') WV.ensureLoadTab('shop');
-        if (WV && typeof WV.refreshObjectives === 'function') WV.refreshObjectives(true); // forzar refresh de objetivos al cambiar key
+        if (WV && typeof WV.refreshObjectives === 'function') WV.refreshObjectives(true);
         if (WV && typeof WV.activate === 'function') WV.activate();
         hydrateWVModePills(el('wvPanel'));
       }
-
     } catch (e) {
       console.warn('[router] onKeySelectChange error', e);
     }
   }
 
   function onDomReady(){
+    if (onDomReady.__wired) return; // [HARDEN]
+    onDomReady.__wired = true;
+
     $$('.overlay-tab').forEach(function(btn){
       btn.addEventListener('click', function(){ var view=btn.getAttribute('data-view'); if (view==='cards') location.hash='#/cards'; else if (view==='meta') location.hash='#/meta'; });
     });
@@ -1003,10 +937,9 @@
     var sel=el('keySelectGlobal');
     if (sel && !sel.__routerWired){ sel.__routerWired=true; sel.addEventListener('change', onKeySelectChange); }
 
-    // Wiring de eventos globales de WV Targets
     document.addEventListener('gn:wv-targets-refresh', function(ev){
       try {
-        var token = (ev && ev.detail && ev.detail.token) || getSelectedToken() || null;
+        var token = (ev && ev.detail && ev.detail.token) || (el('keySelectGlobal')?.value||null) || null;
         if (WV && typeof WV.onTargetsRefresh === 'function') WV.onTargetsRefresh(token);
       } catch(e){ console.warn('[router] gn:wv-targets-refresh handler error', e); }
     });
@@ -1014,7 +947,6 @@
       try {
         var onWV = normHash(location.hash||'#/cards') === '#/account/wizards-vault';
         if (onWV && WV && typeof WV.refreshObjectives === 'function') {
-          // No forzamos nocache acá; api-gw2 ya precalentó. Pintamos con cache vivo.
           WV.refreshObjectives(false);
         }
       } catch(e){ console.warn('[router] gn:wv-targets-refreshed handler error', e); }
