@@ -98,7 +98,7 @@
     "expansion": "HoT",
     "map": "Tangled Depths",
     "wiki": "https://wiki.guildwars2.com/wiki/King_of_the_Jungle",
-    "chat": "[&BA4IAAA=]",
+    "chat": "[&BPUHAAA=]",
     "windowsUTC": ["00:30","02:30","04:30","06:30","08:30","10:30","12:30","14:30","16:30","18:30","20:30","22:30"],
     "durationMin": 20,
     "api": { "mapChestId": "tangled_depths_heros_choice_chest" },
