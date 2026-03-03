@@ -142,7 +142,7 @@
   { "metaId": "svanir_shaman_chief",       "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
   { "metaId": "triple_trouble_wurm",       "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
 
-  { "metaId": "ley_line_anomaly",          "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
+  { "metaId": "ley_line_anomaly",          "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": 19976 },
   { "metaId": "convergences",              "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
   { "metaId": "convergence_mount_balrior", "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
   { "metaId": "the_twisted_marionette",    "items": [ { "itemName": "—", "wiki": "", "preview": "" } ], "highlightItemId": null },
