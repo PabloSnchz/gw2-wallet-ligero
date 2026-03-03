@@ -5,7 +5,7 @@
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
-  console.info('%cGW2 Wallet app.js v2.6.1 — Bootstrap keys + toasts + router sync', 'color:#0bf; font-weight:700');
+  console.info('%cGW2 Wallet app.js v2.6.3 — Bootstrap keys + toasts + router sync + selected-key persistence + WV Targets refresh', 'color:#0bf; font-weight:700');
 
   /* ========================= Estado ========================= */
   const state = {
@@ -34,6 +34,9 @@
 
   const LS_CONV = 'gw2_conv_cache_v3';
   const CONV_TTL = 1000 * 60 * 30;
+
+  // NUEVO: persistencia de la key seleccionada (para restaurar tras F5)
+  const LS_SELECTED_KEY = 'gw2_selected_key_v1';
 
   // NUEVO: Pins por cuenta (como WV/Meta)
   const LS_WALLET_PINS = 'gw2_wallet_pins_v1';
@@ -121,6 +124,28 @@
     el.status.style.color = k === 'error' ? '#f28b82' : (k === 'ok' ? '#a7f3d0' : '#a0a0a6');
     el.status.textContent = m;
   }
+
+  // NUEVO: Emisor de eventos para WV Objetivos (y globales) con debounce
+  let _wvTargetsEmitT = null;
+  function emitRefreshEvents(token, source = 'key-change') {
+    try {
+      const detail = { token: token ?? null, source };
+      clearTimeout(_wvTargetsEmitT);
+      // Debounce leve por si la UI dispara varios cambios seguidos
+      _wvTargetsEmitT = setTimeout(() => {
+        // Evento específico para la pantalla de Objetivos
+        document.dispatchEvent(new CustomEvent('gn:wv-targets-refresh', { detail }));
+        // (Opcional) Evento global por si otros paneles se suman
+        document.dispatchEvent(new CustomEvent('gn:global-refresh', { detail }));
+        // (Opcional) MetaEventos (muchos módulos ya lo escuchan)
+        document.dispatchEvent(new CustomEvent('gn:meta-refresh', { detail }));
+        console.info('[app] emitRefreshEvents', detail);
+      }, 80);
+    } catch (e) {
+      console.warn('[app] emitRefreshEvents error', e);
+    }
+  }
+
   function obfuscate(t) { return !t || t.length < 8 ? 'Key' : `Key ${t.slice(0, 4)}…${t.slice(-4)}`; }
   function esc(s) { return String(s || '').replace(/[&<>\"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m])); }
 
@@ -548,9 +573,22 @@
     _programmaticChange: false, // << NUEVO: evita bucles en change
 
     load() {
+      // Carga listado de keys
       try { this.list = JSON.parse(localStorage.getItem(LS_KEYS)) || []; }
       catch { this.list = []; }
       state.keys = this.list.slice();
+
+      // NUEVO: restaurar selección previa desde localStorage
+      try { this.selected = localStorage.getItem(LS_SELECTED_KEY) || null; }
+      catch { this.selected = null; }
+
+      // Si la key guardada no existe más en la lista, anular selección
+      if (this.selected && !this.list.some(k => k.value === this.selected)) {
+        this.selected = null;
+        try { localStorage.removeItem(LS_SELECTED_KEY); } catch {}
+      }
+
+      state.selected = this.selected;
       return this.list;
     },
     save() {
@@ -562,12 +600,20 @@
       this.selected = token || null;
       state.selected = this.selected;
 
+      // NUEVO: persistir selección (o limpiar si es null)
+      try {
+        if (this.selected) localStorage.setItem(LS_SELECTED_KEY, this.selected);
+        else localStorage.removeItem(LS_SELECTED_KEY);
+      } catch {}
+
       const gs = el.keySelectGlobal;
       const before = gs ? gs.value : null;
       if (gs && gs.value !== (this.selected || '')) gs.value = this.selected || '';
 
       // Avisar a otros módulos
       document.dispatchEvent(new CustomEvent('gn:tokenchange', { detail: { token: this.selected } }));
+      // NUEVO: forzar refresh en WV Objetivos (y canales opcionales)
+      emitRefreshEvents(this.selected, 'key:setSelected');
 
       // NUEVO: disparamos un 'change' programático para que el router refresque WV,
       // y evitamos bucles en nuestro propio handler con _programmaticChange.
@@ -623,7 +669,7 @@
 
       if (this.selected === value) {
         const next = this.list[0]?.value || null;
-        // Importante: setSelected con notify para que el router se entere
+        // Importante: setSelected con notify para que el router se entere (y persiste LS_SELECTED_KEY)
         this.setSelected(next);
         if (next) loadAllForToken(next);
         else { state.wallet = []; render(); }
@@ -880,7 +926,7 @@
     try { state.favs = new Set(JSON.parse(localStorage.getItem(LS_FAVS)) || []); }
     catch { state.favs = new Set(); }
 
-    // Cargar keys
+    // Cargar keys + selección previa (si existe y sigue siendo válida)
     KeyManager.load();
     KeyManager.refreshSelects();
 
@@ -904,9 +950,11 @@
 
     // Selección inicial
     if (!KeyManager.selected && KeyManager.list.length) {
+      // No hay selección guardada o es inválida → usar primera key
       KeyManager.setSelected(KeyManager.list[0].value);
       await loadAllForToken(KeyManager.selected);
     } else if (KeyManager.selected) {
+      // Hay selección válida guardada → restaurar y cargar
       KeyManager.setSelected(KeyManager.selected);
       await loadAllForToken(KeyManager.selected);
     } else {
@@ -923,6 +971,8 @@
 
     // Avisar token inicial a otros módulos (compat)
     document.dispatchEvent(new CustomEvent('gn:tokenchange', { detail: { token: KeyManager.selected } }));
+    // NUEVO: asegurar que Objetivos (y demás) también se actualicen al iniciar
+    emitRefreshEvents(KeyManager.selected, 'boot');
   }
   boot();
 
