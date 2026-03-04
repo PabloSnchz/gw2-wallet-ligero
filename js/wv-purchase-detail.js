@@ -1,14 +1,20 @@
 /*!
- * js/wv-purchase-detail.js — Vista de Detalle de Compras (Wizard's Vault)
+ * js/wv-purchase-detail.js — Vista de Detalle de Compras (Wizard's Vault) + Dashboard
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.2.1 (2026-03-04)
+ * Versión: 1.3.2 (2026-03-04)
  *
- * Parches de estabilidad (vs 1.2.0):
- *  - Apertura tras F5 sólo en gn:nav-active con reopen guard (sin setTimeout inicial).
- *  - MutationObserver del toolbar con throttle en rAF y sin re-asignar innerHTML innecesariamente.
- *  - Catálogo de ítems: sólo item_id de columnas activas (pinned), lazy en idle + cap de seguridad, con backfill de headers.
- *  - refresh() coalesced: guardia in-flight + seq (last-win).
- *  - Se preservan: iconos AA/ítems, purchased+marks, persistencia wvpd_open y botón con imagen por URL.
+ * Cambios v1.3.2:
+ *  1) Top ítems más pendientes (recuadro azul): sólo icono del ítem (22px), nombre como tooltip.
+ *  2) “Top cuentas deficitarias” (cuadritos rojos): se agrega icono de AA junto al Δ.
+ *  3) Icono “cámara” (banner y botón de tienda): usa imagen por URL (LS 'wvpd_icon_url' o setIcon()) en lugar de SVG si está disponible.
+ *  4) Nueva tarjeta “Datos útiles” (cuadro blanco): Fijados completos/total, Cuentas con AA suficiente, Ítem más caro pendiente (con icono), AA faltante promedio/cuenta.
+ *
+ * Mantiene (desde v1.2.1/1.3.1):
+ *  - Apertura tras F5 sólo en 'gn:nav-active' con guard.
+ *  - MutationObserver del toolbar con throttle en rAF (sin innerHTML redundante).
+ *  - Catálogo de ítems sólo para columnas activas (pinned), lazy en idle + cap de seguridad (800).
+ *  - refresh() coalesced (in-flight + seq).
+ *  - Celdas coherentes con Tienda: purchased + marks (cap) y restante via wvComputeRemaining().
  */
 
 (function (root) {
@@ -37,20 +43,22 @@
     inited: false,
     season: null,
     keys: [],
-    accounts: [],             // [{ fp,label,token,aa,aaIcon,itemsById,rows,pinned,marks }]
-    pinnedUnion: [],          // [listingId...]
-    globalItemsById: new Map(), // Map(item_id -> item meta) - reducido a columnas activas
+    accounts: [],               // [{ fp,label,token,aa,aaIcon,itemsById,rows,pinned,marks }]
+    pinnedUnion: [],            // [listingId...]
+    globalItemsById: new Map(), // Map(item_id -> item meta)
     filters: { q:'', onlyPending:false, onlyPendingCols:false, sort:'delta' },
     loading: false,
     prevTab: 'shop',
     tabsHidden: false,
-    accessIconUrl: null
+    accessIconUrl: null,
+    dashTimer: null
   };
 
   // Guards
   var _reopenOnceToken = 0;
   var _refreshInFlight = null;
   var _refreshSeq = 0;
+  var _itemsBackfillScheduled = false;
 
   // ------------------------------ Estilos --------------------------------
   function injectStyles(){
@@ -59,6 +67,60 @@
       #wvPDPanel.panel{ margin-top: 12px; }
       #wvPDPanel[hidden]{ display:none !important; }
 
+      /* ===== DASHBOARD ===== */
+      .wvpd-dash{ display:grid; gap:10px; margin-bottom:12px; }
+      .wvpd-dash__grid{ display:grid; gap:10px; grid-template-columns: repeat(3, minmax(0,1fr)); }
+
+      .wvpd-card{
+        background: linear-gradient(180deg, #0f1116 0%, #0d0f14 100%);
+        border:1px solid #26262b; border-radius:12px; padding:10px 12px;
+      }
+
+      .wvpd-kpi{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+      .wvpd-kpi__lbl{
+        color:#a0a6b3; font-size:12px; display:inline-flex; align-items:center; gap:8px;
+      }
+      .wvpd-kpi__lbl .aa-ico img{
+        width:16px; height:16px; vertical-align:middle; border-radius:4px; box-shadow:0 0 0 1px #2a2a30 inset;
+      }
+      .wvpd-kpi__val{ font-size:20px; font-weight:800; letter-spacing:0.2px; }
+      .wvpd-kpi--ok   .wvpd-kpi__val{ color:#a0ffc8; }
+      .wvpd-kpi--warn .wvpd-kpi__val{ color:#ffd36b; }
+      .wvpd-kpi--bad  .wvpd-kpi__val{ color:#ff9d9d; }
+
+      .wvpd-rows{ display:grid; gap:8px; grid-template-columns: 1.2fr 1.8fr; }
+      @media (max-width: 980px){
+        .wvpd-rows{ grid-template-columns: 1fr; }
+      }
+
+      .wvpd-rot{ display:flex; gap:10px; flex-wrap:wrap; }
+      .wvpd-rot__pill{
+        display:inline-flex; align-items:center; gap:8px;
+        padding:6px 10px; border:1px solid #26262b; border-radius:999px;
+        background:#0f1218; color:#cdd2da; font-size:12px;
+      }
+      .wvpd-rot__pill .clock-ico{ width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center; }
+      .wvpd-rot__pill .clock-ico svg{ display:block; width:16px; height:16px; }
+
+      .wvpd-cols{ display:flex; gap:10px; flex-wrap:wrap; }
+      .wvpd-col{ flex:1 1 240px; min-width:220px; }
+
+      .wvpd-list{ margin:0; padding:0; list-style:none; display:grid; gap:6px; }
+      .wvpd-li{
+        display:flex; align-items:center; justify-content:space-between; gap:10px;
+        background:#0c0e13; border:1px solid #222631; border-radius:10px; padding:8px 10px;
+      }
+      .wvpd-li__left{ display:inline-flex; align-items:center; gap:8px; min-width:0; }
+      .wvpd-li__icon img{
+        width:26px; height:26px; border-radius:6px; box-shadow:0 0 0 1px #2a2a30 inset;
+      }
+      .wvpd-li__name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px; color:#cfd2d8; }
+      .wvpd-li__delta{ font-weight:700; display:inline-flex; align-items:center; gap:6px; }
+      .wvpd-li__delta--bad{ color:#ff9d9d; }
+      .wvpd-li__delta--ok { color:#a0ffc8; }
+      .wvpd-li__rest{ font-weight:700; color:#ffd36b; }
+
+      /* ===== TOOLBAR ===== */
       .wvpd-header{
         display:flex; align-items:center; justify-content:space-between; gap:8px;
         background: linear-gradient(90deg, #0f1013 0%, #181b22 100%);
@@ -70,9 +132,10 @@
         background: #0b0e13; border:1px solid #20242d; border-radius:10px; padding:8px 10px;
       }
       .wvpd-banner__icon{
-        width:36px; height:36px; border-radius:8px; background:#111726; display:flex; align-items:center; justify-content:center;
-        box-shadow: 0 0 0 1px #2a2a30 inset;
+        width:48px; height:48px; border-radius:12px; background:#111726; display:flex; align-items:center; justify-content:center;
+        box-shadow: 0 0 0 1px #2a2a30 inset; overflow:hidden;
       }
+      .wvpd-banner__icon img{ width:46px; height:46px; display:block; }
       .wvpd-banner__title{ font-weight:700; }
       .wvpd-help{ color:#a0a6b3; font-size:12px; }
       .wvpd-stickyhint{ color:#a0a6b3; font-size:12px; margin-left:8px; }
@@ -83,12 +146,13 @@
       .wv-shop-toolbar .group{ display:flex; align-items:center; }
       #wvPDOpenBtn{ margin-left:auto; }
       .wvpd-iconbtn{
-        width:32px; height:32px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;
+        width:48px; height:48px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center;
         background:#111319; border:1px solid #2c2f36; cursor:pointer;
       }
       .wvpd-iconbtn:hover{ border-color:#3b4352; }
-      .wvpd-iconbtn img{ width:18px; height:18px; border-radius:4px; display:block; }
+      .wvpd-iconbtn img{ width:46px; height:46px; border-radius:4px; display:block; }
 
+      /* ===== TABLA ===== */
       .wvpd-tablewrap{ overflow:auto; border:1px solid #26262b; border-radius:10px; }
       table.wvpd{ border-collapse:separate; border-spacing:0; width:100%; }
       table.wvpd th, table.wvpd td{ padding:8px 10px; border-bottom:1px solid #24252a; white-space:nowrap; }
@@ -107,7 +171,6 @@
       .wvpd-green{ color:#a0ffc8; }
       .wvpd-red{ color:#ff9d9d; }
       .wvpd-pill{ display:inline-block; padding:2px 6px; border-radius:6px; font-size:12px; border:1px solid #2b2b30; color:#cfd2d8; }
-
       .wvpd-status-ok{ color:#a0ffc8; }
       .wvpd-status-bad{ color:#ff9d9d; }
 
@@ -117,7 +180,7 @@
   }
 
   // ------------------------------ Botón acceso (toolbar) -----------------
-  function svgCamera(){
+  function svgCamera(){ // fallback
     return (
       '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">'+
         '<path fill="#8ab4f8" d="M9 4h6l1.5 2H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3.5L9 4z"/>'+
@@ -131,6 +194,29 @@
       return '<img src="'+esc(u)+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">';
     }
     return svgCamera();
+  }
+  function bannerIconHTML(){ // mismo ícono que el botón
+    var u = state.accessIconUrl || (function(){ try{ return localStorage.getItem(LS_WVPD_ICON_URL)||''; }catch(_){ return ''; } })();
+    if (u && /^https?:\/\//i.test(u)) {
+      return '<img src="'+esc(u)+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">';
+    }
+    return svgCamera();
+  }
+  function updateBannerIcon(){
+    var el = document.getElementById('wvpdBannerIcon');
+    if (!el) return;
+    var hasImg = !!el.querySelector('img');
+    var url = state.accessIconUrl || (function(){ try{ return localStorage.getItem(LS_WVPD_ICON_URL)||''; }catch(_){ return ''; } })();
+    if (url && /^https?:\/\//i.test(url)) {
+      if (hasImg) {
+        var img = el.querySelector('img');
+        if (img && img.src !== url) img.src = url;
+      } else {
+        el.innerHTML = bannerIconHTML();
+      }
+    } else {
+      el.innerHTML = svgCamera();
+    }
   }
   function ensureToolbarButton(){
     try{
@@ -147,7 +233,6 @@
         existing.setAttribute('data-wvpd-open','1');
         existing.title = 'Detalle de compras (todas las cuentas)';
         existing.style.marginLeft = 'auto';
-        // Evitar loop por innerHTML: sólo tocar img src si cambió
         var wantUrl = state.accessIconUrl || (function(){ try{ return localStorage.getItem(LS_WVPD_ICON_URL)||''; }catch(_){ return ''; } })();
         var img = existing.querySelector('img');
         if (img && wantUrl && img.src !== wantUrl) img.src = wantUrl;
@@ -173,7 +258,6 @@
     var host = document.getElementById('wvShopToolbarHost');
     if (!host) return;
 
-    // Delegación click
     if (!host.__wvpdDelegated){
       host.__wvpdDelegated = true;
       host.addEventListener('click', function(ev){
@@ -185,7 +269,6 @@
       });
     }
 
-    // MO con throttle en rAF
     if (!host.__wvpdObs){
       var scheduled = false;
       var mo = new MutationObserver(function(){
@@ -229,18 +312,63 @@
       panel.innerHTML = [
         '<div class="panel-head"><h3 class="panel-head__title">Detalle de compras — Wizard’s Vault</h3></div>',
         '<div class="panel__body">',
+          // === DASHBOARD ===
+          '<div id="wvpdDash" class="wvpd-dash">',
+            '<div class="wvpd-dash__grid">',
+              '<div class="wvpd-card wvpd-kpi" id="wvpdKpiAAAvail">',
+                '<div class="wvpd-kpi__lbl"><span class="aa-ico"></span><span>Total disponible</span></div>',
+                '<div class="wvpd-kpi__val">—</div>',
+              '</div>',
+              '<div class="wvpd-card wvpd-kpi" id="wvpdKpiAANeed">',
+                '<div class="wvpd-kpi__lbl"><span class="aa-ico"></span><span>Necesaria (fijados)</span></div>',
+                '<div class="wvpd-kpi__val">—</div>',
+              '</div>',
+              '<div class="wvpd-card wvpd-kpi" id="wvpdKpiAADelta">',
+                '<div class="wvpd-kpi__lbl"><span class="aa-ico"></span><span>Δ Global</span></div>',
+                '<div class="wvpd-kpi__val">—</div>',
+              '</div>',
+            '</div>',
+            '<div class="wvpd-rows">',
+              '<div class="wvpd-card">',
+                '<div class="wvpd-rot">',
+                  '<span class="wvpd-rot__pill"><span class="clock-ico">'+clockSvg()+'</span><span class="wvpd-rot__label">Reset diario:</span> <strong id="wvpdCountDaily">—</strong></span>',
+                  '<span class="wvpd-rot__pill"><span class="clock-ico">'+clockSvg()+'</span><span class="wvpd-rot__label">Reset semanal:</span> <strong id="wvpdCountWeekly">—</strong></span>',
+                  '<span class="wvpd-rot__pill"><span class="clock-ico">'+clockSvg()+'</span><span class="wvpd-rot__label">Fin de temporada:</span> <strong id="wvpdCountSeason">—</strong></span>',
+                '</div>',
+                // === NUEVO CUADRO BLANCO: Datos útiles ===
+                '<div id="wvpdUsefulBox" style="margin-top:10px; display:grid; gap:8px">',
+                  '<div class="wvpd-kpi__lbl">Datos útiles</div>',
+                  '<div id="wvpdUsefulContent" class="wvpd-cols"></div>',
+                '</div>',
+              '</div>',
+              '<div class="wvpd-card">',
+                '<div class="wvpd-cols">',
+                  '<div class="wvpd-col">',
+                    '<div class="wvpd-kpi__lbl" style="margin-bottom:6px">Top cuentas deficitarias</div>',
+                    '<ul id="wvpdTopAccounts" class="wvpd-list"></ul>',
+                  '</div>',
+                  '<div class="wvpd-col">',
+                    '<div class="wvpd-kpi__lbl" style="margin-bottom:6px">Top ítems más pendientes</div>',
+                    '<ul id="wvpdTopItems" class="wvpd-list"></ul>',
+                  '</div>',
+                '</div>',
+              '</div>',
+            '</div>',
+          '</div>',
+          // === TOOLBAR ===
           '<div class="wvpd-header">',
             '<div class="wvpd-header__left">',
               '<div class="wvpd-banner">',
-                '<div class="wvpd-banner__icon">'+svgCamera()+'</div>',
+                '<div class="wvpd-banner__icon" id="wvpdBannerIcon">'+bannerIconHTML()+'</div>',
                 '<div>',
                   '<div class="wvpd-banner__title">Cámara del brujo</div>',
-                  '<div class="wvpd-help">Progreso por cuenta e ítems fijados. Usá las tabs de WV para volver.</div>',
+                  '<div class="wvpd-help">Resumen estratégico y detalle por cuenta/ítem fijado.</div>',
                 '</div>',
               '</div>',
-              '<span class="wvpd-stickyhint">Desplazá lateralmente para ver todas las columnas.</span>',
+              '<span class="wvpd-stickyhint">Tip: “Solo pendientes” y orden por Δ priorizan lo crítico.</span>',
             '</div>',
           '</div>',
+          // === FILTROS ===
           '<div class="wvpd-filters">',
             '<input type="text" id="wvpdSearch" placeholder="Buscar cuenta…">',
             '<label><input type="checkbox" id="wvpdOnlyPending"> Solo pendientes</label>',
@@ -261,26 +389,22 @@
       // Filtros
       var t=null, rootPanel = panel;
       rootPanel.querySelector('#wvpdSearch')?.addEventListener('input', function(e){
-        clearTimeout(t); t=setTimeout(function(){ state.filters.q = e.target.value.trim().toLowerCase(); renderTable(); }, 160);
+        clearTimeout(t); t=setTimeout(function(){ state.filters.q = e.target.value.trim().toLowerCase(); renderTable(); updateDashboard(); }, 160);
       });
-      rootPanel.querySelector('#wvpdOnlyPending')?.addEventListener('change', function(e){ state.filters.onlyPending = !!e.target.checked; renderTable(); });
+      rootPanel.querySelector('#wvpdOnlyPending')?.addEventListener('change', function(e){ state.filters.onlyPending = !!e.target.checked; renderTable(); updateDashboard(); });
       rootPanel.querySelector('#wvpdOnlyPendingCols')?.addEventListener('change', function(e){ state.filters.onlyPendingCols = !!e.target.checked; safeRefresh(false); });
       rootPanel.querySelector('#wvpdSort')?.addEventListener('change', function(e){ state.filters.sort = e.target.value||'delta'; renderTable(); });
+
       rootPanel.querySelector('#wvpdCompact')?.addEventListener('change', function(e){
         var wrap = panel.closest('.panel'); if (!wrap) wrap = panel;
         wrap.classList.toggle('wvpd-compact', !!e.target.checked);
       });
-
-      // Tabs de WV cierran esta vista
-      ['wvTabBtnDaily','wvTabBtnWeekly','wvTabBtnSpecial','wvTabBtnShop'].forEach(function(id){
-        var b = document.getElementById(id);
-        if (b && !b.__wvpdWired){
-          b.__wvpdWired = true;
-          b.addEventListener('click', function(){ try { WVPurchaseDetail.hide(); } catch(_){ } });
-        }
-      });
     }
     return panel;
+  }
+
+  function clockSvg(){
+    return '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="#cdd2da" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3 2"/></g></svg>';
   }
 
   function setStatus(msg, kind){
@@ -374,7 +498,7 @@
 
     state.accounts = out;
     state.pinnedUnion = computePinnedUnion(out);
-    state.globalItemsById.clear(); // se poblara lazy para columnas activas
+    state.globalItemsById.clear();
 
     setStatus(state.pinnedUnion.length ? 'Listo.' : 'No hay ítems fijados en ninguna cuenta.');
     state.loading = false;
@@ -386,7 +510,7 @@
       var u = state.accounts[i] && state.accounts[i].aaIcon;
       if (u) return String(u);
     }
-    return null; // fallback
+    return null;
   }
   function aaIconHTML(size){
     var url = anyAAIcon();
@@ -397,7 +521,6 @@
   function getItemMeta(itemId){
     var meta = state.globalItemsById.get(Number(itemId));
     if (meta) return meta;
-    // fallback por cuenta
     for (var i=0;i<state.accounts.length;i++){
       var acc = state.accounts[i];
       var map = acc.itemsById;
@@ -479,6 +602,218 @@
     return c;
   }
 
+  // ------------------------------ Dashboard (KPIs, countdowns, tops, útiles) ----
+  function kpiSet(elId, val, kind){
+    var host = document.getElementById(elId); if (!host) return;
+    host.classList.remove('wvpd-kpi--ok','wvpd-kpi--warn','wvpd-kpi--bad');
+    if (kind) host.classList.add('wvpd-kpi--'+kind);
+    var v = host.querySelector('.wvpd-kpi__val'); if (v) v.textContent = fmtInt(val);
+    var lbl = host.querySelector('.wvpd-kpi__lbl .aa-ico');
+    if (lbl) lbl.innerHTML = aaIconHTML(16);
+  }
+  function fmtCountdown(ms){
+    if (!isFinite(ms) || ms<=0) return '—';
+    var s = Math.floor(ms/1000);
+    var d = Math.floor(s/86400); s%=86400;
+    var h = Math.floor(s/3600); s%=3600;
+    var m = Math.floor(s/60);   s%=60;
+    var parts = [];
+    if (d>0) parts.push(d+'d');
+    parts.push(String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'));
+    return parts.join(' ');
+  }
+  function msUntil(ts){ var t = (ts instanceof Date) ? ts.getTime() : Number(ts||0); return Math.max(0, t - Date.now()); }
+  function nextDailyResetUTC(){
+    var now = new Date();
+    var y=now.getUTCFullYear(), m=now.getUTCMonth(), d=now.getUTCDate();
+    var next = new Date(Date.UTC(y, m, d, 24, 0, 0, 0));
+    if (next.getTime() <= Date.now()) next = new Date(Date.UTC(y, m, d+1, 0, 0, 0, 0));
+    return next;
+  }
+  function nextWeeklyResetUTC(){
+    var now = new Date();
+    var day = now.getUTCDay();
+    var daysUntilMonday = (1 - day + 7) % 7;
+    var base = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 7, 30, 0, 0));
+    var next = new Date(base.getTime() + daysUntilMonday*24*60*60*1000);
+    if (next.getTime() <= Date.now()) next = new Date(next.getTime() + 7*24*60*60*1000);
+    return next;
+  }
+  function seasonEndUTC(){
+    var s = state.season; if (!s || !s.end) return null;
+    var t = new Date(s.end); return isNaN(t.getTime()) ? null : t;
+  }
+
+  function recomputeKpis(){
+    var aaAvail = 0;
+    state.accounts.forEach(function(a){ aaAvail += Number(a.aa||0); });
+    var aaNeed = 0;
+    state.accounts.forEach(function(acc){ aaNeed += aaNeededForPinned(acc); });
+    var delta = aaAvail - aaNeed;
+    var kind = (delta >= 0) ? 'ok' : (delta >= -500 ? 'warn' : 'bad');
+    return { aaAvail: aaAvail, aaNeed: aaNeed, delta: delta, kind: kind };
+  }
+  function topDeficitAccounts(n){
+    var rows = state.accounts.map(function(a){
+      var need = aaNeededForPinned(a);
+      var d = Number(a.aa||0) - need;
+      return { label: a.label || a.fp || 'Key', delta: d };
+    });
+    rows.sort(function(x,y){ return x.delta - y.delta; });
+    return rows.slice(0, n||3);
+  }
+  function leftForListingInAccount(acc, listingId){
+    var row = findRowByListingId(acc.rows||[], listingId);
+    if (!row) return 0;
+    var limit     = (row.purchase_limit==null? null : Number(row.purchase_limit));
+    var purchased = Number(row.purchased||0);
+    var marked    = Number((acc.marks||{})[String(listingId)]||0);
+    if (limit==null) return 0;
+    var left = (root.GW2Api && typeof root.GW2Api.wvComputeRemaining==='function')
+      ? root.GW2Api.wvComputeRemaining(limit, purchased, marked)
+      : Math.max(0, limit - (purchased+marked));
+    return left;
+  }
+  function topPendingItems(n){
+    var out = [];
+    state.pinnedUnion.forEach(function(listingId){
+      var leftSum = 0, countAcc = 0, itemId = null, meta = null;
+      state.accounts.forEach(function(acc){
+        var left = leftForListingInAccount(acc, listingId);
+        if (left > 0){ leftSum += left; countAcc++; }
+        if (itemId==null){
+          var row = findRowByListingId(acc.rows||[], listingId);
+          if (row && row.item_id!=null) itemId = Number(row.item_id);
+        }
+      });
+      if (leftSum > 0){
+        meta = (itemId!=null) ? getItemMeta(itemId) : null;
+        out.push({ listingId: listingId, leftSum: leftSum, countAcc: countAcc, itemId: itemId, meta: meta });
+      }
+    });
+    out.sort(function(a,b){
+      if (b.leftSum !== a.leftSum) return b.leftSum - a.leftSum;
+      return b.countAcc - a.countAcc;
+    });
+    return out.slice(0, n||3);
+  }
+
+  function updateCountdowns(){
+    var elD = document.getElementById('wvpdCountDaily');
+    var elW = document.getElementById('wvpdCountWeekly');
+    var elS = document.getElementById('wvpdCountSeason');
+    var d = nextDailyResetUTC();
+    var w = nextWeeklyResetUTC();
+    var s = seasonEndUTC();
+    if (elD) elD.textContent = fmtCountdown(msUntil(d));
+    if (elW) elW.textContent = fmtCountdown(msUntil(w));
+    if (elS) elS.textContent = s ? fmtCountdown(msUntil(s)) : '—';
+  }
+  function clearDashTimer(){
+    try { if (state.dashTimer) clearInterval(state.dashTimer); } catch(_){}
+    state.dashTimer = null;
+  }
+
+  function buildUsefulBoxHTML(){
+    // Totales (por cuenta)
+    var totalPinned = 0, totalPinnedDone = 0, accountsEnough = 0;
+    var mostExp = { aa: 0, meta: null, name: '', itemId: null, listingId: null };
+
+    state.accounts.forEach(function(acc){
+      var need = aaNeededForPinned(acc);
+      if ((Number(acc.aa||0) - need) >= 0) accountsEnough++;
+
+      Object.keys(acc.pinned || {}).forEach(function(idStr){
+        if (!acc.pinned[idStr]) return;
+        totalPinned++;
+        var listingId = Number(idStr);
+        var row = findRowByListingId(acc.rows||[], listingId);
+        if (!row) return;
+        var left = leftForListingInAccount(acc, listingId);
+        if (left === 0) totalPinnedDone++;
+
+        // Ítem más caro pendiente (AA left = left * cost)
+        if (left > 0){
+          var cost = Number(row.cost||0);
+          var aaLeft = left * cost;
+          if (aaLeft > mostExp.aa){
+            mostExp.aa = aaLeft;
+            mostExp.listingId = listingId;
+            // buscar meta
+            var itemId = (row.item_id!=null) ? Number(row.item_id) : null;
+            mostExp.itemId = itemId;
+            mostExp.meta = (itemId!=null) ? getItemMeta(itemId) : null;
+            mostExp.name = mostExp.meta?.name || (itemId!=null?('#'+itemId):('#'+listingId));
+          }
+        }
+      });
+    });
+
+    var aaTotals = recomputeKpis(); // aaAvail, aaNeed, delta
+    var avgNeedPerAcc = state.accounts.length ? Math.round(aaTotals.aaNeed / state.accounts.length) : 0;
+
+    // Render
+    var icon = mostExp.meta?.icon ? ('<span class="wvpd-li__icon"><img src="'+esc(mostExp.meta.icon)+'" alt="'+esc(mostExp.name)+'" loading="lazy" decoding="async" referrerpolicy="no-referrer"></span>') : '';
+    var nameTitle = esc(mostExp.name || '—');
+    var mostExpHTML = (mostExp.aa>0)
+      ? ('<div class="wvpd-li"><span class="wvpd-li__left">'+icon+'<span class="wvpd-li__name" title="'+nameTitle+'">'+(icon?'':'—')+'</span></span><span class="wvpd-li__rest">AA faltante: '+fmtInt(mostExp.aa)+'</span></div>')
+      : ('<div class="wvpd-li"><span class="wvpd-li__name">—</span><span class="wvpd-li__rest">AA faltante: 0</span></div>');
+
+    var k1 = '<div class="wvpd-li"><span>Fijados completos / totales</span><span class="wvpd-li__rest">'+fmtInt(totalPinnedDone)+' / '+fmtInt(totalPinned)+'</span></div>';
+    var k2 = '<div class="wvpd-li"><span>Cuentas con AA suficiente</span><span class="wvpd-li__rest">'+fmtInt(accountsEnough)+' / '+fmtInt(state.accounts.length)+'</span></div>';
+    var k3 = mostExpHTML;
+    var k4 = '<div class="wvpd-li"><span>AA Faltante promedio / cuenta</span><span class="wvpd-li__rest">'+fmtInt(avgNeedPerAcc)+'</span></div>';
+
+    return '<div class="wvpd-col">'+k1+k2+'</div><div class="wvpd-col">'+k3+k4+'</div>';
+  }
+
+  function updateUsefulBox(){
+    var host = document.getElementById('wvpdUsefulContent');
+    if (!host) return;
+    host.innerHTML = buildUsefulBoxHTML();
+  }
+
+  function updateDashboard(){
+    var k = recomputeKpis();
+    kpiSet('wvpdKpiAAAvail', k.aaAvail, 'ok');
+    kpiSet('wvpdKpiAANeed',  k.aaNeed,  k.aaNeed <= 0 ? 'ok' : (k.aaNeed < 500 ? 'warn' : 'bad'));
+    kpiSet('wvpdKpiAADelta', k.delta,   k.kind);
+
+    // Top cuentas deficitarias (con icono de AA junto al Δ)
+    var listA = document.getElementById('wvpdTopAccounts');
+    if (listA){
+      var topA = topDeficitAccounts(3);
+      var aaI = aaIconHTML(14);
+      listA.innerHTML = topA.length ? topA.map(function(a){
+        var cls = (a.delta >= 0) ? 'wvpd-li__delta--ok' : 'wvpd-li__delta--bad';
+        return '<li class="wvpd-li"><span class="wvpd-li__name">'+esc(a.label)+'</span><span class="wvpd-li__delta '+cls+'">'+aaI+(a.delta>=0?'+':'')+fmtInt(a.delta)+'</span></li>';
+      }).join('') : '<li class="wvpd-li"><span class="wvpd-li__name">—</span><span class="wvpd-li__delta">—</span></li>';
+    }
+
+    // Top ítems pendientes: sólo icono (nombre en tooltip)
+    var listI = document.getElementById('wvpdTopItems');
+    if (listI){
+      var topI = topPendingItems(3);
+      listI.innerHTML = topI.length ? topI.map(function(x){
+        var name = x.meta?.name || (x.itemId!=null ? ('#'+x.itemId) : ('#'+x.listingId));
+        var icon = x.meta?.icon ? ('<span class="wvpd-li__icon"><img src="'+esc(x.meta.icon)+'" alt="'+esc(name)+'" loading="lazy" decoding="async" referrerpolicy="no-referrer"></span>') : '<span class="wvpd-li__icon"></span>';
+        return '<li class="wvpd-li" title="'+esc(name)+'">'+
+                 '<span class="wvpd-li__left">'+icon+'<span class="wvpd-li__name" style="display:none">'+esc(name)+'</span></span>'+
+                 '<span class="wvpd-li__rest">Restan: '+fmtInt(x.leftSum)+'</span>'+
+               '</li>';
+      }).join('') : '<li class="wvpd-li"><span class="wvpd-li__name">—</span><span class="wvpd-li__rest">—</span></li>';
+    }
+
+    // Countdowns
+    updateCountdowns();
+    // Datos útiles (nuevo cuadro blanco)
+    updateUsefulBox();
+
+    // Tick del reloj
+    try { if (state.dashTimer) clearInterval(state.dashTimer); } catch(_){}
+    state.dashTimer = setInterval(updateCountdowns, 1000);
+  }
+
   // ------------------------------ Render Tabla --------------------------
   function renderTable(){
     var table = document.getElementById('wvpdTable');
@@ -507,10 +842,8 @@
       });
     }
 
-    // ----- Encabezado -----
     var hcells = ['<th>Cuenta</th>'];
     pins.forEach(function(listingId){
-      // Buscar item_id en cualquier cuenta y meta disponible (puede no estar aún)
       var itemId = null, meta = null, name = '';
       for (var i=0;i<state.accounts.length;i++){
         var acc = state.accounts[i];
@@ -534,7 +867,6 @@
 
     thead.innerHTML = '<tr>'+hcells.join('')+'</tr>';
 
-    // ----- Filas -----
     var rowsAcc = state.accounts.slice();
     if (state.filters.q){
       var q = state.filters.q;
@@ -579,19 +911,15 @@
 
     tbody.innerHTML = body || '<tr><td colspan="'+(1 + pins.length + 3)+'" class="center wvpd-muted">Sin datos para mostrar.</td></tr>';
 
-    // Backfill lazy de iconos en headers si aún no estaban
     lazyBuildItemsCatalogForActiveColumns();
   }
 
   // ------------------------------ Catálogo ítems (lazy + cap) -----------
-  var _itemsBackfillScheduled = false;
   function collectActiveItemIds(){
-    // Recolectar sólo los item_id de las columnas (pinned en uso)
     var setIds = new Set();
     var ths = $$('#wvpdTable thead th[data-listing-id]');
     ths.forEach(function(th){
       var listingId = Number(th.getAttribute('data-listing-id'));
-      // hallar item_id en cualquier cuenta
       for (var i=0;i<state.accounts.length;i++){
         var acc = state.accounts[i];
         var row = findRowByListingId((acc.rows||[]), listingId);
@@ -609,19 +937,16 @@
         var ids = collectActiveItemIds();
         if (!ids.length) return;
 
-        // Cap de seguridad
         var cap = 800;
         ids = ids.slice(0, cap);
-
-        // Resta por pedir (si ya tenemos algunos en cache local)
         ids = ids.filter(function(id){ return !state.globalItemsById.has(Number(id)); });
         if (!ids.length) return;
 
         if (root.GW2Api && typeof root.GW2Api.getItemsMany==='function'){
           var items = await root.GW2Api.getItemsMany(ids, { nocache:false });
           (items||[]).forEach(function(it){ if (it && it.id!=null) state.globalItemsById.set(Number(it.id), it); });
-          // Backfill de headers
           backfillHeaderIcons();
+          updateDashboard(); // repintar “Top ítems” con iconos si hizo falta
         }
       } catch(e){ console.warn(LOG, 'items lazy', e); }
     }, { timeout: 1200 });
@@ -629,9 +954,7 @@
   function backfillHeaderIcons(){
     var ths = $$('#wvpdTable thead th[data-listing-id]');
     ths.forEach(function(th){
-      // si ya hay img, no tocar
       if (th.querySelector('img')) return;
-
       var listingId = Number(th.getAttribute('data-listing-id'));
       var itemMeta = null, itemId = null;
       for (var i=0;i<state.accounts.length;i++){
@@ -659,10 +982,10 @@
       observeToolbar();
       ensurePanel();
       try { state.accessIconUrl = localStorage.getItem(LS_WVPD_ICON_URL) || null; } catch(_){}
+      updateBannerIcon();
 
       state.inited = true;
 
-      // Reapertura tras F5 SOLO en gn:nav-active (guard por navegación)
       document.addEventListener('gn:nav-active', function(ev){
         try {
           var h = String(ev && ev.detail && ev.detail.hash || '').toLowerCase();
@@ -673,22 +996,21 @@
           if (open === '1') {
             requestAnimationFrame(function(){ if (_reopenOnceToken === myToken) WVPurchaseDetail.show(); });
           }
-          observeToolbar(); // asegurar botón
+          observeToolbar();
         } catch(_){}
       });
 
-      // Storage (throttle) — refrescar si está visible
       var _stTimer = null;
       window.addEventListener('storage', function(e){
         if (!e) return;
-        if (e.key!==LS_KEYS && e.key!==LS_WV_SHOP_PINNED && e.key!==LS_WV_SHOP_MARKS) return;
+        if (e.key!==LS_KEYS && e.key!==LS_WV_SHOP_PINNED && e.key!==LS_WV_SHOP_MARKS && e.key!==LS_WVPD_ICON_URL) return;
         var p = document.getElementById('wvPDPanel');
+        if (e.key===LS_WVPD_ICON_URL) { state.accessIconUrl = localStorage.getItem(LS_WVPD_ICON_URL) || null; ensureToolbarButton(); updateBannerIcon(); return; }
         if (!p || p.hasAttribute('hidden')) return;
         clearTimeout(_stTimer);
         _stTimer = setTimeout(function(){ safeRefresh(false); }, 400);
       });
 
-      // Tabs de WV cierran esta vista
       ['wvTabBtnDaily','wvTabBtnWeekly','wvTabBtnSpecial','wvTabBtnShop'].forEach(function(id){
         var b = document.getElementById(id);
         if (b && !b.__wvpdWired){
@@ -714,12 +1036,12 @@
       try { if (root.WV && typeof root.WV.setActiveTab==='function') root.WV.setActiveTab(state.prevTab || 'shop'); } catch(_){}
       hidePanel();
       try { document.getElementById('wvPanel')?.scrollIntoView({ behavior:'smooth', block:'start' }); } catch(_){}
+      try { if (state.dashTimer) clearInterval(state.dashTimer); } catch(_){}
+      state.dashTimer = null;
     },
 
-    // Mantengo por compat; internamente usa safeRefresh
     async refresh(forceNoCache){ await safeRefresh(!!forceNoCache); },
 
-    // Imagen custom del botón acceso (persistente)
     setIcon: function(url){
       state.accessIconUrl = (url && String(url).trim()) || null;
       try {
@@ -727,6 +1049,7 @@
         else localStorage.removeItem(LS_WVPD_ICON_URL);
       } catch(_){}
       ensureToolbarButton();
+      updateBannerIcon();
     }
   };
 
@@ -734,13 +1057,14 @@
     const mySeq = ++_refreshSeq;
     if (_refreshInFlight){
       try { await _refreshInFlight; } catch(_){}
-      if (mySeq !== _refreshSeq) return; // ya vino un pedido más nuevo
+      if (mySeq !== _refreshSeq) return;
     }
 
     _refreshInFlight = (async () => {
       setStatus('Actualizando…');
       await loadAll(!!forceNoCache);
-      renderTable(); // pinta rápido; backfill de iconos va en idle
+      renderTable();
+      updateDashboard();
       setStatus('Listo.');
     })();
 
@@ -755,6 +1079,6 @@
   if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ WVPurchaseDetail.initOnce(); });
   else WVPurchaseDetail.initOnce();
 
-  console.info(LOG, 'ready 1.2.1');
+  console.info(LOG, 'ready 1.3.2');
 
 })(typeof window!=='undefined' ? window : (typeof globalThis!=='undefined' ? globalThis : this));
