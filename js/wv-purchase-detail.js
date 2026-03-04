@@ -1,20 +1,18 @@
 /*!
- * js/wv-purchase-detail.js — Vista de Detalle de Compras (Wizard's Vault) + Dashboard
+ * js/wv-purchase-detail.js — Vista de Detalle de Compras (Wizard's Vault) + Dashboard + Selector de Temporada
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.3.2 (2026-03-04)
+ * Versión: 1.4.0 (2026-03-04)
  *
- * Cambios v1.3.2:
- *  1) Top ítems más pendientes (recuadro azul): sólo icono del ítem (22px), nombre como tooltip.
- *  2) “Top cuentas deficitarias” (cuadritos rojos): se agrega icono de AA junto al Δ.
- *  3) Icono “cámara” (banner y botón de tienda): usa imagen por URL (LS 'wvpd_icon_url' o setIcon()) en lugar de SVG si está disponible.
- *  4) Nueva tarjeta “Datos útiles” (cuadro blanco): Fijados completos/total, Cuentas con AA suficiente, Ítem más caro pendiente (con icono), AA faltante promedio/cuenta.
+ * Cambios v1.4.0:
+ *  - Consumo del almacenamiento por temporada a través de WVSeasonStore (archivo por temporada).
+ *  - Selector de temporada (actual y pasadas) en el dashboard (listado desde WVSeasonStore.listSeasons()).
+ *  - Modo "historial": al seleccionar una temporada pasada, se muestra un resumen histórico y se desactiva la tabla analítica en vivo
+ *    (la tabla requiere filas/rows de tienda vigentes; para historiales sólo hay pins/marks persistidos).
+ *  - Se mantiene la estabilidad v1.2.1 (coalescing de refresh, MO throttle, lazy backfill de iconos) y visual v1.3.x.
  *
- * Mantiene (desde v1.2.1/1.3.1):
- *  - Apertura tras F5 sólo en 'gn:nav-active' con guard.
- *  - MutationObserver del toolbar con throttle en rAF (sin innerHTML redundante).
- *  - Catálogo de ítems sólo para columnas activas (pinned), lazy en idle + cap de seguridad (800).
- *  - refresh() coalesced (in-flight + seq).
- *  - Celdas coherentes con Tienda: purchased + marks (cap) y restante via wvComputeRemaining().
+ * Notas:
+ *  - Para temporada actual: comportamiento idéntico a v1.3.2 (usa getWVShopMerged + pins/marks del store).
+ *  - Para temporada pasada: muestra KPIs/útiles reducidos (sin AA en vivo ni rows), una tarjeta resumen por cuenta y totales.
  */
 
 (function (root) {
@@ -24,28 +22,27 @@
   // ------------------------------ Utils DOM ------------------------------
   function $(s, r){ return (r||document).querySelector(s); }
   function $$(s, r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); }
-  function fmtInt(n){ n=Number(n||0); return n.toLocaleString('es-AR'); }
+  function fmtInt(n){ if (n==null || !isFinite(n)) return '—'; n=Number(n||0); return n.toLocaleString('es-AR'); }
   function esc(s){ return String(s||'').replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]; }); }
   function rIC(fn, opts){
     try { if ('requestIdleCallback' in window) return window.requestIdleCallback(fn, opts||{timeout:1200}); } catch(_){}
     return setTimeout(fn, (opts && opts.timeout) || 200);
   }
+  function fpToken(token){ var t=String(token||''); return t ? (t.slice(0,4)+'…'+t.slice(-4)) : 'anon'; }
 
-  // ------------------------------ Constantes LS --------------------------
-  var LS_KEYS             = 'gw2_keys';
-  var LS_WV_SHOP_PINNED   = 'gw2_wv_pinned_v1';
-  var LS_WV_SHOP_MARKS    = 'gw2_wv_marks_v1';
-  var LS_WVPD_ICON_URL    = 'wvpd_icon_url';
-  var LS_WVPD_OPEN        = 'wvpd_open';
-
-  // ------------------------------ Estado --------------------------------
+  // ------------------------------ Estado / Store -------------------------
   var state = {
     inited: false,
-    season: null,
+    // temporada actual y seleccionada
+    currentSeason: { year:null, seq:null, season_id:null, title:null, start:null, end:null },
+    selectedSeason: { year:null, seq:null },  // por defecto = currentSeason
+    seasonsIdx: [],                           // WVSeasonStore.listSeasons()
+    // cuentas (por key)
     keys: [],
-    accounts: [],               // [{ fp,label,token,aa,aaIcon,itemsById,rows,pinned,marks }]
-    pinnedUnion: [],            // [listingId...]
-    globalItemsById: new Map(), // Map(item_id -> item meta)
+    accounts: [],   // para temporada ACTUAL: [{ fp,label,token,aa,aaIcon,itemsById,rows,pinned,marks }]
+                    // para temporada PASADA:  [{ fp,label,token,aa: null,aaIcon:null, itemsById:Map(), rows:[], pinned, marks }]
+    pinnedUnion: [],          // sólo para actual (columnas)
+    globalItemsById: new Map(),
     filters: { q:'', onlyPending:false, onlyPendingCols:false, sort:'delta' },
     loading: false,
     prevTab: 'shop',
@@ -77,28 +74,18 @@
       }
 
       .wvpd-kpi{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
-      .wvpd-kpi__lbl{
-        color:#a0a6b3; font-size:12px; display:inline-flex; align-items:center; gap:8px;
-      }
-      .wvpd-kpi__lbl .aa-ico img{
-        width:16px; height:16px; vertical-align:middle; border-radius:4px; box-shadow:0 0 0 1px #2a2a30 inset;
-      }
+      .wvpd-kpi__lbl{ color:#a0a6b3; font-size:12px; display:inline-flex; align-items:center; gap:8px; }
+      .wvpd-kpi__lbl .aa-ico img{ width:16px; height:16px; vertical-align:middle; border-radius:4px; box-shadow:0 0 0 1px #2a2a30 inset; }
       .wvpd-kpi__val{ font-size:20px; font-weight:800; letter-spacing:0.2px; }
       .wvpd-kpi--ok   .wvpd-kpi__val{ color:#a0ffc8; }
       .wvpd-kpi--warn .wvpd-kpi__val{ color:#ffd36b; }
       .wvpd-kpi--bad  .wvpd-kpi__val{ color:#ff9d9d; }
 
       .wvpd-rows{ display:grid; gap:8px; grid-template-columns: 1.2fr 1.8fr; }
-      @media (max-width: 980px){
-        .wvpd-rows{ grid-template-columns: 1fr; }
-      }
+      @media (max-width: 980px){ .wvpd-rows{ grid-template-columns: 1fr; } }
 
       .wvpd-rot{ display:flex; gap:10px; flex-wrap:wrap; }
-      .wvpd-rot__pill{
-        display:inline-flex; align-items:center; gap:8px;
-        padding:6px 10px; border:1px solid #26262b; border-radius:999px;
-        background:#0f1218; color:#cdd2da; font-size:12px;
-      }
+      .wvpd-rot__pill{ display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid #26262b; border-radius:999px; background:#0f1218; color:#cdd2da; font-size:12px; }
       .wvpd-rot__pill .clock-ico{ width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center; }
       .wvpd-rot__pill .clock-ico svg{ display:block; width:16px; height:16px; }
 
@@ -106,14 +93,9 @@
       .wvpd-col{ flex:1 1 240px; min-width:220px; }
 
       .wvpd-list{ margin:0; padding:0; list-style:none; display:grid; gap:6px; }
-      .wvpd-li{
-        display:flex; align-items:center; justify-content:space-between; gap:10px;
-        background:#0c0e13; border:1px solid #222631; border-radius:10px; padding:8px 10px;
-      }
+      .wvpd-li{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:#0c0e13; border:1px solid #222631; border-radius:10px; padding:8px 10px; }
       .wvpd-li__left{ display:inline-flex; align-items:center; gap:8px; min-width:0; }
-      .wvpd-li__icon img{
-        width:26px; height:26px; border-radius:6px; box-shadow:0 0 0 1px #2a2a30 inset;
-      }
+      .wvpd-li__icon img{ width:22px; height:22px; border-radius:6px; box-shadow:0 0 0 1px #2a2a30 inset; }
       .wvpd-li__name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px; color:#cfd2d8; }
       .wvpd-li__delta{ font-weight:700; display:inline-flex; align-items:center; gap:6px; }
       .wvpd-li__delta--bad{ color:#ff9d9d; }
@@ -121,36 +103,24 @@
       .wvpd-li__rest{ font-weight:700; color:#ffd36b; }
 
       /* ===== TOOLBAR ===== */
-      .wvpd-header{
-        display:flex; align-items:center; justify-content:space-between; gap:8px;
-        background: linear-gradient(90deg, #0f1013 0%, #181b22 100%);
-        border:1px solid #26262b; border-radius:12px; padding:10px 12px; margin-bottom:10px;
-      }
+      .wvpd-header{ display:flex; align-items:center; justify-content:space-between; gap:8px; background: linear-gradient(90deg, #0f1013 0%, #181b22 100%); border:1px solid #26262b; border-radius:12px; padding:10px 12px; margin-bottom:10px; }
       .wvpd-header__left{ display:flex; align-items:center; gap:10px; }
-      .wvpd-banner{
-        display:flex; align-items:center; gap:10px;
-        background: #0b0e13; border:1px solid #20242d; border-radius:10px; padding:8px 10px;
-      }
-      .wvpd-banner__icon{
-        width:48px; height:48px; border-radius:12px; background:#111726; display:flex; align-items:center; justify-content:center;
-        box-shadow: 0 0 0 1px #2a2a30 inset; overflow:hidden;
-      }
-      .wvpd-banner__icon img{ width:46px; height:46px; display:block; }
+      .wvpd-banner{ display:flex; align-items:center; gap:10px; background: #0b0e13; border:1px solid #20242d; border-radius:10px; padding:8px 10px; }
+      .wvpd-banner__icon{ width:40px; height:40px; border-radius:12px; background:#111726; display:flex; align-items:center; justify-content:center; box-shadow: 0 0 0 1px #2a2a30 inset; overflow:hidden; }
+      .wvpd-banner__icon img{ width:40px; height:40px; display:block; }
       .wvpd-banner__title{ font-weight:700; }
       .wvpd-help{ color:#a0a6b3; font-size:12px; }
       .wvpd-stickyhint{ color:#a0a6b3; font-size:12px; margin-left:8px; }
 
-      .wvpd-filters{ display:flex; gap:10px; flex-wrap:wrap; margin:10px 0; }
-      .wvpd-filters input[type="text"]{ min-width:220px; }
+      .wvpd-seasonbar{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+      .wvpd-seasonbar select{ min-width:220px; }
 
-      .wv-shop-toolbar .group{ display:flex; align-items:center; }
-      #wvPDOpenBtn{ margin-left:auto; }
-      .wvpd-iconbtn{
-        width:48px; height:48px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center;
-        background:#111319; border:1px solid #2c2f36; cursor:pointer;
-      }
+      .wvpd-filters{ display:flex; gap:10px; flex-wrap:wrap; margin:10px 0; }
+      .wvpd-filters input[type=\"text\"]{ min-width:220px; }
+
+      .wvpd-iconbtn{ width:40px; height:40px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; background:#111319; border:1px solid #2c2f36; cursor:pointer; }
       .wvpd-iconbtn:hover{ border-color:#3b4352; }
-      .wvpd-iconbtn img{ width:46px; height:46px; border-radius:4px; display:block; }
+      .wvpd-iconbtn img{ width:40px; height:40px; border-radius:4px; display:block; }
 
       /* ===== TABLA ===== */
       .wvpd-tablewrap{ overflow:auto; border:1px solid #26262b; border-radius:10px; }
@@ -175,11 +145,15 @@
       .wvpd-status-bad{ color:#ff9d9d; }
 
       .wvpd-compact table.wvpd th, .wvpd-compact table.wvpd td{ padding:6px 8px; }
+
+      /* Bloque histórico simple */
+      .wvpd-history{ border:1px dashed #2a2f3a; border-radius:10px; padding:12px; background:#0f1218; }
+      .wvpd-history__grid{ display:grid; gap:8px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
     `;
     var s = document.createElement('style'); s.id='wv-pd-styles'; s.textContent = css; document.head.appendChild(s);
   }
 
-  // ------------------------------ Botón acceso (toolbar) -----------------
+  // ------------------------------ Botón acceso (toolbar tienda) ----------
   function svgCamera(){ // fallback
     return (
       '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">'+
@@ -189,14 +163,14 @@
     );
   }
   function accessIconHTML(){
-    var u = state.accessIconUrl || (function(){ try{ return localStorage.getItem(LS_WVPD_ICON_URL)||''; }catch(_){ return ''; } })();
+    var u = state.accessIconUrl || (function(){ try{ return localStorage.getItem('wvpd_icon_url')||''; }catch(_){ return ''; } })();
     if (u && /^https?:\/\//i.test(u)) {
       return '<img src="'+esc(u)+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">';
     }
     return svgCamera();
   }
-  function bannerIconHTML(){ // mismo ícono que el botón
-    var u = state.accessIconUrl || (function(){ try{ return localStorage.getItem(LS_WVPD_ICON_URL)||''; }catch(_){ return ''; } })();
+  function bannerIconHTML(){
+    var u = state.accessIconUrl || (function(){ try{ return localStorage.getItem('wvpd_icon_url')||''; }catch(_){ return ''; } })();
     if (u && /^https?:\/\//i.test(u)) {
       return '<img src="'+esc(u)+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">';
     }
@@ -206,7 +180,7 @@
     var el = document.getElementById('wvpdBannerIcon');
     if (!el) return;
     var hasImg = !!el.querySelector('img');
-    var url = state.accessIconUrl || (function(){ try{ return localStorage.getItem(LS_WVPD_ICON_URL)||''; }catch(_){ return ''; } })();
+    var url = state.accessIconUrl || (function(){ try{ return localStorage.getItem('wvpd_icon_url')||''; }catch(_){ return ''; } })();
     if (url && /^https?:\/\//i.test(url)) {
       if (hasImg) {
         var img = el.querySelector('img');
@@ -233,7 +207,7 @@
         existing.setAttribute('data-wvpd-open','1');
         existing.title = 'Detalle de compras (todas las cuentas)';
         existing.style.marginLeft = 'auto';
-        var wantUrl = state.accessIconUrl || (function(){ try{ return localStorage.getItem(LS_WVPD_ICON_URL)||''; }catch(_){ return ''; } })();
+        var wantUrl = state.accessIconUrl || (function(){ try{ return localStorage.getItem('wvpd_icon_url')||''; }catch(_){ return ''; } })();
         var img = existing.querySelector('img');
         if (img && wantUrl && img.src !== wantUrl) img.src = wantUrl;
         if (!img && wantUrl) existing.innerHTML = accessIconHTML();
@@ -314,6 +288,11 @@
         '<div class="panel__body">',
           // === DASHBOARD ===
           '<div id="wvpdDash" class="wvpd-dash">',
+            '<div class="wvpd-seasonbar wvpd-card">',
+              '<div><strong>Temporada</strong></div>',
+              '<select id="wvpdSeasonSelect" aria-label="Seleccionar temporada"></select>',
+              '<span id="wvpdSeasonLabel" class="wvpd-muted" style="margin-left:6px"></span>',
+            '</div>',
             '<div class="wvpd-dash__grid">',
               '<div class="wvpd-card wvpd-kpi" id="wvpdKpiAAAvail">',
                 '<div class="wvpd-kpi__lbl"><span class="aa-ico"></span><span>Total disponible</span></div>',
@@ -335,7 +314,6 @@
                   '<span class="wvpd-rot__pill"><span class="clock-ico">'+clockSvg()+'</span><span class="wvpd-rot__label">Reset semanal:</span> <strong id="wvpdCountWeekly">—</strong></span>',
                   '<span class="wvpd-rot__pill"><span class="clock-ico">'+clockSvg()+'</span><span class="wvpd-rot__label">Fin de temporada:</span> <strong id="wvpdCountSeason">—</strong></span>',
                 '</div>',
-                // === NUEVO CUADRO BLANCO: Datos útiles ===
                 '<div id="wvpdUsefulBox" style="margin-top:10px; display:grid; gap:8px">',
                   '<div class="wvpd-kpi__lbl">Datos útiles</div>',
                   '<div id="wvpdUsefulContent" class="wvpd-cols"></div>',
@@ -368,8 +346,8 @@
               '<span class="wvpd-stickyhint">Tip: “Solo pendientes” y orden por Δ priorizan lo crítico.</span>',
             '</div>',
           '</div>',
-          // === FILTROS ===
-          '<div class="wvpd-filters">',
+          // === FILTROS (solo para temporada actual; se ocultan en historial) ===
+          '<div class="wvpd-filters" id="wvpdFilters">',
             '<input type="text" id="wvpdSearch" placeholder="Buscar cuenta…">',
             '<label><input type="checkbox" id="wvpdOnlyPending"> Solo pendientes</label>',
             '<label><input type="checkbox" id="wvpdOnlyPendingCols"> Solo columnas con pendientes</label>',
@@ -382,11 +360,12 @@
             '<label class="wvpd-compact-toggle"><input type="checkbox" id="wvpdCompact"> Vista compacta</label>',
           '</div>',
           '<div id="wvpdStatus" class="muted" style="margin:6px 0 10px 0">—</div>',
-          '<div class="wvpd-tablewrap"><table class="wvpd" id="wvpdTable"><thead></thead><tbody></tbody></table></div>',
+          '<div id="wvpdHistoryWrap" class="wvpd-history" style="display:none"></div>',
+          '<div class="wvpd-tablewrap" id="wvpdTableWrap"><table class="wvpd" id="wvpdTable"><thead></thead><tbody></tbody></table></div>',
         '</div>'
       ].join('');
 
-      // Filtros
+      // Wires filtros
       var t=null, rootPanel = panel;
       rootPanel.querySelector('#wvpdSearch')?.addEventListener('input', function(e){
         clearTimeout(t); t=setTimeout(function(){ state.filters.q = e.target.value.trim().toLowerCase(); renderTable(); updateDashboard(); }, 160);
@@ -398,6 +377,24 @@
       rootPanel.querySelector('#wvpdCompact')?.addEventListener('change', function(e){
         var wrap = panel.closest('.panel'); if (!wrap) wrap = panel;
         wrap.classList.toggle('wvpd-compact', !!e.target.checked);
+      });
+
+      // Selector de temporada
+      rootPanel.querySelector('#wvpdSeasonSelect')?.addEventListener('change', async function(e){
+        var v = e.target.value || '';
+        var parts = v.split('-'); // YY-SEQ
+        var yy = Number(parts[0]||0), seq = Number(parts[1]||0);
+        state.selectedSeason = { year: yy||state.currentSeason.year, seq: seq||state.currentSeason.seq };
+        await safeRefresh(false);
+      });
+
+      // Tabs de WV cierran esta vista
+      ['wvTabBtnDaily','wvTabBtnWeekly','wvTabBtnSpecial','wvTabBtnShop'].forEach(function(id){
+        var b = document.getElementById(id);
+        if (b && !b.__wvpdWired){
+          b.__wvpdWired = true;
+          b.addEventListener('click', function(){ try { WVPurchaseDetail.hide(); } catch(_){ } });
+        }
       });
     }
     return panel;
@@ -418,49 +415,81 @@
 
   // ------------------------------ Datos / Carga --------------------------
   function loadKeys(){
-    try { var list = JSON.parse(localStorage.getItem(LS_KEYS)||'[]'); return Array.isArray(list)?list:[]; }
+    try { var list = JSON.parse(localStorage.getItem('gw2_keys')||'[]'); return Array.isArray(list)?list:[]; }
     catch(_){ return []; }
   }
-  function loadPinnedNS(ns){
-    try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_PINNED)||'{}'); var bag = all && all[ns]; return (bag && typeof bag==='object') ? bag : {}; }
-    catch(_){ return {}; }
+
+  // helpers store
+  function getPinnedFromStore(year, seq, fp){
+    if (!root.WVSeasonStore) return {};
+    try { return root.WVSeasonStore.getPinned(year, seq, fp) || {}; } catch(_){ return {}; }
   }
-  function loadMarksNS(ns){
-    try { var all = JSON.parse(localStorage.getItem(LS_WV_SHOP_MARKS)||'{}');  var bag = all && all[ns]; return (bag && typeof bag==='object') ? bag : {}; }
-    catch(_){ return {}; }
-  }
-  function fpToken(token){ var t=String(token||''); return t ? (t.slice(0,4)+'…'+t.slice(-4)) : 'anon'; }
-  function marksNamespace(token, season){
-    var fp = fpToken(token);
-    var sid = (season && (season.id || season.title)) || 'season';
-    return fp + ':' + sid;
+  function getMarksFromStore(year, seq, fp){
+    if (!root.WVSeasonStore) return {};
+    try { return root.WVSeasonStore.getMarks(year, seq, fp) || {}; } catch(_){ return {}; }
   }
 
-  function computePinnedUnion(accounts){
-    var ids = new Set();
-    accounts.forEach(function(acc){
-      var p = acc.pinned || {};
-      Object.keys(p).forEach(function(id){ if (p[id]) ids.add(Number(id)); });
-    });
-    return Array.from(ids.values()).sort(function(a,b){ return a-b; });
+  // TEMPORADA / SELECTOR
+  async function initSeasonSelection(){
+    // current
+    if (root.WVSeasonStore && typeof root.WVSeasonStore.getCurrentSeasonInfo==='function'){
+      try { state.currentSeason = await root.WVSeasonStore.getCurrentSeasonInfo(); }
+      catch(e){ console.warn(LOG,'getCurrentSeasonInfo',e); }
+    } else {
+      var y = (new Date()).getUTCFullYear() % 100;
+      state.currentSeason = { year:y, seq:1, season_id:null, title:null, start:null, end:null };
+    }
+    if (!state.selectedSeason.year) {
+      state.selectedSeason = { year: state.currentSeason.year, seq: state.currentSeason.seq };
+    }
+
+    // list
+    state.seasonsIdx = (root.WVSeasonStore && typeof root.WVSeasonStore.listSeasons==='function')
+      ? root.WVSeasonStore.listSeasons()
+      : [{ year: state.currentSeason.year, seq: state.currentSeason.seq }];
+
+    // pintar select
+    var sel = $('#wvpdSeasonSelect');
+    if (sel){
+      var opts = state.seasonsIdx.slice().sort(function(a,b){ if (a.year!==b.year) return b.year-a.year; return b.seq-a.seq; });
+      sel.innerHTML = opts.map(function(it){
+        var val = it.year+'-'+it.seq;
+        var lab = it.seq+'° Temporada '+String(it.year);
+        var selected = (it.year===state.selectedSeason.year && it.seq===state.selectedSeason.seq) ? ' selected' : '';
+        return '<option value="'+esc(val)+'"'+selected+'>'+esc(lab)+'</option>';
+      }).join('');
+      var labEl = $('#wvpdSeasonLabel');
+      if (labEl){
+        var isCur = (state.selectedSeason.year===state.currentSeason.year && state.selectedSeason.seq===state.currentSeason.seq);
+        labEl.textContent = isCur ? '(actual)' : '(historial)';
+      }
+    }
   }
 
+  // Carga principal (depende de si es temporada actual o historial)
   async function loadAll(forceNoCache){
     state.loading = true;
-    setStatus('Cargando datos de cuentas…');
+    setStatus('Cargando datos…');
 
-    try { state.season = await root.GW2Api.getWVSeason({ nocache: !!forceNoCache }); }
-    catch(e){ console.warn(LOG,'season', e); state.season = null; }
+    await initSeasonSelection();
 
+    // keys configuradas
     state.keys = loadKeys();
+
+    // Sin keys → feedback
     if (!state.keys.length){
       state.accounts = []; state.pinnedUnion = []; state.globalItemsById.clear();
       setStatus('No hay API Keys guardadas. Agregá una desde el menú de keys.', 'error');
       state.loading=false; return;
     }
 
+    var isCurrent = (state.selectedSeason.year===state.currentSeason.year && state.selectedSeason.seq===state.currentSeason.seq);
+
+    // Construir cuentas
     var out = [];
     var idx = 0, ACTIVE=0, MAX=2;
+
+    // Carga por key (en actual trae WVShopMerged; en historial, no)
     await new Promise(function(resolve){
       function next(){
         if (idx>=state.keys.length && ACTIVE===0) return resolve();
@@ -468,14 +497,27 @@
           var it = state.keys[idx++]; ACTIVE++;
           (function(k){
             var token = k.value; var label = k.label || ('Key '+fpToken(token));
-            var ns = marksNamespace(token, state.season);
-            var pinned = loadPinnedNS(ns);
-            var marks  = loadMarksNS(ns);
+            var fp = fpToken(token);
+            var pinned = getPinnedFromStore(state.selectedSeason.year, state.selectedSeason.seq, fp);
+            var marks  = getMarksFromStore(state.selectedSeason.year, state.selectedSeason.seq, fp);
+
+            if (!isCurrent){
+              // Modo historial: no traemos shop actual (no corresponde)
+              out.push({
+                token: token, fp: fp, label: label,
+                aa: null, aaIcon: null,
+                itemsById: new Map(), rows: [],
+                pinned: pinned || {}, marks: marks || {}
+              });
+              ACTIVE--; next(); return;
+            }
+
+            // Modo temporada actual: traemos WVShopMerged para AA/rows/items/aaIcon
             root.GW2Api.getWVShopMerged(token, { nocache: !!forceNoCache })
               .then(function(pkg){
                 out.push({
                   token: token,
-                  fp: fpToken(token),
+                  fp: fp,
                   label: label,
                   aa: Number(pkg && pkg.aa || 0),
                   aaIcon: (pkg && pkg.aaIconUrl) || null,
@@ -487,7 +529,11 @@
               })
               .catch(function(e){
                 console.warn(LOG, 'getWVShopMerged', e);
-                out.push({ token: token, fp: fpToken(token), label: label, aa:0, aaIcon:null, itemsById:new Map(), rows:[], pinned: pinned||{}, marks:marks||{}, error: e });
+                out.push({
+                  token: token, fp: fp, label: label,
+                  aa:0, aaIcon:null, itemsById:new Map(), rows:[],
+                  pinned: pinned||{}, marks: marks||{}, error: e
+                });
               })
               .finally(function(){ ACTIVE--; next(); });
           })(it);
@@ -497,14 +543,30 @@
     });
 
     state.accounts = out;
-    state.pinnedUnion = computePinnedUnion(out);
-    state.globalItemsById.clear();
 
-    setStatus(state.pinnedUnion.length ? 'Listo.' : 'No hay ítems fijados en ninguna cuenta.');
+    // Union de pins sólo si es temporada actual (para columnas de tabla)
+    function computePinnedUnion(accounts){
+      var ids = new Set();
+      accounts.forEach(function(acc){
+        var p = acc.pinned || {};
+        Object.keys(p).forEach(function(id){ if (p[id]) ids.add(Number(id)); });
+      });
+      return Array.from(ids.values()).sort(function(a,b){ return a-b; });
+    }
+
+    if (isCurrent){
+      state.pinnedUnion = computePinnedUnion(out);
+      state.globalItemsById.clear();
+    } else {
+      state.pinnedUnion = [];
+      state.globalItemsById.clear();
+    }
+
+    setStatus(isCurrent ? 'Listo.' : 'Modo historial: tabla desactivada (no hay datos de tienda para temporadas pasadas).');
     state.loading = false;
   }
 
-  // ------------------------------ Helpers ítems/AA -----------------------
+  // ------------------------------ Helpers ítems/AA (modo actual) --------
   function anyAAIcon(){
     for (var i=0;i<state.accounts.length;i++){
       var u = state.accounts[i] && state.accounts[i].aaIcon;
@@ -602,7 +664,7 @@
     return c;
   }
 
-  // ------------------------------ Dashboard (KPIs, countdowns, tops, útiles) ----
+  // ------------------------------ Dashboard (KPIs, countdowns, tops) ----
   function kpiSet(elId, val, kind){
     var host = document.getElementById(elId); if (!host) return;
     host.classList.remove('wvpd-kpi--ok','wvpd-kpi--warn','wvpd-kpi--bad');
@@ -640,11 +702,16 @@
     return next;
   }
   function seasonEndUTC(){
-    var s = state.season; if (!s || !s.end) return null;
+    var s = state.currentSeason; if (!s || !s.end) return null;
     var t = new Date(s.end); return isNaN(t.getTime()) ? null : t;
   }
 
   function recomputeKpis(){
+    var isCurrent = (state.selectedSeason.year===state.currentSeason.year && state.selectedSeason.seq===state.currentSeason.seq);
+    if (!isCurrent){
+      // En historial no tenemos AA ni rows vivos → KPIs AA quedan “—” (null)
+      return { aaAvail: null, aaNeed: null, delta: null, kind: null };
+    }
     var aaAvail = 0;
     state.accounts.forEach(function(a){ aaAvail += Number(a.aa||0); });
     var aaNeed = 0;
@@ -653,15 +720,19 @@
     var kind = (delta >= 0) ? 'ok' : (delta >= -500 ? 'warn' : 'bad');
     return { aaAvail: aaAvail, aaNeed: aaNeed, delta: delta, kind: kind };
   }
+
   function topDeficitAccounts(n){
+    var isCurrent = (state.selectedSeason.year===state.currentSeason.year && state.selectedSeason.seq===state.currentSeason.seq);
     var rows = state.accounts.map(function(a){
-      var need = aaNeededForPinned(a);
-      var d = Number(a.aa||0) - need;
-      return { label: a.label || a.fp || 'Key', delta: d };
+      var need = isCurrent ? aaNeededForPinned(a) : 0;
+      var d = isCurrent ? (Number(a.aa||0) - need) : 0;
+      return { label: a.label || a.fp || 'Key', delta: isCurrent ? d : 0 };
     });
-    rows.sort(function(x,y){ return x.delta - y.delta; });
+    // en historial, el Δ es 0 por falta de AA → no aporta; igual devolvemos orden original
+    rows.sort(function(x,y){ return x.delta - y.delta; }); // más negativo primero
     return rows.slice(0, n||3);
   }
+
   function leftForListingInAccount(acc, listingId){
     var row = findRowByListingId(acc.rows||[], listingId);
     if (!row) return 0;
@@ -674,7 +745,10 @@
       : Math.max(0, limit - (purchased+marked));
     return left;
   }
+
   function topPendingItems(n){
+    var isCurrent = (state.selectedSeason.year===state.currentSeason.year && state.selectedSeason.seq===state.currentSeason.seq);
+    if (!isCurrent) return []; // sin rows, no podemos calcular left
     var out = [];
     state.pinnedUnion.forEach(function(listingId){
       var leftSum = 0, countAcc = 0, itemId = null, meta = null;
@@ -714,55 +788,46 @@
     state.dashTimer = null;
   }
 
-  function buildUsefulBoxHTML(){
-    // Totales (por cuenta)
-    var totalPinned = 0, totalPinnedDone = 0, accountsEnough = 0;
-    var mostExp = { aa: 0, meta: null, name: '', itemId: null, listingId: null };
+  function buildUsefulBoxHTML(isCurrent){
+    // KPIs útiles independientes de AA: totales de fijados y cuentas activas
+    var totalPinned = 0, totalPinnedDone = 0, accountsWithPinned = 0;
+    var totalMarks = 0;
 
     state.accounts.forEach(function(acc){
-      var need = aaNeededForPinned(acc);
-      if ((Number(acc.aa||0) - need) >= 0) accountsEnough++;
+      var pins = acc.pinned || {};
+      var marks = acc.marks || {};
+      var pinIds = Object.keys(pins).filter(function(k){ return !!pins[k]; });
+      totalPinned += pinIds.length;
+      if (pinIds.length>0) accountsWithPinned++;
+      Object.keys(marks).forEach(function(id){ totalMarks += Number(marks[id]||0); });
 
-      Object.keys(acc.pinned || {}).forEach(function(idStr){
-        if (!acc.pinned[idStr]) return;
-        totalPinned++;
-        var listingId = Number(idStr);
-        var row = findRowByListingId(acc.rows||[], listingId);
-        if (!row) return;
-        var left = leftForListingInAccount(acc, listingId);
-        if (left === 0) totalPinnedDone++;
-
-        // Ítem más caro pendiente (AA left = left * cost)
-        if (left > 0){
-          var cost = Number(row.cost||0);
-          var aaLeft = left * cost;
-          if (aaLeft > mostExp.aa){
-            mostExp.aa = aaLeft;
-            mostExp.listingId = listingId;
-            // buscar meta
-            var itemId = (row.item_id!=null) ? Number(row.item_id) : null;
-            mostExp.itemId = itemId;
-            mostExp.meta = (itemId!=null) ? getItemMeta(itemId) : null;
-            mostExp.name = mostExp.meta?.name || (itemId!=null?('#'+itemId):('#'+listingId));
+      if (isCurrent){
+        // sólo podemos calcular "completos" con rows (modo actual)
+        var rows = acc.rows || [];
+        pinIds.forEach(function(idStr){
+          var row = findRowByListingId(rows, Number(idStr));
+          if (!row) return;
+          var limit = (row.purchase_limit==null? null : Number(row.purchase_limit));
+          var purchased = Number(row.purchased||0);
+          var marked    = Number((acc.marks||{})[String(idStr)]||0);
+          if (limit!=null){
+            var left = (root.GW2Api && typeof root.GW2Api.wvComputeRemaining==='function')
+              ? root.GW2Api.wvComputeRemaining(limit, purchased, marked)
+              : Math.max(0, limit - (purchased+marked));
+            if (left===0) totalPinnedDone++;
           }
-        }
-      });
+        });
+      }
     });
 
-    var aaTotals = recomputeKpis(); // aaAvail, aaNeed, delta
-    var avgNeedPerAcc = state.accounts.length ? Math.round(aaTotals.aaNeed / state.accounts.length) : 0;
-
-    // Render
-    var icon = mostExp.meta?.icon ? ('<span class="wvpd-li__icon"><img src="'+esc(mostExp.meta.icon)+'" alt="'+esc(mostExp.name)+'" loading="lazy" decoding="async" referrerpolicy="no-referrer"></span>') : '';
-    var nameTitle = esc(mostExp.name || '—');
-    var mostExpHTML = (mostExp.aa>0)
-      ? ('<div class="wvpd-li"><span class="wvpd-li__left">'+icon+'<span class="wvpd-li__name" title="'+nameTitle+'">'+(icon?'':'—')+'</span></span><span class="wvpd-li__rest">AA faltante: '+fmtInt(mostExp.aa)+'</span></div>')
-      : ('<div class="wvpd-li"><span class="wvpd-li__name">—</span><span class="wvpd-li__rest">AA faltante: 0</span></div>');
-
-    var k1 = '<div class="wvpd-li"><span>Fijados completos / totales</span><span class="wvpd-li__rest">'+fmtInt(totalPinnedDone)+' / '+fmtInt(totalPinned)+'</span></div>';
-    var k2 = '<div class="wvpd-li"><span>Cuentas con AA suficiente</span><span class="wvpd-li__rest">'+fmtInt(accountsEnough)+' / '+fmtInt(state.accounts.length)+'</span></div>';
-    var k3 = mostExpHTML;
-    var k4 = '<div class="wvpd-li"><span>AA Faltante promedio / cuenta</span><span class="wvpd-li__rest">'+fmtInt(avgNeedPerAcc)+'</span></div>';
+    var k1 = '<div class="wvpd-li"><span>Ítems fijados (suma)</span><span class="wvpd-li__rest">'+fmtInt(totalPinned)+'</span></div>';
+    var k2 = '<div class="wvpd-li"><span>Cuentas con fijados</span><span class="wvpd-li__rest">'+fmtInt(accountsWithPinned)+' / '+fmtInt(state.accounts.length)+'</span></div>';
+    var k3 = isCurrent
+      ? '<div class="wvpd-li"><span>Fijados completos (alcanzado límite)</span><span class="wvpd-li__rest">'+fmtInt(totalPinnedDone)+'</span></div>'
+      : '<div class="wvpd-li"><span>Marcas acumuladas</span><span class="wvpd-li__rest">'+fmtInt(totalMarks)+'</span></div>';
+    var k4 = isCurrent
+      ? '<div class="wvpd-li"><span>Marcas acumuladas</span><span class="wvpd-li__rest">'+fmtInt(totalMarks)+'</span></div>'
+      : '<div class="wvpd-li"><span>Vista histórica</span><span class="wvpd-li__rest">sin AA/rows en vivo</span></div>';
 
     return '<div class="wvpd-col">'+k1+k2+'</div><div class="wvpd-col">'+k3+k4+'</div>';
   }
@@ -770,16 +835,18 @@
   function updateUsefulBox(){
     var host = document.getElementById('wvpdUsefulContent');
     if (!host) return;
-    host.innerHTML = buildUsefulBoxHTML();
+    var isCurrent = (state.selectedSeason.year===state.currentSeason.year && state.selectedSeason.seq===state.currentSeason.seq);
+    host.innerHTML = buildUsefulBoxHTML(isCurrent);
   }
 
   function updateDashboard(){
+    // KPI AA (si hay AA/actual)
     var k = recomputeKpis();
-    kpiSet('wvpdKpiAAAvail', k.aaAvail, 'ok');
-    kpiSet('wvpdKpiAANeed',  k.aaNeed,  k.aaNeed <= 0 ? 'ok' : (k.aaNeed < 500 ? 'warn' : 'bad'));
+    kpiSet('wvpdKpiAAAvail', k.aaAvail, k.kind || 'ok');
+    kpiSet('wvpdKpiAANeed',  k.aaNeed,  k.aaNeed==null ? null : (k.aaNeed <= 0 ? 'ok' : (k.aaNeed < 500 ? 'warn' : 'bad')));
     kpiSet('wvpdKpiAADelta', k.delta,   k.kind);
 
-    // Top cuentas deficitarias (con icono de AA junto al Δ)
+    // Top cuentas (en historial el Δ=0; se muestra igual la lista)
     var listA = document.getElementById('wvpdTopAccounts');
     if (listA){
       var topA = topDeficitAccounts(3);
@@ -790,7 +857,7 @@
       }).join('') : '<li class="wvpd-li"><span class="wvpd-li__name">—</span><span class="wvpd-li__delta">—</span></li>';
     }
 
-    // Top ítems pendientes: sólo icono (nombre en tooltip)
+    // Top ítems pendientes (sólo en actual)
     var listI = document.getElementById('wvpdTopItems');
     if (listI){
       var topI = topPendingItems(3);
@@ -799,23 +866,45 @@
         var icon = x.meta?.icon ? ('<span class="wvpd-li__icon"><img src="'+esc(x.meta.icon)+'" alt="'+esc(name)+'" loading="lazy" decoding="async" referrerpolicy="no-referrer"></span>') : '<span class="wvpd-li__icon"></span>';
         return '<li class="wvpd-li" title="'+esc(name)+'">'+
                  '<span class="wvpd-li__left">'+icon+'<span class="wvpd-li__name" style="display:none">'+esc(name)+'</span></span>'+
-                 '<span class="wvpd-li__rest">Restan: '+fmtInt(x.leftSum)+'</span>'+
+                 '<span class="wvpd-li__rest">restante: '+fmtInt(x.leftSum)+'</span>'+
                '</li>';
       }).join('') : '<li class="wvpd-li"><span class="wvpd-li__name">—</span><span class="wvpd-li__rest">—</span></li>';
     }
 
-    // Countdowns
+    // Countdowns y datos útiles
     updateCountdowns();
-    // Datos útiles (nuevo cuadro blanco)
     updateUsefulBox();
 
-    // Tick del reloj
     try { if (state.dashTimer) clearInterval(state.dashTimer); } catch(_){}
     state.dashTimer = setInterval(updateCountdowns, 1000);
+
+    // Mostrar/ocultar filtros y tabla / historial wrap según temporada
+    var isCurrent = (state.selectedSeason.year===state.currentSeason.year && state.selectedSeason.seq===state.currentSeason.seq);
+    var filters = $('#wvpdFilters'), table = $('#wvpdTableWrap'), hist = $('#wvpdHistoryWrap');
+    if (filters) filters.style.display = isCurrent ? '' : 'none';
+    if (table)   table.style.display   = isCurrent ? '' : 'none';
+    if (hist) {
+      if (isCurrent) {
+        hist.style.display = 'none';
+        hist.innerHTML = '';
+      } else {
+        // pequeño resumen por cuenta para historial
+        hist.style.display = '';
+        var cards = state.accounts.map(function(acc){
+          var pc = Object.keys(acc.pinned||{}).filter(function(k){ return !!acc.pinned[k]; }).length;
+          var mk = Object.values(acc.marks||{}).reduce(function(a,b){ return a + Number(b||0); }, 0);
+          return '<div class="wvpd-li"><span class="wvpd-li__name">'+esc(acc.label||acc.fp)+'</span><span class="wvpd-li__rest">fijados: '+fmtInt(pc)+' · marcas: '+fmtInt(mk)+'</span></div>';
+        }).join('');
+        hist.innerHTML = '<div class="wvpd-kpi__lbl" style="margin-bottom:8px">Resumen histórico por cuenta</div><div class="wvpd-history__grid">'+cards+'</div>';
+      }
+    }
   }
 
-  // ------------------------------ Render Tabla --------------------------
+  // ------------------------------ Render Tabla (sólo actual) ------------
   function renderTable(){
+    var isCurrent = (state.selectedSeason.year===state.currentSeason.year && state.selectedSeason.seq===state.currentSeason.seq);
+    if (!isCurrent) return; // tabla desactivada en historial
+
     var table = document.getElementById('wvpdTable');
     var thead = table?.querySelector('thead');
     var tbody = table?.querySelector('tbody');
@@ -842,6 +931,7 @@
       });
     }
 
+    // ----- Encabezado -----
     var hcells = ['<th>Cuenta</th>'];
     pins.forEach(function(listingId){
       var itemId = null, meta = null, name = '';
@@ -867,6 +957,7 @@
 
     thead.innerHTML = '<tr>'+hcells.join('')+'</tr>';
 
+    // ----- Filas -----
     var rowsAcc = state.accounts.slice();
     if (state.filters.q){
       var q = state.filters.q;
@@ -911,10 +1002,11 @@
 
     tbody.innerHTML = body || '<tr><td colspan="'+(1 + pins.length + 3)+'" class="center wvpd-muted">Sin datos para mostrar.</td></tr>';
 
+    // Backfill lazy de iconos en headers si aún no estaban
     lazyBuildItemsCatalogForActiveColumns();
   }
 
-  // ------------------------------ Catálogo ítems (lazy + cap) -----------
+  // ------------------------------ Catálogo ítems (lazy + cap, actual) ---
   function collectActiveItemIds(){
     var setIds = new Set();
     var ths = $$('#wvpdTable thead th[data-listing-id]');
@@ -929,6 +1021,8 @@
     return Array.from(setIds.values());
   }
   function lazyBuildItemsCatalogForActiveColumns(){
+    var isCurrent = (state.selectedSeason.year===state.currentSeason.year && state.selectedSeason.seq===state.currentSeason.seq);
+    if (!isCurrent) return;
     if (_itemsBackfillScheduled) return;
     _itemsBackfillScheduled = true;
     rIC(async function(){
@@ -939,6 +1033,7 @@
 
         var cap = 800;
         ids = ids.slice(0, cap);
+
         ids = ids.filter(function(id){ return !state.globalItemsById.has(Number(id)); });
         if (!ids.length) return;
 
@@ -981,18 +1076,19 @@
       injectStyles();
       observeToolbar();
       ensurePanel();
-      try { state.accessIconUrl = localStorage.getItem(LS_WVPD_ICON_URL) || null; } catch(_){}
+      try { state.accessIconUrl = localStorage.getItem('wvpd_icon_url') || null; } catch(_){}
       updateBannerIcon();
 
       state.inited = true;
 
+      // Reapertura tras F5 SOLO en gn:nav-active (guard por navegación)
       document.addEventListener('gn:nav-active', function(ev){
         try {
           var h = String(ev && ev.detail && ev.detail.hash || '').toLowerCase();
           if (h !== '#/account/wizards-vault') return;
 
           var myToken = ++_reopenOnceToken;
-          var open = null; try { open = localStorage.getItem(LS_WVPD_OPEN); } catch(_){}
+          var open = null; try { open = localStorage.getItem('wvpd_open'); } catch(_){}
           if (open === '1') {
             requestAnimationFrame(function(){ if (_reopenOnceToken === myToken) WVPurchaseDetail.show(); });
           }
@@ -1000,17 +1096,21 @@
         } catch(_){}
       });
 
+      // Storage (throttle) — refrescar si está visible
       var _stTimer = null;
       window.addEventListener('storage', function(e){
         if (!e) return;
-        if (e.key!==LS_KEYS && e.key!==LS_WV_SHOP_PINNED && e.key!==LS_WV_SHOP_MARKS && e.key!==LS_WVPD_ICON_URL) return;
         var p = document.getElementById('wvPDPanel');
-        if (e.key===LS_WVPD_ICON_URL) { state.accessIconUrl = localStorage.getItem(LS_WVPD_ICON_URL) || null; ensureToolbarButton(); updateBannerIcon(); return; }
+        if (e.key==='wvpd_icon_url'){ state.accessIconUrl = localStorage.getItem('wvpd_icon_url') || null; ensureToolbarButton(); updateBannerIcon(); return; }
         if (!p || p.hasAttribute('hidden')) return;
-        clearTimeout(_stTimer);
-        _stTimer = setTimeout(function(){ safeRefresh(false); }, 400);
+        // Cambios en archivos de temporada o índice
+        if (e.key && (e.key.startsWith('wv:season:') || e.key==='wv:season:index')){
+          clearTimeout(_stTimer);
+          _stTimer = setTimeout(function(){ safeRefresh(false); }, 400);
+        }
       });
 
+      // Tabs WV cierran esta vista
       ['wvTabBtnDaily','wvTabBtnWeekly','wvTabBtnSpecial','wvTabBtnShop'].forEach(function(id){
         var b = document.getElementById(id);
         if (b && !b.__wvpdWired){
@@ -1022,7 +1122,7 @@
 
     async show(){
       await this.initOnce();
-      try { localStorage.setItem(LS_WVPD_OPEN, '1'); } catch(_){}
+      try { localStorage.setItem('wvpd_open', '1'); } catch(_){}
       setTabsVisible(false);
       showPanel();
       try { document.getElementById('wvPanel')?.scrollIntoView({ behavior:'smooth', block:'start' }); }
@@ -1031,7 +1131,7 @@
     },
 
     hide(){
-      try { localStorage.setItem(LS_WVPD_OPEN, '0'); } catch(_){}
+      try { localStorage.setItem('wvpd_open', '0'); } catch(_){}
       setTabsVisible(true);
       try { if (root.WV && typeof root.WV.setActiveTab==='function') root.WV.setActiveTab(state.prevTab || 'shop'); } catch(_){}
       hidePanel();
@@ -1045,8 +1145,8 @@
     setIcon: function(url){
       state.accessIconUrl = (url && String(url).trim()) || null;
       try {
-        if (state.accessIconUrl) localStorage.setItem(LS_WVPD_ICON_URL, state.accessIconUrl);
-        else localStorage.removeItem(LS_WVPD_ICON_URL);
+        if (state.accessIconUrl) localStorage.setItem('wvpd_icon_url', state.accessIconUrl);
+        else localStorage.removeItem('wvpd_icon_url');
       } catch(_){}
       ensureToolbarButton();
       updateBannerIcon();
@@ -1062,9 +1162,17 @@
 
     _refreshInFlight = (async () => {
       setStatus('Actualizando…');
+
+      // Preparar/actualizar temporada y select
+      await initSeasonSelection();
+
+      // Cargar datos (según temporada)
       await loadAll(!!forceNoCache);
+
+      // Renderizar (tabla solo si actual)
       renderTable();
       updateDashboard();
+
       setStatus('Listo.');
     })();
 
@@ -1079,6 +1187,6 @@
   if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', function(){ WVPurchaseDetail.initOnce(); });
   else WVPurchaseDetail.initOnce();
 
-  console.info(LOG, 'ready 1.3.2');
+  console.info(LOG, 'ready 1.4.0');
 
 })(typeof window!=='undefined' ? window : (typeof globalThis!=='undefined' ? globalThis : this));

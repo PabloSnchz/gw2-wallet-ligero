@@ -1,13 +1,13 @@
 /*!
  * js/wizards-vault.js — Módulo Wizard's Vault (season, objetivos, cuenta, listados, shop)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.1.0 (2026-03-03) — backoff + de-dupe + lang centralizado + AA vía wallet
+ * Versión: 1.2.1 (2026-03-04) — hotfix getWVSeason + compat v1.1.0 + hook opcional a WVSeasonStore
  *
- * Notas:
- *  - Requiere que js/api-gw2.js haya definido window.GW2Api antes de cargar.
- *  - Mantiene misma API pública expuesta vía GW2Api.* (retrocompat).
- *  - Escucha 'gn:wv-targets-refresh' y emite 'gn:wv-targets-refreshed'.
- *  - Usa ?access_token= para evitar preflight CORS.
+ * Cambios:
+ *  - getWVSeason() robusto: acepta respuesta plana o anidada (p.ej. {season:{id,start,end}, title}).
+ *  - Nunca retorna null/undefined; si el endpoint falla -> objeto seguro {title:'—',start:null,end:null}.
+ *  - Mantiene 1:1 la API pública que expone en GW2Api (retrocompat v1.1.0).
+ *  - Si WVSeasonStore está presente, lanza migración legacy->archivo por temporada en background (no bloquea).
  */
 
 (function (root) {
@@ -18,17 +18,15 @@
   var LANG = (root.GW2Api && root.GW2Api.__cfg && root.GW2Api.__cfg.LANG) || 'es';
   var RETRIES = (root.GW2Api && root.GW2Api.__cfg && typeof root.GW2Api.__cfg.RETRIES === 'number')
                 ? root.GW2Api.__cfg.RETRIES : 2;
-  var RETRY_BASE_MS = 600; // mismo base que api-gw2.js
+  var RETRY_BASE_MS = 600;
 
-  // TTLs (ms) — específicos del módulo
   var TTL = {
-    WV_SEASON:    6 * 60 * 60 * 1000,  // 6 h
-    WV_LISTINGS: 30 * 60 * 1000,       // 30 min
-    WV_ACCOUNT:   5 * 60 * 1000,       // 5 min
-    WV_OBJ:       5 * 60 * 1000        // 5 min
+    WV_SEASON:    6 * 60 * 60 * 1000,
+    WV_LISTINGS: 30 * 60 * 1000,
+    WV_ACCOUNT:   5 * 60 * 1000,
+    WV_OBJ:       5 * 60 * 1000
   };
 
-  // Caché en memoria + LS + in-flight (de-dupe)
   var __mem = new Map();
   var __inflight = new Map();
 
@@ -85,7 +83,6 @@
     return u.toString();
   }
 
-  // jfetch base
   function jfetch(url, opts) {
     opts = opts || {};
     var nocache = !!opts.nocache;
@@ -106,15 +103,12 @@
     });
   }
 
-  // Backoff con reintentos (429/503/504)
   function fetchWithRetry(url, opts) {
     opts = opts || {};
     var max = (opts.retries != null) ? opts.retries : RETRIES;
     var attempt = 0;
     var lastErr;
-
     function jitter() { return Math.floor(Math.random() * 200); }
-
     function loop() {
       return jfetch(url, opts).catch(function (e) {
         lastErr = e;
@@ -128,16 +122,25 @@
     return loop();
   }
 
-  // De-dup de concurrencia por clave
   function inflightOnce(ikey, producer) {
     if (__inflight.has(ikey)) return __inflight.get(ikey);
     var p = Promise.resolve().then(producer).finally(function () { __inflight.delete(ikey); });
     __inflight.set(ikey, p);
     return p;
   }
-
   function jtry(url, opts){
     return fetchWithRetry(url, opts).catch(function(e){ if (e && e.status===404) return null; throw e; });
+  }
+
+  // -------- HOTFIX: normalizador de season --------
+  function normalizeSeason(any){
+    if (!any || typeof any!=='object') return { title:'—', start:null, end:null };
+    // casos: plano {id,title,start,end} o anidado {season:{id,start,end},title}
+    var id    = any.id || (any.season && any.season.id) || null;
+    var start = any.start || (any.season && any.season.start) || null;
+    var end   = any.end   || (any.season && any.season.end)   || null;
+    var title = any.title || (any.season && any.season.title) || any.name || '—';
+    return { id:id||null, title:title||'—', start:start||null, end:end||null };
   }
 
   // ----------------------------- WV: Season -----------------------------
@@ -147,8 +150,7 @@
     var cached = getCache(key, TTL.WV_SEASON, null, opts.nocache);
     if (cached) return Promise.resolve(cached);
 
-    // Canon: /v2/wizardsvault (season actual)
-    // Fallbacks: rutas con guion o /season si existiera (compat)
+    // Canon + fallbacks
     var u1 = API_BASE + '/v2/wizardsvault';
     var u2 = API_BASE + '/v2/wizardsvault/season';
     var u3 = API_BASE + '/v2/wizards-vault/season';
@@ -157,14 +159,20 @@
 
     return inflightOnce(ikey, function () {
       return jtry(u1, opts).then(function (a) {
-        if (a && (a.title || a.id)) return a;
+        if (a && (a.title || a.id || (a.season && (a.season.id || a.season.title)))) return a;
         return jtry(u2, opts).then(function (b) {
-          if (b && (b.title || b.id)) return b;
+          if (b && (b.title || b.id || (b.season && (b.season.id || b.season.title)))) return b;
           return jtry(u3, opts).then(function (c) {
-            return (c && (c.title || c.id)) ? c : { title: '—', start: null, end: null };
+            return (c && (c.title || c.id || (c.season && (c.season.id || c.season.title)))) ? c : { title:'—', start:null, end:null };
           });
         });
-      }).then(function (data) {
+      }).then(function (raw) {
+        var data = normalizeSeason(raw);
+        putCache(key, data, null, TTL.WV_SEASON);
+        return data;
+      }).catch(function(e){
+        console.warn(LOGW, 'getWVSeason failed, returning safe object', e);
+        var data = { title:'—', start:null, end:null };
         putCache(key, data, null, TTL.WV_SEASON);
         return data;
       });
@@ -180,9 +188,7 @@
     var cached = getCache(key, TTL.WV_OBJ, token, opts.nocache);
     if (cached) return Promise.resolve(cached);
 
-    // Canon: /v2/account/wizardsvault/{kind}
     var u1 = withToken(withParams(API_BASE + '/v2/account/wizardsvault/' + kind, { lang: LANG }), token);
-    // Fallbacks (compat):
     var u2 = withToken(withParams(API_BASE + '/v2/wizardsvault/objectives/' + kind, { lang: LANG }), token);
     var u3 = withToken(withParams(API_BASE + '/v2/account/wizards-vault/' + kind, { lang: LANG }), token);
     var u4 = withToken(withParams(API_BASE + '/v2/wizards-vault/objectives/' + kind, { lang: LANG }), token);
@@ -265,7 +271,7 @@
     opts = opts || {};
     if (!token) return Promise.reject(new Error('Falta access_token'));
 
-    var key = 'wv_account_v2'; // nueva clave para evitar colisión con caches viejos
+    var key = 'wv_account_v2';
     var cached = getCache(key, TTL.WV_ACCOUNT, token, opts.nocache);
     if (cached) return Promise.resolve(cached);
 
@@ -294,9 +300,7 @@
     var cached = getCache(key, TTL.WV_LISTINGS, null, opts.nocache);
     if (cached) return Promise.resolve(cached);
 
-    // Canon: /v2/wizardsvault/listings?ids=all
     var u1 = API_BASE + '/v2/wizardsvault/listings?ids=all';
-    // Fallbacks:
     var u2 = API_BASE + '/v2/wizards-vault/listings?ids=all';
     var u3 = API_BASE + '/v2/wizardsvault/listings';
     var u4 = API_BASE + '/v2/wizards-vault/listings';
@@ -339,9 +343,7 @@
     var cached = getCache(key, TTL.WV_OBJ, token, opts.nocache);
     if (cached) return Promise.resolve(cached);
 
-    // Canon: /v2/account/wizardsvault/listings
     var u1 = withToken(API_BASE + '/v2/account/wizardsvault/listings', token);
-    // Fallbacks:
     var u2 = withToken(API_BASE + '/v2/wizardsvault/account/listings', token);
     var u3 = withToken(API_BASE + '/v2/account/wizards-vault/listings', token);
 
@@ -404,22 +406,18 @@
     return map;
   }
 
-  // getWVShopMerged — versión que espera items antes de resolver (primer render completo)
+  // getWVShopMerged — espera items antes de resolver (primer render completo)
   function getWVShopMerged(token, opts){
     opts = opts || {};
     if (!token) return Promise.reject(new Error('Falta access_token'));
 
-    // 1) En paralelo: catálogo, account listings y AA (vía wallet)
     return Promise.all([
       getWVListings({ nocache: !!opts.nocache }),
       getAccountWVListings(token, { nocache: !!opts.nocache }),
       getWVAccount(token, { nocache: !!opts.nocache })
     ]).then(function ([catalog, accShop, wvAcc]) {
 
-      // 2) Merge rápido
       var merged = wvMergeShopListings(accShop || [], catalog || []);
-
-      // 3) Prefetch de items ASAP (lista única)
       var itemIds = merged.map(function (m) { return m.item_id; }).filter(function (x) { return x != null; });
       var uniqueIds = Array.from(new Set(itemIds));
 
@@ -427,7 +425,6 @@
         ? root.GW2Api.getItemsMany(uniqueIds, { nocache: !!opts.nocache })
         : Promise.resolve([]);
 
-      // 4) Devolver cuando items estén listos (evita "Item #id")
       return itemsPromise.then(function (items) {
         return {
           rows: merged,
@@ -439,7 +436,7 @@
     });
   }
 
-  // ----------------------------- WV: Targets helpers + listener -----------------------------
+  // ----------------------------- Targets helpers + listener -----------------------------
   function wvInvalidateTargets(token){
     delCache('wv_obj_daily:'+LANG, token);
     delCache('wv_obj_weekly:'+LANG, token);
@@ -464,25 +461,7 @@
     });
   }
 
-  if (typeof document !== 'undefined' && document.addEventListener) {
-    document.addEventListener('gn:wv-targets-refresh', function (ev) {
-      try {
-        var token = (ev && ev.detail && ev.detail.token) || null;
-        var src   = (ev && ev.detail && ev.detail.source) || 'unknown';
-        wvInvalidateTargets(token);
-        wvPreloadTargets(token, { nocache: true }).then(function(){
-          document.dispatchEvent(new CustomEvent('gn:wv-targets-refreshed', {
-            detail: { token: token, source: src, ts: Date.now() }
-          }));
-        });
-        console.info(LOGW, 'targets invalidated + preloaded for', fpToken(token), 'src:', src);
-      } catch (e) {
-        console.warn(LOGW, 'wv-targets-refresh handler error', e);
-      }
-    });
-  }
-
-  // ----------------------------- Export -----------------------------
+  // ----------------------------- Export base (compat 1.1.0) -----------------------------
   var WizardsVault = {
     // Season / Objetivos / Cuenta
     getWVSeason: getWVSeason,
@@ -507,9 +486,35 @@
     __cfg: { API_BASE: API_BASE, TTL: TTL, LANG: LANG }
   };
 
+  // ----------------------------- Hook opcional a WVSeasonStore -----------------------------
+  (function hookSeasonStore(){
+    if (!root.WVSeasonStore) return;
+    try {
+      if (typeof root.WVSeasonStore.migrateFromLegacy === 'function') {
+        root.WVSeasonStore.migrateFromLegacy()
+          .then(function(r){ if (r && r.moved) console.info(LOGW, 'Migrated legacy WV data to season store', r.details); })
+          .catch(function(e){ console.warn(LOGW, 'migrateFromLegacy error', e); });
+      }
+      WizardsVault.wvStore = {
+        getCurrentSeasonInfo: root.WVSeasonStore.getCurrentSeasonInfo,
+        listSeasons: root.WVSeasonStore.listSeasons,
+        readSeason: root.WVSeasonStore.readSeason,
+        getPinned: root.WVSeasonStore.getPinned,
+        setPinned: root.WVSeasonStore.setPinned,
+        delPinned: root.WVSeasonStore.delPinned,
+        getMarks: root.WVSeasonStore.getMarks,
+        setMarks: root.WVSeasonStore.setMarks,
+        getPrefs: root.WVSeasonStore.getPrefs,
+        setPrefs: root.WVSeasonStore.setPrefs
+      };
+    } catch(e){
+      console.warn(LOGW, 'season-store hook failed', e);
+    }
+  })();
+
+  // ----------------------------- Integración con GW2Api (contrato v1.1.0) -----------------------------
   root.WizardsVault = WizardsVault;
 
-  // Colgar la API en GW2Api (retrocompatibilidad total)
   if (root.GW2Api) {
     var ap = root.GW2Api;
     [
