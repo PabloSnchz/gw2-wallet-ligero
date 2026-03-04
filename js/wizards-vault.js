@@ -1,12 +1,12 @@
 /*!
  * js/wizards-vault.js — Módulo Wizard's Vault (season, objetivos, cuenta, listados, shop)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.0.0 (2026-03-03) — extracción modular + listeners propios
+ * Versión: 1.1.0 (2026-03-03) — backoff + de-dupe + lang centralizado + AA vía wallet
  *
  * Notas:
  *  - Requiere que js/api-gw2.js haya definido window.GW2Api antes de cargar.
- *  - Mantiene misma API pública que usaba el proyecto (expuesta vía GW2Api.*).
- *  - Escucha 'gn:wv-targets-refresh' y emite 'gn:wv-targets-refreshed' (como antes).
+ *  - Mantiene misma API pública expuesta vía GW2Api.* (retrocompat).
+ *  - Escucha 'gn:wv-targets-refresh' y emite 'gn:wv-targets-refreshed'.
  *  - Usa ?access_token= para evitar preflight CORS.
  */
 
@@ -15,6 +15,10 @@
 
   var LOGW = '[WizardsVault]';
   var API_BASE = (root.GW2Api && root.GW2Api.__cfg && root.GW2Api.__cfg.API_BASE) || 'https://api.guildwars2.com';
+  var LANG = (root.GW2Api && root.GW2Api.__cfg && root.GW2Api.__cfg.LANG) || 'es';
+  var RETRIES = (root.GW2Api && root.GW2Api.__cfg && typeof root.GW2Api.__cfg.RETRIES === 'number')
+                ? root.GW2Api.__cfg.RETRIES : 2;
+  var RETRY_BASE_MS = 600; // mismo base que api-gw2.js
 
   // TTLs (ms) — específicos del módulo
   var TTL = {
@@ -24,8 +28,9 @@
     WV_OBJ:       5 * 60 * 1000        // 5 min
   };
 
-  // Caché en memoria + LS
+  // Caché en memoria + LS + in-flight (de-dupe)
   var __mem = new Map();
+  var __inflight = new Map();
 
   function now() { return Date.now(); }
   function lsGet(k){ try{ var j=localStorage.getItem(k); return j?JSON.parse(j):null; }catch(_){ return null; } }
@@ -71,18 +76,28 @@
     if (token) u.searchParams.set('access_token', token);
     return u.toString();
   }
+  function withParams(url, params) {
+    var u = new URL(url);
+    if (params) Object.keys(params).forEach(function (k) {
+      var val = params[k];
+      if (val != null) u.searchParams.set(k, String(val));
+    });
+    return u.toString();
+  }
+
+  // jfetch base
   function jfetch(url, opts) {
     opts = opts || {};
     var nocache = !!opts.nocache;
-    return fetch(url, {
-      headers: { 'Accept': 'application/json' },
-      cache: nocache ? 'no-store' : 'default',
-      mode: 'cors'
-    }).then(function(res){
+    var headers = Object.assign({ 'Accept': 'application/json' }, (opts.headers || {}));
+    var init = { headers: headers, cache: nocache ? 'no-store' : 'default', mode: 'cors' };
+    if (opts.signal) init.signal = opts.signal;
+
+    return fetch(url, init).then(function(res){
       return res.text().then(function(raw){
         if (!res.ok){
           var msg = raw || ('HTTP '+res.status);
-          try{ var o=JSON.parse(raw); if (o && o.text) msg = o.text; }catch(_){}
+          try{ var o=raw ? JSON.parse(raw) : null; if (o && (o.text || o.error)) msg = o.text || o.error; }catch(_){}
           var err=new Error(msg); err.status=res.status; err.url=url; throw err;
         }
         try{ return raw?JSON.parse(raw):null; }
@@ -90,8 +105,39 @@
       });
     });
   }
+
+  // Backoff con reintentos (429/503/504)
+  function fetchWithRetry(url, opts) {
+    opts = opts || {};
+    var max = (opts.retries != null) ? opts.retries : RETRIES;
+    var attempt = 0;
+    var lastErr;
+
+    function jitter() { return Math.floor(Math.random() * 200); }
+
+    function loop() {
+      return jfetch(url, opts).catch(function (e) {
+        lastErr = e;
+        var retriable = e && (e.status === 429 || e.status === 503 || e.status === 504);
+        if (!retriable || attempt >= max) throw lastErr;
+        var backoff = Math.min(5000, RETRY_BASE_MS * Math.pow(2, attempt)) + jitter();
+        attempt++;
+        return new Promise(function (r) { setTimeout(r, backoff); }).then(loop);
+      });
+    }
+    return loop();
+  }
+
+  // De-dup de concurrencia por clave
+  function inflightOnce(ikey, producer) {
+    if (__inflight.has(ikey)) return __inflight.get(ikey);
+    var p = Promise.resolve().then(producer).finally(function () { __inflight.delete(ikey); });
+    __inflight.set(ikey, p);
+    return p;
+  }
+
   function jtry(url, opts){
-    return jfetch(url, opts).catch(function(e){ if (e && e.status===404) return null; throw e; });
+    return fetchWithRetry(url, opts).catch(function(e){ if (e && e.status===404) return null; throw e; });
   }
 
   // ----------------------------- WV: Season -----------------------------
@@ -101,21 +147,27 @@
     var cached = getCache(key, TTL.WV_SEASON, null, opts.nocache);
     if (cached) return Promise.resolve(cached);
 
+    // Canon: /v2/wizardsvault (season actual)
+    // Fallbacks: rutas con guion o /season si existiera (compat)
     var u1 = API_BASE + '/v2/wizardsvault';
     var u2 = API_BASE + '/v2/wizardsvault/season';
     var u3 = API_BASE + '/v2/wizards-vault/season';
 
-    return jtry(u1, opts).then(function (a) {
-      if (a && (a.title || a.id)) return a;
-      return jtry(u2, opts).then(function (b) {
-        if (b && (b.title || b.id)) return b;
-        return jtry(u3, opts).then(function (c) {
-          return (c && (c.title || c.id)) ? c : { title: '—', start: null, end: null };
+    var ikey = 'if:wv_season';
+
+    return inflightOnce(ikey, function () {
+      return jtry(u1, opts).then(function (a) {
+        if (a && (a.title || a.id)) return a;
+        return jtry(u2, opts).then(function (b) {
+          if (b && (b.title || b.id)) return b;
+          return jtry(u3, opts).then(function (c) {
+            return (c && (c.title || c.id)) ? c : { title: '—', start: null, end: null };
+          });
         });
+      }).then(function (data) {
+        putCache(key, data, null, TTL.WV_SEASON);
+        return data;
       });
-    }).then(function (data) {
-      putCache(key, data, null, TTL.WV_SEASON);
-      return data;
     });
   }
 
@@ -124,60 +176,114 @@
     opts = opts || {};
     if (!token) return Promise.reject(new Error('Falta access_token'));
 
-    var key = 'wv_obj_' + kind;
+    var key = 'wv_obj_' + kind + ':' + LANG;
     var cached = getCache(key, TTL.WV_OBJ, token, opts.nocache);
     if (cached) return Promise.resolve(cached);
 
-    var u1 = withToken(API_BASE + '/v2/account/wizardsvault/' + kind, token) + '&lang=es';
-    var u2 = withToken(API_BASE + '/v2/wizardsvault/objectives/' + kind, token) + '&lang=es';
-    var u3 = withToken(API_BASE + '/v2/account/wizards-vault/' + kind, token) + '&lang=es';
-    var u4 = withToken(API_BASE + '/v2/wizards-vault/objectives/' + kind, token) + '&lang=es';
+    // Canon: /v2/account/wizardsvault/{kind}
+    var u1 = withToken(withParams(API_BASE + '/v2/account/wizardsvault/' + kind, { lang: LANG }), token);
+    // Fallbacks (compat):
+    var u2 = withToken(withParams(API_BASE + '/v2/wizardsvault/objectives/' + kind, { lang: LANG }), token);
+    var u3 = withToken(withParams(API_BASE + '/v2/account/wizards-vault/' + kind, { lang: LANG }), token);
+    var u4 = withToken(withParams(API_BASE + '/v2/wizards-vault/objectives/' + kind, { lang: LANG }), token);
 
-    return jtry(u1, opts).then(function(a){
-      if (a && a.objectives) return a;
-      return jtry(u2, opts).then(function(b){
-        if (b && b.objectives) return b;
-        return jtry(u3, opts).then(function(c){
-          if (c && c.objectives) return c;
-          return jtry(u4, opts).then(function(d){
-            return (d && d.objectives) ? d : { objectives: [] };
+    var ikey = 'if:' + key + ':' + fpToken(token);
+
+    return inflightOnce(ikey, function () {
+      return jtry(u1, opts).then(function(a){
+        if (a && a.objectives) return a;
+        return jtry(u2, opts).then(function(b){
+          if (b && b.objectives) return b;
+          return jtry(u3, opts).then(function(c){
+            if (c && c.objectives) return c;
+            return jtry(u4, opts).then(function(d){
+              return (d && d.objectives) ? d : { objectives: [] };
+            });
           });
         });
+      }).then(function (data) {
+        putCache(key, data, token, TTL.WV_OBJ);
+        return data;
       });
-    }).then(function (data) {
-      putCache(key, data, token, TTL.WV_OBJ);
-      return data;
     });
   }
   function getWVDaily(token, opts){   return _getWVObjectives('daily',   token, opts); }
   function getWVWeekly(token, opts){  return _getWVObjectives('weekly',  token, opts); }
   function getWVSpecial(token, opts){ return _getWVObjectives('special', token, opts); }
 
-  // ----------------------------- WV: Cuenta -----------------------------
+  // -------- WV: Objetivos — catálogo global (meta de objetivos) --------
+  function getWVObjectivesAll(opts) {
+    opts = opts || {};
+    var key = 'wv_obj_catalog:' + LANG;
+    var cached = getCache(key, TTL.WV_OBJ, null, opts.nocache);
+    if (cached) return Promise.resolve(cached);
+
+    var url = withParams(API_BASE + '/v2/wizardsvault/objectives', { ids: 'all', lang: LANG });
+    var ikey = 'if:' + key;
+
+    return inflightOnce(ikey, function () {
+      return jtry(url, opts).then(function(arr){
+        var list = Array.isArray(arr) ? arr : [];
+        putCache(key, list, null, TTL.WV_OBJ);
+        return list;
+      });
+    });
+  }
+  function getWVObjectivesMeta(ids, opts) {
+    opts = opts || {};
+    ids = Array.isArray(ids) ? Array.from(new Set(ids)).filter(function(x){ return x!=null; }) : [];
+    if (!ids.length) return Promise.resolve([]);
+
+    var out = [];
+    var chunk = 200;
+    var chain = Promise.resolve();
+
+    for (var i=0; i<ids.length; i+=chunk) {
+      (function (slice) {
+        chain = chain.then(function () {
+          var key = 'wv_obj_meta:' + LANG + ':' + slice.join(',');
+          var cached = getCache(key, TTL.WV_OBJ, null, opts.nocache);
+          if (cached) { out = out.concat(cached || []); return; }
+
+          var url = withParams(API_BASE + '/v2/wizardsvault/objectives', { ids: slice.join(','), lang: LANG });
+          var ikey = 'if:' + key;
+          return inflightOnce(ikey, function () {
+            return jtry(url, opts).then(function (data) {
+              data = data || [];
+              putCache(key, data, null, TTL.WV_OBJ);
+              out = out.concat(data);
+            });
+          });
+        });
+      })(ids.slice(i, i+chunk));
+    }
+    return chain.then(function () { return out; });
+  }
+
+  // ----------------------------- WV: Cuenta (AA vía Wallet/Currencies) -----------------------------
   function getWVAccount(token, opts){
     opts = opts || {};
     if (!token) return Promise.reject(new Error('Falta access_token'));
 
-    var key = 'wv_account';
+    var key = 'wv_account_v2'; // nueva clave para evitar colisión con caches viejos
     var cached = getCache(key, TTL.WV_ACCOUNT, token, opts.nocache);
     if (cached) return Promise.resolve(cached);
 
-    var u1 = withToken(API_BASE + '/v2/account/wizardsvault', token);
-    var u2 = withToken(API_BASE + '/v2/wizardsvault/account', token);
-    var u3 = withToken(API_BASE + '/v2/account/wizards-vault', token);
+    var hasApi = (root.GW2Api && typeof root.GW2Api.getAstralAcclaimBalance === 'function');
+    if (!hasApi) return Promise.resolve({ astral_acclaim: 0, icon: null });
 
-    return jtry(u1, opts).then(function(a){
-      if (a && (a.astral_acclaim != null || a.icon)) return a;
-      return jtry(u2, opts).then(function(b){
-        if (b && (b.astral_acclaim != null || b.icon)) return b;
-        return jtry(u3, opts).then(function(c){
-          return (c && (c.astral_acclaim != null || c.icon)) ? c : null;
+    var ikey = 'if:' + key + ':' + fpToken(token);
+    return inflightOnce(ikey, function () {
+      return root.GW2Api.getAstralAcclaimBalance(token, { nocache: !!opts.nocache })
+        .then(function (aa){
+          var out = { astral_acclaim: (aa && aa.value) || 0, icon: (aa && aa.meta && aa.meta.icon) || null };
+          putCache(key, out, token, TTL.WV_ACCOUNT);
+          return out;
+        }).catch(function (){
+          var out = { astral_acclaim: 0, icon: null };
+          putCache(key, out, token, TTL.WV_ACCOUNT);
+          return out;
         });
-      });
-    }).then(function(data){
-      if (data && typeof data.astral_acclaim !== 'number') data.astral_acclaim = toNum(data.astral_acclaim, 0);
-      putCache(key, data, token, TTL.WV_ACCOUNT);
-      return data;
     });
   }
 
@@ -188,34 +294,40 @@
     var cached = getCache(key, TTL.WV_LISTINGS, null, opts.nocache);
     if (cached) return Promise.resolve(cached);
 
+    // Canon: /v2/wizardsvault/listings?ids=all
     var u1 = API_BASE + '/v2/wizardsvault/listings?ids=all';
+    // Fallbacks:
     var u2 = API_BASE + '/v2/wizards-vault/listings?ids=all';
     var u3 = API_BASE + '/v2/wizardsvault/listings';
     var u4 = API_BASE + '/v2/wizards-vault/listings';
 
-    return jtry(u1, opts).then(function(a){
-      if (Array.isArray(a)) return a;
-      return jtry(u2, opts).then(function(b){
-        if (Array.isArray(b)) return b;
-        return jtry(u3, opts).then(function(c){
-          if (Array.isArray(c)) return c;
-          return jtry(u4, opts).then(function(d){
-            return Array.isArray(d) ? d : [];
+    var ikey = 'if:' + key;
+
+    return inflightOnce(ikey, function () {
+      return jtry(u1, opts).then(function(a){
+        if (Array.isArray(a)) return a;
+        return jtry(u2, opts).then(function(b){
+          if (Array.isArray(b)) return b;
+          return jtry(u3, opts).then(function(c){
+            if (Array.isArray(c)) return c;
+            return jtry(u4, opts).then(function(d){
+              return Array.isArray(d) ? d : [];
+            });
           });
         });
+      }).then(function(arr){
+        var norm = (arr || []).map(function (x) {
+          return {
+            id: toNum(x.id, null),
+            item_id: toNullableNum(x.item_id),
+            item_count: toNullableNum(x.item_count),
+            type: x.type || null,
+            cost: toNullableNum(x.cost)
+          };
+        });
+        putCache(key, norm, null, TTL.WV_LISTINGS);
+        return norm;
       });
-    }).then(function(arr){
-      var norm = (arr || []).map(function (x) {
-        return {
-          id: toNum(x.id, null),
-          item_id: toNullableNum(x.item_id),
-          item_count: toNullableNum(x.item_count),
-          type: x.type || null,
-          cost: toNullableNum(x.cost)
-        };
-      });
-      putCache(key, norm, null, TTL.WV_LISTINGS);
-      return norm;
     });
   }
 
@@ -227,32 +339,38 @@
     var cached = getCache(key, TTL.WV_OBJ, token, opts.nocache);
     if (cached) return Promise.resolve(cached);
 
+    // Canon: /v2/account/wizardsvault/listings
     var u1 = withToken(API_BASE + '/v2/account/wizardsvault/listings', token);
+    // Fallbacks:
     var u2 = withToken(API_BASE + '/v2/wizardsvault/account/listings', token);
     var u3 = withToken(API_BASE + '/v2/account/wizards-vault/listings', token);
 
-    return jtry(u1, opts).then(function(a){
-      if (Array.isArray(a)) return a;
-      return jtry(u2, opts).then(function(b){
-        if (Array.isArray(b)) return b;
-        return jtry(u3, opts).then(function(c){
-          return Array.isArray(c) ? c : [];
+    var ikey = 'if:' + key + ':' + fpToken(token);
+
+    return inflightOnce(ikey, function () {
+      return jtry(u1, opts).then(function(a){
+        if (Array.isArray(a)) return a;
+        return jtry(u2, opts).then(function(b){
+          if (Array.isArray(b)) return b;
+          return jtry(u3, opts).then(function(c){
+            return Array.isArray(c) ? c : [];
+          });
         });
+      }).then(function(arr){
+        var norm = (arr || []).map(function (x) {
+          return {
+            id: toNum(x.id, null),
+            item_id: toNullableNum(x.item_id),
+            item_count: toNullableNum(x.item_count),
+            type: x.type || null,
+            cost: toNullableNum(x.cost),
+            purchased: (x.purchased == null ? 0 : toNum(x.purchased, 0)),
+            purchase_limit: (x.purchase_limit == null ? null : toNum(x.purchase_limit, null))
+          };
+        });
+        putCache(key, norm, token, TTL.WV_OBJ);
+        return norm;
       });
-    }).then(function(arr){
-      var norm = (arr || []).map(function (x) {
-        return {
-          id: toNum(x.id, null),
-          item_id: toNullableNum(x.item_id),
-          item_count: toNullableNum(x.item_count),
-          type: x.type || null,
-          cost: toNullableNum(x.cost),
-          purchased: (x.purchased == null ? 0 : toNum(x.purchased, 0)),
-          purchase_limit: (x.purchase_limit == null ? null : toNum(x.purchase_limit, null))
-        };
-      });
-      putCache(key, norm, token, TTL.WV_OBJ);
-      return norm;
     });
   }
 
@@ -286,26 +404,30 @@
     return map;
   }
 
+  // getWVShopMerged — versión que espera items antes de resolver (primer render completo)
   function getWVShopMerged(token, opts){
     opts = opts || {};
     if (!token) return Promise.reject(new Error('Falta access_token'));
 
+    // 1) En paralelo: catálogo, account listings y AA (vía wallet)
     return Promise.all([
-      getAccountWVListings(token, { nocache: !!opts.nocache }),
       getWVListings({ nocache: !!opts.nocache }),
+      getAccountWVListings(token, { nocache: !!opts.nocache }),
       getWVAccount(token, { nocache: !!opts.nocache })
-    ]).then(function (arr) {
-      var accShop = arr[0] || [];
-      var catalog = arr[1] || [];
-      var wvAcc   = arr[2] || null;
+    ]).then(function ([catalog, accShop, wvAcc]) {
 
-      var merged = wvMergeShopListings(accShop, catalog);
+      // 2) Merge rápido
+      var merged = wvMergeShopListings(accShop || [], catalog || []);
 
+      // 3) Prefetch de items ASAP (lista única)
       var itemIds = merged.map(function (m) { return m.item_id; }).filter(function (x) { return x != null; });
+      var uniqueIds = Array.from(new Set(itemIds));
+
       var itemsPromise = (root.GW2Api && typeof root.GW2Api.getItemsMany === 'function')
-        ? root.GW2Api.getItemsMany(Array.from(new Set(itemIds)), { nocache: !!opts.nocache })
+        ? root.GW2Api.getItemsMany(uniqueIds, { nocache: !!opts.nocache })
         : Promise.resolve([]);
 
+      // 4) Devolver cuando items estén listos (evita "Item #id")
       return itemsPromise.then(function (items) {
         return {
           rows: merged,
@@ -319,10 +441,10 @@
 
   // ----------------------------- WV: Targets helpers + listener -----------------------------
   function wvInvalidateTargets(token){
-    delCache('wv_obj_daily', token);
-    delCache('wv_obj_weekly', token);
-    delCache('wv_obj_special', token);
-    delCache('wv_account', token);
+    delCache('wv_obj_daily:'+LANG, token);
+    delCache('wv_obj_weekly:'+LANG, token);
+    delCache('wv_obj_special:'+LANG, token);
+    delCache('wv_account_v2', token);
   }
 
   function wvPreloadTargets(token, opts){
@@ -371,6 +493,9 @@
     // Listados
     getWVListings: getWVListings,
     getAccountWVListings: getAccountWVListings,
+    // Catálogo/Meta de objetivos
+    getWVObjectivesAll: getWVObjectivesAll,
+    getWVObjectivesMeta: getWVObjectivesMeta,
     // Shop
     wvComputeRemaining: wvComputeRemaining,
     wvMergeShopListings: wvMergeShopListings,
@@ -379,7 +504,7 @@
     wvInvalidateTargets: wvInvalidateTargets,
     wvPreloadTargets: wvPreloadTargets,
     // Debug
-    __cfg: { API_BASE: API_BASE, TTL: TTL }
+    __cfg: { API_BASE: API_BASE, TTL: TTL, LANG: LANG }
   };
 
   root.WizardsVault = WizardsVault;
@@ -389,12 +514,14 @@
     var ap = root.GW2Api;
     [
       'getWVSeason','getWVDaily','getWVWeekly','getWVSpecial','getWVAccount',
-      'getWVListings','getAccountWVListings','wvComputeRemaining','wvMergeShopListings',
-      'getWVShopMerged','wvInvalidateTargets','wvPreloadTargets'
+      'getWVListings','getAccountWVListings',
+      'getWVObjectivesAll','getWVObjectivesMeta',
+      'wvComputeRemaining','wvMergeShopListings','getWVShopMerged',
+      'wvInvalidateTargets','wvPreloadTargets'
     ].forEach(function(name){
       ap[name] = WizardsVault[name];
     });
-    console.info(LOGW, 'integrado con GW2Api — métodos WV listos.');
+    console.info(LOGW, 'integrado con GW2Api — métodos WV listos. lang=' + LANG + ' retries=' + RETRIES);
   } else {
     console.warn(LOGW, 'GW2Api no encontrado. Verificá el orden de carga (api-gw2.js antes de wizards-vault.js).');
   }

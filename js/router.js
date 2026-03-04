@@ -1,21 +1,18 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.9.1 (2026‑03‑03)
+ * v2.9.3 (2026‑03‑03)
  *
- * Cambios v2.9.1:
- *  - [HARDEN] Debounce en route() para evitar múltiples renders en hashchange “rápidos”.
- *  - [HARDEN] Guardias de idempotencia en WV.activate()/deactivate() (no duplicar timers).
- *  - [HARDEN] Limpieza robusta de placeholders/cargas al cambiar de tab/clave.
- *  - [HARDEN] Listeners globales cableados una sola vez, con try/catch defensivo.
- *  - Mantiene compatibilidad total con app.js, api-gw2.js y wizards-vault.js.
+ * Cambios v2.9.3:
+ *  - [UX] Skeleton unificado (estilo Meta) para la Tienda WV (cards + table).
+ *  - [UX] setShopLoading(true) inyecta skeleton acorde a la vista.
+ *  - Mantiene de-dupe de refreshShopData y hardening previos.
  */
 
 (function () {
   'use strict';
 
-  console.info('[WV] router-wv.js v2.9.1 — hardening (debounce + idempotencia + listeners robustos)');
+  console.info('[WV] router-wv.js v2.9.3 — skeleton + de-dupe');
 
-  // ------------------------------- Utils DOM -------------------------------
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
   var el = function (id) { return document.getElementById(id); };
@@ -32,7 +29,6 @@
     return s;
   }
 
-  // ------------------ Colores de rareza ------------------
   var RARITY_COLORS = {
     'junk': '#AAAAAA', 'basic': '#FFFFFF', 'fine': '#62A4DA',
     'masterwork': '#1A9306', 'rare': '#FCD00B', 'exotic': '#FFA405',
@@ -52,15 +48,12 @@
   }
   function escapeHtml(str) {
     return String(str || '')
-      .replace(/&amp;amp;/g,'&amp;amp;amp;').replace(/&amp;lt;/g,'&amp;amp;lt;').replace(/&amp;gt;/g,'&amp;amp;gt;')
-      .replace(/"/g,'&amp;amp;quot;').replace(/'/g,'&amp;amp;#039;');
+      .replace(/&amp;amp;amp;/g,'&amp;amp;amp;amp;').replace(/&amp;amp;lt;/g,'&amp;amp;amp;lt;').replace(/&amp;amp;gt;/g,'&amp;amp;amp;gt;')
+      .replace(/"/g,'&amp;amp;amp;quot;').replace(/'/g,'&amp;amp;amp;#039;');
   }
   function fmtNumber(n) { n = Number(n || 0); return n.toLocaleString('es-AR'); }
   function now() { return Date.now(); }
 
-  // ------------------------------------------------------------------------
-  // WV: Hydrate de pastillas de modo (PvE / PvP / WvW)
-  // ------------------------------------------------------------------------
   function hydrateWVModePills(scope) {
     try {
       var ICONS = (window.WV_MODE_ICONS || {});
@@ -68,7 +61,6 @@
       var root = scope || document;
       var nodes = root.querySelectorAll('.wv-obj-mode, .wv-mode-pill, [data-wv-mode], [data-mode]');
       if (!nodes || !nodes.length) return;
-
       Array.prototype.forEach.call(nodes, function (node) {
         try {
           if (!node || node.__wvIconHydrated) return;
@@ -90,7 +82,6 @@
     } catch {}
   }
 
-  // ---------------------- Sidebar: link activo por hash --------------------
   function setActiveNav(hash) {
     try {
       var h = normHash(hash || location.hash || '#/cards');
@@ -111,7 +102,6 @@
     } catch (e) { console.warn('[router] setActiveNav error', e); }
   }
 
-  // ------------------------ Sidebar: layout por vista ----------------------
   function updateSidebarFor(view) {
     try {
       var conv=el('asideConvSection'), next=el('asideNextFeatures'), metaNext=el('metaAsideNext'), ach=el('achAsidePanel');
@@ -122,7 +112,6 @@
     } catch (e) { console.warn('[router] updateSidebarFor error', e); }
   }
 
-  // ------------------------------ Panels main ------------------------------
   function showPanel(idToShow) {
     ['walletPanel','metaPanel','achievementsPanel','wvPanel'].forEach(function(id){
       var node=el(id); if (!node) return;
@@ -160,13 +149,13 @@
       obj:{ daily:null, weekly:null, special:null },
       resetTimers:{ daily:null, weekly:null, special:null },
       skipObjFetchOnce: false,
-      // [HARDEN] flags de idempotencia
       _active:false
     };
 
     var _objFetchSeq = 0;
+    var _shopInFlight = null; // de-dupe
 
-    // guardado en LS (igual que antes)
+    // LS keys
     var LS_WV_SHOP_MARKS='gw2_wv_marks_v1', LS_WV_SHOP_PINNED='gw2_wv_pinned_v1', LS_WV_SHOP_VIEW='gw2_wv_view_v1',
         LS_WV_LAST_TAB='gw2_wv_lasttab_v1', LS_WV_LEGACY_VIS='gw2_wv_legacy_filter_v1';
 
@@ -197,7 +186,54 @@
       }
     }
 
-    // ---- Loading placeholder (único) ----
+    // ---- Loading con SKELETON ----
+    function skShopCards(n){
+      var html = ['<div class="wv-sk-grid">'];
+      for (var i=0;i<n;i++){
+        html.push(
+          '<div class="wv-sk-card">',
+            '<div class="wv-sk-card__top">',
+              '<div class="skeleton wv-sk-icon"></div>',
+              '<div>',
+                '<div class="skeleton skeleton--line lg" style="width:70%"></div>',
+                '<div class="skeleton skeleton--line sm" style="width:46%"></div>',
+              '</div>',
+              '<div class="skeleton wv-sk-btn"></div>',
+            '</div>',
+            '<div class="wv-sk-card__meta">',
+              '<div class="skeleton wv-sk-chip"></div>',
+              '<div class="skeleton wv-sk-chip"></div>',
+            '</div>',
+            '<div class="skeleton skeleton--block"></div>',
+            '<div class="wv-sk-card__meta">',
+              '<div class="skeleton wv-sk-pill"></div>',
+              '<div class="skeleton wv-sk-pill"></div>',
+            '</div>',
+          '</div>'
+        );
+      }
+      html.push('</div>');
+      return html.join('');
+    }
+    function skShopTable(n){
+      var html = ['<div class="wv-sk-table">'];
+      for (var i=0;i<n;i++){
+        html.push(
+          '<div class="wv-sk-row">',
+            '<div class="skeleton wv-sk-icon"></div>',
+            '<div class="skeleton wv-sk-name"></div>',
+            '<div class="skeleton wv-sk-thin"></div>',
+            '<div class="skeleton wv-sk-thin"></div>',
+            '<div class="skeleton wv-sk-thin"></div>',
+            '<div class="skeleton wv-sk-btn"></div>',
+            '<div class="skeleton wv-sk-btn"></div>',
+          '</div>'
+        );
+      }
+      html.push('</div>');
+      return html.join('');
+    }
+
     function setShopLoading(on, msg){
       var host = els.tabShop; if (!host) return;
       var node = host.querySelector('#wvShopLoading');
@@ -213,7 +249,10 @@
             host.prepend(node);
           }
         }
-        node.textContent = String(msg || 'Cargando Tienda…');
+        // Si ya conocemos la vista preferida, skeleton acorde:
+        var viewPref = state.shop.view || loadView() || 'cards';
+        var body = (viewPref === 'table') ? skShopTable(8) : skShopCards(8);
+        node.innerHTML = '<div style="margin:6px 0 10px 0">'+escapeHtml(String(msg || 'Cargando Tienda…'))+'</div>' + body;
         node.hidden = false;
       } else {
         if (node) node.hidden = true;
@@ -435,7 +474,7 @@
           sorted.sort(function(a,b){ var ia=itemsById.get(a.item_id)||{}, ib=itemsById.get(b.item_id)||{}; return String(ia.name||'').localeCompare(String(ib.name||''),'es'); });
       }
       var pinned=state.shop.pinned||{};
-      sorted.sort(function(a,b){ var pa=!!pinned[a.id], pb=!!pinned[b.id]; return pa&&!pb?-1:(!pa&&pb?1:0); });
+      sorted.sort(function(a,b){ var pa=!!pinned[a.id], pb=!!pinned[b.id]; return pa&& !pb ? -1 : (!pa && pb ? 1 : 0); });
       return sorted;
     }
 
@@ -510,13 +549,13 @@
           var pinActive=!!(st.pinned && st.pinned[x.id]), pinCls='wv-pin'+(pinActive?' wv-pin--active':''), pinBtn='<button class="'+pinCls+'" data-pin="'+x.id+'" title="'+(pinActive?'Desfijar':'Fijar')+'">📌</button>';
           var rowStyle='display:flex;justify-content:space-between;align-items:center;gap:8px;';
 
-          return '<div class="wv-card" data-id="'+x.id+'"'+cardDeco+'><div class="wv-card__top"><div class="wv-card__iconWrap"'+iconDeco+'>'+ (icon?('<img class="wv-card__icon" src="'+escapeHtml(icon)+'" alt="" loading="lazy"/>'):'') +'</div><div class="wv-card__name" title="'+escapeHtml(name)+'"'+(color?' style="color:'+color+'"':'')+'>'+escapeHtml(name)+'</div>'+pinBtn+'</div><div class="wv-card__meta"><span class="wv-badge">Costo: <strong>'+cost+'</strong> AA</span><span class="wv-type">'+escapeHtml(x.type||'—')+'</span></div><div class="wv-card__body"><div class="sep"></div><div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Comprado:</span><span class="pill">'+purchasedEff+' / '+(limit==null?'∞':limit)+'</span></div><div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Restante:</span><span class="pill">'+leftVal+'</span></div></div><div class="wv-card__bottom" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span class="wv-id">ID '+x.id+'</span><span>'+ctr+(maxBtn?' '+maxBtn:'')+'</span></div></div>';
+          return '<div class="wv-card" data-id="'+x.id+'"'+cardDeco+'><div class="wv-card__top"><div class="wv-card__iconWrap"'+iconDeco+'>'+(icon?('<img class="wv-card__icon" src="'+escapeHtml(icon)+'" alt="" loading="lazy"/>'):'')+'</div><div class="wv-card__name" title="'+escapeHtml(name)+'"'+(color?' style="color:'+color+'"':'')+'>'+escapeHtml(name)+'</div>'+pinBtn+'</div><div class="wv-card__meta"><span class="wv-badge">Costo: <strong>'+cost+'</strong> AA</span><span class="wv-type">'+escapeHtml(x.type||'—')+'</span></div><div class="wv-card__body"><div class="sep"></div><div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Comprado:</span><span class="pill">'+purchasedEff+' / '+(limit==null?'∞':limit)+'</span></div><div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Restante:</span><span class="pill">'+leftVal+'</span></div></div><div class="wv-card__bottom" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span class="wv-id">ID '+x.id+'</span><span>'+ctr+(maxBtn?' '+maxBtn:'')+'</span></div></div>';
         }).join('');
 
         area.innerHTML = '<div class="wv-card-grid">'+cards+'</div>';
       }
 
-      // Wire contadores y pin
+      // Wire de contadores y pin (igual que antes)
       $$('.wv-counter', area).forEach(function(host){
         var id=host.getAttribute('data-id'), btnDec=$('.wv-dec',host), btnInc=$('.wv-inc',host), spanVal=$('span.muted',host);
         var findRow=function(){ return state.shop.merged.find(function(x){ return String(x.id)===String(id); }); };
@@ -551,10 +590,13 @@
       else { if (st.autoRefreshTimer){ clearInterval(st.autoRefreshTimer); st.autoRefreshTimer=null; } }
     }
 
+    // de-dupe
     function refreshShopData(forceNoCache){
       var token=getSelectedToken();
       if (!token){ if (els.tabShop) els.tabShop.innerHTML='<p class="muted">Seleccioná una API Key para ver la Tienda.</p>'; return Promise.resolve(); }
       state.shop.lastToken=token;
+
+      if (_shopInFlight) return _shopInFlight;
 
       setShopLoading(true, 'Cargando Tienda…');
 
@@ -562,7 +604,7 @@
         ? Promise.resolve(state.shop.season)
         : GW2Api.getWVSeason({ nocache:false }).then(function(season){ state.shop.season=season; setWVSeasonHeader(season); return season; }).catch(function(){ return null; });
 
-      return ensureSeason.then(function(){
+      _shopInFlight = ensureSeason.then(function(){
         return GW2Api.getWVShopMerged(token, { nocache: !!forceNoCache });
       }).then(function(pkg){
         state.shop.merged=pkg.rows||[]; state.shop.itemsById=pkg.itemsById||new Map();
@@ -587,7 +629,11 @@
         console.warn('[WV] refresh shop error:', e);
         setShopLoading(false);
         window.toast?.('error','No se pudo cargar Tienda',{ ttl: 2000 });
+      }).finally(function(){
+        _shopInFlight = null;
       });
+
+      return _shopInFlight;
     }
 
     function refreshObjectives(forceNoCache){
@@ -704,7 +750,6 @@
       }
     }
 
-    // ===== Scheduler de resets =====
     function msUntil(dateUtc){
       var t = (dateUtc instanceof Date) ? dateUtc.getTime() : Number(dateUtc||0);
       var d = t - Date.now();
@@ -745,7 +790,7 @@
 
     function scheduleDailyReset(){
       try{
-        if (!state._active) return; // [HARDEN] solo si WV visible/activo
+        if (!state._active) return;
         var at = nextDailyResetUTC(); if (!at) return;
         var ms = msUntil(at);
         if (ms === 0) ms = 500;
@@ -796,7 +841,6 @@
     }
 
     function activate(){
-      // [HARDEN] idempotencia: no activar dos veces
       if (state._active) return;
       state._active = true;
 
@@ -821,7 +865,7 @@
       scheduleAllResets();
     }
     function deactivate(){
-      if (!state._active) return; // [HARDEN]
+      if (!state._active) return;
       state._active = false;
       ensureShopAutoRefresh(false);
       clearResetTimers();
@@ -879,9 +923,8 @@
   })();
 
   // ----------------------------- ROUTER ------------------------------------
-  var _routeT = null; // [HARDEN] debounce
+  var _routeT = null; // debounce
   function route(){
-    // [HARDEN] Debounce leve: agrupar posibles cambios de hash/back-to-back
     clearTimeout(_routeT);
     _routeT = setTimeout(function(){
       var h=normHash(location.hash||'#/cards');
@@ -927,7 +970,7 @@
   }
 
   function onDomReady(){
-    if (onDomReady.__wired) return; // [HARDEN]
+    if (onDomReady.__wired) return;
     onDomReady.__wired = true;
 
     $$('.overlay-tab').forEach(function(btn){
