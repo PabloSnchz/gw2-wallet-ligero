@@ -1,13 +1,12 @@
 /* ===========================================================================
  * js/achievements.js — Achievements con toolbar, aside, wiki links,
  * ocultar completados, categorías e iconos + deep‑links + KPIs AP.
- * Versión: 2.10.0 (2026‑03‑03)
- *  - Guard de secuencia (“última llamada gana”) en loadAll().
- *  - AP Diario histórico desde /v2/account (daily_ap + monthly_ap) [no-store].
- *  - AP Permanente por tiers ganados (no Daily/Monthly).
- *  - NUEVO: Delta de Legado (ajusta diferencias API vs cliente sumando a Perm.).
- *  - NUEVO: Iconos separados (perm/daily/total) + link a wiki en KPIs.
- *  - NUEVO: Pills con icono oficial y contenido alineado verticalmente.
+ * Versión: 2.11.0-perf (hotfix watchdog) — 2026‑03‑04
+ *
+ * Hotfix:
+ *  - ⬅️ Removido listener interno de 'gn:tokenchange' (router es la única fuente).
+ *  - 🛡️ Watchdog: si no hay progreso en 5s -> abort + reintento conservador.
+ *  - ⚙️ Modo conservador: metas en lotes de 50, secuenciales (nocache=false).
  * =========================================================================== */
 
 (function (root) {
@@ -17,17 +16,44 @@
   var $  = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.from((r || document).querySelectorAll(s)); };
 
-  var _loadSeq = 0;  // “última llamada gana” (evita pisado entre requests al cambiar de key)
+  var _loadSeq = 0;         // “última llamada gana”
+  var _abortCtrl = null;    // AbortController para cortar cargas previas
+
+  // Watchdog (anti-atasco)
+  var _wdTimer = null;
+  var _lastProgressTs = 0;
+  var _conservative = false; // activado por watchdog en reintento
+  function _tickProgress(){ _lastProgressTs = Date.now(); }
+  function _startWatchdog() {
+    _stopWatchdog();
+    _tickProgress();
+    _wdTimer = setInterval(function(){
+      if (Date.now() - _lastProgressTs > 5000) { // 5s sin progreso visible
+        try { _abortCtrl && _abortCtrl.abort(); } catch (_){}
+        _stopWatchdog();
+        _conservative = true; // Próximo intento: secuencial + chunk 50
+        _showInfo('La carga de logros tardó más de lo normal. Reintentando en modo conservador…', 'warn');
+        // relanzar sin nocache para aprovechar LS/mem
+        loadAll({ nocache:false }).catch(function(){});
+      }
+    }, 1000);
+  }
+  function _stopWatchdog(){ if (_wdTimer){ clearInterval(_wdTimer); _wdTimer=null; } }
 
   // ======================= ICONOS OFICIALES (WIKI) =========================
-  // KPIs (separados por tipo):
-  var ICON_AP_PERM  = 'https://wiki.guildwars2.com/images/thumb/c/cd/AP.png/30px-AP.png';  // Permanente (Heavy)
-  var ICON_AP_DAILY = 'https://wiki.guildwars2.com/images/1/14/Daily_Achievement.png';       // Diario (Normal)
-  var ICON_AP_TOTAL = 'https://wiki.guildwars2.com/images/thumb/c/cd/AP.png/30px-AP.png'; // Total (Large)
-  // Pills (tamaño chico):
+  var ICON_AP_PERM  = 'https://wiki.guildwars2.com/images/thumb/c/cd/AP.png/30px-AP.png';
+  var ICON_AP_DAILY = 'https://wiki.guildwars2.com/images/1/14/Daily_Achievement.png';
+  var ICON_AP_TOTAL = 'https://wiki.guildwars2.com/images/thumb/c/cd/AP.png/30px-AP.png';
   var ICON_AP_18    = 'https://wiki.guildwars2.com/images/thumb/c/cd/AP.png/30px-AP.png';
-  // Página de la wiki (enlace de los KPIs):
   var ICON_AP_PAGE  = 'https://wiki.guildwars2.com/wiki/Achievement_Chest';
+
+  // ------------------------------- Helpers LS ------------------------------
+  function lsGet(key){ try{ var j=localStorage.getItem(key); return j?JSON.parse(j):null; }catch(_){ return null; } }
+  function lsSet(key,val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(_){ } }
+  function now(){ return Date.now(); }
+  function isFresh(entry, ttl){ return !!entry && typeof entry.ts==='number' && (now()-entry.ts)<=ttl; }
+
+  var CATS_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
   // ---------------------------- Estado / DOM -------------------------------
   var el = {
@@ -48,34 +74,32 @@
     asideTopList: null,
     asideCats: null,
     // KPIs AP
-    kpiWrap: null
+    kpiWrap: null,
+    // Banner
+    infoBanner: null
   };
 
   var state = {
     token: null,
-    acc: [],                 // /v2/account/achievements
-    metaById: new Map(),     // id -> meta /v2/achievements
-    // categorías
+    acc: [],
+    metaById: new Map(),
     categories: [],
-    catById: new Map(),      // id -> category
-    achIdToCat: new Map(),   // achievementId -> categoryId
-    // filtros
-    qRaw: '',                // texto crudo (input / hash)
-    qNorm: '',               // normalizado (búsqueda efectiva)
+    catById: new Map(),
+    achIdToCat: new Map(),
+    qRaw: '',
+    qNorm: '',
     pct: 0.8,
-    cat: '',                 // '' = todas | string(categoryId)
-    hideDone: false,         // Ocultar completados
-    // AP (cuenta)
-    apDailyHist: 0,          // daily_ap + monthly_ap (account)
-    apPermanent: 0,          // suma de tiers ganados (no daily/monthly)
-    apLegacyDelta: 0,        // AP no atribuibles por API (legado/histórico)
-    // flags
+    cat: '',
+    hideDone: false,
+    apDailyHist: 0,
+    apPermanent: 0,
+    apLegacyDelta: 0,
     loaded: false,
     loading: false,
     catsLoaded: false,
-    // wiring
-    _wiredTokenListener: false,
-    _wiredHashListener: false
+    _wiredTokenListener: false,   // (hotfix) queda false; no se cablea
+    _wiredHashListener: false,
+    _normCache: new Map()
   };
 
   // ------------------------------- Utils -----------------------------------
@@ -87,16 +111,45 @@
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m];
     });
   }
-  function norm(s){
-    return String(s||'').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,'');
-  }
+  function normStr(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,''); }
   function getSelectedToken(){ try { return root.__GN__?.getSelectedToken?.() || null; } catch(_){ return null; } }
   function isActiveRoute(){ return (String(location.hash||'').toLowerCase().startsWith('#/account/achievements')); }
+  function getLang(){ try{ return String(root.GW2Api?.__cfg?.LANG || 'es'); }catch(_){ return 'es'; } }
+  function getApiBase(){ try{ return String(root.GW2Api?.__cfg?.API_BASE || 'https://api.guildwars2.com'); }catch(_){ return 'https://api.guildwars2.com'; } }
 
   function iconImg(url, size, alt, extraStyle){
     if(!url) return '';
     var s = Number(size||18), style = extraStyle ? ' style="'+extraStyle+'"' : '';
     return '<img src="'+esc(url)+'" alt="'+esc(alt||'')+'" width="'+s+'" height="'+s+'" loading="lazy" decoding="async" referrerpolicy="no-referrer"'+style+' />';
+  }
+
+  // --------------------------- Banner / toast -------------------------------
+  function _ensureInfoBanner(){
+    if (el.infoBanner) return;
+    if (!el.panel) return;
+    var host = el.panel.querySelector('.panel-head') || el.panel;
+    var div = document.createElement('div');
+    div.id = 'achInfoBanner';
+    div.className = 'alert';
+    div.style.margin = '6px 0 0';
+    div.style.display = 'none';
+    host.appendChild(div);
+    el.infoBanner = div;
+  }
+  function _showInfo(msg, kind){
+    _ensureInfoBanner();
+    try { window.toast?.(kind==='warn'?'warn':'info', msg, { ttl: 2000 }); } catch(_){}
+    if (el.infoBanner){
+      el.infoBanner.textContent = String(msg||'');
+      el.infoBanner.style.display = 'block';
+      el.infoBanner.setAttribute('role', 'status');
+    }
+  }
+  function _hideInfo(){
+    if (el.infoBanner){
+      el.infoBanner.style.display = 'none';
+      el.infoBanner.textContent = '';
+    }
   }
 
   // --------------------------- Deep‑links (hash) ----------------------------
@@ -116,7 +169,7 @@
     var pNum = pct != null ? parseFloat(pct) : NaN;
 
     state.qRaw  = String(q||'');
-    state.qNorm = norm(state.qRaw);
+    state.qNorm = normStr(state.qRaw);
 
     if (isFinite(pNum) && pNum > 0 && pNum <= 1) state.pct = pNum;
     state.cat = cat ? String(cat) : '';
@@ -143,7 +196,7 @@
     var url = new URL(location.href);
     url.hash = newHash;
     history.replaceState(null, '', url.toString());
-    state.qRaw = qRaw; state.qNorm = norm(qRaw);
+    state.qRaw = qRaw; state.qNorm = normStr(qRaw);
   }
 
   // ------------------------ Modelo de progreso + AP -------------------------
@@ -232,34 +285,52 @@
 
   // ---------------------------- Carga categorías ----------------------------
   async function ensureCategories(){
-    if (state.catsLoaded) return;
-    try {
-      var url = 'https://api.guildwars2.com/v2/achievements/categories?ids=all&lang=es';
-      var res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      var arr = await res.json().catch(function(){ return []; });
-      if (!Array.isArray(arr)) arr = [];
-      state.categories = arr.slice();
-      state.catById = new Map(arr.map(function(c){ return [String(c.id), c]; }));
-
-      var map = new Map();
-      arr.forEach(function(cat){
-        var list = Array.isArray(cat.achievements) ? cat.achievements : [];
-        list.forEach(function(entry){
-          var achId = (typeof entry === 'number') ? entry : (entry && entry.id);
-          if (achId == null) return;
-          var key = String(achId);
-          if (!map.has(key)) map.set(key, String(cat.id));
-        });
-      });
-      state.achIdToCat = map;
+    if (state.catsLoaded && state.categories && state.categories.length) return;
+    var lang = getLang();
+    var lkey = 'ach_cats_v1:' + lang;
+    var bag = lsGet(lkey);
+    if (isFresh(bag, CATS_TTL_MS) && Array.isArray(bag.data)) {
+      hydrateCategories(bag.data);
       state.catsLoaded = true;
+      return;
+    }
+    try {
+      var url = getApiBase() + '/v2/achievements/categories?ids=all&lang=' + encodeURIComponent(lang);
+      var arr = null;
+      if (root.GW2Api && typeof root.GW2Api.jtry === 'function') {
+        arr = await root.GW2Api.jtry(url, { /* signal opcional */ });
+      } else {
+        var res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        arr = await res.json().catch(function(){ return []; });
+      }
+      if (!Array.isArray(arr)) arr = [];
+      hydrateCategories(arr);
+      lsSet(lkey, { ts: now(), data: arr });
     } catch(e){
       console.warn(LOGP, 'categories', e);
-      state.categories = [];
-      state.catById = new Map();
-      state.achIdToCat = new Map();
+      if (!state.categories || !state.categories.length) {
+        state.categories = [];
+        state.catById = new Map();
+        state.achIdToCat = new Map();
+      }
+    } finally {
       state.catsLoaded = true;
     }
+  }
+  function hydrateCategories(arr){
+    state.categories = arr.slice();
+    state.catById = new Map(arr.map(function(c){ return [String(c.id), c]; }));
+    var map = new Map();
+    arr.forEach(function(cat){
+      var list = Array.isArray(cat.achievements) ? cat.achievements : [];
+      list.forEach(function(entry){
+        var achId = (typeof entry === 'number') ? entry : (entry && entry.id);
+        if (achId == null) return;
+        var key = String(achId);
+        if (!map.has(key)) map.set(key, String(cat.id));
+      });
+    });
+    state.achIdToCat = map;
   }
 
   // -------------------------- KPI visual de AP ------------------------------
@@ -298,21 +369,18 @@
 
     var tipPerm = 'Permanente API'+(apLegacyDelta>0?(' + Legado '+fmtInt(apLegacyDelta)):'');
     el.kpiWrap.innerHTML = [
-      // Permanente
       '<div class="ach-kpi__tile" title="'+esc(tipPerm)+'">',
         '<a class="ach-kpi__icon" href="'+esc(ICON_AP_PAGE)+'" target="_blank" rel="noopener">'+iconImg(ICON_AP_PERM, 20, 'AP')+'</a>',
         '<span class="ach-kpi__lbl">Permanente</span>',
         (apLegacyDelta>0?('<span class="ach-kpi__delta">+'+fmtInt(apLegacyDelta)+' legado</span>'):''),
         '<span class="ach-kpi__num">'+fmtInt(permFinal)+'</span>',
       '</div>',
-      // Diario
       '<div class="ach-kpi__tile" title="Logro diario acumulado (incluye histórico mensual)">',
         '<a class="ach-kpi__icon" href="'+esc(ICON_AP_PAGE)+'" target="_blank" rel="noopener">'+iconImg(ICON_AP_DAILY, 20, 'AP')+'</a>',
         '<span class="ach-kpi__lbl">Logro diario</span>',
         '<span class="ach-kpi__num">'+fmtInt(apDaily)+'</span>',
       '</div>',
       '<span class="ach-kpi__sep">+</span>',
-      // Total
       '<div class="ach-kpi__tile" title="Total de puntos de logro acumulados">',
         '<a class="ach-kpi__icon" href="'+esc(ICON_AP_PAGE)+'" target="_blank" rel="noopener">'+iconImg(ICON_AP_TOTAL, 20, 'AP')+'</a>',
         '<span class="ach-kpi__lbl">Total</span>',
@@ -331,14 +399,12 @@
     var name = esc(cat.name || '');
     return '<span class="ach-badge">'+ icon + name + '</span>';
   }
-
   function wikiLinkHTML(meta){
     var name = meta?.name ? String(meta.name) : '';
     if (!name) return '';
     var href = 'https://wiki.guildwars2.com/wiki/' + encodeURIComponent(name);
     return '<a class="btn btn--ghost" href="'+href+'" target="_blank" rel="noopener" title="Abrir en la Wiki">Wiki</a>';
   }
-
   function progressSeverity(pr){
     var pct = Math.round((pr?.pct || 0) * 100);
     if (pct >= 100) return 'done';
@@ -368,9 +434,8 @@
     var wiki = wikiLinkHTML(meta);
 
     var apTot = totalAP(meta);
-    var apGot = earnedAP(r, meta);
+    var apGot = meta ? earnedAP(r, meta) : 0;
 
-    // === Pill con icono oficial y contenido alineado verticalmente ===
     var apHtml = (apTot > 0)
       ? '<span class="pill" title="Puntos de logro (ganados / posibles)">'+
           '<span style="display:inline-flex;align-items:center;gap:6px;">'+
@@ -407,9 +472,8 @@
     var wiki = wikiLinkHTML(meta);
 
     var apTot = totalAP(meta);
-    var apGot = earnedAP(r, meta);
+    var apGot = meta ? earnedAP(r, meta) : 0;
 
-    // === Pill con icono oficial y contenido alineado verticalmente ===
     var apHtml = (apTot > 0)
       ? '<span class="pill" title="Puntos de logro (ganados / posibles)">'+
           '<span style="display:inline-flex;align-items:center;gap:6px;">'+
@@ -430,7 +494,7 @@
           '<span class="cats">' + ratioTxt + '</span>' +
           '<span class="a-actions">'+ (apHtml ? apHtml : '') + (wiki ? (' ' + wiki) : '') +'</span>' +
         '</div>' +
-        '<div class="ach-progline"><span>Progreso</span><span>'+ pctTxt +'</span></div>' +
+        '<div class="ach-progline"><span>Progreso</span><span>'+ fmtPct(pr.pct) +'</span></div>' +
         progressBarHTML(pr) +
       '</article>'
     );
@@ -441,8 +505,7 @@
 
     var rows = [];
     (state.acc || []).forEach(function (r) {
-      var meta = state.metaById.get(r.id);
-      if (!meta) return;
+      var meta = state.metaById.get(r.id) || null;
       var pr = computeProgress(r, meta);
       if (state.hideDone && pr.pct >= 1) return;
       rows.push({ r: r, meta: meta, pr: pr });
@@ -461,6 +524,21 @@
         ' • AP potencial (≥ ' + Math.round(state.pct*100) + '%): ' + fmtInt(apPot);
     }
     renderKpi(state.apPermanent, state.apDailyHist, state.apLegacyDelta);
+    _tickProgress();
+  }
+
+  // Normalización con memo por id (para filtros)
+  function getNormForId(id){
+    var key = String(id);
+    var cached = state._normCache.get(key);
+    if (cached) return cached;
+    var m = state.metaById.get(id) || {};
+    var v = {
+      name: normStr(m.name || ''),
+      desc: normStr(m.description || '')
+    };
+    state._normCache.set(key, v);
+    return v;
   }
 
   function passesFilters(meta, pr, achId){
@@ -470,32 +548,58 @@
     }
     if (state.qNorm) {
       var q = state.qNorm;
-      var name = norm(meta?.name);
-      var desc = norm(meta?.description || '');
-      var cat  = norm(String(meta?.category || ''));
-      if (!(name.includes(q) || desc.includes(q) || cat.includes(q))) return false;
+      var nrm = getNormForId(achId);
+      if (!(nrm.name.includes(q) || nrm.desc.includes(q))) return false;
     }
     if (state.hideDone && pr.pct >= 1) return false;
     if (pr.pct < state.pct) return false;
     return pr.pct < 1;
   }
 
+  // Render "Nearly" por tandas (fluido)
   function renderNearly(){
     if (!el.nearlyGrid) return;
     var rows = [];
     (state.acc || []).forEach(function (r) {
-      var meta = state.metaById.get(r.id); if (!meta) return;
+      var meta = state.metaById.get(r.id) || null;
       var pr = computeProgress(r, meta);
       if (passesFilters(meta, pr, r.id)) rows.push({ r: r, meta: meta, pr: pr });
     });
     rows.sort(function(a,b){ return b.pr.pct - a.pr.pct; });
     rows = rows.slice(0, 60);
+
     if (!rows.length) {
       el.nearlyGrid.innerHTML = '<p class="muted">No hay logros que coincidan con los filtros.</p>';
-    } else {
-      el.nearlyGrid.innerHTML = rows.map(function(x){ return rowNearlyHTML(x.meta, x.r, x.pr); }).join('');
+      renderKpi(state.apPermanent, state.apDailyHist, state.apLegacyDelta);
+      renderAside(rows);
+      _tickProgress();
+      return;
     }
-    renderKpi(state.apPermanent, state.apDailyHist, state.apLegacyDelta);
+
+    // Pintamos por tandas para evitar jank
+    el.nearlyGrid.innerHTML = ''; // limpia
+    var i = 0;
+    function pump(deadline){
+      var start = i;
+      var budgetOk = function(){ return (deadline && typeof deadline.timeRemaining==='function') ? (deadline.timeRemaining() > 8) : true; };
+      var count = 0;
+      while (i < rows.length && (budgetOk() || count < 5)) {
+        i++; count++;
+      }
+      var html = rows.slice(start, i).map(function(x){ return rowNearlyHTML(x.meta, x.r, x.pr); }).join('');
+      if (html) el.nearlyGrid.insertAdjacentHTML('beforeend', html);
+      if (i < rows.length) {
+        if ('requestIdleCallback' in window) window.requestIdleCallback(pump, { timeout: 250 });
+        else setTimeout(function(){ pump(); }, 16);
+      } else {
+        renderKpi(state.apPermanent, state.apDailyHist, state.apLegacyDelta);
+        _tickProgress();
+      }
+    }
+    if ('requestIdleCallback' in window) window.requestIdleCallback(pump, { timeout: 250 });
+    else setTimeout(function(){ pump(); }, 0);
+
+    renderAside(rows);
   }
 
   // --------------------------- Aside de Logros ------------------------------
@@ -516,7 +620,6 @@
     var s = document.createElement('style'); s.id='ach-aside-styles'; s.textContent=css;
     document.head.appendChild(s);
   }
-
   function ensureAside(){
     ensureAsideStyles();
     const host = document.querySelector('aside.col-side');
@@ -557,7 +660,6 @@
     el.asideCats = p.querySelector('#achAsideCats');
     p.removeAttribute('hidden');
   }
-
   function renderAside(rowsNearly){
     ensureAside();
     var top = (rowsNearly || []).slice(0,5);
@@ -637,7 +739,6 @@
     var s = document.createElement('style'); s.id='ach-toolbar-styles'; s.textContent=css;
     document.head.appendChild(s);
   }
-
   function ensureRefreshButton(){
     if (!el.panel) return;
     if (!el.head) el.head = el.panel.querySelector('.panel-head');
@@ -648,12 +749,11 @@
     btn.textContent = 'Refrescar';
     btn.title = 'Volver a consultar (sin caché)';
     btn.style.marginLeft = '8px';
-    btn.addEventListener('click', function () { loadAll({ nocache: true }).catch(function(){}); });
+    btn.addEventListener('click', function () { _conservative=false; _hideInfo(); loadAll({ nocache: true }).catch(function(){}); });
     var titleHost = el.head.querySelector('.panel-head__title');
     if (titleHost && titleHost.parentNode) titleHost.parentNode.appendChild(btn);
     else el.head.appendChild(btn);
   }
-
   function ensureToolbar(){
     injectToolbarStyles();
     if (!el.panel) return;
@@ -703,7 +803,6 @@
     if (oldSearch) { var slot = document.getElementById('achSearch_alt'); slot.replaceWith(oldSearch); }
     if (oldPct)    { var slot2 = document.getElementById('achPct_alt'); slot2.replaceWith(oldPct); }
   }
-
   function fillCategorySelect(){
     if (!el.cat) return;
     if (el.cat.__filled) return;
@@ -721,7 +820,6 @@
     el.cat.__filled = true;
     el.cat.value = state.cat || '';
   }
-
   function wireToolbar(){
     if (el.search && !el.search.__wired) {
       el.search.__wired = true;
@@ -730,7 +828,7 @@
         clearTimeout(t);
         t = setTimeout(function(){
           state.qRaw  = el.search.value || '';
-          state.qNorm = norm(state.qRaw);
+          state.qNorm = normStr(state.qRaw);
           writeFiltersToHashSilently();
           renderNearly();
           renderSummary();
@@ -779,7 +877,6 @@
     if (el.summaryGrid) el.summaryGrid.setAttribute('aria-live','polite');
     if (el.nearlyGrid)  el.nearlyGrid.setAttribute('aria-live','polite');
   }
-
   function setLoading(on){
     state.loading = !!on;
     if (el.panel) {
@@ -789,21 +886,57 @@
     }
   }
 
-  async function fetchAccountAP(token){
-    var url = 'https://api.guildwars2.com/v2/account?access_token='+encodeURIComponent(token);
-    var r = await fetch(url, { headers: { 'Accept':'application/json' }, cache: 'no-store' });
-    if (!r.ok) throw new Error('account HTTP '+r.status);
-    var o = await r.json();
-    var daily = Number(o?.daily_ap || 0);
-    var monthly = Number(o?.monthly_ap || 0);
-    return { dailyHist: daily + monthly, raw: o };
+  async function fetchAccountAP(token, opts){
+    opts = opts || {};
+    try {
+      var url = getApiBase() + '/v2/account?access_token='+encodeURIComponent(token);
+      var o = await root.GW2Api.jtry(url, { signal: opts.signal });
+      if (!o) return { dailyHist: 0, raw: null };
+      var daily = Number(o?.daily_ap || 0);
+      var monthly = Number(o?.monthly_ap || 0);
+      _tickProgress();
+      return { dailyHist: daily + monthly, raw: o };
+    } catch(e){
+      console.warn(LOGP, 'account AP', e);
+      return { dailyHist: 0, raw: null };
+    }
+  }
+
+  // Wrapper para metas: normal vs conservador
+  async function fetchMetas(ids, opts){
+    if (!_conservative) {
+      var arr = await root.GW2Api.getAchievementsMeta(ids, { nocache: !!opts.nocache, signal: opts.signal });
+      _tickProgress();
+      return arr || [];
+    }
+    // Modo conservador: secuencial en chunks de 50
+    var out = [];
+    var size = 50;
+    for (var i=0;i<ids.length;i+=size){
+      var slice = ids.slice(i, i+size);
+      try{
+        var part = await root.GW2Api.getAchievementsMeta(slice, { nocache:false, signal: opts.signal });
+        if (Array.isArray(part)) out.push.apply(out, part);
+        _tickProgress();
+      }catch(e){
+        if (e && e.name==='AbortError') throw e;
+        console.warn(LOGP, 'meta slice error (conservador)', e && (e.status||e.message), slice.slice(0,5), '('+slice.length+' ids)');
+      }
+    }
+    return out;
   }
 
   async function loadAll(opts){
     opts = opts || {};
 
+    try { if (_abortCtrl) _abortCtrl.abort(); } catch(_){}
+    _abortCtrl = new AbortController();
+
     const mySeq = ++_loadSeq;
     const tokenAtStart = getSelectedToken();
+
+    _startWatchdog();
+    _hideInfo();
 
     if (el.summaryGrid) el.summaryGrid.innerHTML = '<p class="muted">Cargando logros…</p>';
     if (el.nearlyGrid)  el.nearlyGrid.innerHTML  = '<p class="muted">Cargando…</p>';
@@ -819,48 +952,45 @@
       state.apDailyHist = 0; state.apPermanent = 0; state.apLegacyDelta = 0;
       await ensureCategories(); fillCategorySelect(); ensureAside(); renderAside([]);
       renderSummary(); renderNearly();
+      _stopWatchdog();
       return;
     }
     state.token = token;
 
     setLoading(true);
     try {
-      // 1) Progreso + AP de cuenta (histórico)
       var [acc, apObj] = await Promise.all([
-        root.GW2Api.getAccountAchievements(token, { nocache: !!opts.nocache }),
-        fetchAccountAP(token)
+        root.GW2Api.getAccountAchievements(token, { nocache: !!opts.nocache, signal: _abortCtrl.signal }),
+        fetchAccountAP(token, { signal: _abortCtrl.signal }),
+        ensureCategories().catch(function(e){ console.warn(LOGP,'cats',e); })
       ]);
+      _tickProgress();
       if (mySeq !== _loadSeq || tokenAtStart !== getSelectedToken()) return;
 
       state.acc = Array.isArray(acc) ? acc : [];
       state.apDailyHist = Number(apObj?.dailyHist || 0);
 
-      // 2) Metadatos
-      var ids = Array.from(new Set((state.acc || []).map(a => a.id))).filter(id => id != null);
-      var metas = ids.length ? await root.GW2Api.getAchievementsMeta(ids, { nocache: !!opts.nocache }) : [];
+      var ids = Array.from(new Set((state.acc || []).map(function(a){return a.id;}))).filter(function(id){ return id != null; });
+      var metas = ids.length ? await fetchMetas(ids, { nocache: !!opts.nocache, signal: _abortCtrl.signal }) : [];
       if (mySeq !== _loadSeq || tokenAtStart !== getSelectedToken()) return;
-      state.metaById = (function buildMetaMap(arr){ var m = new Map(); (arr || []).forEach(x => { if (x && x.id != null) m.set(x.id, x); }); return m; })(metas);
+      state.metaById = (function buildMetaMap(arr){ var m = new Map(); (arr || []).forEach(function(x){ if (x && x.id != null) m.set(x.id, x); }); return m; })(metas);
 
-      // 3) Categorías + aside
-      await ensureCategories();
-      if (mySeq !== _loadSeq || tokenAtStart !== getSelectedToken()) return;
       fillCategorySelect();
       ensureAside();
+      state._normCache.clear();
 
-      // 4) AP permanente (por tiers ganados en logros no Daily/Monthly)
       state.apPermanent = computePermanentAP(state.acc, state.metaById);
-
-      // 5) Delta de Legado = max(0, API_TOTAL - (apDailyHist + apPermanent))
       var apiTotal = computeApiTotal(state.acc, state.metaById);
       var seenTotal = state.apDailyHist + state.apPermanent;
       state.apLegacyDelta = Math.max(0, apiTotal - seenTotal);
 
-      if (mySeq !== _loadSeq || tokenAtStart !== getSelectedToken()) return;
       state.loaded = true;
       renderSummary();
       renderNearly();
+      _tickProgress();
 
     } catch (e) {
+      if (e && e.name === 'AbortError') { console.debug(LOGP, 'carga abortada'); return; }
       console.warn(LOGP, e);
       if (el.nearlyGrid) el.nearlyGrid.innerHTML = '<p class="muted">No se pudieron cargar logros.</p>';
       if (el.summaryGrid) el.summaryGrid.innerHTML = '';
@@ -868,25 +998,16 @@
     } finally {
       wireToolbar();
       setLoading(false);
-      if (!state._wiredTokenListener && document && document.addEventListener){
-        document.addEventListener('gn:tokenchange', function(){
-          if (isActiveRoute()){
-            state.loaded = false;
-            loadAll({ nocache: true }).catch(err => console.warn(LOGP,'tokenchange reload',err));
-          } else {
-            state.loaded = false;
-          }
-        });
-        state._wiredTokenListener = true;
-      }
+      // (hotfix) NO cableamos 'gn:tokenchange' aquí.
       if (!state._wiredHashListener && window && window.addEventListener){
         window.addEventListener('hashchange', function(){
           if (isActiveRoute()){
-            loadAll({ nocache: false }).catch(err => console.warn(LOGP,'hashchange render',err));
+            loadAll({ nocache: false }).catch(function(err){ console.warn(LOGP,'hashchange render',err); });
           }
         });
         state._wiredHashListener = true;
       }
+      _stopWatchdog();
     }
   }
 
@@ -908,37 +1029,32 @@
       }
       await loadAll({ nocache: !!(opts && opts.nocache) });
     },
-    async onTokenChange(){
+    async onTokenChange(){ // el router puede preferir llamar a render(), dejamos compat
       ensureDomRefs();
       state.loaded = false;
       await loadAll({ nocache: true });
+    },
+    // Prefetch “ligero” (no conservador)
+    async prefetch(token){
+      try {
+        var api = root.GW2Api;
+        if (!api) return;
+        var tok = token || getSelectedToken();
+        await ensureCategories();
+        if (!tok) return;
+        var acc = await api.getAccountAchievements(tok, { nocache: false });
+        var ids = Array.from(new Set((acc||[]).map(function(a){return a.id;}))).filter(function(id){return id!=null;});
+        if (ids.length) { await api.getAchievementsMeta(ids, { nocache: false }); }
+      } catch (e) {
+        console.warn(LOGP, 'prefetch warn', e);
+      }
     }
   };
   root.Achievements = Achievements;
 
-  // Listeners globales (por si el router tarda en cablearse)
-  (function wireOnce(){
-    if (!state._wiredTokenListener && document && document.addEventListener){
-      document.addEventListener('gn:tokenchange', function(){
-        if (isActiveRoute()){
-          state.loaded = false;
-          loadAll({ nocache: true }).catch(err => console.warn(LOGP,'tokenchange reload',err));
-        } else {
-          state.loaded = false;
-        }
-      });
-      state._wiredTokenListener = true;
-    }
-    if (!state._wiredHashListener && window && window.addEventListener){
-      window.addEventListener('hashchange', function(){
-        if (isActiveRoute()){
-          loadAll({ nocache: false }).catch(err => console.warn(LOGP,'hashchange render',err));
-        }
-      });
-      state._wiredHashListener = true;
-    }
-  })();
+  // (hotfix) NO agregamos listener 'gn:tokenchange' en este archivo.
+  // El router (v2.9.6-guards) es el único que reacciona a ese evento.
 
-  console.info(LOGP, 'OK v2.10.0 — AP diario histórico + perm(API) + delta legado + iconos wiki + pills alineadas');
+  console.info(LOGP, 'OK v2.11.0-perf (hotfix watchdog) — router orquesta; watchdog anti-atascos');
 
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

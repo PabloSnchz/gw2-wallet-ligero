@@ -5,7 +5,7 @@
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
-  console.info('%cGW2 Wallet app.js v2.6.3 — Bootstrap keys + toasts + router sync + selected-key persistence + WV Targets refresh', 'color:#0bf; font-weight:700');
+  console.info('%cGW2 Wallet app.js v2.6.4-events — Bootstrap keys + toasts + router sync (solo gn:tokenchange) + selected-key persistence + WV Targets refresh', 'color:#0bf; font-weight:700');
 
   /* ========================= Estado ========================= */
   const state = {
@@ -35,10 +35,10 @@
   const LS_CONV = 'gw2_conv_cache_v3';
   const CONV_TTL = 1000 * 60 * 30;
 
-  // NUEVO: persistencia de la key seleccionada (para restaurar tras F5)
+  // Persistencia de la key seleccionada (para restaurar tras F5)
   const LS_SELECTED_KEY = 'gw2_selected_key_v1';
 
-  // NUEVO: Pins por cuenta (como WV/Meta)
+  // Pins por cuenta (como WV/Meta)
   const LS_WALLET_PINS = 'gw2_wallet_pins_v1';
 
   /* ========================== API =========================== */
@@ -125,19 +125,15 @@
     el.status.textContent = m;
   }
 
-  // NUEVO: Emisor de eventos para WV Objetivos (y globales) con debounce
+  // Emisor de eventos para WV Objetivos (y globales) con debounce
   let _wvTargetsEmitT = null;
   function emitRefreshEvents(token, source = 'key-change') {
     try {
       const detail = { token: token ?? null, source };
       clearTimeout(_wvTargetsEmitT);
-      // Debounce leve por si la UI dispara varios cambios seguidos
       _wvTargetsEmitT = setTimeout(() => {
-        // Evento específico para la pantalla de Objetivos
         document.dispatchEvent(new CustomEvent('gn:wv-targets-refresh', { detail }));
-        // (Opcional) Evento global por si otros paneles se suman
         document.dispatchEvent(new CustomEvent('gn:global-refresh', { detail }));
-        // (Opcional) MetaEventos (muchos módulos ya lo escuchan)
         document.dispatchEvent(new CustomEvent('gn:meta-refresh', { detail }));
         console.info('[app] emitRefreshEvents', detail);
       }, 80);
@@ -147,7 +143,7 @@
   }
 
   function obfuscate(t) { return !t || t.length < 8 ? 'Key' : `Key ${t.slice(0, 4)}…${t.slice(-4)}`; }
-  function esc(s) { return String(s || '').replace(/[&<>\"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m])); }
+  function esc(s) { return String(s || '').replace(/[&<>"']/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[m]); }
 
   function splitCopper(v) { const g = Math.floor(v / 10000), s = Math.floor((v % 10000) / 100), c = v % 100; return { g, s, c }; }
   function badgesHTMLFromCopper(copper) {
@@ -321,9 +317,8 @@
 
   /* =================== Tarjetas modernas ===================== */
 
-  // === NUEVO: clave determinista para las 6 divisas con color oficial ===
+  // === Clave determinista para 6 divisas con color oficial ===
   function resolveWalletKeyByName(name) {
-    // normalización básica (lower, sin tildes, trim)
     const n = String(name || '')
       .toLowerCase()
       .normalize('NFD').replace(/\p{Diacritic}/gu,'')
@@ -331,26 +326,18 @@
       .replace(/\s+/g,' ')
       .trim();
 
-    // EXACT (ES/EN; singular / plural)
     const exact = new Map([
-      // Gems / Gemas
       ['gema', 'gems'], ['gemas', 'gems'], ['gem', 'gems'], ['gems', 'gems'],
-      // Coins / Monedas (oro/plata/cobre)
       ['moneda', 'coins'], ['monedas', 'coins'], ['coin', 'coins'], ['coins', 'coins'],
-      // Karma
       ['karma', 'karma'],
-      // Laurels / Laureles
       ['laurel', 'laurels'], ['laureles', 'laurels'], ['laurels', 'laurels'],
-      // Trade Contracts / Contratos comerciales
       ['contrato comercial', 'trade_contracts'], ['contratos comerciales', 'trade_contracts'],
       ['trade contract', 'trade_contracts'], ['trade contracts', 'trade_contracts'],
-      // Elegy Mosaic / Mosaicos de elegía
       ['mosaico de elegia', 'elegy_mosaic'], ['mosaicos de elegia', 'elegy_mosaic'],
       ['elegy mosaic', 'elegy_mosaic'], ['elegy mosaics', 'elegy_mosaic']
     ]);
     if (exact.has(n)) return exact.get(n);
 
-    // STARTS WITH (p.ej., "Moneda (oro/plata/cobre)")
     const starts = [
       ['gema', 'gems'], ['gem', 'gems'],
       ['moneda', 'coins'], ['coin', 'coins'],
@@ -361,7 +348,6 @@
       if (n.startsWith(p)) return key;
     }
 
-    // TOKENS (oro/plata/cobre → coins, etc.)
     const tokens = new Map([
       ['oro', 'coins'], ['gold', 'coins'], ['plata', 'coins'], ['silver', 'coins'], ['cobre', 'coins'], ['copper', 'coins'],
       ['karma', 'karma'],
@@ -373,21 +359,19 @@
       if (tokens.has(t)) return tokens.get(t);
     }
 
-    return ''; // no definida → fallback blanco en el theme
+    return '';
   }
 
   function walletCardHTML(r) {
     const iconHTML = iconTag(r._cur?.icon, 30);
     const pills = r.cats?.length ? r.cats.slice(0,4).map(t => `<span class="wallet-pill">${esc(t)}</span>`).join('') : '';
-    const kind = ''; // si querés, podés mapear r.cats/kind a wallet-kind--*
+    const kind = '';
     function fmt(n){ return Number(n||0).toLocaleString('es-AR'); }
     const pinCls = 'wv-pin' + (r.isPinned ? ' wv-pin--active' : '');
 
-    // Para Moneda (oro), mostramos badges además del número
     const coinsBadges = isCoins(r._cur) ? (`<div class="coin-badges" style="margin-top:6px">${badgesHTMLFromCopper(r.amount)}</div>`) : '';
 
-    // === NUEVO: clave determinista (para wallet-theme.js) ===
-    const curKey = resolveWalletKeyByName(r.name); // '' si no aplica (glow blanco)
+    const curKey = resolveWalletKeyByName(r.name);
 
     return `
       <article class="wallet-card" data-id="${r.id}"${curKey ? ` data-cur="${curKey}"` : ''}>
@@ -415,11 +399,9 @@
   function renderCards(rows) {
     if (!el.walletCards) return;
 
-    // Separar fijadas / resto (respetando el orden del sort actual dentro de cada grupo)
     const pinned = rows.filter(r => r.isPinned);
     const rest   = rows.filter(r => !r.isPinned);
 
-    // Bloque “Fijadas” (arriba)
     if (el.favBlock && el.favCards) {
       if (pinned.length) {
         el.favBlock.removeAttribute('hidden');
@@ -430,11 +412,9 @@
       }
     }
 
-    // Grid principal
     el.walletCards.classList.add('wallet-card-grid');
     el.walletCards.innerHTML = rest.map(walletCardHTML).join('');
 
-    // Wire de pins (ambos contenedores)
     function wirePins(host) {
       host?.querySelectorAll('[data-wallet-pin]')?.forEach(btn => {
         if (btn.__wired) return; btn.__wired = true;
@@ -443,7 +423,7 @@
           const pins = pinsLoad();
           if (pins[id]) delete pins[id]; else pins[id] = true;
           pinsSave(pins);
-          render(); // reordena y refresca
+          render();
         });
       });
     }
@@ -474,14 +454,12 @@
   function renderTable(rows) {
     if (!el.tableBody) return;
 
-    // Orden: pins primero (manteniendo el orden de sort actual dentro de cada grupo)
     const pinned = rows.filter(r => r.isPinned);
     const rest   = rows.filter(r => !r.isPinned);
     const final  = pinned.concat(rest);
 
     el.tableBody.innerHTML = final.map(rowHTML).join('');
 
-    // Wire pins en tabla
     el.tableBody.querySelectorAll('[data-wallet-pin]')?.forEach(btn => {
       if (btn.__wired) return; btn.__wired = true;
       btn.addEventListener('click', () => {
@@ -560,7 +538,6 @@
     state.accountName = acct?.name || '—'; state.wallet = w || [];
     el.ownerLabel && (el.ownerLabel.textContent = state.accountName);
 
-    // Migración favs→pins (si aplica)
     migrateFavsToPinsIfNeeded();
 
     setStatus('Listo.', 'ok'); render();
@@ -570,19 +547,16 @@
   const KeyManager = {
     list: [],
     selected: null,
-    _programmaticChange: false, // << NUEVO: evita bucles en change
+    _programmaticChange: false, // sigue presente para compat con listeners existentes
 
     load() {
-      // Carga listado de keys
       try { this.list = JSON.parse(localStorage.getItem(LS_KEYS)) || []; }
       catch { this.list = []; }
       state.keys = this.list.slice();
 
-      // NUEVO: restaurar selección previa desde localStorage
       try { this.selected = localStorage.getItem(LS_SELECTED_KEY) || null; }
       catch { this.selected = null; }
 
-      // Si la key guardada no existe más en la lista, anular selección
       if (this.selected && !this.list.some(k => k.value === this.selected)) {
         this.selected = null;
         try { localStorage.removeItem(LS_SELECTED_KEY); } catch {}
@@ -600,28 +574,20 @@
       this.selected = token || null;
       state.selected = this.selected;
 
-      // NUEVO: persistir selección (o limpiar si es null)
       try {
         if (this.selected) localStorage.setItem(LS_SELECTED_KEY, this.selected);
         else localStorage.removeItem(LS_SELECTED_KEY);
       } catch {}
 
       const gs = el.keySelectGlobal;
-      const before = gs ? gs.value : null;
       if (gs && gs.value !== (this.selected || '')) gs.value = this.selected || '';
 
-      // Avisar a otros módulos
+      // Señal ÚNICA de cambio de key (router/módulos reaccionan a esto)
       document.dispatchEvent(new CustomEvent('gn:tokenchange', { detail: { token: this.selected } }));
-      // NUEVO: forzar refresh en WV Objetivos (y canales opcionales)
       emitRefreshEvents(this.selected, 'key:setSelected');
 
-      // NUEVO: disparamos un 'change' programático para que el router refresque WV,
-      // y evitamos bucles en nuestro propio handler con _programmaticChange.
-      const changedByCode = gs && before !== (this.selected || '');
-      if (!opts.silent && gs && changedByCode) {
-        this._programmaticChange = true;
-        setTimeout(() => { gs.dispatchEvent(new Event('change', { bubbles: true })); }, 0);
-      }
+      // IMPORTANTE: NO disparamos 'change' programático en el <select>.
+      // El router escucha 'gn:tokenchange' y actualiza la vista correspondiente.
     },
     refreshSelects() {
       const sel = el.keySelectGlobal;
@@ -648,7 +614,7 @@
       this.save();
       this.refreshSelects();
 
-      // Selecciona y notifica (router capturará el 'change' programático)
+      // Selecciona y notifica (router escuchará gn:tokenchange)
       this.setSelected(value);
 
       // Cargar datos de Wallet en paralelo
@@ -669,7 +635,6 @@
 
       if (this.selected === value) {
         const next = this.list[0]?.value || null;
-        // Importante: setSelected con notify para que el router se entere (y persiste LS_SELECTED_KEY)
         this.setSelected(next);
         if (next) loadAllForToken(next);
         else { state.wallet = []; render(); }
@@ -766,7 +731,7 @@
 
     el.keysList.querySelectorAll('.k-use').forEach(b => b.addEventListener('click', async ev => {
       const row = ev.target.closest('.keys-row'); const val = row?.dataset?.val; if (!val) return;
-      // Al seleccionar por código queremos notificar al router
+      // Al seleccionar por código, notificamos solo por gn:tokenchange
       KeyManager.setSelected(val);
       await loadAllForToken(val);
       setStatus('API Key seleccionada.', 'ok');
@@ -857,7 +822,7 @@
     // Header - Modal y selector global
     el.keysMenuBtn?.addEventListener('click', openKeysModal);
 
-    // Handler del select global con protección anti-bucle
+    // Handler del select global (cuando el usuario cambia manualmente)
     el.keySelectGlobal?.addEventListener('change', async () => {
       if (KeyManager._programmaticChange) { KeyManager._programmaticChange = false; return; }
       const token = el.keySelectGlobal.value || null;
@@ -898,13 +863,12 @@
       el.cvGold?.addEventListener('input', deb(onBottomInput));
       el.cvRefresh?.addEventListener('click', () => { updateRef400().catch(() => { }); onTopInput(); onBottomInput(); });
 
-      // NUEVO: quick‑chips
+      // quick‑chips
       el.cvGemsQuick?.querySelectorAll('[data-gems]')?.forEach(btn => {
         if (btn.__wired) return; btn.__wired = true;
         btn.addEventListener('click', () => {
           const n = Number(btn.getAttribute('data-gems')) || 0;
           if (el.cvGems) el.cvGems.value = String(n);
-          // cálculo inmediato sin debounce
           onTopInput();
         });
       });
@@ -913,7 +877,6 @@
         btn.addEventListener('click', () => {
           const n = Number(btn.getAttribute('data-gold')) || 0;
           if (el.cvGold) el.cvGold.value = String(n);
-          // cálculo inmediato sin debounce
           onBottomInput();
         });
       });
@@ -950,12 +913,10 @@
 
     // Selección inicial
     if (!KeyManager.selected && KeyManager.list.length) {
-      // No hay selección guardada o es inválida → usar primera key
-      KeyManager.setSelected(KeyManager.list[0].value);
+      KeyManager.setSelected(KeyManager.list[0].value);  // emite gn:tokenchange
       await loadAllForToken(KeyManager.selected);
     } else if (KeyManager.selected) {
-      // Hay selección válida guardada → restaurar y cargar
-      KeyManager.setSelected(KeyManager.selected);
+      KeyManager.setSelected(KeyManager.selected);       // emite gn:tokenchange
       await loadAllForToken(KeyManager.selected);
     } else {
       render();
@@ -969,10 +930,8 @@
     updateRef400().catch(() => {});
     runIconChecks();
 
-    // Avisar token inicial a otros módulos (compat)
-    document.dispatchEvent(new CustomEvent('gn:tokenchange', { detail: { token: KeyManager.selected } }));
-    // NUEVO: asegurar que Objetivos (y demás) también se actualicen al iniciar
-    emitRefreshEvents(KeyManager.selected, 'boot');
+    // ⚠️ IMPORTANTE: No volver a emitir aquí gn:tokenchange ni emitRefreshEvents('boot')
+    // ya lo hizo setSelected() más arriba; evitamos duplicar pipelines.
   }
   boot();
 
@@ -1042,21 +1001,15 @@
     markUpdated(container);
   }
 
-  /* ===== NUEVO: Conveniencia (400 gemas) ======================
-     Mapea el precio (en ORO) de 400 gemas a un score 0..1 según referencias:
-       - Excelente: <=108 oro
-       - Bueno: 120–130 oro (meseta alta fija)
-       - Actual poco conveniente: ~160 oro (score bajo)
-  */
   function scoreFromPrice400(priceGold) {
     const p = Number(priceGold || 0);
     if (!Number.isFinite(p) || p <= 0) return { score: 0, tier: 'bad' };
 
     if (p <= 108)            return { score: 1.00, tier: 'exc' };
-    if (p > 108 && p < 120)  return { score: 1.00 - ((p - 108) / (120 - 108)) * 0.15, tier: 'good' }; // 1.00→0.85
-    if (p >= 120 && p <=130) return { score: 0.85, tier: 'good' };                                     // meseta alta
-    if (p > 130 && p < 160)  return { score: 0.85 - ((p - 130) / (160 - 130)) * 0.65, tier: 'mid' };   // 0.85→0.20
-    return { score: 0.05, tier: 'bad' }; // 160+
+    if (p > 108 && p < 120)  return { score: 1.00 - ((p - 108) / (120 - 108)) * 0.15, tier: 'good' };
+    if (p >= 120 && p <=130) return { score: 0.85, tier: 'good' };
+    if (p > 130 && p < 160)  return { score: 0.85 - ((p - 130) / (160 - 130)) * 0.65, tier: 'mid' };
+    return { score: 0.05, tier: 'bad' };
   }
   function labelForScore(score){
     if (score >= 0.95) return 'Excelente';
@@ -1108,7 +1061,6 @@
 
       meter.setAttribute('aria-valuenow', String(pct));
 
-      // micro-anim en la barra
       markUpdated(elBar);
     }catch(_){}
   }
@@ -1120,7 +1072,6 @@
         el.cvGems.value = '';
         setBadges(el.cvGemsOut, 0);
         setConvState('Ingresá gemas.');
-        // Reinicia barra si el input queda vacío
         renderConvenience(0);
         return;
       }
@@ -1131,7 +1082,6 @@
       setBadges(el.cvGemsOut, copper);
       setConvState('Actualizado.');
 
-      // normalizar a referencia /400 para evaluar conveniencia
       if (gems > 0) {
         const copperFor400 = Math.round((copper / gems) * 400);
         renderConvenience(copperFor400);
@@ -1160,8 +1110,6 @@
       const gems = await gemsToBuyGold_gemsMarket(copper);
       setGemsOut(gems);
       setConvState('Actualizado.');
-      // Nota: la barra refleja conveniencia de COMPRAR gemas con oro (coins->gems),
-      // por eso no la actualizamos aquí (dirección inversa). La referencia /400 se cubre en updateRef400 y onTopInput.
     } catch (e) {
       console.error('[conv] bottom', e);
       setGemsOut(0);
@@ -1189,7 +1137,6 @@
         markUpdated(el.cvRef400);
       }
 
-      // pintar barra de conveniencia con la referencia real /400
       renderConvenience(copper);
 
       window.toast?.('success','Referencia 400 actualizada', { ttl: 1500 });

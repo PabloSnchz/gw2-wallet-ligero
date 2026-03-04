@@ -1,6 +1,21 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.9.3 (2026‑03‑03)
+ * v2.9.6-guards (2026‑03‑04)
+ *
+ * Cambios v2.9.6:
+ *  - [Perf/UX] Prefetch con guardas y de-dupe:
+ *      • No corre si GW2Api aún no está listo.
+ *      • Concurrency local: evita prefetechos repetidos.
+ *      • Prefiere idle/hover/focus para disminuir carreras con el primer paint.
+ *      • Sincroniza con Achievements.prefetch si el módulo ya está publicado.
+ *  - [Integración] Listener 'gn:tokenchange' (reacciona a cambio de key
+ *    sin depender del 'change' programático del <select>).
+ *
+ * Cambios v2.9.5:
+ *  - [Perf/UX] Prefetch para Achievements (hover/focus + idle + on-route).
+ *
+ * Cambios v2.9.4:
+ *  - [Perf/UX] Prefetch inteligente para WV (season + listings + items + targets).
  *
  * Cambios v2.9.3:
  *  - [UX] Skeleton unificado (estilo Meta) para la Tienda WV (cards + table).
@@ -11,7 +26,7 @@
 (function () {
   'use strict';
 
-  console.info('[WV] router-wv.js v2.9.3 — skeleton + de-dupe');
+  console.info('[WV] router-wv.js v2.9.6-guards — prefetch WV + Achievements con guardas');
 
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -48,11 +63,22 @@
   }
   function escapeHtml(str) {
     return String(str || '')
-      .replace(/&amp;amp;amp;/g,'&amp;amp;amp;amp;').replace(/&amp;amp;lt;/g,'&amp;amp;amp;lt;').replace(/&amp;amp;gt;/g,'&amp;amp;amp;gt;')
-      .replace(/"/g,'&amp;amp;amp;quot;').replace(/'/g,'&amp;amp;amp;#039;');
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
   }
   function fmtNumber(n) { n = Number(n || 0); return n.toLocaleString('es-AR'); }
   function now() { return Date.now(); }
+
+  // ========================= NUEVO: Guardas Prefetch =========================
+  function getGW(){ try { return window.GW2Api || null; } catch(_) { return null; } }
+  var __pf = { wv: { inFlight: null, done: false }, ach: { inFlight: null, done: false } };
+  function runIdle(fn, timeout){
+    try {
+      if ('requestIdleCallback' in window) return window.requestIdleCallback(fn, { timeout: timeout || 1500 });
+    } catch(_){}
+    return setTimeout(fn, Math.min(timeout || 1500, 900));
+  }
+  // ==========================================================================
 
   function hydrateWVModePills(scope) {
     try {
@@ -249,7 +275,6 @@
             host.prepend(node);
           }
         }
-        // Si ya conocemos la vista preferida, skeleton acorde:
         var viewPref = state.shop.view || loadView() || 'cards';
         var body = (viewPref === 'table') ? skShopTable(8) : skShopCards(8);
         node.innerHTML = '<div style="margin:6px 0 10px 0">'+escapeHtml(String(msg || 'Cargando Tienda…'))+'</div>' + body;
@@ -555,7 +580,7 @@
         area.innerHTML = '<div class="wv-card-grid">'+cards+'</div>';
       }
 
-      // Wire de contadores y pin (igual que antes)
+      // Wire de contadores y pin
       $$('.wv-counter', area).forEach(function(host){
         var id=host.getAttribute('data-id'), btnDec=$('.wv-dec',host), btnInc=$('.wv-inc',host), spanVal=$('span.muted',host);
         var findRow=function(){ return state.shop.merged.find(function(x){ return String(x.id)===String(id); }); };
@@ -922,6 +947,92 @@
     return api;
   })();
 
+  // ----------------------------- PREFETCH WV --------------------------------
+  function getWVLinkNode() {
+    try {
+      var links = Array.prototype.slice.call(document.querySelectorAll('.side-nav a, .side-nav__link'));
+      for (var i=0; i<links.length; i++) {
+        var href = (links[i].getAttribute('href') || links[i].getAttribute('data-hash') || '').toLowerCase();
+        if (href.indexOf('#/account/wizards-vault') >= 0) return links[i];
+      }
+    } catch(_){}
+    return null;
+  }
+
+  function wvPrefetchOnce() {
+    var GW = getGW();
+    if (!GW) return Promise.resolve();           // API aún no disponible
+    if (__pf.wv.done) return Promise.resolve();  // ya corrido esta sesión
+    if (__pf.wv.inFlight) return __pf.wv.inFlight;
+
+    var token = getSelectedToken();
+    __pf.wv.inFlight = Promise.resolve()
+      .then(function(){ return GW.getWVSeason({ nocache:false }).catch(function(){ return null; }); })
+      .then(function(){
+        return GW.getWVListings({ nocache:false }).then(function(glb){
+          var ids = [];
+          try { (glb||[]).forEach(function(row){ if (row && row.item_id != null) ids.push(row.item_id); }); } catch(_){}
+          ids = Array.from(new Set(ids)).slice(0, 800);
+          if (ids.length) return GW.getItemsMany(ids, { nocache:false }).catch(function(){});
+        }).catch(function(){});
+      })
+      .then(function(){
+        if (token && typeof GW.wvPreloadTargets === 'function') {
+          return GW.wvPreloadTargets(token, { nocache:false }).catch(function(){});
+        }
+      })
+      .then(function(){ __pf.wv.done = true; })
+      .finally(function(){ __pf.wv.inFlight = null; });
+
+    return __pf.wv.inFlight;
+  }
+
+  function wireWVPefetchHoverFocusOnce() {
+    if (wireWVPefetchHoverFocusOnce.__wired) return;
+    var link = getWVLinkNode();
+    if (!link) return;
+    link.addEventListener('mouseenter', wvPrefetchOnce, { once: true });
+    link.addEventListener('focus', wvPrefetchOnce, { once: true, capture: true });
+    wireWVPefetchHoverFocusOnce.__wired = true;
+  }
+  function tryIdleWVPrefetch() { runIdle(function(){ wvPrefetchOnce(); }, 1500); }
+
+  // ------------------------ PREFETCH Achievements ---------------------------
+  function getAchievementsLinkNode() {
+    try {
+      var links = Array.prototype.slice.call(document.querySelectorAll('.side-nav a, .side-nav__link'));
+      for (var i=0; i<links.length; i++) {
+        var href = (links[i].getAttribute('href') || links[i].getAttribute('data-hash') || '').toLowerCase();
+        if (href.indexOf('#/account/achievements') >= 0) return links[i];
+      }
+    } catch(_){}
+    return null;
+  }
+
+  function achievementsPrefetchOnce() {
+    if (!getGW()) return;                      // API base aún no publicada
+    if (__pf.ach.done || __pf.ach.inFlight) return;
+    var api = window.Achievements && typeof window.Achievements.prefetch === 'function'
+      ? window.Achievements : null;
+    if (!api) return;                           // módulo aún no listo
+
+    var tok = getSelectedToken();
+    __pf.ach.inFlight = Promise.resolve()
+      .then(function(){ return api.prefetch(tok); })
+      .then(function(){ __pf.ach.done = true; })
+      .finally(function(){ __pf.ach.inFlight = null; });
+  }
+
+  function wireAchievementsPrefetchHoverFocusOnce() {
+    if (wireAchievementsPrefetchHoverFocusOnce.__wired) return;
+    var link = getAchievementsLinkNode();
+    if (!link) return;
+    link.addEventListener('mouseenter', achievementsPrefetchOnce, { once: true });
+    link.addEventListener('focus', achievementsPrefetchOnce, { once: true, capture: true });
+    wireAchievementsPrefetchHoverFocusOnce.__wired = true;
+  }
+  function tryIdleAchievementsPrefetch() { runIdle(function(){ achievementsPrefetchOnce(); }, 1800); }
+
   // ----------------------------- ROUTER ------------------------------------
   var _routeT = null; // debounce
   function route(){
@@ -932,8 +1043,36 @@
 
       if (h==='#/cards'){ try{ showPanel('walletPanel'); }catch(e){ console.warn('[router] show wallet error',e); } finally{ updateSidebarFor('cards'); setActiveNav(h); } return; }
       if (h==='#/meta'){ try{ showPanel('metaPanel'); document.dispatchEvent(new CustomEvent('gn:tabchange',{detail:{view:'meta'}})); }catch(e){ console.warn('[router] show meta error',e); } finally{ updateSidebarFor('meta'); setActiveNav(h); } return; }
-      if (h==='#/account/achievements'){ try{ showPanel('achievementsPanel'); if (window.Achievements && typeof window.Achievements.render==='function'){ window.Achievements.render(); } }catch(e){ console.warn('[router] show achievements error',e); } finally{ updateSidebarFor('achievements'); setActiveNav(h); } return; }
-      if (h==='#/account/wizards-vault'){ try{ showPanel('wvPanel'); if (WV && typeof WV.activate==='function') WV.activate(); hydrateWVModePills(el('wvPanel')); }catch(e){ console.error('[router] WV.activate error',e); } finally{ updateSidebarFor('wv'); setActiveNav(h); } return; }
+      if (h==='#/account/achievements'){
+        try{
+          showPanel('achievementsPanel');
+          // Warm-up por si el usuario llega directo (con guardas)
+          try { achievementsPrefetchOnce(); } catch(_){}
+          if (window.Achievements && typeof window.Achievements.render==='function'){
+            window.Achievements.render();
+          }
+        }catch(e){
+          console.warn('[router] show achievements error',e);
+        } finally {
+          updateSidebarFor('achievements'); setActiveNav(h);
+        }
+        return;
+      }
+      if (h==='#/account/wizards-vault'){
+        try{
+          showPanel('wvPanel');
+          // Warm-up WV por si el usuario llega directo (con guardas)
+          try { wvPrefetchOnce(); } catch(_){}
+          if (WV && typeof WV.activate==='function') WV.activate();
+          hydrateWVModePills(el('wvPanel'));
+        }catch(e){
+          console.error('[router] WV.activate error',e);
+        } finally {
+          updateSidebarFor('wv');
+          setActiveNav(h);
+        }
+        return;
+      }
 
       try{ showPanel('walletPanel'); }catch(e){ console.warn('[router] fallback show wallet error',e); } finally{ updateSidebarFor('cards'); setActiveNav('#/cards'); }
     }, 35);
@@ -954,6 +1093,8 @@
           if (status) { status.textContent = 'Cargando…'; status.classList.remove('error'); status.classList.add('muted'); }
         }
       } else if (h === '#/account/achievements') {
+        // Prefetch antes de render, para acelerar primer paint tras cambio de token
+        try { achievementsPrefetchOnce(); } catch(_){}
         if (window.Achievements && typeof window.Achievements.render === 'function') {
           window.Achievements.render();
         }
@@ -995,8 +1136,50 @@
       } catch(e){ console.warn('[router] gn:wv-targets-refreshed handler error', e); }
     });
 
+    // ********************* NUEVO: listener de gn:tokenchange *****************
+    document.addEventListener('gn:tokenchange', function(ev){
+      try {
+        var token = (ev && ev.detail && ev.detail.token) || null;
+
+        // Sincronizar el <select> visual (solo UI, no dispara change)
+        var gs = document.getElementById('keySelectGlobal');
+        if (gs && gs.value !== (token || '')) gs.value = token || '';
+
+        var h = normHash(location.hash || '#/cards');
+
+        if (h === '#/meta') {
+          if (window.Meta && typeof window.Meta.refresh === 'function') {
+            window.Meta.refresh({ token: token, nocache: false });
+          } else {
+            var btn = document.getElementById('metaRefreshFlags'); if (btn && typeof btn.click === 'function') btn.click();
+            var status = document.getElementById('metaStatus'); if (status) { status.textContent = 'Cargando…'; status.classList.remove('error'); status.classList.add('muted'); }
+          }
+        } else if (h === '#/account/achievements') {
+          try { achievementsPrefetchOnce(); } catch(_){}
+          if (window.Achievements && typeof window.Achievements.render === 'function') {
+            window.Achievements.render();
+          }
+        } else if (h === '#/account/wizards-vault') {
+          if (WV && typeof WV.onTokenChanged === 'function') WV.onTokenChanged(token);
+          if (WV && typeof WV.ensureLoadTab === 'function') WV.ensureLoadTab('shop');
+          if (WV && typeof WV.refreshObjectives === 'function') WV.refreshObjectives(true);
+          if (WV && typeof WV.activate === 'function') WV.activate();
+          try { hydrateWVModePills(document.getElementById('wvPanel')); } catch(_){}
+        }
+      } catch(e){
+        console.warn('[router] gn:tokenchange delegate error', e);
+      }
+    });
+    // ************************************************************************
+
     window.addEventListener('hashchange', route);
     document.addEventListener('visibilitychange', function(){ if (WV && typeof WV.onVisibilityChange==='function') WV.onVisibilityChange(document.hidden); });
+
+    // Prefetch suave + de-dupe con guardas
+    try { wireWVPefetchHoverFocusOnce(); } catch(_){}
+    try { tryIdleWVPrefetch(); } catch(_){}
+    try { wireAchievementsPrefetchHoverFocusOnce(); } catch(_){}
+    try { tryIdleAchievementsPrefetch(); } catch(_){}
 
     route(); hydrateWVModePills(el('wvPanel'));
   }
