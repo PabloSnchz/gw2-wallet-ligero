@@ -1803,3 +1803,76 @@ display: -webkit-box;
 .meta-card .meta-card__subtitle {
   margin-top: 6px; /* probá 6–10px hasta que te quede cómodo */
 }
+
+/* ==========================================================================
+   Skeleton / Shimmer (unificado con Meta)
+   ========================================================================== */
+
+@keyframes gn-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton {
+  --sk-base: rgba(255,255,255,0.08);
+  --sk-hi:   rgba(255,255,255,0.18);
+  position: relative;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--sk-base) 25%,
+    var(--sk-hi) 37%,
+    var(--sk-base) 63%
+  );
+  background-size: 800px 100%;
+  animation: gn-shimmer 1.25s linear infinite;
+}
+
+.skeleton--line { height: 10px; margin: 8px 0; }
+.skeleton--line.sm { height: 8px;  }
+.skeleton--line.lg { height: 14px; }
+.skeleton--circle { border-radius: 50%; width: 36px; height: 36px; }
+.skeleton--block  { height: 56px; }
+
+/* Grid de tarjetas (WV) */
+.wv-sk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin-top: 8px;
+}
+.wv-sk-card {
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 12px;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 10px;
+}
+.wv-sk-card__top {
+  display: grid; grid-template-columns: 44px 1fr 24px; gap: 10px; align-items: center;
+}
+.wv-sk-card__meta {
+  display: flex; gap: 10px; align-items: center;
+}
+.wv-sk-chip { width: 64px; height: 22px; border-radius: 12px; }
+.wv-sk-pill { width: 90px; height: 22px; border-radius: 12px; }
+
+/* Tabla (WV) */
+.wv-sk-table { margin-top: 8px; }
+.wv-sk-row {
+  display: grid;
+  grid-template-columns: 220px 1fr 110px 140px 120px 160px 80px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px dashed rgba(255,255,255,0.06);
+}
+.wv-sk-cell { height: 18px; }
+.wv-sk-icon { width: 28px; height: 28px; border-radius: 6px; }
+.wv-sk-name { height: 16px; width: 68%; }
+.wv-sk-thin { height: 12px; width: 58%; }
+.wv-sk-btn  { width: 42px; height: 26px; border-radius: 6px; }
+
+/* Nota: usa colores oscuros por defecto; si tenés tema claro, sobreescribí --sk-base/--sk-hi */
+
