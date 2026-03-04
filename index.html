@@ -598,7 +598,20 @@
 
   <!-- IMPORTANTE: router antes que app (para registrar listeners antes del boot) -->
   <script defer src="js/router.js?v=2.9.3"></script>
+  <script defer src="js/wv-tabs-skin.js?v=1.0.0"></script>
   <script defer src="js/wv-purchase-detail.js?v=1.2.1"></script>
+  
+  <!-- Inicialización del icono (solo si no lo definió el usuario antes) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      if (window.WVPurchaseDetail && typeof WVPurchaseDetail.setIcon === 'function') {
+        if (!localStorage.getItem('wvpd_icon_url')) {
+          WVPurchaseDetail.setIcon('https://wiki.guildwars2.com/images/6/60/Wizard%27s_Vault_interface_icon.png');
+        }
+      }
+    });
+  </script>
+
   <script defer src="js/app.js?v=2.6.3"></script>
 
   <script>
