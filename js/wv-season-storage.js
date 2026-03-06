@@ -1,32 +1,36 @@
 /*!
  * js/wv-season-storage.js — Servicio de almacenamiento por temporada (Wizard's Vault)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.0.0 (2026-03-04)
+ * Versión: 1.1.0 (2026-03-05) — Single-Season + mutate event
  *
  * Objetivo:
  *   - Persistir TODO lo relevante de Wizard's Vault por temporada en 1 "archivo" (entrada LS) por temporada.
  *   - Consumido por Tienda y Detalle de Compras.
  *   - Evitar QuotaExceeded: partición por temporada + compact() y escritura atómica.
- *   - Mantener historial de temporadas: índice maestro + selector por temporada.
+ *   - (MODO SINGLE-SEASON) Mantener solo la temporada actual y resetear al iniciar una nueva.
  *   - Migración desde legacy: gw2_wv_pinned_v1 / gw2_wv_marks_v1
  *
  * Notas:
  *   - NO guarda catálogos ni caches pesadas; sólo "state" (pinned, marks, prefs).
- *   - Usa esquema: "wv:season:YY:SEQ" + índice "wv:season:index".
- *   - YY = año (2 dígitos) de la temporada; SEQ = n° de temporada dentro del año.
- *   - current season se determina con GW2Api.getWVSeason(); si es nueva, crea entrada con SEQ consecutivo.
+ *   - Esquema multi-season original: "wv:season:YY:SEQ" + índice "wv:season:index".
+ *   - En single-season se usa clave única "wv:season:current".
  */
 
 (function (root) {
   'use strict';
 
   var LOG = '[WVSeasonStore]';
-  var KEY_INDEX = 'wv:season:index';             // JSON: [{year,seq,season_id?,title?,start?,end?}, ...]
-  var FILE_PREFIX = 'wv:season:';                // Archivo por temporada: 'wv:season:26:1'
-  var SHADOW_SUFFIX = '.__shadow';               // Escritura atómica: primero shadow, luego commit real
-  var LEGACY_PINNED = 'gw2_wv_pinned_v1';        // { "<fp>:<seasonId|title>": { listingId: true|1, ... }, ... }
-  var LEGACY_MARKS  = 'gw2_wv_marks_v1';         // { "<fp>:<seasonId|title>": { listingId: n, ... }, ... }
-  var LS_KEYS       = 'gw2_keys';                // listado de keys guardadas (para inferir fps disponibles)
+
+  // --- CONFIG ---
+  var SINGLE_SEASON_MODE = true;                // << activar una sola season viva
+  var KEY_INDEX = 'wv:season:index';            // JSON: [{year,seq,season_id?,title?,start?,end?}, ...]
+  var FILE_PREFIX = 'wv:season:';               // Base para multi-season
+  var CURRENT_KEY = 'wv:season:current';        // Clave única en single-season
+
+  var SHADOW_SUFFIX = '.__shadow';              // Escritura atómica: primero shadow, luego commit real
+  var LEGACY_PINNED = 'gw2_wv_pinned_v1';       // { "<fp>:<seasonId|title>": { listingId: true|1, ... }, ... }
+  var LEGACY_MARKS  = 'gw2_wv_marks_v1';        // { "<fp>:<seasonId|title>": { listingId: n, ... }, ... }
+  var LS_KEYS       = 'gw2_keys';               // listado de keys guardadas (para inferir fps disponibles)
 
   // ---- Pequeñas utilidades
   function now(){ return Date.now(); }
@@ -45,7 +49,10 @@
   function fpToken(token){ var t=String(token||''); return t ? (t.slice(0,4)+'…'+t.slice(-4)) : 'anon'; }
 
   // ---- Construcción de claves
-  function keySeasonFile(year, seq){ return FILE_PREFIX + String(year) + ':' + String(seq); }
+  function keySeasonFile(year, seq){
+    if (SINGLE_SEASON_MODE) return CURRENT_KEY;
+    return FILE_PREFIX + String(year) + ':' + String(seq);
+  }
   function keyShadow(seasonKey){ return seasonKey + SHADOW_SUFFIX; }
 
   // ---- Carga/guarda de índice
@@ -58,14 +65,12 @@
     catch (e) { console.warn(LOG, 'saveIndex quota?', e); }
   }
 
-  // ---- Buscar/crear entrada de temporada actual
+  // ---- Buscar/crear entrada (multi-season only)
   function indexFind(idx, year, season_id){
     if (!idx || !idx.length) return null;
-    // Primero por season_id (si existe), luego por último SEQ del mismo año
     if (season_id){
       for (var i=0;i<idx.length;i++){ var it = idx[i]; if (it && it.season_id && it.season_id===season_id) return it; }
     }
-    // nada por id, devolver el último del año (no crear)
     var last=null;
     for (var j=0;j<idx.length;j++){ var it2=idx[j]; if (it2 && it2.year===year) last=it2; }
     return last;
@@ -73,7 +78,6 @@
 
   // ---- Determinar season actual a partir de GW2Api.getWVSeason()
   function deriveSeasonInfo(gw2Season){
-    // year por start si existe; si no, por "ahora"
     var y = twoDigitYear(gw2Season && (gw2Season.start || gw2Season.end));
     return {
       year: y,
@@ -88,17 +92,17 @@
   function readSeason(year, seq){
     var k = keySeasonFile(year, seq);
     var obj = parseJson(getLS(k), null);
+    var defSeq = SINGLE_SEASON_MODE ? 1 : seq;
+    var defYear = (typeof year === 'number') ? year : twoDigitYear();
     if (!obj || typeof obj!=='object') {
-      obj = { version:1, season_info:{year: year, seq: seq}, keys: {}, prefs: {} };
+      obj = { version:1, season_info:{year: defYear, seq: defSeq}, keys: {}, prefs: {} };
     } else {
-      // asegurar estructura mínima
       obj.version = (typeof obj.version==='number') ? obj.version : 1;
-      obj.season_info = obj.season_info || { year: year, seq: seq };
+      obj.season_info = obj.season_info || { year: defYear, seq: defSeq };
       obj.keys = obj.keys || {};
       obj.prefs = obj.prefs || {};
-      // normalizar seq/year si faltara
-      obj.season_info.year = (typeof obj.season_info.year==='number') ? obj.season_info.year : year;
-      obj.season_info.seq  = (typeof obj.season_info.seq==='number')  ? obj.season_info.seq  : seq;
+      obj.season_info.year = (typeof obj.season_info.year==='number') ? obj.season_info.year : defYear;
+      obj.season_info.seq  = (typeof obj.season_info.seq==='number')  ? obj.season_info.seq  : defSeq;
     }
     return obj;
   }
@@ -114,32 +118,28 @@
         setLS(k, json);        // 2) commit
         delLS(shadow);         // 3) cleanup
       } else {
-        // Fallback sin shadow (no atómico, pero entra en cuotas muy justas)
         setLS(k, json);
       }
     }
 
-    // 1er intento: con shadow (atómico)
     try {
       doWrite(true);
       return true;
     } catch (e1) {
       var quota = (e1 && (e1.name==='QuotaExceededError' || String(e1).includes('Quota')));
-      // Limpia shadow si quedó colgado
       try { delLS(shadow); } catch(_){}
 
       if (!quota) throw e1;
 
-      console.warn('[WVSeasonStore] writeSeasonAtomic quota (shadow). Compact & retry no-shadow…', e1);
+      console.warn(LOG, 'writeSeasonAtomic quota (shadow). Compact & retry no-shadow…', e1);
       try { compact({ keepPerYear: 1 }); } catch(_){}
 
-      // 2do intento: sin shadow
       try {
         doWrite(false);
-        console.info('[WVSeasonStore] writeSeasonAtomic fallback sin shadow OK');
+        console.info(LOG, 'writeSeasonAtomic fallback sin shadow OK');
         return true;
       } catch (e2) {
-        console.error('[WVSeasonStore] writeSeasonAtomic failed after compact + no-shadow', e2);
+        console.error(LOG, 'writeSeasonAtomic failed after compact + no-shadow', e2);
         throw e2;
       }
     }
@@ -151,7 +151,6 @@
     opts = opts || {};
     var k = keySeasonFile(year, seq);
     if (__inflight.has(k)) {
-      // coalesce: esperar a que termine el actual y luego ejecutar (último gana)
       var chain = __inflight.get(k);
       var next = chain.finally(function(){ return writeSeason(year, seq, producer, opts); });
       __inflight.set(k, next);
@@ -166,10 +165,11 @@
         var quota = (e && (e.name==='QuotaExceededError' || String(e).indexOf('Quota')>=0));
         if (!quota) throw e;
         console.warn(LOG, 'QuotaExceeded on writeSeason', k, e);
-        // compact + retry (una vez)
         try { compact({ keepPerYear: 6 }); } catch(_){}
         writeSeasonAtomic(year, seq, obj);
       }
+      // Evento de mutación tras escribir (para WV / WVPD)
+      try { window.dispatchEvent(new CustomEvent('wv:season-store:mutate', { detail: { key: k } })); } catch(_){}
     }).finally(function(){ __inflight.delete(k); });
     __inflight.set(k, p);
     return p;
@@ -240,39 +240,85 @@
 
   // ---- Listado / obtención de temporada actual ----
   function listSeasons(){
-    var idx = loadIndex();
-    // Orden natural: por year asc, seq asc
-    idx.sort(function(a,b){ if (a.year!==b.year) return a.year-b.year; return a.seq-b.seq; });
-    return idx.slice();
+    if (!SINGLE_SEASON_MODE) {
+      var idx = loadIndex();
+      idx.sort(function(a,b){ if (a.year!==b.year) return a.year-b.year; return a.seq-b.seq; });
+      return idx.slice();
+    }
+    // single-season: devolver única entrada derivada del archivo actual (o de getCurrentSeasonInfo)
+    try {
+      var cur = parseJson(getLS(CURRENT_KEY), null);
+      if (cur && cur.season_info) {
+        return [{ year: cur.season_info.year || twoDigitYear(), seq: 1, season_id: cur.season_info.season_id || null,
+                  title: cur.season_info.title || null, start: cur.season_info.start || null, end: cur.season_info.end || null }];
+      }
+    } catch (_){}
+    return [{ year: twoDigitYear(), seq: 1 }];
   }
 
-  // Crea/actualiza entrada de temporada actual (si GW2Api disponible)
+  // Crea/actualiza entrada de temporada actual
   function getCurrentSeasonInfo(){
-    // Puede no estar GW2Api en tiempo de carga: devolvemos por defecto
-    var pr = Promise.resolve();
+    // Si no está GW2Api, devolvemos algo neutro y aseguramos archivo mínimo
     if (!root.GW2Api || typeof root.GW2Api.getWVSeason!=='function'){
-      return Promise.resolve({ year: twoDigitYear(), seq: 1, season_id: null, title: null, start:null, end:null });
+      var y0 = twoDigitYear();
+      if (SINGLE_SEASON_MODE) {
+        try {
+          var obj0 = readSeason(y0, 1);
+          obj0.season_info = Object.assign({}, obj0.season_info||{}, { year:y0, seq:1 });
+          writeSeasonAtomic(y0, 1, obj0);
+          saveIndex([{ year: y0, seq: 1, season_id: obj0.season_info.season_id || null, title: obj0.season_info.title || null, start: obj0.season_info.start || null, end: obj0.season_info.end || null }]);
+        } catch(e){ console.warn(LOG, 'init (no GW2Api) write', e); }
+      }
+      return Promise.resolve({ year: y0, seq: 1, season_id: null, title: null, start:null, end:null });
     }
+
     return root.GW2Api.getWVSeason({ nocache: false }).then(function (s){
       var base = deriveSeasonInfo(s); // {year, season_id, title, start, end}
-      var idx = loadIndex();
+      if (SINGLE_SEASON_MODE) {
+        // SINGLE-SEASON: todo se guarda en CURRENT_KEY, seq=1
+        var y = base.year || twoDigitYear();
+        var cur = parseJson(getLS(CURRENT_KEY), null);
+        var curInfo = cur && cur.season_info ? cur.season_info : null;
 
-      // ¿existe ya esta temporada?
+        var sameId = !!(curInfo && curInfo.season_id && base.season_id && curInfo.season_id === base.season_id);
+
+        if (!cur) {
+          // no existe archivo -> crear
+          var objNew = { version:1, season_info: Object.assign({ year: y, seq:1 }, base), keys:{}, prefs:{} };
+          try { writeSeasonAtomic(y, 1, objNew); } catch(eA){ console.warn(LOG, 'init new current write', eA); }
+          saveIndex([{ year: y, seq: 1, season_id: base.season_id||null, title: base.title||null, start: base.start||null, end: base.end||null }]);
+          return { year: y, seq: 1, season_id: base.season_id||null, title: base.title||null, start: base.start||null, end: base.end||null };
+        }
+
+        if (!sameId && base.season_id) {
+          // Detectamos NUEVA temporada (id distinto) => RESET
+          var objReset = { version:1, season_info: Object.assign({ year: y, seq:1 }, base), keys:{}, prefs:{} };
+          try { writeSeasonAtomic(y, 1, objReset); } catch(eB){ console.warn(LOG, 'reset SINGLE_SEASON write', eB); }
+          saveIndex([{ year: y, seq: 1, season_id: base.season_id||null, title: base.title||null, start: base.start||null, end: base.end||null }]);
+          return { year: y, seq: 1, season_id: base.season_id||null, title: base.title||null, start: base.start||null, end: base.end||null };
+        }
+
+        // Misma season: refrescar metadata (por si cambia titulo/fechas)
+        var objCur = readSeason(y, 1);
+        objCur.season_info = Object.assign({}, objCur.season_info||{}, base, { year:y, seq:1 });
+        try { writeSeasonAtomic(y, 1, objCur); } catch(eC){ console.warn(LOG, 'update SINGLE_SEASON write', eC); }
+        saveIndex([{ year: y, seq: 1, season_id: objCur.season_info.season_id||null, title: objCur.season_info.title||null, start: objCur.season_info.start||null, end: objCur.season_info.end||null }]);
+        return { year: y, seq: 1, season_id: objCur.season_info.season_id||null, title: objCur.season_info.title||null, start: objCur.season_info.start||null, end: objCur.season_info.end||null };
+      }
+
+      // MODO MULTI-SEASON (compat anterior)
+      var idx = loadIndex();
       var found = indexFind(idx, base.year, base.season_id);
       var entry;
 
       if (found && found.season_id && base.season_id && found.season_id === base.season_id) {
-        // ya existe entrada para este season_id
-        // refrescamos metadata
         found.title = base.title || found.title || null;
         found.start = base.start || found.start || null;
         found.end   = base.end   || found.end   || null;
         entry = found;
       } else if (found && !base.season_id) {
-        // Tenemos una del mismo año; usamos la última SEQ conocida
         entry = found;
       } else {
-        // Nueva temporada => creamos SEQ = último del año + 1
         var lastSeq = 0;
         for (var i=0;i<idx.length;i++) if (idx[i] && idx[i].year===base.year) lastSeq = Math.max(lastSeq, Number(idx[i].seq||0));
         entry = {
@@ -287,17 +333,23 @@
       }
       saveIndex(idx);
 
-      // Garantizar archivo temporada mínimo
       var obj = readSeason(entry.year, entry.seq);
-      // Actualizar season_info si hay variaciones
       obj.season_info = Object.assign({}, obj.season_info||{}, entry);
       try { writeSeasonAtomic(entry.year, entry.seq, obj); } catch(e){ console.warn(LOG, 'init write Season file', e); }
 
       return { year: entry.year, seq: entry.seq, season_id: entry.season_id, title: entry.title, start: entry.start, end: entry.end };
     }).catch(function(e){
       console.warn(LOG, 'getCurrentSeasonInfo failed, fallback', e);
-      // Fallback neutro (no creamos índice si API falla)
-      return { year: twoDigitYear(), seq: 1, season_id: null, title: null, start:null, end:null };
+      var yy = twoDigitYear();
+      if (SINGLE_SEASON_MODE) {
+        try {
+          var o = readSeason(yy, 1);
+          o.season_info = Object.assign({}, o.season_info||{}, { year: yy, seq:1 });
+          writeSeasonAtomic(yy, 1, o);
+          saveIndex([{ year: yy, seq:1, season_id: o.season_info.season_id||null, title: o.season_info.title||null, start: o.season_info.start||null, end: o.season_info.end||null }]);
+        } catch(_){}
+      }
+      return { year: yy, seq: 1, season_id: null, title: null, start:null, end:null };
     });
   }
 
@@ -305,10 +357,40 @@
   // policy: { keepPerYear?: number, keepYears?: number[], keepRecent?: number }
   function compact(policy){
     policy = policy || { keepPerYear: 6 };
+
+    if (SINGLE_SEASON_MODE) {
+      // En single-season, mantener sólo CURRENT_KEY y el index con una sola entrada.
+      var freed = 0, kept = 0;
+      try {
+        // Borrar cualquier wv:season:YY:SEQ residual
+        for (var i=0; i<localStorage.length; i++){
+          var k = localStorage.key(i);
+          if (!k) continue;
+          if (k.indexOf(FILE_PREFIX)===0 && k !== CURRENT_KEY && k !== KEY_INDEX) {
+            var v = getLS(k);
+            if (v != null) freed += (v.length || 0);
+            delLS(k);
+          }
+        }
+        // Reescribir index acorde al CURRENT_KEY si existe
+        var cur = parseJson(getLS(CURRENT_KEY), null);
+        if (cur && cur.season_info) {
+          saveIndex([{ year: cur.season_info.year || twoDigitYear(), seq:1, season_id: cur.season_info.season_id||null,
+                       title: cur.season_info.title||null, start: cur.season_info.start||null, end: cur.season_info.end||null }]);
+          kept = 1;
+        } else {
+          saveIndex([{ year: twoDigitYear(), seq:1 }]);
+          kept = 0;
+        }
+      } catch(e){ console.warn(LOG, 'compact single-season', e); }
+      console.info(LOG, 'compact(single) freed', (freed/1024).toFixed(1)+'KB', 'kept', kept, 'policy', policy);
+      return { freedBytes: freed, kept: kept };
+    }
+
+    // Multi-season (comportamiento original)
     var idx = loadIndex();
     if (!idx.length) return { freedBytes: 0, kept: 0 };
 
-    // Agrupar por año
     var byYear = new Map();
     idx.forEach(function(it){ if(!byYear.has(it.year)) byYear.set(it.year, []); byYear.get(it.year).push(it); });
 
@@ -323,7 +405,6 @@
       }
     });
 
-    // calcular a borrar
     var freed = 0, kept = 0;
     idx.forEach(function(it){
       var k = keySeasonFile(it.year, it.seq);
@@ -336,7 +417,6 @@
       }
     });
 
-    // Re-escribir index sólo con los kept
     var newIdx = [];
     idx.forEach(function(it){ var k=keySeasonFile(it.year,it.seq); if (keepKeys.has(k)) newIdx.push(it); });
     saveIndex(newIdx);
@@ -353,34 +433,27 @@
     var legacyPinned = parseJson(getLS(LEGACY_PINNED), {}) || {};
     var legacyMarks  = parseJson(getLS(LEGACY_MARKS),  {}) || {};
 
-    // Determinar temporada actual (para llevar legacy -> temporada actual)
-    // No conocemos mapping de otras temporadas legacy => migramos sólo la "vigente"
-    // con heurística de ns "<fp>:<seasonId|title actual>".
     var promise = getCurrentSeasonInfo().then(function (cur){
       var year = cur.year, seq = cur.seq;
       var seasonId = (cur.season_id || cur.title || 'season');
 
-      // Obtener fps presentes (si están guardadas keys)
       var keysList = parseJson(getLS(LS_KEYS), []) || [];
       var fps = [];
       try {
         fps = keysList.map(function(k){ return fpToken(k && k.value); }).filter(Boolean);
       } catch(_){}
 
-      // Recorrer todo legacy; mover ns que coincidan con temporada actual
       var writes = [];
 
       // PINNED
       Object.keys(legacyPinned).forEach(function(ns){
-        // ns form legacy: "<fp>:<seasonId|title>"
         var parts = String(ns).split(':');
         if (parts.length < 2) return;
         var fp = parts[0];
-        var seasonTag = parts.slice(1).join(':'); // por si el title tenía ':'
+        var seasonTag = parts.slice(1).join(':');
         var bag = legacyPinned[ns] || {};
 
         var matches = (seasonTag === seasonId);
-        // Si no hay exact match por id/title, igual lo admitimos si el fp existe y aún no hay bag actual
         if (matches || fps.indexOf(fp)>=0) {
           writes.push(writeSeason(year, seq, function(obj){
             var kb = ensureKeyBag(obj, fp);
@@ -411,7 +484,6 @@
       });
 
       return Promise.all(writes).then(function(){
-        // Opcional: limpiar legacy sólo si movimos algo
         if (moved){
           try { delLS(LEGACY_PINNED); }catch(_){}
           try { delLS(LEGACY_MARKS); }catch(_){}
@@ -456,11 +528,11 @@
       keyShadow: keyShadow,
       fpToken: fpToken
     },
-    __cfg: { KEY_INDEX: KEY_INDEX, FILE_PREFIX: FILE_PREFIX }
+    __cfg: { KEY_INDEX: KEY_INDEX, FILE_PREFIX: FILE_PREFIX, CURRENT_KEY: CURRENT_KEY, SINGLE_SEASON_MODE: SINGLE_SEASON_MODE }
   };
 
   // Colgar servicio en window
   root.WVSeasonStore = WVSeasonStore;
-  console.info(LOG, 'ready v1.0.0');
+  console.info(LOG, 'ready v1.1.0 (single-season=' + SINGLE_SEASON_MODE + ')');
 
 })(typeof window!=='undefined' ? window : (typeof globalThis!=='undefined' ? globalThis : this));

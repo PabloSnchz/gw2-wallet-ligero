@@ -589,7 +589,7 @@
   <!-- JS base -->
   <script defer src="js/api-gw2.js?v=2.7.0-modular"></script>
   <!-- NUEVO: módulo Wizard's Vault (debe ir tras api-gw2.js) -->
-  <script defer src="js/wv-season-storage.js?v=1.0.0"></script>
+  <script defer src="js/wv-season-storage.js?v=1.1.0"></script>
   <script defer src="js/wizards-vault.js?v=1.2.1"></script>
 
   <!-- Módulos de vistas que no dependen del router -->
@@ -598,9 +598,9 @@
   <script defer src="js/sidebar-nav.js?v=1.2"></script>
 
   <!-- IMPORTANTE: router antes que app (para registrar listeners antes del boot) -->
-  <script defer src="js/router.js?v=2.9.3"></script>
+  <script defer src="js/router.js?v=2.9.7"></script>
   <script defer src="js/wv-tabs-skin.js?v=1.0.0"></script>
-  <script defer src="js/wv-purchase-detail.js?v=1.4.0"></script>
+  <script defer src="js/wv-purchase-detail.js?v=1.5.0"></script>
   
   <!-- Inicialización del icono (solo si no lo definió el usuario antes) -->
   <script>
@@ -628,5 +628,157 @@
   <script src="js/wallet-theme.js?v=1.1.0"></script>
   <script src="js/meta-theme.js?v=1.0.0"></script>
   <script src="js/achievements-theme.js?v=1.0.0"></script>
+  <style id="wvpd-hotfix-ui">
+  /* --- Botón de acceso al dashboard en toolbar --- */
+  .wvpd-iconbtn{
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 0 0 auto !important; /* empuja a la derecha */
+    width: auto !important;
+    height: auto !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .wvpd-iconbtn img{
+    width: 40px !important;
+    height: 40px !important;
+    display: block !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    pointer-events: none; /* todo el click lo toma el botón */
+  }
+  .wvpd-iconbtn:hover img{ filter: brightness(1.08); }
+
+  /* --- Colores utilitarios --- */
+  .wvpd-number--amber { color:#ffd36b !important; font-weight:700; }
+  .wvpd-number--red   { color:#ff9d9d !important; font-weight:700; }
+  .wvpd-green         { color:#a0ffc8 !important; font-weight:700; }
+  .wvpd-label--red    { color:#ff9d9d !important; }
+
+  /* === Datos útiles: poner en amarillo el ÚLTIMO hijo de cada item (número) === */
+  #wvpdUsefulContent .wvpd-li > :last-child { color:#ffd36b !important; font-weight:700; }
+
+  /* === Top cuentas deficitarias: delta en rojo === */
+  #wvpdTopAccounts .wvpd-li .wvpd-li__delta { color:#ff9d9d !important; font-weight:700; }
+
+  /* === Top ítems más pendientes: lado derecho en amarillo (si no hay spans) === */
+  #wvpdTopItems .wvpd-li .wvpd-li__rest { color:#ffd36b !important; font-weight:700; }
+
+  /* === Tabla: “Sin stock” en verde === */
+  /* Si ya viene con clase .wvpd-green no hace falta; lo reforzamos por compat */
+  #wvpdTable td { /* reservado por si necesitas más estilos */ }
+</style>
+  
+  <script>
+  // Forzar wiring del botón si existe
+  (function () {
+    function wirePDButton() {
+      var host = document.getElementById('wvShopToolbarHost');
+      if (!host) return;
+      var btn = host.querySelector('#wvPDOpenBtn');
+      if (!btn) return;
+      btn.classList.add('wvpd-iconbtn');
+      var want = 'https://wiki.guildwars2.com/images/6/60/Wizard%27s_Vault_interface_icon.png';
+      if (!btn.querySelector('img')) {
+        btn.innerHTML = '<img src="'+want+'" alt="WV" width="40" height="40" loading="lazy" referrerpolicy="no-referrer">';
+      } else {
+        var im = btn.querySelector('img');
+        if (im) { im.src = want; im.width=40; im.height=40; }
+      }
+      if (!btn.__wvpdClick) {
+        btn.__wvpdClick = true;
+        btn.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          try { window.WVPurchaseDetail?.show(); } catch (e) { console.warn('[WVPD] show error', e); }
+        });
+      }
+    }
+
+    // Intenta ahora y cuando cambie la toolbar
+    document.addEventListener('DOMContentLoaded', wirePDButton);
+    setTimeout(wirePDButton, 500);
+    var moHost = document.getElementById('wvShopToolbarHost');
+    if (moHost && 'MutationObserver' in window) {
+      var mo = new MutationObserver(function(){ wirePDButton(); });
+      mo.observe(moHost, { childList:true, subtree:true });
+    }
+  })();
+</script>
+<script>
+/* HOTFIX: pintar “Restante” en ROJO dentro de TODAS las celdas de la tabla */
+(function(){
+  // Normaliza el HTML para poder matchear Restante aunque venga con &nbsp; o con guion largo delante
+  function paintRestanteInTable(){
+    var table = document.getElementById('wvpdTable');
+    if (!table) return;
+
+    // Regex robusto:
+    // - opcional guion (– o — o -) y/o espacios antes
+    // - palabra Restante (case-insensitive)
+    // - opcional ":" con/ sin espacios
+    // NO captura el número de la derecha (lo dejamos como está)
+    var RX = /(?:[\u2013\u2014\-]\s*)?(Restante)\s*:/gi; // \u2013 (–), \u2014 (—)
+
+    table.querySelectorAll('td').forEach(function(td){
+      var html = td.innerHTML;
+      if (!html) return;
+
+      // si ya tiene el span, no tocamos
+      if (html.indexOf('wvpd-label--red') >= 0) return;
+
+      // reemplazos suaves para &nbsp; -> espacio (solamente para matchear; usamos una copia)
+      var test = html.replace(/&nbsp;/g, ' ');
+
+      if (RX.test(test)){
+        // Aplicamos sobre el HTML original preservando &nbsp;
+        // Primero volvemos a generar el regex (por el flag global)
+        RX.lastIndex = 0;
+        var newHtml = html.replace(RX, function(_, restWord){
+          // conservamos ":" que ya estaba en el texto original
+          return '<span class="wvpd-label--red">'+restWord+'</span>:';
+        });
+        td.innerHTML = newHtml;
+      }
+    });
+  }
+
+  // Corre al entrar, y en re‑renders
+  document.addEventListener('DOMContentLoaded', paintRestanteInTable);
+  setTimeout(paintRestanteInTable, 250);
+  setTimeout(paintRestanteInTable, 750);
+  setTimeout(paintRestanteInTable, 1500);
+
+  // Observa cambios en el cuerpo de la tabla para recolorear si se re‑pinta
+  var tbody = document.querySelector('#wvpdTable tbody');
+  if (tbody && 'MutationObserver' in window){
+    var mo = new MutationObserver(function(muts){
+      for (var i=0;i<muts.length;i++){
+        if (muts[i].addedNodes && muts[i].addedNodes.length){ paintRestanteInTable(); break; }
+      }
+    });
+    mo.observe(tbody, { childList:true, subtree:true });
+  }
+})();
+</script>
+<style>
+  /* Solo el ícono del banner (no afecta al botón de la toolbar) */
+  #wvPDPanel .wvpd-banner__icon img {
+    width: 50px !important;   /* elegí el tamaño */
+    height: 50px !important;  /* elegí el tamaño */
+  }
+
+  /* Si además querés centrarlo/mejorar el encuadre del contenedor */
+  #wvPDPanel .wvpd-banner__icon {
+    width: 56px !important;
+    height: 56px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+</style>
 </body>
 </html>
