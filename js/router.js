@@ -1,17 +1,17 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.9.3 (2026‑03‑03)
+ * v2.9.7 (2026‑03‑05)
  *
- * Cambios v2.9.3:
- *  - [UX] Skeleton unificado (estilo Meta) para la Tienda WV (cards + table).
- *  - [UX] setShopLoading(true) inyecta skeleton acorde a la vista.
- *  - Mantiene de-dupe de refreshShopData y hardening previos.
+ * Cambios v2.9.7:
+ *  - [WV/Tienda] Persistencia de pins/marks migrada a WVSeasonStore (single‑season).
+ *  - [WV/Tienda] Actualización en vivo ante 'wv:season-store:mutate'.
+ *  - [UX] Se mantiene skeleton + de-dupe y funcionamiento previo.
  */
 
 (function () {
   'use strict';
 
-  console.info('[WV] router-wv.js v2.9.3 — skeleton + de-dupe');
+  console.info('[WV] router-wv.js v2.9.7 — SeasonStore bridge + skeleton + de-dupe');
 
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -48,8 +48,8 @@
   }
   function escapeHtml(str) {
     return String(str || '')
-      .replace(/&amp;amp;amp;/g,'&amp;amp;amp;amp;').replace(/&amp;amp;lt;/g,'&amp;amp;amp;lt;').replace(/&amp;amp;gt;/g,'&amp;amp;amp;gt;')
-      .replace(/"/g,'&amp;amp;amp;quot;').replace(/'/g,'&amp;amp;amp;#039;');
+      .replace(/&amp;amp;amp;amp;/g,'&amp;amp;amp;amp;amp;').replace(/&amp;amp;amp;lt;/g,'&amp;amp;amp;amp;lt;').replace(/&amp;amp;amp;gt;/g,'&amp;amp;amp;amp;gt;')
+      .replace(/"/g,'&amp;amp;amp;amp;quot;').replace(/'/g,'&amp;amp;amp;amp;#039;');
   }
   function fmtNumber(n) { n = Number(n || 0); return n.toLocaleString('es-AR'); }
   function now() { return Date.now(); }
@@ -155,19 +155,45 @@
     var _objFetchSeq = 0;
     var _shopInFlight = null; // de-dupe
 
-    // LS keys
-    var LS_WV_SHOP_MARKS='gw2_wv_marks_v1', LS_WV_SHOP_PINNED='gw2_wv_pinned_v1', LS_WV_SHOP_VIEW='gw2_wv_view_v1',
+    // Preferencias UI (se mantienen en LS)
+    var LS_WV_SHOP_VIEW='gw2_wv_view_v1',
         LS_WV_LAST_TAB='gw2_wv_lasttab_v1', LS_WV_LEGACY_VIS='gw2_wv_legacy_filter_v1';
+
+    // ---- SeasonStore bridge ----
+    var lastSS = null; // {year,seq} resuelto desde WVSeasonStore.getCurrentSeasonInfo()
 
     function marksNamespace(){
       var token=getSelectedToken()||'anon', fp=token?(token.slice(0,4)+'…'+token.slice(-4)):'anon';
       var st=state.shop, seasonId=(st && st.season && (st.season.id || st.season.title)) || 'season';
+      // La parte "seasonId" se preserva solo para keying visual; el store usa fp+{year,seq}
       return fp+':'+seasonId;
     }
-    function loadMarks(ns){ try{ var all=JSON.parse(localStorage.getItem(LS_WV_SHOP_MARKS)||'{}'); return all[ns]||{}; }catch(_){ return {}; } }
-    function saveMarks(ns,m){ try{ var all=JSON.parse(localStorage.getItem(LS_WV_SHOP_MARKS)||'{}'); all[ns]=m||{}; localStorage.setItem(LS_WV_SHOP_MARKS,JSON.stringify(all)); }catch(_){ } }
-    function loadPinned(ns){ try{ var all=JSON.parse(localStorage.getItem(LS_WV_SHOP_PINNED)||'{}'); return all[ns]||{}; }catch(_){ return {}; } }
-    function savePinned(ns,p){ try{ var all=JSON.parse(localStorage.getItem(LS_WV_SHOP_PINNED)||'{}'); all[ns]=p||{}; localStorage.setItem(LS_WV_SHOP_PINNED,JSON.stringify(all)); }catch(_){ } }
+    function parseNs(ns){ return String(ns||'').split(':')[0]||'anon'; }
+
+    function loadMarks(ns){
+      try{ if (!window.WVSeasonStore || !lastSS) return {};
+           var fp = parseNs(ns);
+           return WVSeasonStore.getMarks(lastSS.year, lastSS.seq, fp) || {}; }catch(_){ return {}; }
+    }
+    function saveMarks(ns,m){
+      try{ if (!window.WVSeasonStore || !lastSS) return;
+           var fp = parseNs(ns);
+           return WVSeasonStore.setMarks(lastSS.year, lastSS.seq, fp, m||{}); }catch(_){}
+    }
+    function loadPinned(ns){
+      try{ if (!window.WVSeasonStore || !lastSS) return {};
+           var fp = parseNs(ns);
+           return WVSeasonStore.getPinned(lastSS.year, lastSS.seq, fp) || {}; }catch(_){ return {}; }
+    }
+    function setPinnedPatch(fp, patchObj){
+      try{ if (!window.WVSeasonStore || !lastSS) return;
+           return WVSeasonStore.setPinned(lastSS.year, lastSS.seq, fp, patchObj||{}); }catch(_){}
+    }
+    function delPinnedIds(fp, ids){
+      try{ if (!window.WVSeasonStore || !lastSS) return;
+           return WVSeasonStore.delPinned(lastSS.year, lastSS.seq, fp, ids||[]); }catch(_){}
+    }
+
     function saveView(v){ try{ localStorage.setItem(LS_WV_SHOP_VIEW,v); }catch(_){ } }
     function loadView(){ try{ return localStorage.getItem(LS_WV_SHOP_VIEW)||'cards'; }catch(_){ return 'cards'; } }
     function saveLastTab(t){ try{ localStorage.setItem(LS_WV_LAST_TAB,t); }catch(_){ } }
@@ -249,7 +275,6 @@
             host.prepend(node);
           }
         }
-        // Si ya conocemos la vista preferida, skeleton acorde:
         var viewPref = state.shop.view || loadView() || 'cards';
         var body = (viewPref === 'table') ? skShopTable(8) : skShopCards(8);
         node.innerHTML = '<div style="margin:6px 0 10px 0">'+escapeHtml(String(msg || 'Cargando Tienda…'))+'</div>' + body;
@@ -437,8 +462,13 @@
           if (purchasedApi>=limit && m){ delete marks[id]; changed=true; }
           else if (m>0 && purchasedApi+m>limit){ marks[id]=Math.max(0,limit-purchasedApi); changed=true; }
         });
-        if (changed){ state.shop.marks=marks; saveMarks(marksNamespace(),marks); renderShopArea(); window.toast?.('success','Marcas sincronizadas con el API',{ttl:1800}); }
-        else window.toast?.('info','No hay marcas para limpiar',{ttl:1500});
+        if (changed){
+          st.marks=marks;
+          var ns=marksNamespace(), fp=parseNs(ns);
+          saveMarks(ns, marks); // persiste en SeasonStore
+          renderShopArea();
+          window.toast?.('success','Marcas sincronizadas con el API',{ttl:1800});
+        } else window.toast?.('info','No hay marcas para limpiar',{ttl:1500});
       });
 
       syncShopToggleLabel();
@@ -549,37 +579,67 @@
           var pinActive=!!(st.pinned && st.pinned[x.id]), pinCls='wv-pin'+(pinActive?' wv-pin--active':''), pinBtn='<button class="'+pinCls+'" data-pin="'+x.id+'" title="'+(pinActive?'Desfijar':'Fijar')+'">📌</button>';
           var rowStyle='display:flex;justify-content:space-between;align-items:center;gap:8px;';
 
-          return '<div class="wv-card" data-id="'+x.id+'"'+cardDeco+'><div class="wv-card__top"><div class="wv-card__iconWrap"'+iconDeco+'>'+(icon?('<img class="wv-card__icon" src="'+escapeHtml(icon)+'" alt="" loading="lazy"/>'):'')+'</div><div class="wv-card__name" title="'+escapeHtml(name)+'"'+(color?' style="color:'+color+'"':'')+'>'+escapeHtml(name)+'</div>'+pinBtn+'</div><div class="wv-card__meta"><span class="wv-badge">Costo: <strong>'+cost+'</strong> AA</span><span class="wv-type">'+escapeHtml(x.type||'—')+'</span></div><div class="wv-card__body"><div class="sep"></div><div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Comprado:</span><span class="pill">'+purchasedEff+' / '+(limit==null?'∞':limit)+'</span></div><div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Restante:</span><span class="pill">'+leftVal+'</span></div></div><div class="wv-card__bottom" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span class="wv-id">ID '+x.id+'</span><span>'+ctr+(maxBtn?' '+maxBtn:'')+'</span></div></div>';
+          return '<div class="wv-card" data-id="'+x.id+'"'+cardDeco+'><div class="wv-card__top"><div class="wv-card__iconWrap"'+iconDeco+'>'+ (icon?('<img class="wv-card__icon" src="'+escapeHtml(icon)+'" alt="" loading="lazy"/>'):'') +'</div><div class="wv-card__name" title="'+escapeHtml(name)+'"'+(color?' style="color:'+color+'"':'')+'>'+escapeHtml(name)+'</div>'+pinBtn+'</div><div class="wv-card__meta"><span class="wv-badge">Costo: <strong>'+cost+'</strong> AA</span><span class="wv-type">'+escapeHtml(x.type||'—')+'</span></div><div class="wv-card__body"><div class="sep"></div><div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Comprado:</span><span class="pill">'+purchasedEff+' / '+(limit==null?'∞':limit)+'</span></div><div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Restante:</span><span class="pill">'+leftVal+'</span></div></div><div class="wv-card__bottom" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span class="wv-id">ID '+x.id+'</span><span>'+ctr+(maxBtn?' '+maxBtn:'')+'</span></div></div>';
         }).join('');
 
         area.innerHTML = '<div class="wv-card-grid">'+cards+'</div>';
       }
 
-      // Wire de contadores y pin (igual que antes)
+      // Wire de contadores y pin (actualiza SeasonStore)
       $$('.wv-counter', area).forEach(function(host){
         var id=host.getAttribute('data-id'), btnDec=$('.wv-dec',host), btnInc=$('.wv-inc',host), spanVal=$('span.muted',host);
         var findRow=function(){ return state.shop.merged.find(function(x){ return String(x.id)===String(id); }); };
         var limitOf=function(row){ return (typeof row.purchase_limit==='number')?row.purchase_limit:null; };
         var purchasedApiOf=function(row){ return (typeof row.purchased==='number')?row.purchased:0; };
         function refresh(val){ if (spanVal) spanVal.textContent=String(val); renderShopArea(); }
-        if (btnDec && !btnDec.__wired){ btnDec.__wired=true; btnDec.addEventListener('click',function(){ var row=findRow(); if(!row) return; var marks=state.shop.marks||{}; var cur=+marks[id]||0; if(cur<=0) return; cur-=1; marks[id]=cur; state.shop.marks=marks; saveMarks(marksNamespace(),marks); refresh(cur); }); }
-        if (btnInc && !btnInc.__wired){ btnInc.__wired=true; btnInc.addEventListener('click',function(){ var row=findRow(); if(!row) return; var marks=state.shop.marks||{}; var cur=+marks[id]||0; var lim=limitOf(row); var cap=(lim==null)?Infinity:Math.max(0, lim - purchasedApiOf(row)); if(cur>=cap) return; cur+=1; marks[id]=cur; state.shop.marks=marks; saveMarks(marksNamespace(),marks); refresh(cur); }); }
+
+        if (btnDec && !btnDec.__wired){ btnDec.__wired=true; btnDec.addEventListener('click',function(){
+          var row=findRow(); if(!row) return;
+          var marks=state.shop.marks||{}; var cur=+marks[id]||0; if(cur<=0) return;
+          cur-=1; marks[id]=cur; state.shop.marks=marks;
+          var ns=marksNamespace(); var fp=parseNs(ns);
+          saveMarks(ns, ({[id]:cur}));
+          refresh(cur);
+        }); }
+        if (btnInc && !btnInc.__wired){ btnInc.__wired=true; btnInc.addEventListener('click',function(){
+          var row=findRow(); if(!row) return;
+          var marks=state.shop.marks||{}; var cur=+marks[id]||0;
+          var lim=limitOf(row); var cap=(lim==null)?Infinity:Math.max(0, lim - purchasedApiOf(row));
+          if(cur>=cap) return;
+          cur+=1; marks[id]=cur; state.shop.marks=marks;
+          var ns=marksNamespace(); var fp=parseNs(ns);
+          saveMarks(ns, ({[id]:cur}));
+          refresh(cur);
+        }); }
       });
+
       $$('.wv-markall', area).forEach(function(btn){
         if (btn.__wired) return; btn.__wired=true;
         btn.addEventListener('click', function(){
           var id=btn.getAttribute('data-id'); var row=state.shop.merged.find(function(x){ return String(x.id)===String(id); }); if(!row) return;
           var limit=(typeof row.purchase_limit==='number')?row.purchase_limit:null; var purchasedApi=(typeof row.purchased==='number')?row.purchased:0;
           if (limit==null) return; var cap=Math.max(0, limit - purchasedApi);
-          var marks=state.shop.marks||{}; marks[id]=cap; state.shop.marks=marks; saveMarks(marksNamespace(), marks); renderShopArea();
+          var marks=state.shop.marks||{}; marks[id]=cap; state.shop.marks=marks;
+          var ns=marksNamespace(); var fp=parseNs(ns);
+          saveMarks(ns, ({[id]:cap}));
+          renderShopArea();
         });
       });
+
       $$('[data-pin]', area).forEach(function(btn){
         if (btn.__wired) return; btn.__wired=true;
         btn.addEventListener('click', function(){
           var id=btn.getAttribute('data-pin'); var pinned=state.shop.pinned||{};
-          if (pinned[id]) delete pinned[id]; else pinned[id]=true;
-          state.shop.pinned=pinned; savePinned(marksNamespace(), pinned); renderShopArea();
+          var ns=marksNamespace(); var fp=parseNs(ns);
+          if (pinned[id]) {
+            delete pinned[id];
+            delPinnedIds(fp, [id]);
+          } else {
+            pinned[id]=true;
+            setPinnedPatch(fp, ({[id]:true}));
+          }
+          state.shop.pinned=pinned;
+          renderShopArea();
         });
       });
     }
@@ -600,9 +660,17 @@
 
       setShopLoading(true, 'Cargando Tienda…');
 
-      var ensureSeason=(state.shop.season)
-        ? Promise.resolve(state.shop.season)
-        : GW2Api.getWVSeason({ nocache:false }).then(function(season){ state.shop.season=season; setWVSeasonHeader(season); return season; }).catch(function(){ return null; });
+      // Asegurar season visible y {year,seq} del store
+      var ensureSeason = Promise.resolve().then(function(){
+        if (!state.shop.season) {
+          return GW2Api.getWVSeason({ nocache:false })
+            .then(function(season){ state.shop.season=season; setWVSeasonHeader(season); });
+        }
+      }).then(function(){
+        if (window.WVSeasonStore && typeof WVSeasonStore.getCurrentSeasonInfo==='function'){
+          return WVSeasonStore.getCurrentSeasonInfo().then(function(ss){ if (ss && typeof ss.year==='number') lastSS={year:ss.year,seq:ss.seq}; });
+        }
+      });
 
       _shopInFlight = ensureSeason.then(function(){
         return GW2Api.getWVShopMerged(token, { nocache: !!forceNoCache });
@@ -611,8 +679,11 @@
         state.shop.aa=pkg.aa||0; state.shop.aaIconUrl=pkg.aaIconUrl||null; state.shop.lastSyncTs=now();
         state.shop.view=loadView(); state.shop.legacyFilter=loadLegacyFilter();
 
-        var ns=marksNamespace(); state.shop.marks=loadMarks(ns); state.shop.pinned=loadPinned(ns);
+        var ns=marksNamespace();
+        state.shop.marks=loadMarks(ns);
+        state.shop.pinned=loadPinned(ns);
 
+        // Saneamiento de marcas frente a límites del API
         (function(){
           var st=state.shop, marks=st.marks||{}, changed=false;
           (st.merged||[]).forEach(function(row){
@@ -621,7 +692,7 @@
             if (purchasedApi>=limit && m){ delete marks[id]; changed=true; }
             else if (m>0 && purchasedApi+m>limit){ marks[id]=Math.max(0, limit - purchasedApi); changed=true; }
           });
-          if (changed){ st.marks=marks; saveMarks(marksNamespace(), marks); }
+          if (changed){ st.marks=marks; saveMarks(ns, marks); }
         })();
 
         renderShopArea();
@@ -701,6 +772,10 @@
 
       if (!state.loaded.__season){
         GW2Api.getWVSeason({ nocache:false }).then(function(season){ state.shop.season=season; setWVSeasonHeader(season); scheduleSeasonReset(); }).catch(function(){});
+        // Warm lastSS si está el store
+        if (window.WVSeasonStore && WVSeasonStore.getCurrentSeasonInfo) {
+          WVSeasonStore.getCurrentSeasonInfo().then(function(ss){ if (ss) lastSS={year:ss.year,seq:ss.seq}; }).catch(function(){});
+        }
         state.loaded.__season=true;
       }
 
@@ -740,7 +815,12 @@
         state.shop.view=loadView(); state.shop.legacyFilter=loadLegacyFilter();
         ensureShopToolbar();
 
-        var ns=marksNamespace(); state.shop.marks=loadMarks(ns); state.shop.pinned=loadPinned(ns);
+        var ns=marksNamespace();
+        // asegurar lastSS si aún no está
+        if (!lastSS && window.WVSeasonStore && WVSeasonStore.getCurrentSeasonInfo){
+          WVSeasonStore.getCurrentSeasonInfo().then(function(ss){ if (ss) lastSS={year:ss.year,seq:ss.seq}; }).catch(function(){});
+        }
+        state.shop.marks=loadMarks(ns); state.shop.pinned=loadPinned(ns);
 
         setShopLoading(true, 'Cargando Tienda…');
 
@@ -830,6 +910,10 @@
           try{ if (GW2Api && typeof GW2Api.wvInvalidateTargets==='function') GW2Api.wvInvalidateTargets(getSelectedToken()); }catch(_){}
           refreshObjectives(true);
           GW2Api.getWVSeason({ nocache:true }).then(function(season){ state.shop.season=season; setWVSeasonHeader(season); scheduleSeasonReset(); }).catch(function(){});
+          // actualizar lastSS por rollover
+          if (window.WVSeasonStore && WVSeasonStore.getCurrentSeasonInfo) {
+            WVSeasonStore.getCurrentSeasonInfo().then(function(ss){ if (ss) lastSS={year:ss.year,seq:ss.seq}; }).catch(function(){});
+          }
         }, ms);
       }catch(e){ console.warn('[WV] scheduleSeasonReset error', e); }
     }
@@ -902,6 +986,17 @@
       if (onWV) refreshObjectives(true);
       scheduleAllResets();
     }
+
+    // Refresco por mutación del SeasonStore (pin/mark desde otra vista/pestaña)
+    try {
+      window.addEventListener('wv:season-store:mutate', function(){
+        // Recalcular números y repintar si la tienda está visible
+        var onWV = normHash(location.hash||'#/cards') === '#/account/wizards-vault';
+        if (onWV && state.lastTab==='shop') {
+          renderShopArea();
+        }
+      });
+    } catch(_){}
 
     var api={
       activate:activate, setActiveTab:setActiveTab, ensureLoadTab:ensureLoadTab,
