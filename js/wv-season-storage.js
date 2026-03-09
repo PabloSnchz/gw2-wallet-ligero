@@ -1,12 +1,12 @@
 /*!
  * js/wv-season-storage.js — Servicio de almacenamiento por temporada (Wizard's Vault)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.1.0 (2026-03-05) — Single-Season + mutate event
+ * Versión: 1.1.1 (2026-03-09) — Single-Season hotfix: no-shadow por defecto + GC shadows + prune
  *
  * Objetivo:
  *   - Persistir TODO lo relevante de Wizard's Vault por temporada en 1 "archivo" (entrada LS) por temporada.
  *   - Consumido por Tienda y Detalle de Compras.
- *   - Evitar QuotaExceeded: partición por temporada + compact() y escritura atómica.
+ *   - Evitar QuotaExceeded: partición por temporada + compact() y escritura robusta.
  *   - (MODO SINGLE-SEASON) Mantener solo la temporada actual y resetear al iniciar una nueva.
  *   - Migración desde legacy: gw2_wv_pinned_v1 / gw2_wv_marks_v1
  *
@@ -27,7 +27,7 @@
   var FILE_PREFIX = 'wv:season:';               // Base para multi-season
   var CURRENT_KEY = 'wv:season:current';        // Clave única en single-season
 
-  var SHADOW_SUFFIX = '.__shadow';              // Escritura atómica: primero shadow, luego commit real
+  var SHADOW_SUFFIX = '.__shadow';              // Escritura atómica: shadow (multi-season) / GC en single-season
   var LEGACY_PINNED = 'gw2_wv_pinned_v1';       // { "<fp>:<seasonId|title>": { listingId: true|1, ... }, ... }
   var LEGACY_MARKS  = 'gw2_wv_marks_v1';        // { "<fp>:<seasonId|title>": { listingId: n, ... }, ... }
   var LS_KEYS       = 'gw2_keys';               // listado de keys guardadas (para inferir fps disponibles)
@@ -54,6 +54,19 @@
     return FILE_PREFIX + String(year) + ':' + String(seq);
   }
   function keyShadow(seasonKey){ return seasonKey + SHADOW_SUFFIX; }
+
+  // ---- GC de sombras colgadas
+  function gcShadows(){
+    try {
+      for (var i = localStorage.length - 1; i >= 0; i--){
+        var k = localStorage.key(i);
+        if (!k) continue;
+        if (k.indexOf(FILE_PREFIX) === 0 && k.endsWith(SHADOW_SUFFIX)){
+          delLS(k);
+        }
+      }
+    } catch(_){}
+  }
 
   // ---- Carga/guarda de índice
   function loadIndex(){
@@ -107,10 +120,26 @@
     return obj;
   }
 
+  // Prune de bolsas vacías (mantener archivo chico)
+  function pruneEmptyBags(obj){
+    try{
+      if (!obj || !obj.keys) return;
+      Object.keys(obj.keys).forEach(function(fp){
+        var b = obj.keys[fp] || {};
+        var hasPinned = b.pinned && Object.keys(b.pinned).length > 0;
+        var hasMarks  = b.marks  && Object.keys(b.marks).length  > 0;
+        var hasPrefs  = b.prefs  && Object.keys(b.prefs).length  > 0;
+        if (!hasPinned && !hasMarks && !hasPrefs) delete obj.keys[fp];
+      });
+    }catch(_){}
+  }
+
+  // Escritura robusta: en single-season evitar shadow por defecto
   function writeSeasonAtomic(year, seq, data){
     var k = keySeasonFile(year, seq);
     var shadow = keyShadow(k);
     var json = escJson(data);
+    var isSingle = !!SINGLE_SEASON_MODE;
 
     function doWrite(useShadow) {
       if (useShadow) {
@@ -123,16 +152,34 @@
     }
 
     try {
+      if (isSingle) {
+        // En single-season: evitar duplicación de bytes (shadow) por defecto
+        gcShadows();
+        try {
+          doWrite(false); // no-shadow primero
+          return true;
+        } catch (e0) {
+          var quota0 = (e0 && (e0.name==='QuotaExceededError' || String(e0).includes('Quota')));
+          if (!quota0) throw e0;
+          console.warn(LOG, 'writeSeasonAtomic quota (no-shadow). Compact & retry…', e0);
+          try { compact({ keepPerYear: 1 }); } catch(_){}
+          gcShadows();
+          doWrite(false);
+          console.info(LOG, 'writeSeasonAtomic (single) OK tras compact no-shadow');
+          return true;
+        }
+      }
+      // Multi-season: estrategia original (shadow → fallback)
       doWrite(true);
       return true;
     } catch (e1) {
       var quota = (e1 && (e1.name==='QuotaExceededError' || String(e1).includes('Quota')));
       try { delLS(shadow); } catch(_){}
-
       if (!quota) throw e1;
 
       console.warn(LOG, 'writeSeasonAtomic quota (shadow). Compact & retry no-shadow…', e1);
       try { compact({ keepPerYear: 1 }); } catch(_){}
+      gcShadows();
 
       try {
         doWrite(false);
@@ -159,6 +206,7 @@
     var p = Promise.resolve().then(function(){
       var obj = readSeason(year, seq);
       try { producer && producer(obj); } catch(e){ console.warn(LOG,'producer error', e); }
+      try { pruneEmptyBags(obj); } catch(_){}
       try {
         writeSeasonAtomic(year, seq, obj);
       } catch (e) {
@@ -166,16 +214,17 @@
         if (!quota) throw e;
         console.warn(LOG, 'QuotaExceeded on writeSeason', k, e);
         try { compact({ keepPerYear: 6 }); } catch(_){}
+        try { pruneEmptyBags(obj); } catch(_){}
         writeSeasonAtomic(year, seq, obj);
       }
-      // Evento de mutación tras escribir (para WV / WVPD)
+      // Evento de mutación tras escribir (para WV / WVPD / Router WV)
       try { window.dispatchEvent(new CustomEvent('wv:season-store:mutate', { detail: { key: k } })); } catch(_){}
     }).finally(function(){ __inflight.delete(k); });
     __inflight.set(k, p);
     return p;
   }
 
-  // ---- API helpers por cuenta (fp) ----
+  // ---- API helpers por cuenta (fp)
   function ensureKeyBag(obj, fp){
     var bag = obj.keys[fp];
     if (!bag || typeof bag!=='object') { bag = { pinned:{}, marks:{}, prefs:{} }; obj.keys[fp] = bag; }
@@ -193,7 +242,11 @@
   function setPinned(year, seq, fp, patch){
     return writeSeason(year, seq, function(obj){
       var bag = ensureKeyBag(obj, fp);
-      Object.assign(bag.pinned, (patch||{}));
+      Object.keys(patch||{}).forEach(function(id){
+        var v = !!patch[id];
+        if (v) bag.pinned[id] = 1;   // almacenar truthy compacto
+        else   delete bag.pinned[id]; // unpin -> borrar clave
+      });
     });
   }
   function delPinned(year, seq, fp, ids){
@@ -358,6 +411,9 @@
   function compact(policy){
     policy = policy || { keepPerYear: 6 };
 
+    // Antes de cualquier cosa, limpiar shadows colgados
+    gcShadows();
+
     if (SINGLE_SEASON_MODE) {
       // En single-season, mantener sólo CURRENT_KEY y el index con una sola entrada.
       var freed = 0, kept = 0;
@@ -457,7 +513,7 @@
         if (matches || fps.indexOf(fp)>=0) {
           writes.push(writeSeason(year, seq, function(obj){
             var kb = ensureKeyBag(obj, fp);
-            Object.assign(kb.pinned, bag);
+            Object.keys(bag).forEach(function(id){ if (bag[id]) kb.pinned[id] = 1; });
           }));
           moved = true;
           details.push('pinned:'+ns+' -> '+keySeasonFile(year,seq)+'/'+fp);
@@ -533,6 +589,6 @@
 
   // Colgar servicio en window
   root.WVSeasonStore = WVSeasonStore;
-  console.info(LOG, 'ready v1.1.0 (single-season=' + SINGLE_SEASON_MODE + ')');
+  console.info(LOG, 'ready v1.1.1 (single-season=' + SINGLE_SEASON_MODE + ', no-shadow default)');
 
 })(typeof window!=='undefined' ? window : (typeof globalThis!=='undefined' ? globalThis : this));

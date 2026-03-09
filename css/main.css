@@ -1876,3 +1876,18 @@ display: -webkit-box;
 
 /* Nota: usa colores oscuros por defecto; si tenés tema claro, sobreescribí --sk-base/--sk-hi */
 
+/* ========================================================================
+   WV Purchase Detail — paleta canónica de estados (compatible con tema)
+   Estas clases son utilizadas por js/wv-purchase-detail.js v1.6.0
+   ===================================================================== */
+.wvpd-green{ color:#a0ffc8 !important; font-weight:700; }
+.wvpd-red  { color:#ff9d9d !important; font-weight:700; }
+
+/* Nombre de la cuenta según progreso de “Meta de la temporada” (0..6 pasos) */
+.wvpd-acc--red   { color:#ff9d9d !important; font-weight:800; }  /* 0–3/6 */
+.wvpd-acc--yellow{ color:#ffd36b !important; font-weight:800; }  /* 4–5/6 */
+.wvpd-acc--green { color:#a0ffc8 !important; font-weight:900; }  /* 6/6 */
+
+/* Top cuentas deficitarias: delta */
+.wvpd-li__delta--bad{ color:#ff9d9d !important; font-weight:700; } /* delta < 0 */
+.wvpd-li__delta--ok { color:#a0ffc8 !important; font-weight:700; } /* delta >= 0 */
