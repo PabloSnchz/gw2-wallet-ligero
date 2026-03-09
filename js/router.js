@@ -1,6 +1,13 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.9.7 (2026‑03‑05)
+ * v2.9.8 (2026‑03‑09)
+ *
+ * Cambios v2.9.8:
+ *  - [WV/Tienda] Handlers robustos de persistencia:
+ *      · Pin/Unpin: await + rollback on error (toast).
+ *      · Marks inc/dec/max: micro‑batch (120ms por fp) + toast + refresh on error.
+ *  - [WV/Tienda] Se mantiene skeleton, de‑dupe y mutate-event para repintar en vivo.
+ *  - [Compat] No se tocan APIs públicas ni invariantes del BAI.
  *
  * Cambios v2.9.7:
  *  - [WV/Tienda] Persistencia de pins/marks migrada a WVSeasonStore (single‑season).
@@ -11,7 +18,7 @@
 (function () {
   'use strict';
 
-  console.info('[WV] router-wv.js v2.9.7 — SeasonStore bridge + skeleton + de-dupe');
+  console.info('[WV] router-wv.js v2.9.8 — Persistencia robusta + micro-batching');
 
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -48,8 +55,8 @@
   }
   function escapeHtml(str) {
     return String(str || '')
-      .replace(/&amp;amp;amp;amp;/g,'&amp;amp;amp;amp;amp;').replace(/&amp;amp;amp;lt;/g,'&amp;amp;amp;amp;lt;').replace(/&amp;amp;amp;gt;/g,'&amp;amp;amp;amp;gt;')
-      .replace(/"/g,'&amp;amp;amp;amp;quot;').replace(/'/g,'&amp;amp;amp;amp;#039;');
+      .replace(/&amp;amp;amp;amp;amp;/g,'&amp;amp;amp;amp;amp;amp;').replace(/&amp;amp;amp;amp;lt;/g,'&amp;amp;amp;amp;amp;lt;').replace(/&amp;amp;amp;amp;gt;/g,'&amp;amp;amp;amp;amp;gt;')
+      .replace(/"/g,'&amp;amp;amp;amp;amp;quot;').replace(/'/g,'&amp;amp;amp;amp;amp;#039;');
   }
   function fmtNumber(n) { n = Number(n || 0); return n.toLocaleString('es-AR'); }
   function now() { return Date.now(); }
@@ -113,7 +120,7 @@
   }
 
   function showPanel(idToShow) {
-    ['walletPanel','metaPanel','achievementsPanel','wvPanel'].forEach(function(id){
+    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel'].forEach(function(id){
       var node=el(id); if (!node) return;
       if (id===idToShow) node.removeAttribute('hidden'); else node.setAttribute('hidden','hidden');
     });
@@ -159,13 +166,13 @@
     var LS_WV_SHOP_VIEW='gw2_wv_view_v1',
         LS_WV_LAST_TAB='gw2_wv_lasttab_v1', LS_WV_LEGACY_VIS='gw2_wv_legacy_filter_v1';
 
-    // ---- SeasonStore bridge ----
+        // ---- SeasonStore bridge ----
     var lastSS = null; // {year,seq} resuelto desde WVSeasonStore.getCurrentSeasonInfo()
 
     function marksNamespace(){
       var token=getSelectedToken()||'anon', fp=token?(token.slice(0,4)+'…'+token.slice(-4)):'anon';
       var st=state.shop, seasonId=(st && st.season && (st.season.id || st.season.title)) || 'season';
-      // La parte "seasonId" se preserva solo para keying visual; el store usa fp+{year,seq}
+      // La parte "seasonId" es solo informativa; el store usa fp+{year,seq}
       return fp+':'+seasonId;
     }
     function parseNs(ns){ return String(ns||'').split(':')[0]||'anon'; }
@@ -176,9 +183,9 @@
            return WVSeasonStore.getMarks(lastSS.year, lastSS.seq, fp) || {}; }catch(_){ return {}; }
     }
     function saveMarks(ns,m){
-      try{ if (!window.WVSeasonStore || !lastSS) return;
+      try{ if (!window.WVSeasonStore || !lastSS) return Promise.resolve();
            var fp = parseNs(ns);
-           return WVSeasonStore.setMarks(lastSS.year, lastSS.seq, fp, m||{}); }catch(_){}
+           return WVSeasonStore.setMarks(lastSS.year, lastSS.seq, fp, m||{}); }catch(_){ return Promise.resolve(); }
     }
     function loadPinned(ns){
       try{ if (!window.WVSeasonStore || !lastSS) return {};
@@ -186,12 +193,41 @@
            return WVSeasonStore.getPinned(lastSS.year, lastSS.seq, fp) || {}; }catch(_){ return {}; }
     }
     function setPinnedPatch(fp, patchObj){
-      try{ if (!window.WVSeasonStore || !lastSS) return;
-           return WVSeasonStore.setPinned(lastSS.year, lastSS.seq, fp, patchObj||{}); }catch(_){}
+      try{ if (!window.WVSeasonStore || !lastSS) return Promise.resolve();
+           return WVSeasonStore.setPinned(lastSS.year, lastSS.seq, fp, patchObj||{}); }catch(_){ return Promise.resolve(); }
     }
     function delPinnedIds(fp, ids){
-      try{ if (!window.WVSeasonStore || !lastSS) return;
-           return WVSeasonStore.delPinned(lastSS.year, lastSS.seq, fp, ids||[]); }catch(_){}
+      try{ if (!window.WVSeasonStore || !lastSS) return Promise.resolve();
+           return WVSeasonStore.delPinned(lastSS.year, lastSS.seq, fp, ids||[]); }catch(_){ return Promise.resolve(); }
+    }
+
+    // --- Micro-batching de marks por fp (120ms) ---
+    var __marksTimers = new Map();   // fp -> timer
+    var __marksBuffers = new Map();  // fp -> { id: val, ... }
+
+    function saveMarksBatched(fp, patch, onError){
+      var buf = __marksBuffers.get(fp) || {};
+      Object.assign(buf, patch||{});
+      __marksBuffers.set(fp, buf);
+
+      if (__marksTimers.has(fp)) return; // ya programado
+
+      var ns = marksNamespace(); // resuelto al momento del batch
+      var t = setTimeout(async function(){
+        __marksTimers.delete(fp);
+        var payload = __marksBuffers.get(fp) || {};
+        __marksBuffers.delete(fp);
+        try {
+          await saveMarks(ns, payload);
+          // mutate-event disparado por SeasonStore repinta en vivo
+        } catch(e){
+          try { window.toast?.('error','No se pudo guardar marcas (espacio de almacenamiento)',{ttl:1800}); } catch(_){}
+          // Recuperación: refrescar la tienda para alinear con el store real
+          try { refreshShopData(false); } catch(_){}
+          if (typeof onError === 'function') { try { onError(e); } catch(_){ } }
+        }
+      }, 120);
+      __marksTimers.set(fp, t);
     }
 
     function saveView(v){ try{ localStorage.setItem(LS_WV_SHOP_VIEW,v); }catch(_){ } }
@@ -454,7 +490,7 @@
       if (r) r.addEventListener('click', function(){ refreshShopData(true); });
       if (lf) lf.addEventListener('change', function(){ state.shop.legacyFilter=lf.value||'show'; saveLegacyFilter(state.shop.legacyFilter); renderShopArea(); });
 
-      if (cls) cls.addEventListener('click', function(){
+      if (cls) cls.addEventListener('click', async function(){
         var st=state.shop, marks=st.marks||{}, changed=false;
         (st.merged||[]).forEach(function(row){
           var id=String(row.id), limit=(typeof row.purchase_limit==='number')?row.purchase_limit:null, purchasedApi=(typeof row.purchased==='number')?row.purchased:0;
@@ -465,9 +501,14 @@
         if (changed){
           st.marks=marks;
           var ns=marksNamespace(), fp=parseNs(ns);
-          saveMarks(ns, marks); // persiste en SeasonStore
-          renderShopArea();
-          window.toast?.('success','Marcas sincronizadas con el API',{ttl:1800});
+          try {
+            await saveMarks(ns, marks); // persistir completo
+            renderShopArea();
+            window.toast?.('success','Marcas sincronizadas con el API',{ttl:1800});
+          } catch(e){
+            window.toast?.('error','No se pudo limpiar marcas (espacio de almacenamiento)',{ttl:1800});
+            refreshShopData(false);
+          }
         } else window.toast?.('info','No hay marcas para limpiar',{ttl:1500});
       });
 
@@ -593,53 +634,75 @@
         var purchasedApiOf=function(row){ return (typeof row.purchased==='number')?row.purchased:0; };
         function refresh(val){ if (spanVal) spanVal.textContent=String(val); renderShopArea(); }
 
-        if (btnDec && !btnDec.__wired){ btnDec.__wired=true; btnDec.addEventListener('click',function(){
+        if (btnDec && !btnDec.__wired){ btnDec.__wired=true; btnDec.addEventListener('click', async function(){
           var row=findRow(); if(!row) return;
           var marks=state.shop.marks||{}; var cur=+marks[id]||0; if(cur<=0) return;
           cur-=1; marks[id]=cur; state.shop.marks=marks;
           var ns=marksNamespace(); var fp=parseNs(ns);
-          saveMarks(ns, ({[id]:cur}));
+          // Micro-batch: no bloqueamos UI; en error -> toast + refresh
+          saveMarksBatched(fp, ({[id]:cur}), function(){ /* hook opcional */ });
           refresh(cur);
         }); }
-        if (btnInc && !btnInc.__wired){ btnInc.__wired=true; btnInc.addEventListener('click',function(){
+        if (btnInc && !btnInc.__wired){ btnInc.__wired=true; btnInc.addEventListener('click', async function(){
           var row=findRow(); if(!row) return;
           var marks=state.shop.marks||{}; var cur=+marks[id]||0;
           var lim=limitOf(row); var cap=(lim==null)?Infinity:Math.max(0, lim - purchasedApiOf(row));
           if(cur>=cap) return;
           cur+=1; marks[id]=cur; state.shop.marks=marks;
           var ns=marksNamespace(); var fp=parseNs(ns);
-          saveMarks(ns, ({[id]:cur}));
+          saveMarksBatched(fp, ({[id]:cur}), function(){ /* onError */ });
           refresh(cur);
         }); }
       });
 
       $$('.wv-markall', area).forEach(function(btn){
         if (btn.__wired) return; btn.__wired=true;
-        btn.addEventListener('click', function(){
+        btn.addEventListener('click', async function(){
           var id=btn.getAttribute('data-id'); var row=state.shop.merged.find(function(x){ return String(x.id)===String(id); }); if(!row) return;
           var limit=(typeof row.purchase_limit==='number')?row.purchase_limit:null; var purchasedApi=(typeof row.purchased==='number')?row.purchased:0;
           if (limit==null) return; var cap=Math.max(0, limit - purchasedApi);
-          var marks=state.shop.marks||{}; marks[id]=cap; state.shop.marks=marks;
+          var marks=state.shop.marks||{}; var prev=+marks[id]||0; marks[id]=cap; state.shop.marks=marks;
           var ns=marksNamespace(); var fp=parseNs(ns);
-          saveMarks(ns, ({[id]:cap}));
-          renderShopArea();
+          try {
+            await saveMarks(ns, ({[id]:cap}));
+            renderShopArea();
+          } catch(e){
+            marks[id]=prev; state.shop.marks=marks;
+            renderShopArea();
+            window.toast?.('error','No se pudo guardar marcas (espacio de almacenamiento)',{ttl:1800});
+          }
         });
       });
 
       $$('[data-pin]', area).forEach(function(btn){
         if (btn.__wired) return; btn.__wired=true;
-        btn.addEventListener('click', function(){
+        btn.addEventListener('click', async function(){
           var id=btn.getAttribute('data-pin'); var pinned=state.shop.pinned||{};
           var ns=marksNamespace(); var fp=parseNs(ns);
           if (pinned[id]) {
+            // Unpin con rollback on error
             delete pinned[id];
-            delPinnedIds(fp, [id]);
+            try {
+              await delPinnedIds(fp, [id]);
+              state.shop.pinned=pinned;
+              renderShopArea();
+            } catch(e){
+              // Revertir
+              pinned[id]=true; state.shop.pinned=pinned; renderShopArea();
+              window.toast?.('error','No se pudo desfijar (espacio de almacenamiento)',{ttl:1800});
+            }
           } else {
+            // Pin con rollback on error
             pinned[id]=true;
-            setPinnedPatch(fp, ({[id]:true}));
+            try {
+              await setPinnedPatch(fp, ({[id]:true}));
+              state.shop.pinned=pinned;
+              renderShopArea();
+            } catch(e){
+              delete pinned[id]; state.shop.pinned=pinned; renderShopArea();
+              window.toast?.('error','No se pudo fijar (espacio de almacenamiento)',{ttl:1800});
+            }
           }
-          state.shop.pinned=pinned;
-          renderShopArea();
         });
       });
     }
@@ -706,7 +769,6 @@
 
       return _shopInFlight;
     }
-
     function refreshObjectives(forceNoCache){
       const mySeq = ++_objFetchSeq;
       var token=getSelectedToken();
@@ -1019,24 +1081,97 @@
 
   // ----------------------------- ROUTER ------------------------------------
   var _routeT = null; // debounce
-  function route(){
+  function route() {
     clearTimeout(_routeT);
-    _routeT = setTimeout(function(){
-      var h=normHash(location.hash||'#/cards');
-      if (h!=='#/account/wizards-vault' && WV && typeof WV.deactivate==='function') WV.deactivate();
+    _routeT = setTimeout(function () {
+      var h = normHash(location.hash || '#/cards');
 
-      if (h==='#/cards'){ try{ showPanel('walletPanel'); }catch(e){ console.warn('[router] show wallet error',e); } finally{ updateSidebarFor('cards'); setActiveNav(h); } return; }
-      if (h==='#/meta'){ try{ showPanel('metaPanel'); document.dispatchEvent(new CustomEvent('gn:tabchange',{detail:{view:'meta'}})); }catch(e){ console.warn('[router] show meta error',e); } finally{ updateSidebarFor('meta'); setActiveNav(h); } return; }
-      if (h==='#/account/achievements'){ try{ showPanel('achievementsPanel'); if (window.Achievements && typeof window.Achievements.render==='function'){ window.Achievements.render(); } }catch(e){ console.warn('[router] show achievements error',e); } finally{ updateSidebarFor('achievements'); setActiveNav(h); } return; }
-      if (h==='#/account/wizards-vault'){ try{ showPanel('wvPanel'); if (WV && typeof WV.activate==='function') WV.activate(); hydrateWVModePills(el('wvPanel')); }catch(e){ console.error('[router] WV.activate error',e); } finally{ updateSidebarFor('wv'); setActiveNav(h); } return; }
+      // Desactivar WV si salimos de su pantalla
+      if (h !== '#/account/wizards-vault' && WV && typeof WV.deactivate === 'function') {
+        try { WV.deactivate(); } catch (_) {}
+      }
+      // (Opcional) Desactivar Activities si salimos de su pantalla
+      if (h !== '#/activities' && window.Activities && typeof window.Activities.deactivate === 'function') {
+        try { window.Activities.deactivate(); } catch (_) {}
+      }
 
-      try{ showPanel('walletPanel'); }catch(e){ console.warn('[router] fallback show wallet error',e); } finally{ updateSidebarFor('cards'); setActiveNav('#/cards'); }
+      // CARDS (Wallet)
+      if (h === '#/cards') {
+        try { showPanel('walletPanel'); }
+        catch (e) { console.warn('[router] show wallet error', e); }
+        finally { updateSidebarFor('cards'); setActiveNav(h); }
+        return;
+      }
+
+      // META & EVENTOS
+      if (h === '#/meta') {
+        try {
+          showPanel('metaPanel');
+          document.dispatchEvent(new CustomEvent('gn:tabchange', { detail: { view: 'meta' } }));
+        } catch (e) {
+          console.warn('[router] show meta error', e);
+        } finally {
+          updateSidebarFor('meta');
+          setActiveNav(h);
+        }
+        return;
+      }
+
+      // ACHIEVEMENTS
+      if (h === '#/account/achievements') {
+        try {
+          showPanel('achievementsPanel');
+          if (window.Achievements && typeof window.Achievements.render === 'function') {
+            window.Achievements.render();
+          }
+        } catch (e) {
+          console.warn('[router] show achievements error', e);
+        } finally {
+          updateSidebarFor('achievements');
+          setActiveNav(h);
+        }
+        return;
+      }
+
+      // WIZARD'S VAULT
+      if (h === '#/account/wizards-vault') {
+        try {
+          showPanel('wvPanel');
+          if (WV && typeof WV.activate === 'function') WV.activate();
+          hydrateWVModePills(el('wvPanel'));
+        } catch (e) {
+          console.error('[router] WV.activate error', e);
+        } finally {
+          updateSidebarFor('wv');
+          setActiveNav(h);
+        }
+        return;
+      }
+
+      // ACTIVITIES (NUEVO)
+      if (h === '#/activities') {
+        try {
+          showPanel('activitiesPanel');
+          window.Activities?.activate?.();
+        } catch (e) {
+          console.warn('[router] Activities.activate error', e);
+        } finally {
+          updateSidebarFor('activities');
+          setActiveNav(h);
+        }
+        return;
+      }
+
+      // Fallback -> Wallet
+      try { showPanel('walletPanel'); }
+      catch (e) { console.warn('[router] fallback show wallet error', e); }
+      finally { updateSidebarFor('cards'); setActiveNav('#/cards'); }
     }, 35);
   }
 
   function onKeySelectChange() {
     var h = normHash(location.hash || '#/cards');
-    var token = (function(){ var s=el('keySelectGlobal'); return s?(s.value||'').trim():null; })();
+    var token = (function(){ var s = el('keySelectGlobal'); return s ? (s.value || '').trim() : null; })();
 
     try {
       if (h === '#/meta') {
@@ -1048,17 +1183,31 @@
           var status = document.getElementById('metaStatus');
           if (status) { status.textContent = 'Cargando…'; status.classList.remove('error'); status.classList.add('muted'); }
         }
+
       } else if (h === '#/account/achievements') {
         if (window.Achievements && typeof window.Achievements.render === 'function') {
           window.Achievements.render();
         }
+
       } else if (h === '#/account/wizards-vault') {
         if (WV && typeof WV.onTokenChanged === 'function') WV.onTokenChanged(token);
         if (WV && typeof WV.ensureLoadTab === 'function') WV.ensureLoadTab('shop');
         if (WV && typeof WV.refreshObjectives === 'function') WV.refreshObjectives(true);
         if (WV && typeof WV.activate === 'function') WV.activate();
         hydrateWVModePills(el('wvPanel'));
+
+      // ===== NUEVO: Panel de Actividades =====
+      } else if (h === '#/activities') {
+        var p = document.getElementById('activitiesPanel');
+        if (p && !p.hasAttribute('hidden')) {
+          try {
+            window.Activities?.activate?.();
+          } catch (e) {
+            console.warn('[router] Activities.activate error', e);
+          }
+        }
       }
+
     } catch (e) {
       console.warn('[router] onKeySelectChange error', e);
     }
@@ -1100,3 +1249,4 @@
   else onDomReady();
 
 })();
+``

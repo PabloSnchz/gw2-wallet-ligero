@@ -1,7 +1,13 @@
 /*!
  * js/wv-purchase-detail.js — Vista de Detalle de Compras (Wizard's Vault)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.5.0 (2026-03-05) — Single-season, sin selector, sin historial, con refresh por mutate-event
+ * Versión: 1.6.0 (2026-03-09) — Progreso semanal por cuenta + colores internos (sin script externo)
+ *
+ * Cambios:
+ *  - Cuenta coloreada según progreso de “Meta de la temporada” (0–3/6 rojo, 4–5/6 amarillo, 6/6 verde).
+ *  - Estilos internos para .wvpd-red / .wvpd-green / .wvpd-acc--{red|yellow|green} y delta ok/bad.
+ *  - Se mantiene “Sin stock” en verde y “Restante” en rojo (clases propias).
+ *  - Sin dependencias del script de index.html que coloreaba "Restante".
  */
 
 (function (root) {
@@ -12,7 +18,7 @@
   function $(s, r){ return (r||document).querySelector(s); }
   function $$(s, r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); }
   function fmtInt(n){ if (n==null || !isFinite(n)) return '—'; n=Number(n||0); return n.toLocaleString('es-AR'); }
-  function esc(s){ return String(s||'').replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]; }); }
+  function esc(s){ return String(s||'').replace(/[&<>"']/g, function(m){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]); }); }
   function rIC(fn, opts){
     try { if ('requestIdleCallback' in window) return window.requestIdleCallback(fn, opts||{timeout:1200}); } catch(_){}
     return setTimeout(fn, (opts && opts.timeout) || 200);
@@ -27,8 +33,8 @@
 
     // Single-season: no hay selectedSeason ni seasonsIdx
     keys: [],
-    accounts: [],   
-    pinnedUnion: [],         
+    accounts: [],            // cada cuenta ahora incluye seasonMetaSteps (0..6)
+    pinnedUnion: [],
     globalItemsById: new Map(),
 
     filters: { q:'', onlyPending:false, onlyPendingCols:false, sort:'delta' },
@@ -49,7 +55,7 @@
     if (document.getElementById('wv-pd-styles')) return;
 
     var css = `
-      /* (CSS idéntico al original excepto elementos de historial/selector eliminados) */
+      /* ====== Purchase Detail skin ====== */
       #wvPDPanel.panel{ margin-top: 12px; }
       #wvPDPanel[hidden]{ display:none !important; }
       .wvpd-dash{ display:grid; gap:10px; margin-bottom:12px; }
@@ -77,6 +83,17 @@
       table.wvpd th, table.wvpd td{ padding:8px 10px; border-bottom:1px solid #24252a; white-space:nowrap; }
       table.wvpd thead th{ position:sticky; top:0; background:#101217; z-index:2; }
       table.wvpd th:first-child, table.wvpd td:first-child{ position:sticky; left:0; background:#0e1116; z-index:1; }
+
+      /* ====== Colores canónicos para PD ====== */
+      .wvpd-green{ color:#a0ffc8 !important; font-weight:700; }
+      .wvpd-red{   color:#ff9d9d !important; font-weight:700; }
+      .wvpd-acc--red{ color:#ff9d9d !important; font-weight:800; }
+      .wvpd-acc--yellow{ color:#ffd36b !important; font-weight:800; }
+      .wvpd-acc--green{ color:#a0ffc8 !important; font-weight:900; }
+
+      /* Delta en Top cuentas */
+      .wvpd-li__delta--bad{ color:#ff9d9d !important; font-weight:700; }
+      .wvpd-li__delta--ok{  color:#a0ffc8 !important; font-weight:700; }
     `;
 
     var s = document.createElement('style');
@@ -111,98 +128,94 @@
   }
 
   // ------------------------------ Toolbar button Tienda ------------------
-  
-function ensureToolbarButton(){
-  try{
-    var host = document.getElementById('wvShopToolbarHost');
-    if (!host) return;
-    var toolbar = host.querySelector('.wv-shop-toolbar');
-    if (!toolbar) return;
+  function ensureToolbarButton(){
+    try{
+      var host = document.getElementById('wvShopToolbarHost');
+      if (!host) return;
+      var toolbar = host.querySelector('.wv-shop-toolbar');
+      if (!toolbar) return;
 
-    var group = toolbar.querySelector('.group') || toolbar;
-    var clearBtn = group.querySelector('#wvClearSynced');
-    var insertAfter = clearBtn || group.lastElementChild;
+      var group = toolbar.querySelector('.group') || toolbar;
+      var clearBtn = group.querySelector('#wvClearSynced');
+      var insertAfter = clearBtn || group.lastElementChild;
 
-    var existing = group.querySelector('#wvPDOpenBtn');
-    if (existing) {
-      existing.classList.add('wvpd-iconbtn');
-      existing.setAttribute('data-wvpd-open','1');
-      existing.title = 'Detalle de compras (todas las cuentas)';
-      existing.style.marginLeft = 'auto';
-      existing.innerHTML = accessIconHTML();
+      var existing = group.querySelector('#wvPDOpenBtn');
+      if (existing) {
+        existing.classList.add('wvpd-iconbtn');
+        existing.setAttribute('data-wvpd-open','1');
+        existing.title = 'Detalle de compras (todas las cuentas)';
+        existing.style.marginLeft = 'auto';
+        existing.innerHTML = accessIconHTML();
 
-      // 🔌 Cableado directo, por si el delegado aún no está o se perdió
-      if (!existing.__wvpdClick){
-        existing.__wvpdClick = true;
-        existing.addEventListener('click', function(ev){
-          ev.preventDefault();
-          try { window.WVPurchaseDetail?.show(); }
-          catch(e){ console.warn('[WV-PD] show() error (existing)', e); }
-        });
+        if (!existing.__wvpdClick){
+          existing.__wvpdClick = true;
+          existing.addEventListener('click', function(ev){
+            ev.preventDefault();
+            try { window.WVPurchaseDetail?.show(); }
+            catch(e){ console.warn('[WV-PD] show() error (existing)', e); }
+          });
+        }
+        return;
       }
-      return;
-    }
 
-    var btn = document.createElement('button');
-    btn.id = 'wvPDOpenBtn';
-    btn.setAttribute('data-wvpd-open','1');
-    btn.className = 'wvpd-iconbtn';
-    btn.title = 'Detalle de compras (todas las cuentas)';
-    btn.setAttribute('aria-label','Detalle de compras');
-    btn.innerHTML = accessIconHTML();
-    btn.style.marginLeft = 'auto';
+      var btn = document.createElement('button');
+      btn.id = 'wvPDOpenBtn';
+      btn.setAttribute('data-wvpd-open','1');
+      btn.className = 'wvpd-iconbtn';
+      btn.title = 'Detalle de compras (todas las cuentas)';
+      btn.setAttribute('aria-label','Detalle de compras');
+      btn.innerHTML = accessIconHTML();
+      btn.style.marginLeft = 'auto';
 
-    // 🔌 Cableado directo inmediato
-    btn.addEventListener('click', function(ev){
-      ev.preventDefault();
-      try { window.WVPurchaseDetail?.show(); }
-      catch(e){ console.warn('[WV-PD] show() error (new)', e); }
-    });
-
-    if (insertAfter && insertAfter.parentNode === group)
-      insertAfter.insertAdjacentElement('afterend', btn);
-    else
-      group.appendChild(btn);
-
-    console.debug('[WV-PD] Toolbar button ready');
-
-  }catch(e){ console.warn('[WV-PD] ensureToolbarButton', e); }
-}
-
-// --- Mantener el delegado (por si el botón se re-renderiza) ---
-function observeToolbar(){
-  var host = document.getElementById('wvShopToolbarHost');
-  if (!host) return;
-
-  if (!host.__wvpdDelegated){
-    host.__wvpdDelegated = true;
-    host.addEventListener('click', function(ev){
-      var t = ev.target;
-      while (t && t !== host && !t.hasAttribute('data-wvpd-open')) t = t.parentElement;
-      if (t && t.hasAttribute('data-wvpd-open')) {
+      btn.addEventListener('click', function(ev){
         ev.preventDefault();
         try { window.WVPurchaseDetail?.show(); }
-        catch (e) { console.warn('[WV-PD] show error (delegated)', e); }
-      }
-    });
-  }
-
-  if (!host.__wvpdObs){
-    var scheduled = false;
-    var mo = new MutationObserver(function(){
-      if (scheduled) return;
-      scheduled = true;
-      requestAnimationFrame(function(){
-        scheduled = false;
-        ensureToolbarButton(); // reinyecta/re-cablea tras cambios en toolbar
+        catch(e){ console.warn('[WV-PD] show() error (new)', e); }
       });
-    });
-    try { mo.observe(host, { childList:true, subtree:true }); host.__wvpdObs = mo; } catch(_){}
+
+      if (insertAfter && insertAfter.parentNode === group)
+        insertAfter.insertAdjacentElement('afterend', btn);
+      else
+        group.appendChild(btn);
+
+      console.debug('[WV-PD] Toolbar button ready');
+
+    }catch(e){ console.warn('[WV-PD] ensureToolbarButton', e); }
   }
 
-  ensureToolbarButton();
-}
+  // --- Mantener el delegado (por si el botón se re-renderiza) ---
+  function observeToolbar(){
+    var host = document.getElementById('wvShopToolbarHost');
+    if (!host) return;
 
+    if (!host.__wvpdDelegated){
+      host.__wvpdDelegated = true;
+      host.addEventListener('click', function(ev){
+        var t = ev.target;
+        while (t && t !== host && !t.hasAttribute('data-wvpd-open')) t = t.parentElement;
+        if (t && t.hasAttribute('data-wvpd-open')) {
+          ev.preventDefault();
+          try { window.WVPurchaseDetail?.show(); }
+          catch (e) { console.warn('[WV-PD] show error (delegated)', e); }
+        }
+      });
+    }
+
+    if (!host.__wvpdObs){
+      var scheduled = false;
+      var mo = new MutationObserver(function(){
+        if (scheduled) return;
+        scheduled = true;
+        requestAnimationFrame(function(){
+          scheduled = false;
+          ensureToolbarButton(); // reinyecta/re-cablea tras cambios en toolbar
+        });
+      });
+      try { mo.observe(host, { childList:true, subtree:true }); host.__wvpdObs = mo; } catch(_){}
+    }
+
+    ensureToolbarButton();
+  }
 
   // ------------------------------ Panel ------------------------------------
   function firstWVTabNode(){ return $('#wvTabDaily') || $('#wvTabWeekly') || $('#wvTabSpecial') || $('#wvTabShop'); }
@@ -300,7 +313,7 @@ function observeToolbar(){
             '</div>',
           '</div>',
 
-          // FILTROS (siempre activos, ya no dependen de season/historial)
+          // FILTROS
           '<div class="wvpd-filters" id="wvpdFilters">',
             '<input type="text" id="wvpdSearch" placeholder="Buscar cuenta…">',
             '<label><input type="checkbox" id="wvpdOnlyPending"> Solo pendientes</label>',
@@ -311,7 +324,7 @@ function observeToolbar(){
 
           '<div id="wvpdStatus" class="muted" style="margin:6px 0 10px 0">—</div>',
 
-          // TABLA (siempre visible; no historial)
+          // TABLA
           '<div class="wvpd-tablewrap" id="wvpdTableWrap">',
             '<table class="wvpd" id="wvpdTable">',
               '<thead></thead>',
@@ -390,6 +403,29 @@ function observeToolbar(){
     }
   }
 
+  // --------- Progreso semanal (steps /6) ----------
+  function extractSeasonMetaSteps(weeklyData){
+    try {
+      var cur = Number(weeklyData && weeklyData.meta_progress_current || 0);
+      var tot = Number(weeklyData && weeklyData.meta_progress_complete || 0);
+      if (!isFinite(cur) || !isFinite(tot) || tot <= 0){
+        // Fallback: intentar por objetivos con nombre que contenga "Meta de la temporada"
+        var list = (weeklyData && Array.isArray(weeklyData.objectives)) ? weeklyData.objectives : [];
+        var meta = list.find(function(o){
+          var t = String(o && (o.title || o.name) || '').toLowerCase();
+          return t.includes('meta de la temporada');
+        });
+        if (meta && typeof meta.progress_current==='number' && typeof meta.progress_complete==='number'){
+          cur = meta.progress_current; tot = meta.progress_complete;
+        } else {
+          return 0;
+        }
+      }
+      var step = Math.round((cur / tot) * 6);
+      return Math.max(0, Math.min(6, step));
+    } catch(_){ return 0; }
+  }
+
   // Carga principal (solo temporada actual)
   async function loadAll(forceNoCache){
     state.loading = true;
@@ -425,29 +461,37 @@ function observeToolbar(){
             var pinned = getPinnedFromStore(cur.year, cur.seq, fp);
             var marks  = getMarksFromStore(cur.year, cur.seq, fp);
 
-            root.GW2Api.getWVShopMerged(token, { nocache: !!forceNoCache })
-              .then(function(pkg){
-                out.push({
-                  token: token,
-                  fp: fp,
-                  label: label,
-                  aa: Number(pkg && pkg.aa || 0),
-                  aaIcon: (pkg && pkg.aaIconUrl) || null,
-                  itemsById: pkg && pkg.itemsById || new Map(),
-                  rows: Array.isArray(pkg && pkg.rows) ? pkg.rows : [],
-                  pinned: pinned || {},
-                  marks: marks || {}
-                });
-              })
-              .catch(function(e){
-                console.warn(LOG, 'getWVShopMerged', e);
-                out.push({
-                  token: token, fp: fp, label: label,
-                  aa:0, aaIcon:null, itemsById:new Map(), rows:[],
-                  pinned: pinned||{}, marks: marks||{}, error: e
-                });
-              })
-              .finally(function(){ ACTIVE--; next(); });
+            // Merge shop + weekly (para meta steps /6)
+            Promise.all([
+              root.GW2Api.getWVShopMerged(token, { nocache: !!forceNoCache }),
+              root.GW2Api.getWVWeekly(token, { nocache: !!forceNoCache }).catch(function(e){ return null; })
+            ])
+            .then(function(results){
+              var pkg = results[0], weekly = results[1];
+              var steps = extractSeasonMetaSteps(weekly);
+
+              out.push({
+                token: token,
+                fp: fp,
+                label: label,
+                aa: Number(pkg && pkg.aa || 0),
+                aaIcon: (pkg && pkg.aaIconUrl) || null,
+                itemsById: pkg && pkg.itemsById || new Map(),
+                rows: Array.isArray(pkg && pkg.rows) ? pkg.rows : [],
+                pinned: pinned || {},
+                marks: marks || {},
+                seasonMetaSteps: steps // 0..6
+              });
+            })
+            .catch(function(e){
+              console.warn(LOG, 'getWVShopMerged/Weekly', e);
+              out.push({
+                token: token, fp: fp, label: label,
+                aa:0, aaIcon:null, itemsById:new Map(), rows:[],
+                pinned: pinned||{}, marks: marks||{}, seasonMetaSteps: 0, error: e
+              });
+            })
+            .finally(function(){ ACTIVE--; next(); });
 
           })(it);
         }
@@ -805,8 +849,14 @@ function observeToolbar(){
     var body = rowsAcc.map(function(acc){
       var cells = [];
       var fpBadge = '<span class="wvpd-pill" title="Fingerprint de la key">'+esc(acc.fp||'anon')+'</span>';
-      cells.push('<td><strong>'+esc(acc.label||('Key '+esc(acc.fp||'')))+'</strong> '+fpBadge+'</td>');
 
+      // Color por progreso semanal /6
+      var stp = Number(acc.seasonMetaSteps || 0); // 0..6
+      var accCls = (stp >= 6) ? 'wvpd-acc--green' : (stp >= 4 ? 'wvpd-acc--yellow' : 'wvpd-acc--red');
+      var nameHtml = '<strong class="'+accCls+'" title="Meta semanal: '+stp+'/6">'+esc(acc.label||('Key '+esc(acc.fp||'')))+'</strong>';
+      cells.push('<td>'+nameHtml+' '+fpBadge+'</td>');
+
+      // Columnas de pins fijados
       pins.forEach(function(listingId){
         var isPinned = !!(acc.pinned && acc.pinned[String(listingId)]);
         if (!isPinned){ cells.push('<td class="center wvpd-muted">—</td>'); return; }
@@ -1032,5 +1082,5 @@ function observeToolbar(){
   else
     WVPurchaseDetail.initOnce();
 
-  console.info(LOG, 'ready 1.5.0 (single-season)');
+  console.info(LOG, 'ready 1.6.0 (single-season + weekly progress color)');
 })(typeof window!=='undefined' ? window : (typeof globalThis!=='undefined' ? globalThis : this));

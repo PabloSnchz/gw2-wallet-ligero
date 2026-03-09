@@ -432,6 +432,15 @@
                 <span>Cámara del Brujo</span>
               </a>
             </li>
+
+            <li>
+              <a id="navAC" class="side-nav__link" href="#/activities">
+                <span class="side-nav__icon">
+                  <img class="icon-img" src="https://wiki.guildwars2.com/images/b/b0/Hero_panel_crafting_icon.png" alt="Actividades" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
+                </span>
+                <span>Actividades</span>
+              </a>
+            </li>
           </ul>
         </nav>
       </section>
@@ -516,7 +525,7 @@
         <h3 class="panel__title">Próximas funciones</h3>
         <div class="panel__body">
           <ul class="muted">
-            <li>Exportar CSV/JSON</li>
+            <li>Panel de Actividades</li>
             <li>Historial y variación</li>
             <li>Deep‑links</li>
           </ul>
@@ -589,7 +598,7 @@
   <!-- JS base -->
   <script defer src="js/api-gw2.js?v=2.7.0-modular"></script>
   <!-- NUEVO: módulo Wizard's Vault (debe ir tras api-gw2.js) -->
-  <script defer src="js/wv-season-storage.js?v=1.1.0"></script>
+  <script defer src="js/wv-season-storage.js?v=1.1.1"></script>
   <script defer src="js/wizards-vault.js?v=1.2.1"></script>
 
   <!-- Módulos de vistas que no dependen del router -->
@@ -598,7 +607,8 @@
   <script defer src="js/sidebar-nav.js?v=1.2"></script>
 
   <!-- IMPORTANTE: router antes que app (para registrar listeners antes del boot) -->
-  <script defer src="js/router.js?v=2.9.7"></script>
+  <script defer src="js/router.js?v=2.9.8"></script>
+  <script defer src="js/activities.js?v=1.2.0"></script>
   <script defer src="js/wv-tabs-skin.js?v=1.0.0"></script>
   <script defer src="js/wv-purchase-detail.js?v=1.5.0"></script>
   
@@ -708,62 +718,6 @@
     }
   })();
 </script>
-<script>
-/* HOTFIX: pintar “Restante” en ROJO dentro de TODAS las celdas de la tabla */
-(function(){
-  // Normaliza el HTML para poder matchear Restante aunque venga con &nbsp; o con guion largo delante
-  function paintRestanteInTable(){
-    var table = document.getElementById('wvpdTable');
-    if (!table) return;
-
-    // Regex robusto:
-    // - opcional guion (– o — o -) y/o espacios antes
-    // - palabra Restante (case-insensitive)
-    // - opcional ":" con/ sin espacios
-    // NO captura el número de la derecha (lo dejamos como está)
-    var RX = /(?:[\u2013\u2014\-]\s*)?(Restante)\s*:/gi; // \u2013 (–), \u2014 (—)
-
-    table.querySelectorAll('td').forEach(function(td){
-      var html = td.innerHTML;
-      if (!html) return;
-
-      // si ya tiene el span, no tocamos
-      if (html.indexOf('wvpd-label--red') >= 0) return;
-
-      // reemplazos suaves para &nbsp; -> espacio (solamente para matchear; usamos una copia)
-      var test = html.replace(/&nbsp;/g, ' ');
-
-      if (RX.test(test)){
-        // Aplicamos sobre el HTML original preservando &nbsp;
-        // Primero volvemos a generar el regex (por el flag global)
-        RX.lastIndex = 0;
-        var newHtml = html.replace(RX, function(_, restWord){
-          // conservamos ":" que ya estaba en el texto original
-          return '<span class="wvpd-label--red">'+restWord+'</span>:';
-        });
-        td.innerHTML = newHtml;
-      }
-    });
-  }
-
-  // Corre al entrar, y en re‑renders
-  document.addEventListener('DOMContentLoaded', paintRestanteInTable);
-  setTimeout(paintRestanteInTable, 250);
-  setTimeout(paintRestanteInTable, 750);
-  setTimeout(paintRestanteInTable, 1500);
-
-  // Observa cambios en el cuerpo de la tabla para recolorear si se re‑pinta
-  var tbody = document.querySelector('#wvpdTable tbody');
-  if (tbody && 'MutationObserver' in window){
-    var mo = new MutationObserver(function(muts){
-      for (var i=0;i<muts.length;i++){
-        if (muts[i].addedNodes && muts[i].addedNodes.length){ paintRestanteInTable(); break; }
-      }
-    });
-    mo.observe(tbody, { childList:true, subtree:true });
-  }
-})();
-</script>
 <style>
   /* Solo el ícono del banner (no afecta al botón de la toolbar) */
   #wvPDPanel .wvpd-banner__icon img {
@@ -779,6 +733,15 @@
     align-items: center;
     justify-content: center;
   }
+</style>
+<style>
+  #activitiesPanel .card{
+    background:#0f1420;border-radius:10px;padding:10px;box-shadow:inset 0 0 0 1px #1f2a3b;
+  }
+  #activitiesPanel .muted{ color:#9aa7bd; }
+  #activitiesPanel .btn[disabled]{ opacity:.5; cursor:not-allowed; }
+  #activitiesPanel .panel-head__title img{ margin-right:6px; border-radius:4px;}
+  #activitiesPanel .node-icon{ background:#203049; }
 </style>
 </body>
 </html>
