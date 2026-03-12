@@ -1891,3 +1891,175 @@ display: -webkit-box;
 /* Top cuentas deficitarias: delta */
 .wvpd-li__delta--bad{ color:#ff9d9d !important; font-weight:700; } /* delta < 0 */
 .wvpd-li__delta--ok { color:#a0ffc8 !important; font-weight:700; } /* delta >= 0 */
+
+/* === Activities visual polish =========================================== */
+:root {
+  --gw-card-bg: #101620;
+  --gw-card-borda: #1e2a3b;
+  --gw-card-borda-hover: #2a3950;
+  --gw-muted: #8ea2bd;
+  --gw-ok: #a0ffc8;
+  --gw-bad: #ff9d9d;
+  --gw-chip-bg: linear-gradient(180deg,#1a2230,#0f1722);
+  --gw-chip-borda: #2b3a53;
+  --gw-pill-ok-bg: rgba(45,188,133,.14);
+  --gw-pill-bad-bg: rgba(233,76,92,.12);
+  --gw-shadow: 0 0 0 1px rgba(46,68,97,.5) inset, 0 2px 18px rgba(8,15,25,.6);
+}
+
+/* Mini KPI */
+#activitiesKPI .card {
+  background: var(--gw-card-bg);
+  border: 1px solid var(--gw-card-borda);
+  border-radius: 10px;
+  box-shadow: var(--gw-shadow);
+}
+#activitiesKPI .muted { color: var(--gw-muted); }
+
+/* Chips y pills */
+.gw-chip {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:4px 8px; border-radius:999px;
+  background: var(--gw-chip-bg);
+  border:1px solid var(--gw-chip-borda);
+  color:#cde1ff; font-size:12px; letter-spacing:.15px;
+}
+.gw-chip img { width:14px; height:14px; vertical-align:-2px; }
+
+.gw-pill-ok, .gw-pill-bad {
+  display:inline-block; padding:3px 7px; border-radius:7px; font-weight:700;
+}
+.gw-pill-ok { background:var(--gw-pill-ok-bg); color:#7ce6b9; }
+.gw-pill-bad{ background:var(--gw-pill-bad-bg); color:#ff9d9d; }
+
+/* Cards Activities */
+#activitiesPanel .card {
+  background: var(--gw-card-bg);
+  border: 1px solid var(--gw-card-borda);
+  border-radius: 10px;
+  box-shadow: var(--gw-shadow);
+  transition: border-color .15s ease, transform .08s ease;
+}
+#activitiesPanel .card:hover { border-color: var(--gw-card-borda-hover); transform: translateY(-1px); }
+
+#activitiesPanel .card .gw-row { display:flex; gap:10px; align-items:center; }
+
+/* Botones pequeños coherentes */
+#activitiesPanel .btn.btn--xs, #activitiesPanel .btn.btn--ghost.btn--xs {
+  height:24px; line-height:22px; padding:0 8px; border-radius:6px;
+}
+
+/* PSNA grid tiles */
+#psnaGrid article.card { padding:10px; }
+#psnaGrid .gw-wpname { font-weight:700; }
+#psnaGrid .gw-meta { margin-top:6px; color:var(--gw-muted); font-size:12px; }
+#psnaGrid .gw-actions { display:flex; justify-content:space-between; align-items:center; margin-top:6px; }
+
+/* Ecto tiles */
+#ectoGrid article.card { padding:12px; }
+#ectoGrid .gw-item-icon { width:38px; height:38px; border-radius:6px; box-shadow: 0 0 0 1px #1e2a3b, 0 0 14px rgba(40,74,112,.18); }
+#ectoGrid .gw-item-name { font-weight:700; }
+#ectoGrid .gw-item-id { color:var(--gw-muted); font-size:12px; }
+
+/* Weekly */
+#actWeekly .panel-head__title img { margin-right:6px; vertical-align:-4px; }
+
+/* Home nodes */
+#homeNodesGrid label.card { 
+  padding:10px; 
+}
+
+#homeNodesGrid .gw-node-ico {
+  width:22px;
+  height:22px;
+  border-radius:4px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(180deg,#263142,#1a2331);
+  box-shadow:
+    0 0 0 1px rgba(46,68,97,.55) inset,
+    0 0 10px rgba(30,55,88,.38);
+}
+
+/* === Home nodes: presets por tipo + fallbacks (añadidos) ================== */
+
+/* Colores de tipo (heredan tu paleta oscura) */
+:root {
+  --gw-mining-bg:  linear-gradient(180deg,#1c2432,#0d1622);
+  --gw-logging-bg: linear-gradient(180deg,#1e2a21,#0f1a13);
+  --gw-harvest-bg: linear-gradient(180deg,#1c2230,#111827);
+}
+
+/* Variantes por tipo (añade estas clases a cada card vía JS) */
+#homeNodesGrid .gw-node--mining .gw-node-ico {
+  background: var(--gw-mining-bg);
+  box-shadow: 0 0 0 1px rgba(70,120,180,.6) inset, 0 0 10px rgba(70,120,180,.35);
+}
+#homeNodesGrid .gw-node--logging .gw-node-ico {
+  background: var(--gw-logging-bg);
+  box-shadow: 0 0 0 1px rgba(84,124,90,.6) inset, 0 0 10px rgba(72,112,86,.35);
+}
+#homeNodesGrid .gw-node--harvest .gw-node-ico {
+  background: var(--gw-harvest-bg);
+  box-shadow: 0 0 0 1px rgba(90,84,160,.6) inset, 0 0 10px rgba(90,84,160,.35);
+}
+
+/* Imagen del ítem (si hay) */
+#homeNodesGrid .gw-node-ico > img {
+  width:22px; height:22px; display:block;
+}
+
+/* Fallback textual si no hay imagen del ítem */
+#homeNodesGrid .gw-node-ico[data-fallback] {
+  font-size:13px; font-weight:700; color:#cfe6ff; line-height:1;
+}
+#homeNodesGrid .gw-node--logging .gw-node-ico[data-fallback]{ color:#cfead3; }
+#homeNodesGrid .gw-node--harvest .gw-node-ico[data-fallback]{ color:#e3dcff; }
+
+/* Activities — Home nodes: icono + tipo */
+#homeNodesGrid .node-icon img{ width:22px; height:22px; display:block; }
+#homeNodesGrid label.card.hn--mining .node-icon{
+  background: linear-gradient(180deg,#1c2432,#0d1622);
+  box-shadow: 0 0 0 1px rgba(70,120,180,.6) inset, 0 0 10px rgba(70,120,180,.35);
+}
+#homeNodesGrid label.card.hn--logging .node-icon{
+  background: linear-gradient(180deg,#1e2a21,#0f1a13);
+  box-shadow: 0 0 0 1px rgba(84,124,90,.6) inset, 0 0 10px rgba(72,112,86,.35);
+}
+#homeNodesGrid label.card.hn--harvest .node-icon{
+  background: linear-gradient(180deg,#1c2230,#111827);
+  box-shadow: 0 0 0 1px rgba(90,84,160,.6) inset, 0 0 10px rgba(90,84,160,.35);
+}
+
+/* Activities — Home nodes (decor) */
+#homeNodesGrid .node-icon img{ width:22px; height:22px; display:block; }
+#homeNodesGrid label.card.hn--mining .node-icon{
+  background: linear-gradient(180deg,#1c2432,#0d1622);
+  box-shadow: 0 0 0 1px rgba(70,120,180,.6) inset, 0 0 10px rgba(70,120,180,.35);
+}
+#homeNodesGrid label.card.hn--logging .node-icon{
+  background: linear-gradient(180deg,#1e2a21,#0f1a13);
+  box-shadow: 0 0 0 1px rgba(84,124,90,.6) inset, 0 0 10px rgba(72,112,86,.35);
+}
+#homeNodesGrid label.card.hn--harvest .node-icon{
+  background: linear-gradient(180deg,#1c2230,#111827);
+  box-shadow: 0 0 0 1px rgba(90,84,160,.6) inset, 0 0 10px rgba(90,84,160,.35);
+}
+
+/* Home Nodes – tamaño más grande del icono */
+#homeNodesGrid .node-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg,#243045,#141b26);
+  box-shadow: inset 0 0 0 1px rgba(80,100,150,.5), 0 0 8px rgba(0,0,0,.4);
+}
+
+#homeNodesGrid .node-icon img {
+  width: 30px;
+  height: 30px;
+}

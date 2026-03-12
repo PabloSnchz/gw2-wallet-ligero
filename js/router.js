@@ -1,6 +1,10 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.9.8 (2026‑03‑09)
+ * v2.9.9 (2026‑03‑09)
+ *
+ * Cambios v2.9.9:
+ *  - [Activities] Prefetch con de-dupe (best-effort) + abort al salir de la vista.
+ *  - [Nav] Mapeo '#/activities' -> data-view="activities" para resaltar en sidebar.
  *
  * Cambios v2.9.8:
  *  - [WV/Tienda] Handlers robustos de persistencia:
@@ -18,7 +22,7 @@
 (function () {
   'use strict';
 
-  console.info('[WV] router-wv.js v2.9.8 — Persistencia robusta + micro-batching');
+  console.info('[WV] router-wv.js v2.9.9 — Prefetch Activities + nav mapping');
 
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -55,8 +59,8 @@
   }
   function escapeHtml(str) {
     return String(str || '')
-      .replace(/&amp;amp;amp;amp;amp;/g,'&amp;amp;amp;amp;amp;amp;').replace(/&amp;amp;amp;amp;lt;/g,'&amp;amp;amp;amp;amp;lt;').replace(/&amp;amp;amp;amp;gt;/g,'&amp;amp;amp;amp;amp;gt;')
-      .replace(/"/g,'&amp;amp;amp;amp;amp;quot;').replace(/'/g,'&amp;amp;amp;amp;amp;#039;');
+      .replace(/&amp;amp;amp;amp;amp;amp;/g,'&amp;amp;amp;amp;amp;amp;amp;').replace(/&amp;amp;amp;amp;amp;lt;/g,'&amp;amp;amp;amp;amp;amp;lt;').replace(/&amp;amp;amp;amp;amp;gt;/g,'&amp;amp;amp;amp;amp;amp;gt;')
+      .replace(/"/g,'&amp;amp;amp;amp;amp;amp;quot;').replace(/'/g,'&amp;amp;amp;amp;amp;amp;#039;');
   }
   function fmtNumber(n) { n = Number(n || 0); return n.toLocaleString('es-AR'); }
   function now() { return Date.now(); }
@@ -101,7 +105,13 @@
         if ((href && norm(href)===h) || (dh && norm(dh)===h)) { found = a; break; }
       }
       if (!found) {
-        var map = {'#/cards':'cards','#/meta':'meta','#/account/achievements':'achievements','#/account/wizards-vault':'wv'};
+        var map = {
+          '#/cards':'cards',
+          '#/meta':'meta',
+          '#/account/achievements':'achievements',
+          '#/account/wizards-vault':'wv',
+          '#/activities':'activities' // <-- NUEVO mapeo para resaltar en sidebar
+        };
         var dv = map[h]; if (dv) found = links.find(function (a) { return (a.getAttribute('data-view')||'').trim().toLowerCase()===dv; }) || null;
       }
       if (found) { found.classList.add('is-active'); found.setAttribute('aria-current','page'); }
@@ -116,6 +126,7 @@
       if (view==='cards'){ if (conv) conv.hidden=false; if (next) next.hidden=false; }
       else if (view==='meta'){ if (metaNext) metaNext.hidden=false; }
       else if (view==='achievements'){ if (ach) ach.hidden=false; }
+      // No se modifica nada específico para 'wv' ni 'activities' (mantener comportamiento actual)
     } catch (e) { console.warn('[router] updateSidebarFor error', e); }
   }
 
@@ -1081,6 +1092,25 @@
 
   // ----------------------------- ROUTER ------------------------------------
   var _routeT = null; // debounce
+
+  // ===== Activities Prefetch (de-dupe best-effort) =====
+  var _actInflight = null;
+  var _actAbort = null;
+  function prefetchActivitiesOnce(token) {
+    if (_actInflight) return _actInflight; // de-dupe
+    try { if (_actAbort) _actAbort.abort(); } catch(_) {}
+    _actAbort = new AbortController();
+    _actInflight = Promise.resolve().then(function(){
+      return window.Activities?.prefetch?.({ token: token || getSelectedToken(), signal: _actAbort.signal });
+    }).catch(function(e){
+      // Prefetch es best-effort: no romper navegación
+      console.debug('[router] activities prefetch skipped/failed', e?.message || e);
+    }).finally(function(){
+      _actInflight = null;
+    });
+    return _actInflight;
+  }
+
   function route() {
     clearTimeout(_routeT);
     _routeT = setTimeout(function () {
@@ -1090,6 +1120,8 @@
       if (h !== '#/account/wizards-vault' && WV && typeof WV.deactivate === 'function') {
         try { WV.deactivate(); } catch (_) {}
       }
+      // Desactivar prefetch inflight de Activities si cambiamos de vista
+      try { if (h !== '#/activities' && _actAbort) { _actAbort.abort(); } } catch(_) {}
       // (Opcional) Desactivar Activities si salimos de su pantalla
       if (h !== '#/activities' && window.Activities && typeof window.Activities.deactivate === 'function') {
         try { window.Activities.deactivate(); } catch (_) {}
@@ -1151,6 +1183,8 @@
       // ACTIVITIES (NUEVO)
       if (h === '#/activities') {
         try {
+          // Prefetch best-effort sin bloquear el primer paint
+          prefetchActivitiesOnce(getSelectedToken());
           showPanel('activitiesPanel');
           window.Activities?.activate?.();
         } catch (e) {
@@ -1212,7 +1246,6 @@
       console.warn('[router] onKeySelectChange error', e);
     }
   }
-
   function onDomReady(){
     if (onDomReady.__wired) return;
     onDomReady.__wired = true;
@@ -1249,4 +1282,3 @@
   else onDomReady();
 
 })();
-``

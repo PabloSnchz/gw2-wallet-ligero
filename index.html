@@ -158,7 +158,7 @@
         <!-- Filtros (chips discretos) -->
         <div class="chips" aria-label="Filtros de divisas">
           <div class="chip">
-            <label for="searchBox" class="visually-hidden">Buscar</label>
+            <label for="searchBox" class="visualmente-hidden visually-hidden">Buscar</label>
             <input id="searchBox" type="text" placeholder="Nombre de la divisa…"/>
           </div>
 
@@ -607,8 +607,8 @@
   <script defer src="js/sidebar-nav.js?v=1.2"></script>
 
   <!-- IMPORTANTE: router antes que app (para registrar listeners antes del boot) -->
-  <script defer src="js/router.js?v=2.9.8"></script>
   <script defer src="js/activities.js?v=1.2.0"></script>
+  <script defer src="js/router.js?v=2.9.8"></script>
   <script defer src="js/wv-tabs-skin.js?v=1.0.0"></script>
   <script defer src="js/wv-purchase-detail.js?v=1.5.0"></script>
   
@@ -743,5 +743,189 @@
   #activitiesPanel .panel-head__title img{ margin-right:6px; border-radius:4px;}
   #activitiesPanel .node-icon{ background:#203049; }
 </style>
+<!-- ===== Home Nodes: enhancer no intrusivo (MutationObserver) ===== -->
+<style>
+  /* Presets mínimos (si ya los pusiste en main.css, podés borrar este <style>) */
+  #homeNodesGrid .gw-node-ico{
+    width:22px;height:22px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,#263142,#1a2331);
+    box-shadow:0 0 0 1px rgba(46,68,97,.55) inset,0 0 10px rgba(30,55,88,.38);
+    overflow:hidden;
+  }
+  :root{
+    --gw-mining-bg:linear-gradient(180deg,#1c2432,#0d1622);
+    --gw-logging-bg:linear-gradient(180deg,#1e2a21,#0f1a13);
+    --gw-harvest-bg:linear-gradient(180deg,#1c2230,#111827);
+  }
+  #homeNodesGrid .gw-node--mining .gw-node-ico{ background:var(--gw-mining-bg);  box-shadow:0 0 0 1px rgba(70,120,180,.6) inset, 0 0 10px rgba(70,120,180,.35); }
+  #homeNodesGrid .gw-node--logging .gw-node-ico{ background:var(--gw-logging-bg); box-shadow:0 0 0 1px rgba(84,124,90,.6) inset, 0 0 10px rgba(72,112,86,.35); }
+  #homeNodesGrid .gw-node--harvest .gw-node-ico{ background:var(--gw-harvest-bg); box-shadow:0 0 0 1px rgba(90,84,160,.6) inset, 0 0 10px rgba(90,84,160,.35); }
+  #homeNodesGrid .gw-node-ico > img{ width:22px; height:22px; display:block; }
+  #homeNodesGrid .gw-node-ico[data-fallback]{ font-size:13px; font-weight:700; color:#cfe6ff; line-height:1; }
+  #homeNodesGrid .gw-node--logging .gw-node-ico[data-fallback]{ color:#cfead3; }
+  #homeNodesGrid .gw-node--harvest .gw-node-ico[data-fallback]{ color:#e3dcff; }
+</style>
+
+<script>
+(function(){
+  // --- Utils: detectar tipo por ID del nodo ---
+  function detectNodeType(nodeId){
+    nodeId = String(nodeId||'').toLowerCase();
+    if (/_ore_node$/.test(nodeId) || /_(crystal|obsidian|prismaticite|mursaat|brandstone|mistonium|difluorite)/.test(nodeId)) return 'mining';
+    if (/_wood_node$/.test(nodeId) || /petrified_stump|lowland_pine/.test(nodeId)) return 'logging';
+    return 'harvest';
+  }
+
+  // --- Mapeo (podemos expandirlo cuando quieras) ---
+  const HOME_NODE_ITEM_MAP = {
+    'orichalcum_ore_node': 19701,  // Orichalcum Ore
+    'mithril_ore_node':    19700,  // Mithril Ore
+    'ancient_wood_node':   19725,  // Ancient Wood Log
+    'quartz_node':         43773,  // Quartz Crystal
+    'flaxseed_node':       74090,  // Pile of Flax Seeds
+    'omnomberry_node':     12128   // Omnomberry
+  };
+
+  async function fetchItemIcons(ids=[]){
+    if (!ids.length) return {};
+    const url = `https://api.guildwars2.com/v2/items?ids=${ids.join(',')}`;
+    const res = await fetch(url, { mode:'cors' });
+    if (!res.ok) return {};
+    const arr = await res.json();
+    const out = {};
+    arr.forEach(it => { if (it && it.id && it.icon) out[it.id] = { name: it.name, icon: it.icon }; });
+    return out;
+  }
+
+  async function applyHomeNodePresets(container){
+    const cards = Array.from(container.querySelectorAll('label.card[data-node-id]'));
+    if (!cards.length) return;
+
+    // Tipo → clase + asegurar .gw-node-ico
+    cards.forEach(card => {
+      const nodeId = (card.getAttribute('data-node-id') || '').toLowerCase();
+      const t = detectNodeType(nodeId);
+      card.classList.add('gw-node', `gw-node--${t}`);
+
+      let ico = card.querySelector('.gw-node-ico');
+      if (!ico) {
+        ico = document.createElement('span');
+        ico.className = 'gw-node-ico';
+        (card.querySelector('.card__head') || card).prepend(ico);
+      }
+    });
+
+    const ids = [];
+    cards.forEach(card => {
+      const nodeId = (card.getAttribute('data-node-id') || '').toLowerCase();
+      const itemId = HOME_NODE_ITEM_MAP[nodeId];
+      if (itemId) ids.push(itemId);
+    });
+
+    let iconsById = {};
+    try { iconsById = await fetchItemIcons(ids); } catch(e){}
+
+    cards.forEach(card => {
+      const nodeId = (card.getAttribute('data-node-id') || '').toLowerCase();
+      const ico = card.querySelector('.gw-node-ico');
+      if (!ico) return;
+      ico.innerHTML = '';
+
+      const itemId = HOME_NODE_ITEM_MAP[nodeId];
+      const meta = itemId ? iconsById[itemId] : null;
+
+      if (meta && meta.icon){
+        const img = document.createElement('img');
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        img.referrerPolicy = 'no-referrer';
+        img.src = meta.icon;
+        img.alt = meta.name || '';
+        ico.removeAttribute('data-fallback');
+        ico.appendChild(img);
+      } else {
+        const t = detectNodeType(nodeId);
+        ico.setAttribute('data-fallback','1');
+        ico.textContent = (t==='mining' ? '⛏' : (t==='logging' ? '🪓' : '✂'));
+      }
+    });
+  }
+
+  // --- Inyección del subpanel Home nodes si no existe ---
+  function ensureHomeNodesSection(){
+    const panel = document.getElementById('activitiesPanel');
+    if (!panel || panel.hasAttribute('hidden')) return;
+
+    let grid = panel.querySelector('#homeNodesGrid');
+    if (!grid) {
+      // Contenedor
+      const body = panel.querySelector('.panel__body') || panel;
+      const title = document.createElement('h3');
+      title.className = 'panel-head__title';
+      title.style.margin = '6px 0 10px';
+      title.textContent = 'Home nodes';
+
+      grid = document.createElement('div');
+      grid.id = 'homeNodesGrid';
+      grid.className = 'grid';
+      grid.innerHTML = `
+        <label class="card" data-node-id="orichalcum_ore_node">
+          <div class="card__head"><h4 class="card__title">Orichalcum Mining Node</h4></div>
+          <p class="card__desc">Recolectable diario • 3 strikes</p>
+          <div class="card__meta"><span class="cats">Home Instance</span></div>
+        </label>
+        <label class="card" data-node-id="mithril_ore_node">
+          <div class="card__head"><h4 class="card__title">Mithril Mining Node</h4></div>
+          <p class="card__desc">Recolectable diario</p>
+          <div class="card__meta"><span class="cats">Home Instance</span></div>
+        </label>
+        <label class="card" data-node-id="ancient_wood_node">
+          <div class="card__head"><h4 class="card__title">Ancient Wood Logging Node</h4></div>
+          <p class="card__desc">Recolectable diario</p>
+          <div class="card__meta"><span class="cats">Home Instance</span></div>
+        </label>
+        <label class="card" data-node-id="quartz_node">
+          <div class="card__head"><h4 class="card__title">Quartz Crystal Formation</h4></div>
+          <p class="card__desc">Recolectable diario</p>
+          <div class="card__meta"><span class="cats">Home Instance</span></div>
+        </label>
+        <label class="card" data-node-id="flaxseed_node">
+          <div class="card__head"><h4 class="card__title">Flaxseed Harvesting Node</h4></div>
+          <p class="card__desc">Recolectable diario</p>
+          <div class="card__meta"><span class="cats">Home Instance</span></div>
+        </label>
+        <label class="card" data-node-id="omnomberry_node">
+          <div class="card__head"><h4 class="card__title">Omnomberry Harvesting Node</h4></div>
+          <p class="card__desc">Recolectable diario</p>
+          <div class="card__meta"><span class="cats">Home Instance</span></div>
+        </label>
+      `;
+      // Insertar
+      body.appendChild(document.createElement('hr')).className = 'hr-hairline';
+      body.appendChild(title);
+      body.appendChild(grid);
+    }
+
+    applyHomeNodePresets(grid);
+  }
+
+  // 1) Intento inmediato tras DOMContentLoaded
+  document.addEventListener('DOMContentLoaded', ensureHomeNodesSection);
+
+  // 2) Observer: cuando el router o activities.js modifiquen el panel
+  const panel = document.getElementById('activitiesPanel');
+  if (panel && 'MutationObserver' in window){
+    const mo = new MutationObserver(() => {
+      // Solo actuamos cuando la vista está visible
+      if (!panel.hasAttribute('hidden')) ensureHomeNodesSection();
+    });
+    mo.observe(panel, { childList:true, subtree:true, attributes:true, attributeFilter:['hidden'] });
+  }
+
+  // 3) (opcional) Si tu router emite un evento propio, podés engancharlo:
+  // document.addEventListener('route:activities', ensureHomeNodesSection);
+})();
+</script>
+``
 </body>
 </html>
