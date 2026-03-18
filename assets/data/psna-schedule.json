@@ -1,0 +1,101 @@
+{
+  "lastUpdated": "2026-03-18",
+  "source": "Manual update based on Wiki rotation",
+  "version": "1.0.0",
+  "schedule": [
+    {
+      "date": "2026-03-17",
+      "waypoints": [
+        "Camp Resolve Waypoint",
+        "Desider Atum Waypoint",
+        "Waste Hollows Waypoint",
+        "Garenhoff",
+        "Travelen's Waypoint",
+        "Temperus Point Waypoint"
+      ]
+    },
+    {
+      "date": "2026-03-18",
+      "waypoints": [
+        "Town of Prosperity",
+        "Swampwatch Post",
+        "Caer Shadowlain",
+        "Shieldbluff Waypoint",
+        "Mennerheim",
+        "Ferrusatos Village"
+      ]
+    },
+    {
+      "date": "2026-03-19",
+      "waypoints": [
+        "Blue Oasis",
+        "Seraph Protectors",
+        "Armada Harbor",
+        "Altar Brook Trading Post",
+        "Rocklair",
+        "Village of Scalecatch Waypoint"
+      ]
+    },
+    {
+      "date": "2026-03-20",
+      "waypoints": [
+        "Repair Station",
+        "Breth Ayahusasca",
+        "Shelter Docks",
+        "Pearl Islet Waypoint",
+        "Dolyak Pass Waypoint",
+        "Hawkgates Waypoint"
+      ]
+    },
+    {
+      "date": "2026-03-21",
+      "waypoints": [
+        "Camp Resolve Waypoint",
+        "Gallant's Folly",
+        "Augur's Torch",
+        "Vigil Keep Waypoint",
+        "Baldstead",
+        "Bovarin Estate"
+      ]
+    },
+    {
+      "date": "2026-03-22",
+      "waypoints": [
+        "Azarr's Arbor",
+        "Mabon Waypoint",
+        "Fort Trinity Waypoint",
+        "Mudflat Camp",
+        "Blue Ice Shining Waypoint",
+        "Snow Ridge Camp Waypoint"
+      ]
+    },
+    {
+      "date": "2026-03-23",
+      "waypoints": [
+        "Restoration Refuge",
+        "Lionguard Waystation Waypoint",
+        "Rally Waypoint",
+        "Marshwatch Haven Waypoint",
+        "Ridgerock Camp Waypoint",
+        "Haymal Gore"
+      ]
+    },
+    {
+      "date": "2026-03-24",
+      "waypoints": [
+        "Camp Resolve Waypoint",
+        "Desider Atum Waypoint",
+        "Waste Hollows Waypoint",
+        "Garenhoff",
+        "Travelen's Waypoint",
+        "Temperus Point Waypoint"
+      ]
+    }
+  ],
+  "history": [
+    {
+      "date": "2026-03-09",
+      "note": "Inicio de rotación actual"
+    }
+  ]
+}

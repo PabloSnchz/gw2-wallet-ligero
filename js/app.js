@@ -1002,16 +1002,31 @@
     convPut(k, copper); return copper;
   }
   async function costToBuyGems_coinsMarket(targetGems) {
-    if (targetGems <= 0) return 0;
-    let lo = 0, hi = 10000;
-    while (await gemsForCoins(hi) < targetGems) { hi = Math.min(hi * 2, 5e11); if (hi >= 5e11) break; }
-    while (lo < hi) {
-      const mid = Math.floor((lo + hi) / 2);
-      const g = await gemsForCoins(mid);
-      if (g >= targetGems) hi = mid; else lo = mid + 1;
-    }
-    return lo;
+  if (targetGems <= 0) return 0;
+  
+  // Buscamos la cantidad de ORO (en cobre) necesaria para obtener targetGems gemas
+  let lo = 0;  // cobre
+  let hi = 10000 * 10000; // empezamos con 10,000 de oro en cobre (100,000,000 cobre)
+  
+  // Aumentamos hi hasta que consigamos suficientes gemas
+  while (await gemsForCoins(hi) < targetGems) {  // ← USAMOS gemsForCoins (oro → gemas)
+    hi = Math.min(hi * 2, 5e11);
+    if (hi >= 5e11) break;
   }
+  
+  // Búsqueda binaria sobre ORO (cobre)
+  while (lo < hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    const g = await gemsForCoins(mid);  // ← gemsForCoins devuelve GEMAS
+    if (g >= targetGems) {
+      hi = mid;  // podemos conseguir las gemas con menos oro
+    } else {
+      lo = mid + 1;  // necesitamos más oro
+    }
+  }
+  
+  return lo;  // devolvemos la cantidad de ORO (en cobre) necesaria
+}
   async function gemsToBuyGold_gemsMarket(targetCopper) {
     if (targetCopper <= 0) return 0;
     let lo = 0, hi = 100;
