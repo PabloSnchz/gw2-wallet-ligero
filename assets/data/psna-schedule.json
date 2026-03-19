@@ -1,101 +1,242 @@
 {
-  "lastUpdated": "2026-03-18",
-  "source": "Manual update based on Wiki rotation",
-  "version": "1.0.0",
+  "lastUpdated": "2026-03-19",
+  "source": "Manual update based on Wiki rotation - Complete 8-day cycle",
+  "version": "3.0.0",
+  "description": "Rotación completa de PSNA con códigos de waypoint incluidos",
+  "regions": ["Maguuma Wastes", "Maguuma Jungle", "Ruins of Orr", "Kryta", "Shiverpeaks", "Ascalon"],
+  "npcs": ["Mehem the Traveled", "The Fox", "Specialist Yana", "Lady Derwena", "Despina Katelyn", "Verma Giftrender"],
   "schedule": [
     {
       "date": "2026-03-17",
       "waypoints": [
-        "Camp Resolve Waypoint",
-        "Desider Atum Waypoint",
-        "Waste Hollows Waypoint",
-        "Garenhoff",
-        "Travelen's Waypoint",
-        "Temperus Point Waypoint"
+        {
+          "name": "Camp Resolve Waypoint",
+          "code": "[&BH8HAAA=]"
+        },
+        {
+          "name": "Desider Atum Waypoint",
+          "code": "[&BEgAAAA=]"
+        },
+        {
+          "name": "Waste Hollows Waypoint",
+          "code": "[&BKgCAAA=]"
+        },
+        {
+          "name": "Garenhoff",
+          "code": "[&BBEAAAA=]"
+        },
+        {
+          "name": "Travelen's Waypoint",
+          "code": "[&BGQCAAA=]"
+        },
+        {
+          "name": "Temperus Point Waypoint",
+          "code": "[&BIMBAAA=]"
+        }
       ]
     },
     {
       "date": "2026-03-18",
       "waypoints": [
-        "Town of Prosperity",
-        "Swampwatch Post",
-        "Caer Shadowlain",
-        "Shieldbluff Waypoint",
-        "Mennerheim",
-        "Ferrusatos Village"
+        {
+          "name": "Town of Prosperity",
+          "code": "[&BH4HAAA=]"
+        },
+        {
+          "name": "Swampwatch Post",
+          "code": "[&BMIAAAA=]"
+        },
+        {
+          "name": "Caer Shadowlain",
+          "code": "[&BP0CAAA=]"
+        },
+        {
+          "name": "Shieldbluff Waypoint",
+          "code": "[&BKYAAAA=]"
+        },
+        {
+          "name": "Mennerheim",
+          "code": "[&BDgDAAA=]"
+        },
+        {
+          "name": "Ferrusatos Village",
+          "code": "[&BPEBAAA=]"
+        }
       ]
     },
     {
       "date": "2026-03-19",
       "waypoints": [
-        "Blue Oasis",
-        "Seraph Protectors",
-        "Armada Harbor",
-        "Altar Brook Trading Post",
-        "Rocklair",
-        "Village of Scalecatch Waypoint"
+        {
+          "name": "Blue Oasis",
+          "code": "[&BH8HAAA=]"
+        },
+        {
+          "name": "Seraph Protectors",
+          "code": "[&BF0AAAA=]"
+        },
+        {
+          "name": "Armada Harbor",
+          "code": "[&BO4CAAA=]"
+        },
+        {
+          "name": "Altar Brook Trading Post",
+          "code": "[&BEUDAAA=]"
+        },
+        {
+          "name": "Rocklair",
+          "code": "[&BJcBAAA=]"
+        },
+        {
+          "name": "Village of Scalecatch Waypoint",
+          "code": "[&BOcBAAA=]"
+        }
       ]
     },
     {
       "date": "2026-03-20",
       "waypoints": [
-        "Repair Station",
-        "Breth Ayahusasca",
-        "Shelter Docks",
-        "Pearl Islet Waypoint",
-        "Dolyak Pass Waypoint",
-        "Hawkgates Waypoint"
+        {
+          "name": "Repair Station",
+          "code": "[&BJcHAAA=]"
+        },
+        {
+          "name": "Breth Ayahusasca",
+          "code": "[&BMwCAAA=]"
+        },
+        {
+          "name": "Shelter Docks",
+          "code": "[&BKYCAAA=]"
+        },
+        {
+          "name": "Pearl Islet Waypoint",
+          "code": "[&BNUGAAA=]"
+        },
+        {
+          "name": "Dolyak Pass Waypoint",
+          "code": "[&BHsBAAA=]"
+        },
+        {
+          "name": "Hawkgates Waypoint",
+          "code": "[&BNMAAAA=]"
+        }
       ]
     },
     {
       "date": "2026-03-21",
       "waypoints": [
-        "Camp Resolve Waypoint",
-        "Gallant's Folly",
-        "Augur's Torch",
-        "Vigil Keep Waypoint",
-        "Baldstead",
-        "Bovarin Estate"
+        {
+          "name": "Camp Resolve Waypoint",
+          "code": "[&BH8HAAA=]"
+        },
+        {
+          "name": "Gallant's Folly",
+          "code": "[&BNMCAAA=]"
+        },
+        {
+          "name": "Augur's Torch",
+          "code": "[&BB8DAAA=]"
+        },
+        {
+          "name": "Vigil Keep Waypoint",
+          "code": "[&BJIBAAA=]"
+        },
+        {
+          "name": "Baldstead",
+          "code": "[&BE8CAAA=]"
+        },
+        {
+          "name": "Bovarin Estate",
+          "code": "[&BF8BAAA=]"
+        }
       ]
     },
     {
       "date": "2026-03-22",
       "waypoints": [
-        "Azarr's Arbor",
-        "Mabon Waypoint",
-        "Fort Trinity Waypoint",
-        "Mudflat Camp",
-        "Blue Ice Shining Waypoint",
-        "Snow Ridge Camp Waypoint"
+        {
+          "name": "Azarr's Arbor",
+          "code": "[&BIYHAAA=]"
+        },
+        {
+          "name": "Mabon Waypoint",
+          "code": "[&BDoBAAA=]"
+        },
+        {
+          "name": "Fort Trinity Waypoint",
+          "code": "[&BO4CAAA=]"
+        },
+        {
+          "name": "Mudflat Camp",
+          "code": "[&BKcBAAA=]"
+        },
+        {
+          "name": "Blue Ice Shining Waypoint",
+          "code": "[&BIUCAAA=]"
+        },
+        {
+          "name": "Snow Ridge Camp Waypoint",
+          "code": "[&BCECAAA=]"
+        }
       ]
     },
     {
       "date": "2026-03-23",
       "waypoints": [
-        "Restoration Refuge",
-        "Lionguard Waystation Waypoint",
-        "Rally Waypoint",
-        "Marshwatch Haven Waypoint",
-        "Ridgerock Camp Waypoint",
-        "Haymal Gore"
+        {
+          "name": "Restoration Refuge",
+          "code": "[&BIgHAAA=]"
+        },
+        {
+          "name": "Lionguard Waystation Waypoint",
+          "code": "[&BEwDAAA=]"
+        },
+        {
+          "name": "Rally Waypoint",
+          "code": "[&BNIEAAA=]"
+        },
+        {
+          "name": "Marshwatch Haven Waypoint",
+          "code": "[&BKYBAAA=]"
+        },
+        {
+          "name": "Ridgerock Camp Waypoint",
+          "code": "[&BIMCAAA=]"
+        },
+        {
+          "name": "Haymal Gore",
+          "code": "[&BB4CAAA=]"
+        }
       ]
     },
     {
       "date": "2026-03-24",
       "waypoints": [
-        "Camp Resolve Waypoint",
-        "Desider Atum Waypoint",
-        "Waste Hollows Waypoint",
-        "Garenhoff",
-        "Travelen's Waypoint",
-        "Temperus Point Waypoint"
+        {
+          "name": "Camp Resolve Waypoint",
+          "code": "[&BH8HAAA=]"
+        },
+        {
+          "name": "Desider Atum Waypoint",
+          "code": "[&BEgAAAA=]"
+        },
+        {
+          "name": "Waste Hollows Waypoint",
+          "code": "[&BKgCAAA=]"
+        },
+        {
+          "name": "Garenhoff",
+          "code": "[&BBEAAAA=]"
+        },
+        {
+          "name": "Travelen's Waypoint",
+          "code": "[&BGQCAAA=]"
+        },
+        {
+          "name": "Temperus Point Waypoint",
+          "code": "[&BIMBAAA=]"
+        }
       ]
-    }
-  ],
-  "history": [
-    {
-      "date": "2026-03-09",
-      "note": "Inicio de rotación actual"
     }
   ]
 }
