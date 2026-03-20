@@ -441,6 +441,16 @@
                 <span>Actividades</span>
               </a>
             </li>
+
+            <!-- NUEVO: Personajes -->
+            <li>
+              <a id="navChars" class="side-nav__link" href="#/account/characters">
+                <span class="side-nav__icon">
+                  <img class="icon-img" src="https://wiki.guildwars2.com/images/thumb/f/f9/Hero_panel_equipment_icon.png/30px-Hero_panel_equipment_icon.png" alt="Personajes" width="18" height="18" loading="lazy" referrerpolicy="no-referrer">
+                </span>
+                <span>Personajes</span>
+              </a>
+            </li>
           </ul>
         </nav>
       </section>
@@ -596,10 +606,10 @@
   </div>
 
   <!-- JS base -->
-  <script defer src="js/api-gw2.js?v=2.7.0-modular"></script>
+  <script src="js/api-gw2.js?v=2.7.0-modular"></script>
   <!-- NUEVO: módulo Wizard's Vault (debe ir tras api-gw2.js) -->
-  <script defer src="js/wv-season-storage.js?v=1.1.1"></script>
-  <script defer src="js/wizards-vault.js?v=1.2.1"></script>
+  <script src="js/wv-season-storage.js?v=1.1.1"></script>
+  <script src="js/wizards-vault.js?v=1.2.1"></script>
 
   <!-- Módulos de vistas que no dependen del router -->
   <script defer src="js/achievements.js?v=2.10.0"></script>
@@ -608,7 +618,9 @@
 
   <!-- IMPORTANTE: router antes que app (para registrar listeners antes del boot) -->
   <script defer src="js/activities.js?v=3.9.0"></script>
-  <script defer src="js/router.js?v=2.9.8"></script>
+  <!-- NUEVO: Personajes -->
+  <script defer src="js/characters.js?v=2.2.2"></script>
+  <script defer src="js/router.js?v=2.10.0"></script>
   <script defer src="js/wv-tabs-skin.js?v=1.0.0"></script>
   <script defer src="js/wv-purchase-detail.js?v=1.5.0"></script>
   
@@ -926,6 +938,6 @@
   // document.addEventListener('route:activities', ensureHomeNodesSection);
 })();
 </script>
-``
+
 </body>
 </html>
