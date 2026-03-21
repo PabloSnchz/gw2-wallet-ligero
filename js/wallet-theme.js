@@ -1,12 +1,18 @@
 /*!
- * Wallet Theme (divisas) — outline + halo por color + título tintado
- * v1.1.0 (2026-03-01)
+ * Wallet Theme (divisas) — outline + halo por color + título tintado + badges de categorías + card canónica
+ * v1.3.0 (2026-03-21)
+ *
+ * Cambios 1.3.0:
+ *  - Migración de tarjetas a clase .card canónica (hereda hover con glow, gradiente)
+ *  - Compatibilidad total con theme-polish.css v2.0
+ *
+ * Cambios 1.2.0:
+ *  - Migración automática de categorías a badges visuales
+ *  - Preservación de glows especiales por divisa
  *
  * Cambios 1.1.0:
- *  - Prioridad absoluta a data-cur / data-key (determinista) para 6 divisas con color oficial.
- *  - Soporte explícito de selectores de Wallet: .wallet-card__name (título) y .wallet-amount (pill).
- *  - Fallback blanco para el resto (default).
- *  - Heurística por texto conservada como plan B (ES/EN; sing/plural).
+ *  - Prioridad absoluta a data-cur / data-key (determinista)
+ *  - Soporte explícito de selectores de Wallet
  */
 
 (function () {
@@ -15,30 +21,30 @@
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
 
-  console.info('[WalletTheme] wallet-theme.js v1.1.0 — data-cur determinista + selectors Wallet');
+  console.info('[WalletTheme] wallet-theme.js v1.3.0 — card canónica + badges de categorías');
 
   // === DEBUG opcional ===
-  var DEBUG = false; // poné true para ver en consola: "título → key"
+  var DEBUG = false;
 
   // --- Normalización -----------------------------------------------------------
   function normalize(s) {
     return String(s || '')
       .toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // quita acentos
-      .replace(/[^\w\s]/g, '')                            // sin signos
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\w\s]/g, '')
       .replace(/\s+/g, ' ')
       .trim();
   }
 
   // --- Colores -----------------------------------------------------------------
   var COLOR_MAP = {
-    gems:            '#4BBDF0', // azul gemas
-    coins:           '#F4C542', // dorado moneda (oro)
-    karma:           '#AF63DF', // violeta karma
-    laurels:         '#2BC14E', // verde laureles
-    trade_contracts: '#28C3BB', // teal contratos comerciales
-    elegy_mosaic:    '#E2AE43', // ámbar mosaico de elegía
-    default:         '#FFFFFF'  // fallback blanco
+    gems:            '#4BBDF0',
+    coins:           '#F4C542',
+    karma:           '#AF63DF',
+    laurels:         '#2BC14E',
+    trade_contracts: '#28C3BB',
+    elegy_mosaic:    '#E2AE43',
+    default:         '#FFFFFF'
   };
 
   function hexToRGBA(hex, alpha) {
@@ -56,17 +62,14 @@
 
   function colorForKey(key) { return COLOR_MAP[key] || COLOR_MAP.default; }
 
-  // --- Diccionarios de equivalencias (heurística plan B) -----------------------
-  // EXACTOS (títulos tal como aparecen — ES/EN, singular/plural)
+  // --- Diccionarios de equivalencias -------------------------------------------
   var EXACT = new Map([
-    // ES
     ['gema', 'gems'], ['gemas', 'gems'],
     ['moneda', 'coins'], ['monedas', 'coins'],
     ['karma', 'karma'],
     ['laurel', 'laurels'], ['laureles', 'laurels'],
     ['contrato comercial', 'trade_contracts'], ['contratos comerciales', 'trade_contracts'],
     ['mosaico de elegia', 'elegy_mosaic'], ['mosaicos de elegia', 'elegy_mosaic'],
-    // EN
     ['gem', 'gems'], ['gems', 'gems'],
     ['coin', 'coins'], ['coins', 'coins'],
     ['laurel', 'laurels'], ['laurels', 'laurels'],
@@ -74,7 +77,6 @@
     ['elegy mosaic', 'elegy_mosaic'], ['elegy mosaics', 'elegy_mosaic']
   ]);
 
-  // STARTS WITH (por si viene “Moneda (oro/plata/cobre)” u otras variantes)
   var STARTS = [
     ['gema', 'gems'], ['gem', 'gems'],
     ['moneda', 'coins'], ['coin', 'coins'],
@@ -82,7 +84,6 @@
     ['mosaico de elegia', 'elegy_mosaic'], ['elegy mosaic', 'elegy_mosaic']
   ];
 
-  // TOKENS (si contiene la palabra clave en cualquier parte)
   var TOKENS = new Map([
     ['gema', 'gems'], ['gem', 'gems'],
     ['moneda', 'coins'], ['coin', 'coins'],
@@ -93,15 +94,12 @@
     ['elegia', 'elegy_mosaic'], ['elegy', 'elegy_mosaic']
   ]);
 
-  // --- Lectura de título (Wallet + WV + alternativas) --------------------------
+  // --- Lectura de título -------------------------------------------------------
   function readTitle(card) {
     var node =
-      // WV
       card.querySelector('.wv-card__top .wv-card__name') ||
       card.querySelector('.wv-card__name') ||
-      // WALLET (nuevo)
       card.querySelector('.wallet-card__name') ||
-      // Alternativas legacy
       card.querySelector('.cur-card__title') ||
       card.querySelector('.wallet-card__title') ||
       card.querySelector('.w-card__title') ||
@@ -111,38 +109,32 @@
 
   // --- Resolver la key ---------------------------------------------------------
   function resolveCurrencyKey(card) {
-    // 0) data attributes (determinista, prioridad absoluta)
     var dataKey = card.getAttribute('data-cur') || card.getAttribute('data-key') || '';
     if (dataKey) {
       var dk = normalize(dataKey);
-      if (COLOR_MAP[dk]) return dk;         // clave directa en el mapa
-      if (EXACT.has(dk)) return EXACT.get(dk); // por si viniera con variantes
+      if (COLOR_MAP[dk]) return dk;
+      if (EXACT.has(dk)) return EXACT.get(dk);
     }
 
-    // 1) por título (plan B — heurística)
     var tRaw = readTitle(card);
     var t = normalize(tRaw);
 
-    // 1a) exacto
     if (EXACT.has(t)) return EXACT.get(t);
-
-    // 1b) startsWith
     for (var i = 0; i < STARTS.length; i++) {
       var p = STARTS[i][0], key = STARTS[i][1];
       if (t.startsWith(p)) return key;
     }
 
-    // 1c) token match
     var toks = t.split(' ');
     for (var j = 0; j < toks.length; j++) {
       var tok = toks[j];
       if (TOKENS.has(tok)) return TOKENS.get(tok);
     }
 
-    return 'default'; // fallback blanco
+    return 'default';
   }
 
-  // --- Aplicar tema ------------------------------------------------------------
+  // --- Aplicar tema (colores y glows) ------------------------------------------
   function applyCurrencyTheme(card) {
     if (!card) return;
 
@@ -158,12 +150,12 @@
     var bColor = hexToRGBA(isColorful ? hex : '#FFFFFF', isColorful ? 0.28 : 0.18);
     var gColor = hexToRGBA(isColorful ? hex : '#FFFFFF', isColorful ? 0.34 : 0.26);
 
-    // Título (Wallet + WV + alternativas)
+    // Título
     try {
       var title =
         card.querySelector('.wv-card__top .wv-card__name') ||
         card.querySelector('.wv-card__name') ||
-        card.querySelector('.wallet-card__name') ||  // <<< importante para Wallet
+        card.querySelector('.wallet-card__name') ||
         card.querySelector('.cur-card__title') ||
         card.querySelector('.wallet-card__title') ||
         card.querySelector('.w-card__title') ||
@@ -171,7 +163,7 @@
       if (title) title.style.color = isColorful ? hex : '#FFFFFF';
     } catch (_) {}
 
-    // Contenedor tarjeta — borde + glow
+    // Contenedor tarjeta
     try {
       if (bColor && gColor) {
         card.style.border = '1px solid ' + bColor;
@@ -180,11 +172,11 @@
       card.style.borderRadius = '10px';
     } catch (_) {}
 
-    // Marco del ícono (Wallet + WV + alternativas)
+    // Marco del ícono
     try {
       var iconWrap =
         card.querySelector('.wv-card__iconWrap') ||
-        card.querySelector('.wallet-card__iconWrap') ||  // <<< importante para Wallet
+        card.querySelector('.wallet-card__iconWrap') ||
         card.querySelector('.cur-card__iconWrap') ||
         card.querySelector('.w-card__iconWrap') ||
         card.querySelector('.icon, .icon-wrap');
@@ -194,25 +186,134 @@
       }
     } catch (_) {}
 
-    // Cantidad/pill — Wallet: .wallet-amount; (otras variantes conservadas)
+    // Cantidad/pill
     try {
       var amount =
-        card.querySelector('.wallet-amount') ||                         // <<< importante para Wallet
+        card.querySelector('.wallet-amount') ||
         card.querySelector('.cur-amt, .wallet-amt, .w-amt, .pill.value, .value, .wv-badge strong');
       if (amount) amount.style.color = isColorful ? hex : '#FFFFFF';
     } catch (_) {}
   }
 
+  // --- Migración de categorías a badges ----------------------------------------
+  function migrateCategoriesToBadges(root) {
+    var panel = root || document;
+    var host = panel.querySelector('#walletPanel') || panel;
+    
+    var categorySpans = host.querySelectorAll('.cats');
+    
+    categorySpans.forEach(function(span) {
+      if (span.parentElement && span.parentElement.classList && span.parentElement.classList.contains('badge')) {
+        return;
+      }
+      
+      var categoryText = span.textContent || '';
+      if (!categoryText.trim()) return;
+      
+      var badge = document.createElement('span');
+      badge.className = 'badge badge--info';
+      badge.textContent = categoryText;
+      
+      if (span.id) badge.id = span.id;
+      if (span.title) badge.title = span.title;
+      if (span.getAttribute('data-tip')) badge.setAttribute('data-tip', span.getAttribute('data-tip'));
+      
+      span.parentNode.replaceChild(badge, span);
+    });
+  }
+
+  // --- Migración de Wallet a clase .card canónica -----------------------------
+  function migrateWalletToCardClass(root) {
+    var panel = root || document;
+    var host = panel.querySelector('#walletPanel') || panel;
+    
+    var walletCards = host.querySelectorAll('.wallet-card:not(.card)');
+    
+    walletCards.forEach(function(card) {
+      card.classList.add('card');
+    });
+  }
+
+  // --- Observadores -----------------------------------------------------------
+  function observeCategoriesForBadges() {
+    var panel = document.getElementById('walletPanel');
+    if (!panel) return;
+    
+    var observer = new MutationObserver(function(mutations) {
+      var needsMigration = false;
+      
+      mutations.forEach(function(mutation) {
+        if (mutation.addedNodes.length) {
+          mutation.addedNodes.forEach(function(node) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              if (node.classList && node.classList.contains('cats')) {
+                needsMigration = true;
+              }
+              if (node.querySelectorAll && node.querySelectorAll('.cats').length) {
+                needsMigration = true;
+              }
+            }
+          });
+        }
+      });
+      
+      if (needsMigration) {
+        setTimeout(function() {
+          migrateCategoriesToBadges(panel);
+        }, 10);
+      }
+    });
+    
+    observer.observe(panel, { childList: true, subtree: true });
+  }
+
+  function observeWalletCardsForMigration() {
+    var panel = document.getElementById('walletPanel');
+    if (!panel) return;
+    
+    var observer = new MutationObserver(function(mutations) {
+      var needsMigration = false;
+      
+      mutations.forEach(function(mutation) {
+        if (mutation.addedNodes.length) {
+          mutation.addedNodes.forEach(function(node) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              if (node.classList && node.classList.contains('wallet-card')) {
+                needsMigration = true;
+              }
+              if (node.querySelectorAll && node.querySelectorAll('.wallet-card').length) {
+                needsMigration = true;
+              }
+            }
+          });
+        }
+      });
+      
+      if (needsMigration) {
+        setTimeout(function() {
+          migrateWalletToCardClass(panel);
+        }, 10);
+      }
+    });
+    
+    observer.observe(panel, { childList: true, subtree: true });
+  }
+
+  // --- Aplicar tema a todas las tarjetas ---------------------------------------
   function themeWalletNow(root) {
     var panel = root || document;
     var host = panel.querySelector('#walletPanel') || panel;
 
-    // Tarjetas Wallet (y compat WV/legacy si estuvieran bajo wallet panel)
     var cards = $$('.wallet-card, .wv-card, .cur-card, .w-card', host);
     cards.forEach(applyCurrencyTheme);
+    
+    setTimeout(function() {
+      migrateCategoriesToBadges(host);
+      migrateWalletToCardClass(host);
+    }, 20);
   }
 
-  // --- Observer (re-render) -----------------------------------------------------
+  // --- Observer para nuevas tarjetas (glows) -----------------------------------
   var mo = null;
   function ensureObserver() {
     if (mo) return;
@@ -224,8 +325,24 @@
           if (!(n instanceof HTMLElement)) return;
           if (n.matches && (n.matches('.wallet-card, .wv-card, .cur-card, .w-card'))) {
             applyCurrencyTheme(n);
+            setTimeout(function() {
+              migrateCategoriesToBadges(n);
+              migrateWalletToCardClass(n);
+            }, 10);
           } else {
             $$('.wallet-card, .wv-card, .cur-card, .w-card', n).forEach(applyCurrencyTheme);
+            if (n.querySelectorAll) {
+              if (n.querySelectorAll('.cats').length) {
+                setTimeout(function() {
+                  migrateCategoriesToBadges(n);
+                }, 10);
+              }
+              if (n.querySelectorAll('.wallet-card').length) {
+                setTimeout(function() {
+                  migrateWalletToCardClass(n);
+                }, 10);
+              }
+            }
           }
         });
       });
@@ -235,13 +352,37 @@
 
   // --- Hooks de navegación / arranque ------------------------------------------
   function onRoute() {
-    requestAnimationFrame(function () { themeWalletNow(document); });
+    requestAnimationFrame(function () { 
+      themeWalletNow(document);
+    });
   }
 
+  document.addEventListener('gn:tabchange', function(ev) {
+    if (ev.detail && ev.detail.view === 'cards') {
+      setTimeout(function() {
+        themeWalletNow(document);
+      }, 50);
+    }
+  });
+
+  document.addEventListener('gn:tokenchange', function() {
+    setTimeout(function() {
+      themeWalletNow(document);
+    }, 100);
+  });
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { onRoute(); ensureObserver(); });
+    document.addEventListener('DOMContentLoaded', function () { 
+      onRoute(); 
+      ensureObserver();
+      observeCategoriesForBadges();
+      observeWalletCardsForMigration();
+    });
   } else {
-    onRoute(); ensureObserver();
+    onRoute(); 
+    ensureObserver();
+    observeCategoriesForBadges();
+    observeWalletCardsForMigration();
   }
 
   window.addEventListener('hashchange', function () {
@@ -249,7 +390,13 @@
     if (w && !w.hasAttribute('hidden')) onRoute();
   });
 
-  document.addEventListener('gn:tabchange', function (ev) {
-    if (ev.detail && ev.detail.view === 'cards') onRoute();
-  });
+  window.WalletTheme = {
+    applyCurrencyTheme: applyCurrencyTheme,
+    migrateCategoriesToBadges: migrateCategoriesToBadges,
+    migrateWalletToCardClass: migrateWalletToCardClass,
+    themeWalletNow: themeWalletNow,
+    version: '1.3.0'
+  };
+
+  console.info('[WalletTheme] ready v1.3.0 — card canónica + glows especiales + badges de categorías');
 })();
