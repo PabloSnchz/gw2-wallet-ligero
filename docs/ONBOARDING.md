@@ -58,6 +58,31 @@ Si hay riesgo → advertir antes de generar código.
 
 ## 🚀 Novedades v5 (consolidado)
 
+### 🆕 Purchase Detail v1.8.4 — Rediseño visual completo
+Rediseño total del dashboard de compras con nuevo estándar visual:
+
+- **Sistema de colores unificado**:
+  - 🟢 Verde: Total disponible / DISP (recurso disponible)
+  - 🟡 Amarillo: Necesaria (fijados) / NECESARIO (objetivo pendiente)
+  - 🟢 Verde / 🔴 Rojo: Δ Global / Δ según signo (excedente/déficit)
+
+- **Nuevos componentes visuales**:
+  - Encabezados tipo pill con ícono AA integrado
+  - Badges con efecto hover (scale + brightness)
+  - KPIs con borde lateral color + glow según estado
+  - Skeleton loader animado durante carga de datos
+
+- **Mejoras de UX**:
+  - Animación de entrada (fade-in + scale)
+  - Timestamp de última actualización
+  - Tooltips nativos con `data-tip`
+  - Eliminado checkbox "Vista compacta" (no funcional)
+
+- **Limpieza visual**:
+  - Eliminado reglón extra con símbolo '^' sobre tabla
+  - Removido fingerprint de la columna cuenta
+  - Unificación de estilos con el resto del dashboard
+
 ### 🆕 Almacenamiento por temporada (WVSeasonStore v1.1.1)
 - Un archivo JSON por temporada en LocalStorage: `wv:season:<YY>:<SEQ>`
 - Índice global: `wv:season:index`
@@ -134,7 +159,7 @@ Estado y navegación coordinados por router + eventos globales.
 | `js/activities.js` | v3.9.0 | Actividades diarias/semanales: PSNA, fractales, world bosses, ecto, home nodes |
 | `js/characters.js` | v2.2.2 | Personajes: lista, ubicación, POIs, rangos PvP/WvW |
 | `js/router.js` | v2.10.0 | Router con prefetch, guardas, navegación por hash, mapeo de vistas |
-| `js/wv-purchase-detail.js` | v1.5.0 | Detalle de compras, dashboard AA, top pendientes |
+| `js/wv-purchase-detail.js` | v1.8.4 | Detalle de compras, dashboard AA, top pendientes, **nuevo estándar visual**
 | `js/wv-tabs-skin.js` | v1.0.0 | Re-skin de tabs WV, consistente con rerenders |
 | `js/app.js` | v2.6.3 | Keys, wallet, eventos globales, emisor `gn:tokenchange` |
 | `js/*-theme.js` | varios | Glows, colores, estilos temáticos por módulo |
@@ -304,6 +329,11 @@ Panel completo que muestra la lista de personajes de la cuenta con su profesión
 - Timers cargando
 - Íconos visibles
 - AA necesaria ≠ 0 (si hay pins vivos)
+- ✅ **Nuevo:** Sistema de colores unificado (verde/amarillo/rojo)
+- ✅ **Nuevo:** Badges con efecto hover
+- ✅ **Nuevo:** Skeleton loader animado
+- ✅ **Nuevo:** Timestamp de última actualización
+- ✅ **Nuevo:** Animación de entrada al abrir
 
 ### Activities
 - KPI strips visibles (ambas pestañas)
@@ -356,14 +386,15 @@ Panel completo que muestra la lista de personajes de la cuenta con su profesión
 - **Q1 2026:** catálogo lazy imágenes WV
 - **Q1 2026:** Activities mayor refactor (v1.3.x → v3.9.0)
 - **Q1 2026:** Characters módulo completo (v2.2.2)
-
+- **Q1 2026: rediseño visual completo Purchase Detail (v1.8.4) — nuevo estándar de UI**
+  
 ---
 
 ## 🎉 Estado actual del proyecto (v5)
 - ✅ Navegación estable y desacoplada
 - ✅ Achievements sin doble pipeline (watchdog ok)
 - ✅ WV robusta con datos unificados
-- ✅ Purchase Detail completo, multi-temporada
+- ✅ Purchase Detail v1.8.4 productivo: nuevo estándar visual (colores, badges, skeleton, animaciones)
 - ✅ SeasonStore funcionando bien incluso con cuota mínima
 - ✅ Activities v3.9.0 productivo: PSNA, fractales, world bosses, ecto, home nodes
 - ✅ Characters v2.2.2 productivo: personajes, POIs, rangos, ubicación
