@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Bóveda del Gato Negro — Theme Polish (consolidado)
+   Bóveda del Gato Negro — Theme Polish v2.0 (unificado con Purchase Detail)
    - Tokens (colores, radios, sombras, gaps, motion)
    - Tipografía base + ritmo vertical
    - Paneles y Tarjetas (elevación y hover)
@@ -9,6 +9,11 @@
    - Skeletons y estados vacíos
    - Motion responsable (prefers-reduced-motion)
    - Micro-opt de rendering (content-visibility)
+   - NUEVO: Badges canónicos (desde Purchase Detail)
+   - NUEVO: Pills unificados con hover
+   - NUEVO: KPIs con glow y borde lateral
+   - NUEVO: Encabezados tipo pill
+   - NUEVO: Tabla unificada con sticky headers mejorados
    ========================================================================== */
 
 /* ============================== TOKENS =================================== */
@@ -29,6 +34,18 @@
   --acc-warn: #ffd569;/* aviso */
   --acc-err: #f28b82; /* error */
 
+  /* NUEVO: Sistema de colores semánticos (desde Purchase Detail) */
+  --color-green: #a0ffc8;
+  --color-green-bg: #1a3a2a;
+  --color-amber: #ffd36b;
+  --color-amber-bg: #3a2a1a;
+  --color-red: #ff9d9d;
+  --color-red-bg: #3a1a1a;
+  --color-blue: #7bc2ff;
+  --color-blue-bg: #1a2a3a;
+  --color-gray: #6a7080;
+  --color-gray-bg: #1a1c24;
+
   /* Geometría */
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -36,6 +53,10 @@
   --gap-sm: 8px;
   --gap-md: 12px;
   --gap-lg: 16px;
+  
+  /* NUEVO: Geometría extendida */
+  --pill-radius: 24px;
+  --card-radius: 12px;
 
   /* Elevaciones */
   --elev-0: none;
@@ -45,6 +66,10 @@
   /* Motion */
   --ease-1: cubic-bezier(.2,.7,.2,1);
   --dur-1: .14s;
+  
+  /* NUEVO: Motion extendido */
+  --transition-fast: 0.1s ease;
+  --transition-normal: 0.2s ease;
 
   /* Sugerencia de esquema oscuro a controles nativos */
   color-scheme: dark;
@@ -321,4 +346,254 @@ aside.col-side .panel-head__title {
 aside.col-side .side-head-icon,
 aside.col-side .panel-head img {
   margin-right: 6px !important;   /* espacio útil icono → título */
+}
+
+/* ==========================================================================
+   NUEVAS SECCIONES — Componentes canónicos desde Purchase Detail
+   ========================================================================== */
+
+/* ============================== BADGES CANÓNICOS ========================== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  transition: transform var(--transition-fast), filter var(--transition-fast);
+  cursor: default;
+}
+.badge:hover {
+  transform: scale(1.02);
+  filter: brightness(1.1);
+}
+.badge--success {
+  background: var(--color-green-bg);
+  color: var(--color-green);
+  border: 1px solid #2a6a4a;
+}
+.badge--warning {
+  background: var(--color-amber-bg);
+  color: var(--color-amber);
+  border: 1px solid #aa8a3a;
+}
+.badge--info {
+  background: var(--color-blue-bg);
+  color: var(--color-blue);
+  border: 1px solid #3a6a9a;
+}
+.badge--infinite {
+  background: #1a2a2a;
+  color: var(--color-blue);
+  border: 1px solid #2a6a6a;
+}
+.badge--muted {
+  background: #2a2a2a;
+  color: #a0a0a6;
+  border: 1px solid #4a4a4a;
+}
+
+/* ============================== PILLS UNIFICADOS =========================== */
+.pill-unified {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-gray-bg);
+  border: 1px solid #2a2c35;
+  border-radius: var(--pill-radius);
+  padding: 4px 12px;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+.pill-unified:hover {
+  background: #20222c;
+  border-color: #3a3e4a;
+}
+
+/* ============================== KPIs CON GLOW ============================== */
+.kpi {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  transition: all var(--transition-normal);
+  border-left-width: 3px;
+  border-left-style: solid;
+  border-left-color: transparent;
+}
+.kpi--ok {
+  border-left-color: var(--color-green);
+  box-shadow: 0 0 6px rgba(160, 255, 200, 0.2);
+}
+.kpi--warn {
+  border-left-color: var(--color-amber);
+  box-shadow: 0 0 6px rgba(255, 211, 107, 0.2);
+}
+.kpi--bad {
+  border-left-color: var(--color-red);
+  box-shadow: 0 0 6px rgba(255, 157, 157, 0.2);
+}
+.kpi__label {
+  color: #a0a6b3;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.kpi__value {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+.kpi--ok .kpi__value { color: var(--color-green); }
+.kpi--warn .kpi__value { color: var(--color-amber); }
+.kpi--bad .kpi__value { color: var(--color-red); }
+
+/* ============================== ENCABEZADOS TIPO PILL ====================== */
+.header-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-gray-bg);
+  border: 1px solid #2a2c35;
+  border-radius: var(--pill-radius);
+  padding: 4px 12px;
+  font-weight: 500;
+  font-size: 0.7rem;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: nowrap;
+}
+.header-pill .header-pill__label {
+  color: #b4bad0;
+}
+.header-pill__icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ============================== TABLA UNIFICADA ============================ */
+.table-unified {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+.table-unified th,
+.table-unified td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #24252a;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.table-unified thead th {
+  position: sticky;
+  top: 0;
+  background: #0f1118;
+  z-index: 2;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9aa2b8;
+  border-bottom: 1px solid #2a2c35;
+}
+.table-unified th:first-child,
+.table-unified td:first-child {
+  position: sticky;
+  left: 0;
+  background: #0e1116;
+  z-index: 1;
+}
+
+/* ============================== CELDAS DE DATOS NUMÉRICOS ================== */
+.aa-cell {
+  font-weight: 500;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+}
+.aa-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.aa-delta-icon {
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+/* ============================== COLORES SEMÁNTICOS ========================= */
+.text-green { color: var(--color-green) !important; font-weight: 700; }
+.text-red   { color: var(--color-red) !important; font-weight: 700; }
+.text-amber { color: var(--color-amber) !important; font-weight: 700; }
+.text-blue  { color: var(--color-blue) !important; font-weight: 700; }
+
+.bg-green-bg { background: var(--color-green-bg); }
+.bg-amber-bg { background: var(--color-amber-bg); }
+.bg-red-bg   { background: var(--color-red-bg); }
+.bg-blue-bg  { background: var(--color-blue-bg); }
+.bg-gray-bg  { background: var(--color-gray-bg); }
+
+/* ============================== ANIMACIÓN DE ENTRADA ======================= */
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-fade-in {
+  animation: fadeInScale 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+}
+
+/* ============================== SKELETON MEJORADO ========================== */
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.skeleton-enhanced {
+  background: linear-gradient(90deg, #1a1c24 25%, #252830 50%, #1a1c24 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 8px;
+}
+.skeleton-bar {
+  height: 24px;
+  background: linear-gradient(90deg, #1a1c24 25%, #252830 50%, #1a1c24 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 6px;
+}
+.skeleton-table-wrap {
+  padding: 20px;
+  text-align: center;
+}
+.skeleton-table-wrap .skeleton-bar {
+  height: 200px;
+  width: 100%;
+}
+
+/* ============================== TOOLTIP MEJORADO =========================== */
+[data-tip] {
+  position: relative;
+  cursor: help;
+}
+[data-tip]:hover:after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0c0e14;
+  color: #e0e4ed;
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+  z-index: 1000;
+  border: 1px solid #3a3e4a;
+  pointer-events: none;
 }
