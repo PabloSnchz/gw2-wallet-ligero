@@ -1,12 +1,15 @@
 /*!
  * Activities Theme — migración a componentes canónicos (estilo Purchase Detail)
- * v2.3.0 (2026-03-21)
+ * v2.5.0 (2026-03-22)
  *
- * MEJORAS v2.3.0:
- *  - Nuevo filtro por categoría: Nodos API (53), Nodos Janthir (6), Contratos (15)
- *  - Organización visual con separadores entre grupos de filtros
- *  - Mejor control de estado por categoría
+ * MEJORAS v2.5.0:
+ *  - Barra de horarios con iconos oficiales de GW2 desde wiki
+ *  - Hora server UTC y hora local con actualización en tiempo real
+ *  - Cuenta regresiva para reset diario (00:00 UTC) y semanal (lunes 07:30 UTC)
+ *  - Tooltips informativos con detalles de resets
  *
+ * v2.4.0: Barra de horarios inicial
+ * v2.3.0: Filtros por categoría (API/Janthir/Contratos)
  * v2.2.0: Estructura corregida basada en API real
  * v2.1.0: Filtros por tipo + estado con iconos
  * v2.0.0: Lista completa de desbloqueables con estado ✅/❌
@@ -15,7 +18,7 @@
 (function() {
   'use strict';
 
-  console.info('[ActivitiesTheme] Inicializando migración visual v2.3.0');
+  console.info('[ActivitiesTheme] Inicializando migración visual v2.5.0');
 
   var DEBUG = false;
 
@@ -95,6 +98,165 @@
     if (customName) return customName;
     var formatted = nodeId.replace(/_/g, ' ').replace(/ node$/i, '').trim();
     return capitalizeWords(formatted);
+  }
+
+  // ==========================================================================
+  // Horarios y Resets (estilo Purchase Detail con iconos GW2)
+  // ==========================================================================
+
+  // Iconos oficiales de GW2 desde wiki
+  var ICON_UTC = 'https://wiki.guildwars2.com/images/thumb/1/11/World_completion_bouncy_icon_active.png/24px-World_completion_bouncy_icon_active.png';
+  var ICON_LOCAL = 'https://wiki.guildwars2.com/images/6/6e/Activation.png';
+  var ICON_DAILY = 'https://wiki.guildwars2.com/images/thumb/9/99/Game_menu_log_out_icon.png/24px-Game_menu_log_out_icon.png';
+  var ICON_WEEKLY = 'https://wiki.guildwars2.com/images/f/f4/Tango-recharge-darker.png';
+
+  function formatCountdownWithSeconds(ms) {
+    if (!isFinite(ms) || ms <= 0) return '—';
+    var s = Math.floor(ms / 1000);
+    var d = Math.floor(s / 86400);
+    s %= 86400;
+    var h = Math.floor(s / 3600);
+    s %= 3600;
+    var m = Math.floor(s / 60);
+    s %= 60;
+    
+    var parts = [];
+    if (d > 0) parts.push(d + 'd');
+    if (h > 0 || d > 0) parts.push(String(h).padStart(2, '0') + 'h');
+    if (m > 0 || h > 0 || d > 0) parts.push(String(m).padStart(2, '0') + 'm');
+    parts.push(String(s).padStart(2, '0') + 's');
+    
+    return parts.join(' ');
+  }
+
+  function nextDailyResetUTC() {
+    var now = new Date();
+    var y = now.getUTCFullYear();
+    var m = now.getUTCMonth();
+    var d = now.getUTCDate();
+    var next = new Date(Date.UTC(y, m, d, 24, 0, 0, 0));
+    if (next.getTime() <= Date.now()) {
+      next = new Date(Date.UTC(y, m, d + 1, 0, 0, 0, 0));
+    }
+    return next;
+  }
+
+  function nextWeeklyResetUTC() {
+    var now = new Date();
+    var day = now.getUTCDay();
+    var daysUntilMonday = (1 - day + 7) % 7;
+    var base = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 7, 30, 0, 0));
+    var next = new Date(base.getTime() + daysUntilMonday * 24 * 60 * 60 * 1000);
+    if (next.getTime() <= Date.now()) {
+      next = new Date(next.getTime() + 7 * 24 * 60 * 60 * 1000);
+    }
+    return next;
+  }
+
+  function updateActivitiesClock() {
+    var now = new Date();
+    
+    // Hora server (UTC)
+    var utcHours = now.getUTCHours().toString().padStart(2, '0');
+    var utcMinutes = now.getUTCMinutes().toString().padStart(2, '0');
+    var utcSeconds = now.getUTCSeconds().toString().padStart(2, '0');
+    var utcTime = utcHours + ':' + utcMinutes + ':' + utcSeconds;
+    
+    // Hora local
+    var localHours = now.getHours().toString().padStart(2, '0');
+    var localMinutes = now.getMinutes().toString().padStart(2, '0');
+    var localSeconds = now.getSeconds().toString().padStart(2, '0');
+    var localTime = localHours + ':' + localMinutes + ':' + localSeconds;
+    
+    // Reset diario
+    var dailyReset = nextDailyResetUTC();
+    var dailyMs = dailyReset.getTime() - now.getTime();
+    var dailyCountdown = formatCountdownWithSeconds(dailyMs);
+    
+    // Reset semanal
+    var weeklyReset = nextWeeklyResetUTC();
+    var weeklyMs = weeklyReset.getTime() - now.getTime();
+    var weeklyCountdown = formatCountdownWithSeconds(weeklyMs);
+    
+    // Actualizar DOM
+    var utcEl = document.getElementById('activitiesUtcTime');
+    var localEl = document.getElementById('activitiesLocalTime');
+    var dailyEl = document.getElementById('activitiesDailyReset');
+    var weeklyEl = document.getElementById('activitiesWeeklyReset');
+    
+    if (utcEl) utcEl.textContent = utcTime;
+    if (localEl) localEl.textContent = localTime;
+    if (dailyEl) dailyEl.textContent = dailyCountdown;
+    if (weeklyEl) weeklyEl.textContent = weeklyCountdown;
+  }
+
+  function renderActivitiesClockBar(activitiesPanel) {
+    var existingBar = activitiesPanel.querySelector('#activitiesClockBar');
+    if (existingBar) existingBar.remove();
+    
+    var clockBar = document.createElement('div');
+    clockBar.id = 'activitiesClockBar';
+    clockBar.className = 'chips';
+    clockBar.style.marginBottom = '16px';
+    clockBar.style.display = 'flex';
+    clockBar.style.flexWrap = 'wrap';
+    clockBar.style.gap = '16px';
+    clockBar.style.alignItems = 'center';
+    clockBar.style.background = '#0f1116';
+    clockBar.style.padding = '8px 16px';
+    clockBar.style.borderRadius = '40px';
+    clockBar.style.border = '1px solid #2a2c35';
+    clockBar.style.fontFamily = 'monospace';
+    clockBar.style.fontSize = '0.85rem';
+    
+    clockBar.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 6px;" data-tip="Hora del servidor (UTC+0)">
+        <img src="${ICON_UTC}" width="20" height="20" alt="UTC" style="filter: brightness(0.9);">
+        <span>UTC</span>
+        <strong id="activitiesUtcTime">--:--:--</strong>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;" data-tip="Tu hora local">
+        <img src="${ICON_LOCAL}" width="20" height="20" alt="Local" style="filter: brightness(0.9);">
+        <span>Local</span>
+        <strong id="activitiesLocalTime">--:--:--</strong>
+      </div>
+      <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
+      <div style="display: flex; align-items: center; gap: 6px;" data-tip="Reset diario a las 00:00 UTC">
+        <img src="${ICON_DAILY}" width="20" height="20" alt="Reset diario" style="filter: brightness(0.9);">
+        <span>Reset diario</span>
+        <strong id="activitiesDailyReset">--</strong>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;" data-tip="Reset semanal los lunes a las 07:30 UTC">
+        <img src="${ICON_WEEKLY}" width="20" height="20" alt="Reset semanal" style="filter: brightness(0.9);">
+        <span>Reset semanal</span>
+        <strong id="activitiesWeeklyReset">--</strong>
+      </div>
+    `;
+    
+    // Buscar el lugar correcto para insertar (junto a los tabs)
+    var actHead = activitiesPanel.querySelector('.act-head');
+    if (actHead) {
+      actHead.style.display = 'flex';
+      actHead.style.alignItems = 'center';
+      actHead.style.justifyContent = 'space-between';
+      actHead.style.flexWrap = 'wrap';
+      actHead.style.gap = '12px';
+      actHead.appendChild(clockBar);
+    } else {
+      // Fallback: insertar después del título
+      var title = activitiesPanel.querySelector('.panel__title');
+      if (title && title.nextSibling) {
+        title.parentNode.insertBefore(clockBar, title.nextSibling);
+      } else {
+        var body = activitiesPanel.querySelector('.panel__body') || activitiesPanel;
+        body.insertBefore(clockBar, body.firstChild);
+      }
+    }
+    
+    // Iniciar actualización en tiempo real
+    updateActivitiesClock();
+    if (window.__activitiesClockInterval) clearInterval(window.__activitiesClockInterval);
+    window.__activitiesClockInterval = setInterval(updateActivitiesClock, 1000);
   }
 
   // ==========================================================================
@@ -894,6 +1056,10 @@
 
     log('Aplicando mejoras visuales a Activities (panel visible)');
 
+    // Primero renderizar la barra de horarios
+    renderActivitiesClockBar(activitiesPanel);
+    
+    // Luego el resto de mejoras
     enhanceCards(activitiesPanel);
     enhanceKPIs(activitiesPanel);
     enhancePSNA(activitiesPanel);
@@ -948,5 +1114,5 @@
     initActivitiesTheme();
   }
 
-  console.info('[ActivitiesTheme] ready v2.3.0 — filtros por categoría (API/Janthir/Contratos)');
+  console.info('[ActivitiesTheme] ready v2.5.0 — barra de horarios con iconos GW2 oficiales');
 })();
