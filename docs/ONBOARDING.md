@@ -1,6 +1,6 @@
 # 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v5)
 
-Fecha: 2026-03-21
+Fecha: 2026-03-23
 Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `*-theme.js`, `app.css`
 
 ## 📌 BAI — Bloque de Alineamiento Instantáneo
@@ -86,6 +86,39 @@ Rediseño total del dashboard de compras con nuevo estándar visual:
   - Removido fingerprint de la columna cuenta
   - Unificación de estilos con el resto del dashboard
 
+### 🆕 Barra de horarios unificada — Activities + Meta & Eventos (v2.5.0 / v1.3.1)
+
+Nueva barra de horarios implementada en ambos módulos con estándar visual común:
+
+- **Iconos oficiales de GW2 desde wiki**:
+  - 🌍 UTC: World completion bouncy icon
+  - 🏠 Local: Activation icon
+  - ⏰ Reset diario: Game menu log out icon
+  - 📅 Reset semanal: Tango-recharge-darker icon
+
+- **Información en tiempo real**:
+  - Hora servidor UTC y hora local con actualización cada segundo
+  - Cuenta regresiva para reset diario (00:00 UTC) y semanal (lunes 07:30 UTC)
+  - Formato unificado: `Xd Xh Xm Xs` con segundos
+
+- **Tooltips informativos**: Cada elemento muestra información adicional al hacer hover
+
+**Activities (v2.5.0)**:
+- Barra integrada junto a los tabs "Diarias/Semanales"
+- Mismo estilo que Purchase Detail (fondo `#0f1116`, bordes redondeados)
+
+**Meta & Eventos (v1.3.1)**:
+- Barra integrada en misma línea que título "Pendientes / Hecho hoy", margen derecho
+- Eliminado campo redundante "Última actualización"
+- **Mejora de horarios en tarjetas**:
+  - Conversión UTC → hora local
+  - Color dinámico del botón "Horarios":
+    - 🟢 Verde: evento activo ahora
+    - 🟡 Ámbar: próximo evento ≤20 min
+    - 🔵 Azul: más tarde
+  - Resaltado del próximo horario en ámbar con fondo suave
+  - Ícono 🕒 añadido al botón
+
 ### 🆕 Almacenamiento por temporada (WVSeasonStore v1.1.1)
 
 - Un archivo JSON por temporada en LocalStorage: `wv:season:<YY>:<SEQ>`
@@ -126,6 +159,7 @@ Refactor completo con mejoras visuales en Home Nodes:
 - **Refinamiento de Ecto**: estado diario con iconos oficiales desde API.
 - **Semanales**: Llave del León Negro y Leivas, con persistencia por cuenta.
 - **KPI strips**: progreso diario y semanal.
+- **Barra de horarios unificada**: iconos GW2, resets con segundos (v2.5.0).
 
 #### 🆕 Home Nodes — Rediseño completo (v2.3.0)
 
@@ -146,6 +180,14 @@ Rediseño total del panel de nodos de Heredad con nuevo estándar visual:
 - **Sistema de fallback**: URLs de imágenes hardcodeadas desde gw2treasures
 
 **IDs correctos**: Mapeo completo de 74 consumibles con IDs verificados desde la wiki y gw2treasures.
+
+### 🆕 Meta & Eventos — Mejora de horarios (v1.3.1)
+
+- **Barra de horarios unificada**: mismos iconos y formato que Activities
+- **Horarios en tarjetas convertidos a hora local** (desde UTC)
+- **Color dinámico del botón "Horarios"**: verde (activo), ámbar (próximo ≤20 min), azul (más tarde)
+- **Resaltado del próximo horario** en la lista de horarios
+- **Ícono 🕒** añadido al botón "Horarios"
 
 ### 🆕 Characters — Panel de Personajes (v2.2.2)
 
@@ -185,13 +227,14 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/meta.js` | v3.2.1 | MetaEventos con horarios, estado "Hecho hoy" |
 | `js/sidebar-nav.js` | v1.2 | Router‑friendly + tokenchange + a11y |
 | `js/activities.js` | v3.9.0 | Actividades diarias/semanales: PSNA, fractales, world bosses, ecto, home nodes |
-| `js/activities-theme.js` | v2.3.0 | Home Nodes: lista completa (74), filtros, estado ✅/❌, persistencia, fallback imágenes |
+| `js/activities-theme.js` | v2.5.0 | Home Nodes + barra de horarios unificada con iconos GW2 |
 | `js/characters.js` | v2.2.2 | Personajes: lista, ubicación, POIs, rangos PvP/WvW |
 | `js/router.js` | v2.10.0 | Router con prefetch, guardas, navegación por hash, mapeo de vistas |
 | `js/wv-purchase-detail.js` | v1.8.4 | Detalle de compras, dashboard AA, top pendientes, **nuevo estándar visual** |
 | `js/wv-tabs-skin.js` | v1.0.0 | Re-skin de tabs WV, consistente con rerenders |
 | `js/app.js` | v2.6.3 | Keys, wallet, eventos globales, emisor `gn:tokenchange` |
 | `js/*-theme.js` | varios | Glows, colores, estilos temáticos por módulo |
+| `js/meta-theme.js` | v1.3.1 | Barra de horarios unificada + mejora de horarios en tarjetas |
 
 ## ✅ NUEVO js/activities.js — Panel de Actividades (v3.9.0)
 
@@ -232,6 +275,11 @@ Panel que agrupa actividades diarias y semanales relevantes para el jugador: PSN
 - Llave del León Negro (toggle semanal con persistencia)
 - Leivas: contador 0..5 con persistencia semanal
 - Grid de 5 divisas con iconos, costes y tooltips
+
+**Barra de horarios unificada (v2.5.0)**
+- Iconos oficiales de GW2: UTC, Local, Reset diario, Reset semanal
+- Cuenta regresiva con segundos: `Xd Xh Xm Xs`
+- Tooltips informativos en cada elemento
 
 ### Persistencia
 
@@ -385,6 +433,7 @@ Panel completo que muestra la lista de personajes de la cuenta con su profesión
 - Fractales (hoy) lista T4 + escalas Recommended
 - World Bosses próximos
 - Ecto con iconos oficiales
+- **Barra de horarios unificada**: ✅ Iconos GW2, UTC, Local, resets con segundos
 - Home Nodes:
   - ✅ Lista completa de 74 elementos (API + Janthir + Contratos)
   - ✅ Estado de desbloqueo vía API (✅/❌)
@@ -393,6 +442,16 @@ Panel completo que muestra la lista de personajes de la cuenta con su profesión
   - ✅ Checkbox "Recolectado hoy" con persistencia diaria
   - ✅ Contador de progreso de recolección
   - ✅ Fallback de imágenes desde gw2treasures
+
+### Meta & Eventos
+
+- Horarios de eventos en tarjetas
+- Estado "Hecho hoy" con cache
+- Favoritos (máx 6)
+- **Barra de horarios unificada**: ✅ Iconos GW2, UTC, Local, resets con segundos
+- **Botón "Horarios" con color dinámico**: ✅ Verde (activo), Ámbar (próximo), Azul (más tarde)
+- **Horarios convertidos a hora local**: ✅
+- **Próximo horario resaltado**: ✅
 
 ### Characters
 
@@ -421,6 +480,11 @@ Panel completo que muestra la lista de personajes de la cuenta con su profesión
 - Abort + last win en fetchers largos (PSNA, Fractales)
 - Tooltips: siempre `data-tip` + title como fallback
 
+### Meta & Eventos (específico)
+
+- **Barra de horarios**: Iconos GW2, actualización en tiempo real, resets con segundos
+- **Horarios en tarjetas**: Conversión UTC → hora local, color dinámico del botón, resaltado del próximo
+
 ### Characters (específico)
 
 - Carga optimizada: batch processing, timeouts, retries
@@ -440,6 +504,7 @@ Panel completo que muestra la lista de personajes de la cuenta con su profesión
 - **Q1 2026:** Characters módulo completo (v2.2.2)
 - **Q1 2026:** rediseño visual completo Purchase Detail (v1.8.4) — nuevo estándar de UI
 - **Q1 2026:** Home Nodes rediseño completo (activities-theme.js v2.3.0) — lista completa de 74 elementos, filtros avanzados, estado en tiempo real
+- **Q1 2026:** Barra de horarios unificada — Activities v2.5.0, Meta & Eventos v1.3.1
 
 ## 🎉 Estado actual del proyecto (v5)
 
@@ -450,6 +515,7 @@ Panel completo que muestra la lista de personajes de la cuenta con su profesión
 - ✅ SeasonStore funcionando bien incluso con cuota mínima
 - ✅ Activities v3.9.0 productivo: PSNA, fractales, world bosses, ecto, home nodes
 - ✅ **Home Nodes v2.3.0 productivo: lista completa (74), filtros, estado ✅/❌, persistencia**
+- ✅ **Barra de horarios unificada productiva: Activities v2.5.0, Meta & Eventos v1.3.1**
 - ✅ Characters v2.2.2 productivo: personajes, POIs, rangos, ubicación
 
 ## 📦 Anexo de integración UI (CSS)
@@ -517,3 +583,14 @@ Panel completo que muestra la lista de personajes de la cuenta con su profesión
   border-radius: 16px;
   border: 1px solid #2a2c35;
 }
+
+✅ Resumen de cambios integrados
+Sección	Cambio
+Novedades v5	Nueva entrada "Barra de horarios unificada — Activities + Meta & Eventos"
+Activities	Actualizada versión a v2.5.0, añadida barra de horarios
+Meta & Eventos	Nueva entrada con mejoras de horarios, barra unificada
+Tabla responsabilidades	activities-theme.js actualizado a v2.5.0, añadido meta-theme.js v1.3.1
+Checklists	Añadida sección Meta & Eventos con ítems de barra de horarios
+Buenas prácticas	Nueva subsección "Meta & Eventos (específico)"
+Historial de decisiones	Nueva entrada para barra de horarios unificada
+Estado actual	Actualizado con barra de horarios productiva

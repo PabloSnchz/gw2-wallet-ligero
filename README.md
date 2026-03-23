@@ -8,6 +8,7 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 - 🏆 Pantalla de Logros — Nueva vista completa
 - 💱 Conversor Gem ↔ Gold
 - 🏡 Home Nodes — Todos los desbloqueables de Heredad con estado ✅/❌
+- 🕒 Barra de horarios unificada con iconos GW2 (Activities + Meta)
 - 🔐 Gestión completa de API Keys
 - ⭐ Favoritas, filtros avanzados, vista tarjetas/tabla
 
@@ -43,6 +44,14 @@ Definí en `index.html` (antes de router.js):
 
 ## ✨ Novedades principales — v5.0.0
 
+### 🕒 Barra de horarios unificada (NUEVO)
+- **Iconos oficiales de Guild Wars 2**: UTC, Local, Reset diario, Reset semanal
+- **Actualización en tiempo real**: hora UTC y local con segundos
+- **Cuenta regresiva con segundos**: `1d 02h 30m 15s` para resets diario (00:00 UTC) y semanal (lunes 07:30 UTC)
+- **Implementada en**:
+  - **Actividades**: junto a los tabs "Diarias/Semanales"
+  - **Meta & Eventos**: misma línea que el título "Pendientes / Hecho hoy"
+
 ### 🏡 Home Nodes — Rediseño completo
 - **Lista completa**: 74 elementos de Heredad (53 nodos API + 6 Janthir + 15 contratos/consumibles)
 - **Estado en tiempo real**: ✅ Desbloqueado / ❌ No desbloqueado vía API `/v2/account/home/nodes`
@@ -56,6 +65,12 @@ Definí en `index.html` (antes de router.js):
 - **KPIs con glow** y borde lateral según estado
 - **Skeleton loader** animado durante carga
 - **Animación de entrada** (fade-in + scale) y timestamp de última actualización
+
+### 🎭 Meta & Eventos — Mejoras de horarios
+- **Horarios en tarjetas convertidos a hora local** (desde UTC)
+- **Botón "Horarios" con color dinámico**: 🟢 verde (activo), 🟡 ámbar (próximo ≤20 min), 🔵 azul (más tarde)
+- **Próximo horario resaltado** en la lista de horarios
+- **Barra de horarios unificada** con iconos GW2
 
 ### 🎨 Unificación visual global
 - **Badges canónicos**: `.badge--success/warning/info/infinite` con efecto hover en toda la app
@@ -75,11 +90,6 @@ Definí en `index.html` (antes de router.js):
 - Delta de cantidades (↑/↓) contra snapshot local, con pill verde/roja
 - Toolbar enriquecida: “Vista compacta” + “Actualizar base”
 
-### 🎭 Meta & Eventos
-- MetaEventos reescrito con HTML real, íconos funcionales, enlaces Wiki y Mapa corregidos
-- Estado “Hecho hoy” con cache por token (TTL 5 min), fuente API y auto-refresh al reset diario UTC
-- Top‑3 Próximos en sidebar, favoritos (máx 6), modos Deluxe y Compacto
-
 ### 🏆 Logros
 - Pantalla completa con barras de progreso por categoría
 - Filtros por PvE / PvP / WvW
@@ -96,20 +106,21 @@ Definí en `index.html` (antes de router.js):
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
-| `js/activities-theme.js` | v2.3.0 | Home Nodes: lista completa (74), filtros, estado ✅/❌ |
+| `js/activities-theme.js` | v2.5.0 | Home Nodes + barra de horarios unificada con iconos GW2 |
+| `js/meta-theme.js` | v1.3.1 | Barra de horarios unificada + mejora de horarios en tarjetas |
 | `js/wv-purchase-detail.js` | v1.8.4 | Estándar visual de referencia |
 | `js/wallet-theme.js` | v1.3.0 | Badges canónicos + glows preservados |
-| `js/meta-theme.js` | v1.1.0 | Badges canónicos + extensión visual |
 | `css/theme-polish.css` | v2.0.0 | Componentes canónicos unificados |
 
 ---
 
 ## 🧪 Cómo probar las novedades
 
-1. **Home Nodes**: Navegar a **Actividades** → sección "Home nodes"
-2. **Purchase Detail**: Navegar a **Cámara del Brujo** → botón de detalle de compras
-3. **Wallet**: Verificar que las categorías son badges y los glows especiales se mantienen
-4. **Meta & Eventos**: Verificar badges de estado (activo/soon/later) unificados
+1. **Barra de horarios**: Navegar a **Actividades** o **Meta & Eventos** → ver barra con iconos GW2 y resets con segundos
+2. **Home Nodes**: Navegar a **Actividades** → sección "Home nodes"
+3. **Horarios en Meta**: Abrir horarios de una tarjeta → verificar hora local, color del botón y próximo horario resaltado
+4. **Purchase Detail**: Navegar a **Cámara del Brujo** → botón de detalle de compras
+5. **Wallet**: Verificar que las categorías son badges y los glows especiales se mantienen
 
 ---
 
@@ -130,7 +141,7 @@ Definí en `index.html` (antes de router.js):
 
 Este proyecto sigue **Semantic Versioning** (SemVer).
 
-- `v5.0.0`: **Estándar Visual Unificado** — Home Nodes rediseño completo, Purchase Detail v1.8.4, unificación de badges/pills/KPIs, documentación actualizada
+- `v5.0.0`: **Estándar Visual Unificado** — Barra de horarios unificada (Activities v2.5.0, Meta v1.3.1), Home Nodes rediseño completo, Purchase Detail v1.8.4, unificación de badges/pills/KPIs
 - `v4.0.0`: Cámara del Brujo (Wizard’s Vault) — Módulo completo, Pantalla de Logros — Nueva vista completa
 - `v3.0.0`: MetaEventos Deluxe
 - `v2.6.2`: Base estable previa a Deluxe
