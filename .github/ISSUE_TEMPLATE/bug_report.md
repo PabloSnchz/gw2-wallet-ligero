@@ -1,18 +1,31 @@
 ---
-name: 🐛 Reporte de Bug
-about: Reportar un problema o comportamiento inesperado
+name: 🐛 Reporte de bug
+about: Crear un reporte para ayudarnos a mejorar
+title: "[BUG] "
+labels: bug
+assignees: PabloSnchz
 ---
 
-## 🐛 Descripción
-Explicá qué pasó.
+## 🐛 Descripción del problema
+Describe el error de forma clara y concisa.
 
-## 🔁 Pasos para reproducir
-1. ...
-2. ...
+## 🔁 Pasos para reproducirlo
+1. Ir a '...'
+2. Hacer clic en '....'
+3. Navegar a '....'
+4. Ver el error
 
-## 📷 Capturas
-(Si aplica)
+## 🤔 Comportamiento esperado
+Qué debería pasar en su lugar.
 
-## 🧩 Entorno
-- Navegador:
-- SO:
+## 📸 Capturas de pantalla
+Si aplica, agregá imágenes o GIFs para explicar el problema.
+
+## 🔧 Entorno (por favor completar)
+- **Dispositivo:** [ej: iPhone 14, PC]
+- **Sistema operativo:** [ej: Windows 11, macOS 14, Android 13]
+- **Navegador:** [ej: Chrome 120, Safari 17, Firefox 121]
+- **Versión de la app:** [ej: v5.0.0]
+
+## 📋 Contexto adicional
+Cualquier otra información que consideres relevante (API Key con qué permisos, si ocurre solo con ciertas keys, etc.)

@@ -1,17 +1,51 @@
 # 📜 Changelog
+
 Todos los cambios notables de este proyecto serán documentados en este archivo.
 
 El formato sigue las recomendaciones de  
 **Keep a Changelog** (https://keepachangelog.com/)  
 y el versionado **SemVer** (https://semver.org/).
 
+---
 
-## CHANGELOG 
+## [5.0.0] - 2026-03-23
 
-```markdown
-# Changelog
+### Added
+- **Barra de horarios unificada** con iconos oficiales de Guild Wars 2:
+  - Hora servidor UTC y hora local con actualización en tiempo real (segundos)
+  - Cuenta regresiva para reset diario (00:00 UTC) y reset semanal (lunes 07:30 UTC)
+  - Formato unificado: `Xd Xh Xm Xs` con segundos
+  - Implementada en Activities (v2.5.0) y Meta & Eventos (v1.3.1)
+- **Meta & Eventos — Mejora de horarios en tarjetas**:
+  - Conversión UTC → hora local en horarios desplegables
+  - Color dinámico del botón "Horarios": 🟢 verde (activo), 🟡 ámbar (próximo ≤20 min), 🔵 azul (más tarde)
+  - Resaltado del próximo horario en la lista de horarios
+  - Ícono 🕒 añadido al botón
+- **Home Nodes — Rediseño completo** (activities-theme.js v2.3.0):
+  - Lista completa de 74 elementos (53 nodos API + 6 Janthir + 15 contratos/consumibles)
+  - Estado en tiempo real ✅/❌ vía API `/v2/account/home/nodes`
+  - Filtros avanzados por categoría, tipo y estado
+  - Tarjetas rediseñadas con icono de tipo (44px) e imagen de ítem destacada (64px)
+  - Checkbox "Recolectado hoy" con persistencia diaria en localStorage
+  - Contador de progreso con porcentaje
+  - Sistema de fallback de imágenes desde gw2treasures
 
-## [5.2.0] - 2026-03-01
+### Changed
+- **Purchase Detail** (v1.8.4): Sistema de colores unificado (verde/amarillo/rojo), badges con hover, KPIs con glow, skeleton loader, animación de entrada
+- **Wallet Theme** (v1.3.0): Migración a badges canónicos, glows preservados, migración a clase `.card`
+- **Meta Theme** (v1.1.0): Badges canónicos, extensión visual con pills
+- **Theme Polish** (v2.0.0): Componentes canónicos unificados (badges, pills, KPIs, tabla)
+- **ONBOARDING.md**: Actualizado con documentación completa de Home Nodes y barra de horarios
+
+### Removed
+- Eliminado reglón extra con símbolo '^' sobre tabla en Purchase Detail
+- Removido fingerprint de la columna cuenta
+- Eliminado campo redundante "Última actualización" en Meta & Eventos
+
+---
+
+## [4.1.0] - 2026-03-01
+
 ### Added
 - **UI Overhaul**: rediseño de tarjetas y layouts de Wallet, Meta & Logros; unificación de barras de progreso.
 - **Conversor v2.0**: quick‑chips (gemas/oro), micro‑animaciones, halo dorado reforzado, estado “Actualizado.” en pill, sombras dinámicas de la barra y layout simétrico.
@@ -22,7 +56,9 @@ y el versionado **SemVer** (https://semver.org/).
 ### Changed
 - Pulidos de estilo en `theme-polish.css`, halos por rareza y coherencia de tonos/pills.
 
-## [4.0.0] – 2026-02-228
+---
+
+## [4.0.0] – 2026-02-28
 
 ### Wallet
 - Rework de tarjetas con estética WV (`wallet-card-grid`, `wallet-card*`).
@@ -37,7 +73,63 @@ y el versionado **SemVer** (https://semver.org/).
 - “Favoritas” → “Fijadas”.
 - Encabezado de Tabla (última col) ahora es **📌**.
 
-## 2.6.3 (2026‑02‑28)
+### Nuevo módulo completo: Cámara del Brujo (Wizard’s Vault)
+- Objetivos Diarios / Semanales / Especiales.
+- Progreso de Meta global de temporada.
+- Aclamación Astral: disponible, gastado API, reservado (marcas locales).
+- Tienda WV con vista tarjetas/tabla, filtros, buscador, stock y contadores ± persistentes.
+- Toolbar PvE / PvP / WvW.
+- Manejo de permisos y fallback en caso de tokens sin wizardsvault.
+- Integración con endpoints oficiales:
+  - `/v2/wizardsvault/seasons`
+  - `/v2/account/wizardsvault/categories`
+  - `/v2/account/wizardsvault/listings`
+
+### Nuevo módulo completo: Pantalla de Logros (Achievements)
+- Vista dedicada en `#/account/achievements`.
+- Barra de progreso por objetivo.
+- Filtros PvE / PvP / WvW.
+- Rareza, progreso numérico y porcentaje.
+- Integración con `/v2/account/achievements` y `/v2/achievements`.
+- Estilo oscuro, limpio y consistente con el resto del panel.
+
+### Selects (Meta & Eventos / Wallet)
+- Tema oscuro real, sin caret, menú desplegable dark, una sola pastilla (chip).
+
+### Chips sólidos
+- Hover/focus/pressed/checked consistentes y accesibles.
+
+### Toggles inyectados (sin tocar index.html)
+- `data-meta-deluxe="on|off"`
+- `data-meta-compact="on|off"`
+
+### Integración total con:
+- **Hecho hoy (API)**: `/v2/account/worldbosses`, `/v2/account/mapchests`.
+- **Hecho hoy (Manual)**: por id/token/día UTC (localStorage), reset automático 00:00 UTC.
+- **Cache de flags** (TTL 5′), **refresh** manual.
+
+### Nuevo sistema de iconografía en el sidebar
+- Reemplazo de emojis → íconos reales (Wiki e íconos GW2).
+- Preparado para repositorio propio de imágenes.
+
+### Cambiado
+- Refinamiento visual de tarjetas y filtros, sin romper la estructura previa.
+- Ordenación por favoritos, estado (activo → próximo → más tarde) y proximidad.
+- Router actualizado: navegación por hash y emisión correcta de `gn:tabchange` para inicialización del módulo MetaEventos.
+- Correcta separación de asides según vista (Wallet / MetaEventos / Logros / WV).
+
+### Corregido
+- Selects que se veían con fondo blanco / texto claro (ilegible) en algunos navegadores.
+- Flechita (caret) que se superponía en los chips de filtros.
+- Error crítico: MetaEventos no iniciaba debido a cambio en la navegación → solucionado.
+- Tooltips de infusiones: fix de `pop is not defined`, escopo correcto y `createElement('img')` sin CORS.
+- Render de íconos: `iconTag()` / `wpIcon()` ahora devuelven `<img>` reales.
+- Corrección de enlaces Wiki/Mapa (se mostraban como texto).
+
+---
+
+## [2.6.3] - 2026-02-28
+
 ### Router / Sidebar
 - `setActiveNav` robusto (sin entidades, normalización de hash, rAF).
 - **`updateSidebarFor(view)`**: sidebar contextual coherente por vista.
@@ -45,82 +137,17 @@ y el versionado **SemVer** (https://semver.org/).
 - Refuerzo `hashchange`: rutear + re‑aplicar active al final del ciclo.
 - WV: `WV.activate()` antes del marcado de nav; se corrige el **bug de pastilla** y el **sidebar fantasma**.
 
-## 2.6.1–2.6.2 (2026‑02‑28)
+---
+
+## [2.6.1–2.6.2] - 2026-02-28
+
 - Limpieza de entidades HTML fuera de strings en JS (evita errores de sintaxis).
 - Ajustes menores de compatibilidad y logs de diagnóstico.
 
-## 2.5.x (anteriores)
-- A11y en hero tabs, focus trap modal, mejoras de conversor y cache de catálogo.
-
-## [4.0.0] – 2026-02-27
-Nuevo módulo completo: Cámara del Brujo (Wizard’s Vault)
-
-Objetivos Diarios / Semanales / Especiales.
-Progreso de Meta global de temporada.
-Aclamación Astral: disponible, gastado API, reservado (marcas locales).
-Tienda WV con vista tarjetas/tabla, filtros, buscador, stock y contadores ± persistentes.
-Toolbar PvE / PvP / WvW.
-Manejo de permisos y fallback en caso de tokens sin wizardsvault.
-Integración con endpoints oficiales:
-
-/v2/wizardsvault/seasons
-/v2/account/wizardsvault/categories
-/v2/account/wizardsvault/listings
-
-Nuevo módulo completo: Pantalla de Logros (Achievements)
-
-Vista dedicada en #/account/achievements.
-Barra de progreso por objetivo.
-Filtros PvE / PvP / WvW.
-Rareza, progreso numérico y porcentaje.
-Integración con /v2/account/achievements y /v2/achievements.
-Estilo oscuro, limpio y consistente con el resto del panel.
-
-
-
-Selects (Meta & Eventos / Wallet): tema oscuro real, sin caret, menú desplegable dark, una sola pastilla (chip).
-
-
-Chips sólidos: hover/focus/pressed/checked consistentes y accesibles.
-
-
-Toggles inyectados (sin tocar index.html):
-
-data-meta-deluxe="on|off"
-data-meta-compact="on|off"
-
-
-Integración total con:
-
-Hecho hoy (API): /v2/account/worldbosses, /v2/account/mapchests.
-Hecho hoy (Manual): por id/token/día UTC (localStorage), reset automático 00:00 UTC.
-Cache de flags (TTL 5′), refresh manual.
-
-
-Nuevo sistema de iconografía en el sidebar:
-
-Reemplazo de emojis → íconos reales (Wiki e íconos GW2).
-Preparado para repositorio propio de imágenes.
-
-Cambiado
-
-Refinamiento visual de tarjetas y filtros, sin romper la estructura previa.
-Ordenación por favoritos, estado (activo → próximo → más tarde) y proximidad.
-Router actualizado: navegación por hash y emisión correcta de gn:tabchange para inicialización del módulo MetaEventos.
-Correcta separación de asides según vista (Wallet / MetaEventos / Logros / WV).
-
-Corregido
-
-Selects que se veían con fondo blanco / texto claro (ilegible) en algunos navegadores.
-Flechita (caret) que se superponía en los chips de filtros.
-Error crítico: MetaEventos no iniciaba debido a cambio en la navegación → solucionado.
-Tooltips de infusiones: fix de pop is not defined, escopo correcto y createElement('img') sin CORS.
-Render de íconos: iconTag() / wpIcon() ahora devuelven <img> reales.
-Corrección de enlaces Wiki/Mapa (se mostraban como texto).
-
-
+---
 
 ## [3.0.0] – 2026-02-24
+
 ### Agregado
 - **MetaEventos Deluxe v3.0**:
   - Tarjetas con jerarquía clara: header → subinfo → ✔ → contexto → acciones → pie.
@@ -150,6 +177,7 @@ Corrección de enlaces Wiki/Mapa (se mostraban como texto).
 ---
 
 ## [2.6.2] – 2026-02-23
+
 ### Agregado
 - **Manual check** para metas sin API (`manualCheck:true`), persistente por token/día UTC.
 - Tooltips y preview en infusiones (cuando hay `highlightItemId` o `preview`).
@@ -164,25 +192,8 @@ Corrección de enlaces Wiki/Mapa (se mostraban como texto).
 
 ---
 
-## [2.5.0] – 2026-01-xx
-### Agregado
-- Base del panel MetaEventos (v2.x) y Cartera (Wallet).
-- Gestión de API Keys en UI.
-- Filtros iniciales (tipo/expansión/activos/próximos/infusiones).
-
----
-
-## Sin publicar (HEAD)
-- _Nada por ahora._
-
----
-
-### Notas
-- Si necesitás invalidar cache, podés incrementar el query `?v=` en `index.html` para `js/meta.js` y/o `assets`.
-- Para eventos nuevos, preferí `worldBossId` oficiales (`/v2/worldbosses`) y `mapchestId` documentados (`/v2/mapchests`); usa `manualecho hoy”.
-
-
 ## [2.6.1] - 2026-02-24
+
 ### Added
 - MetaEventos: cache por API key (TTL 5 min) para “Hecho hoy”.
 - Botón **Refrescar estado** con bloqueo y toast.
@@ -197,7 +208,10 @@ Corrección de enlaces Wiki/Mapa (se mostraban como texto).
 ### Fixed
 - Duplicado de `renderSkeletonMeta` y pequeños hardenings en `updateClock`.
 
-## v2.6.0 — 2026-02-24
+---
+
+## [2.6.0] — 2026-02-24
+
 ### 🎯 Nuevo
 - Modal completo de API Keys (alta, edición, eliminado, uso, copia).
 - Selector global visible en todas las vistas.
@@ -213,6 +227,8 @@ Corrección de enlaces Wiki/Mapa (se mostraban como texto).
 ### 🔁 Migración
 - El panel Wallet ya no administra API Keys.
 - La gestión se concentra en el header y modal.
+
+---
 
 ## [v2.5.0] — 2026-02-22
 
@@ -255,23 +271,9 @@ Corrección de enlaces Wiki/Mapa (se mostraban como texto).
 - Eliminado error `ReferenceError: renderCards is not defined`.
 
 ---
-## [v2.3.3] — 2026‑02‑21
-### Added
-- Glow rojo en tabs del hero (match visual con API Keys).
-- Iconos de redes con color de marca (Discord, Instagram, YouTube) + icono de Twitch.
-- Mejora visual general (brillo sutil en tarjetas y botones).
-
-### Changed
-- Conversor final estable (lógica con búsqueda binaria, sin auto‑update).
-- Íconos de divisas a 22px.
-- Limpieza visual: fix-pack integrado en `main.css`.
-
-### Fixed
-- Render robusto de íconos en tarjetas y tabla (siempre `<img>`).
-- Eliminar error `ReferenceError: renderCards is not defined`.
-- Alineado de orden/alcance de funciones de render.
 
 ## [2.0.0] - 2026-02-21
+
 ### 🚀 Rediseño total – “Bóveda del Gato Negro”
 Esta versión reemplaza completamente la versión anterior de *gw2-wallet-ligero*, introduciendo una nueva identidad visual, estructura profesional y mejoras profundas en la UI/UX.
 
@@ -310,6 +312,7 @@ Esta versión reemplaza completamente la versión anterior de *gw2-wallet-ligero
 ---
 
 ## [1.6.1] - 2026-02-20
+
 ### 🎨 Ajustes de overlay
 - Correcciones en overlay debajo/encima del header
 - Ajustes responsive
@@ -318,16 +321,19 @@ Esta versión reemplaza completamente la versión anterior de *gw2-wallet-ligero
 ---
 
 ## [1.5.0] - 2026-02-19
+
 ### 🎨 Incorporación logo + branding inicial
 
 ---
 
 ## [1.4.0] - 2026-02-18
+
 ### 🧭 Nuevo header con textura + barra superior
 
 ---
 
 ## [1.3.4] - 2026-02-17
+
 ### 🐞 Fix crítico
 - Corrección de iconos en tarjetas
 - Corrección de overflow en descripciones largas
@@ -335,6 +341,7 @@ Esta versión reemplaza completamente la versión anterior de *gw2-wallet-ligero
 ---
 
 ## [1.0.0] - 2026-02-15
+
 ### 🎉 Versión inicial
 - Lectura de API Keys
 - Integración con `/v2/account/wallet`
