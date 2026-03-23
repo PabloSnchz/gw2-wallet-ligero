@@ -1,173 +1,32 @@
 /*!
  * Meta Theme (expansión/temporada) — outline + halo usando --meta-title-color
- * v1.0.0 (2026-03-01)
+ * v1.3.1 (2026-03-22)
  *
- * Idea clave: meta.js ya define en cada tarjeta:
- *   <article class="meta-card meta-card--tint-title" style="--meta-title-color:#HEX">
- * Este script lee ese color y dibuja el glow/borde como en WV/Wallet.
+ * Cambios v1.3.1:
+ *  - Añadida hora del servidor (UTC) al principio de la barra (igual que Activities)
+ *  - Eliminado campo "Última actualización" (no necesario)
+ *  - Mismo orden que Activities: UTC, Local, Reset diario, Reset semanal
+ *
+ * v1.3.0: Barra de horarios unificada con iconos GW2
+ * v1.2.2: Horarios en hora local con color dinámico
  */
 
 (function () {
   'use strict';
 
-  var $  = function (sel, root) { return (root || document).querySelector(sel); };
-  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+  console.info('[MetaTheme] meta-theme.js v1.3.1 — barra de horarios con UTC + resets');
 
-  console.info('[MetaTheme] meta-theme.js v1.0.0 — glow por expansión via --meta-title-color');
+  var DEBUG = false;
 
-  // === DEBUG opcional ===
-  var DEBUG = false; // poné true para ver en consola el color detectado
+  // ==========================================================================
+  // UTILIDADES
+  // ==========================================================================
 
-  // --- Utils -------------------------------------------------------------------
   function hexToRGBA(hex, alpha) {
     try {
       var h = String(hex || '').trim();
       if (!h) return null;
-      // Aceptar "rgb(...)" o "rgba(...)" por flexibilidad (aunque esperamos #hex)
-      if (/^rgba?\(/i.test(h)) return h.replace(/\s+/g,''); // ya es rgba/rgb
-      // Normalizar #RGB y #RRGGBB
-      h = h.replace(/^#/, '');
-      if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join('');
-      if (h.length !== 6) return null;
-      var r = parseInt(h.slice(0, 2), 16);
-      var g = parseInt(h.slice(2, 4), 16);
-      var b = parseInt(h.slice(4, 6), 16);
-      var a = (typeof alpha === 'number') ? Math.max(0, Math.min(1, alpha)) : 1;
-      return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
-    } catch (_) { return null; }
-  }
-
-  function getMetaTint(card) {
-    try {
-      // 1) Intento directo: atributo style inline (lo setea meta.js)
-      var inline = card.getAttribute('style') || '';
-      var m = inline.match(/--meta-title-color\s*:\s*([^;]+)/i);
-      if (m && m[1]) return String(m[1]).trim();
-
-      // 2) Fallback: leer la variable computada (por si viniera desde CSS externo)
-      var cs = getComputedStyle(card);
-      var v = cs.getPropertyValue('--meta-title-color');
-      if (v) return String(v).trim();
-    } catch (_) {}
-    return ''; // no hay tinte
-  }
-
-  function applyMetaTheme(card) {
-    if (!card) return;
-
-    var tint = getMetaTint(card) || '#FFFFFF';
-    if (DEBUG) console.log('[MetaTheme] tint:', tint, 'for card', card.getAttribute('data-id') || '');
-
-    // Misma receta que WV/Wallet: borde interior sutil + glow exterior
-    var bColor = hexToRGBA(tint, 0.26); // borde/overlay interior
-    var gColor = hexToRGBA(tint, 0.34); // glow exterior
-
-    // 1) Título: reforzar el color (si por alguna razón no lo tomó)
-    try {
-      var title =
-        card.querySelector('.meta-card__title') || // skin moderna
-        card.querySelector('.m-title');             // compat
-      if (title) title.style.color = tint;
-    } catch (_) {}
-
-    // 2) Contenedor de tarjeta: borde + glow
-    try {
-      if (bColor && gColor) {
-        card.style.border = '1px solid ' + bColor;
-        // Dos sombras: una "inset" finita para integrar el color en el borde,
-        // y otra suave hacia afuera para dar el halo.
-        card.style.boxShadow = '0 0 0 1px ' + bColor + ' inset, 0 0 14px ' + gColor;
-      }
-      // Asegurar radio por consistencia con tu piel
-      if (!card.style.borderRadius) card.style.borderRadius = '12px';
-    } catch (_) {}
-
-    // 3) (Opcional) Decorar un elemento “icon wrapper” si en el futuro sumás un ícono
-    //    En Meta no hay ícono fijo de cabecera como en WV/Wallet; si lo agregás:
-    // try {
-    //   var iconWrap = card.querySelector('.meta-card__iconWrap');
-    //   if (iconWrap && bColor && gColor) {
-    //     iconWrap.style.boxShadow = '0 0 0 2px ' + bColor + ', 0 0 10px ' + gColor;
-    //     iconWrap.style.borderRadius = '6px';
-    //   }
-    // } catch (_) {}
-  }
-
-  function themeMetaNow(root) {
-    var host = (root || document).querySelector('#metaPanel') || root || document;
-    var cards = $$('.meta-card, .m-card', host);
-    cards.forEach(applyMetaTheme);
-  }
-
-  // --- Observer para re-renders de la lista ------------------------------------
-  var mo = null;
-  function ensureObserver() {
-    if (mo) return;
-    var panel = $('#metaPanel') || document;
-    mo = new MutationObserver(function (muts) {
-      muts.forEach(function (m) {
-        if (!m.addedNodes) return;
-        m.addedNodes.forEach(function (n) {
-          if (!(n instanceof HTMLElement)) return;
-          if (n.matches && (n.matches('.meta-card, .m-card'))) {
-            applyMetaTheme(n);
-          } else {
-            $$('.meta-card, .m-card', n).forEach(applyMetaTheme);
-          }
-        });
-      });
-    });
-    mo.observe(panel, { childList: true, subtree: true });
-  }
-
-  // --- Hooks de navegación / arranque ------------------------------------------
-  function onRoute() { requestAnimationFrame(function(){ themeMetaNow(document); }); }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function(){ onRoute(); ensureObserver(); });
-  } else {
-    onRoute(); ensureObserver();
-  }
-
-  // Si cambiás de tab con el header o por router
-  window.addEventListener('hashchange', function () {
-    var p = $('#metaPanel');
-    if (p && !p.hasAttribute('hidden')) onRoute();
-  });
-  document.addEventListener('gn:tabchange', function (ev) {
-    if (ev.detail && ev.detail.view === 'meta') onRoute();
-  });
-  /*!
- * Meta Theme (expansión/temporada) — outline + halo usando --meta-title-color
- * v1.1.0 (2026-03-21)
- *
- * Cambios v1.1.0:
- *  - Migración de badges de estado a canónicos (.badge--success/warning/info)
- *  - Migración de etiquetas de infusión/drop a badges
- *  - Migración de textos "Próximo en X" a pill
- *  - Añadida clase .card canónica a tarjetas
- *  - Compatibilidad total con theme-polish.css v2.0
- *
- * v1.0.0: glow por expansión via --meta-title-color
- */
-
-(function () {
-  'use strict';
-
-  var $  = function (sel, root) { return (root || document).querySelector(sel); };
-  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
-
-  console.info('[MetaTheme] meta-theme.js v1.1.0 — glow por expansión + badges canónicos');
-
-  // === DEBUG opcional ===
-  var DEBUG = false; // poné true para ver en consola el color detectado
-
-  // --- Utils -------------------------------------------------------------------
-  function hexToRGBA(hex, alpha) {
-    try {
-      var h = String(hex || '').trim();
-      if (!h) return null;
-      if (/^rgba?\(/i.test(h)) return h.replace(/\s+/g,'');
+      if (/^rgba?\(/i.test(h)) return h.replace(/\s+/g, '');
       h = h.replace(/^#/, '');
       if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join('');
       if (h.length !== 6) return null;
@@ -191,6 +50,381 @@
     return '';
   }
 
+  // ==========================================================================
+  // BARRA DE HORARIOS (estilo Activities con iconos GW2)
+  // ==========================================================================
+
+  // Iconos oficiales de GW2 desde wiki
+  var ICON_UTC = 'https://wiki.guildwars2.com/images/thumb/1/11/World_completion_bouncy_icon_active.png/24px-World_completion_bouncy_icon_active.png';
+  var ICON_LOCAL = 'https://wiki.guildwars2.com/images/6/6e/Activation.png';
+  var ICON_DAILY = 'https://wiki.guildwars2.com/images/thumb/9/99/Game_menu_log_out_icon.png/24px-Game_menu_log_out_icon.png';
+  var ICON_WEEKLY = 'https://wiki.guildwars2.com/images/f/f4/Tango-recharge-darker.png';
+
+  function formatCountdownWithSeconds(ms) {
+    if (!isFinite(ms) || ms <= 0) return '—';
+    var s = Math.floor(ms / 1000);
+    var d = Math.floor(s / 86400);
+    s %= 86400;
+    var h = Math.floor(s / 3600);
+    s %= 3600;
+    var m = Math.floor(s / 60);
+    s %= 60;
+    
+    var parts = [];
+    if (d > 0) parts.push(d + 'd');
+    if (h > 0 || d > 0) parts.push(String(h).padStart(2, '0') + 'h');
+    if (m > 0 || h > 0 || d > 0) parts.push(String(m).padStart(2, '0') + 'm');
+    parts.push(String(s).padStart(2, '0') + 's');
+    
+    return parts.join(' ');
+  }
+
+  function nextDailyResetUTC() {
+    var now = new Date();
+    var y = now.getUTCFullYear();
+    var m = now.getUTCMonth();
+    var d = now.getUTCDate();
+    var next = new Date(Date.UTC(y, m, d, 24, 0, 0, 0));
+    if (next.getTime() <= Date.now()) {
+      next = new Date(Date.UTC(y, m, d + 1, 0, 0, 0, 0));
+    }
+    return next;
+  }
+
+  function nextWeeklyResetUTC() {
+    var now = new Date();
+    var day = now.getUTCDay();
+    var daysUntilMonday = (1 - day + 7) % 7;
+    var base = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 7, 30, 0, 0));
+    var next = new Date(base.getTime() + daysUntilMonday * 24 * 60 * 60 * 1000);
+    if (next.getTime() <= Date.now()) {
+      next = new Date(next.getTime() + 7 * 24 * 60 * 60 * 1000);
+    }
+    return next;
+  }
+
+  function updateMetaClock() {
+    var now = new Date();
+    
+    // Hora server (UTC)
+    var utcHours = now.getUTCHours().toString().padStart(2, '0');
+    var utcMinutes = now.getUTCMinutes().toString().padStart(2, '0');
+    var utcSeconds = now.getUTCSeconds().toString().padStart(2, '0');
+    var utcTime = utcHours + ':' + utcMinutes + ':' + utcSeconds;
+    
+    // Hora local
+    var localHours = now.getHours().toString().padStart(2, '0');
+    var localMinutes = now.getMinutes().toString().padStart(2, '0');
+    var localSeconds = now.getSeconds().toString().padStart(2, '0');
+    var localTime = localHours + ':' + localMinutes + ':' + localSeconds;
+    
+    // Reset diario
+    var dailyReset = nextDailyResetUTC();
+    var dailyMs = dailyReset.getTime() - now.getTime();
+    var dailyCountdown = formatCountdownWithSeconds(dailyMs);
+    
+    // Reset semanal
+    var weeklyReset = nextWeeklyResetUTC();
+    var weeklyMs = weeklyReset.getTime() - now.getTime();
+    var weeklyCountdown = formatCountdownWithSeconds(weeklyMs);
+    
+    // Actualizar DOM
+    var utcEl = document.getElementById('metaUtcTime');
+    var localEl = document.getElementById('metaLocalTime');
+    var dailyEl = document.getElementById('metaDailyReset');
+    var weeklyEl = document.getElementById('metaWeeklyReset');
+    
+    if (utcEl) utcEl.textContent = utcTime;
+    if (localEl) localEl.textContent = localTime;
+    if (dailyEl) dailyEl.textContent = dailyCountdown;
+    if (weeklyEl) weeklyEl.textContent = weeklyCountdown;
+  }
+
+  function renderMetaClockBar(metaPanel) {
+    // Buscar el panel-head existente
+    var panelHead = metaPanel.querySelector('.panel-head');
+    if (!panelHead) return;
+    
+    // Guardar el título existente
+    var title = panelHead.querySelector('.panel-head__title');
+    var metaTopline = panelHead.querySelector('.meta-topline');
+    
+    // Crear nueva barra de horarios
+    var clockBar = document.createElement('div');
+    clockBar.className = 'meta-clock-bar chips';
+    clockBar.style.display = 'flex';
+    clockBar.style.gap = '16px';
+    clockBar.style.alignItems = 'center';
+    clockBar.style.background = '#0f1116';
+    clockBar.style.padding = '4px 12px';
+    clockBar.style.borderRadius = '40px';
+    clockBar.style.border = '1px solid #2a2c35';
+    clockBar.style.fontFamily = 'monospace';
+    clockBar.style.fontSize = '0.85rem';
+    clockBar.style.flexWrap = 'wrap';
+    
+    clockBar.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 6px;" data-tip="Hora del servidor (UTC+0)">
+        <img src="${ICON_UTC}" width="20" height="20" alt="UTC" style="filter: brightness(0.9);">
+        <span>UTC</span>
+        <strong id="metaUtcTime">--:--:--</strong>
+      </div>
+      <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
+      <div style="display: flex; align-items: center; gap: 6px;" data-tip="Tu hora local">
+        <img src="${ICON_LOCAL}" width="20" height="20" alt="Local" style="filter: brightness(0.9);">
+        <span>Local</span>
+        <strong id="metaLocalTime">--:--:--</strong>
+      </div>
+      <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
+      <div style="display: flex; align-items: center; gap: 6px;" data-tip="Reset diario a las 00:00 UTC">
+        <img src="${ICON_DAILY}" width="20" height="20" alt="Reset diario" style="filter: brightness(0.9);">
+        <span>Reset diario</span>
+        <strong id="metaDailyReset">--</strong>
+      </div>
+      <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
+      <div style="display: flex; align-items: center; gap: 6px;" data-tip="Reset semanal los lunes a las 07:30 UTC">
+        <img src="${ICON_WEEKLY}" width="20" height="20" alt="Reset semanal" style="filter: brightness(0.9);">
+        <span>Reset semanal</span>
+        <strong id="metaWeeklyReset">--</strong>
+      </div>
+    `;
+    
+    // Reemplazar el contenido del panel-head
+    panelHead.style.display = 'flex';
+    panelHead.style.justifyContent = 'space-between';
+    panelHead.style.alignItems = 'center';
+    panelHead.style.flexWrap = 'wrap';
+    panelHead.style.gap = '12px';
+    
+    // Limpiar y reconstruir
+    panelHead.innerHTML = '';
+    if (title) panelHead.appendChild(title);
+    panelHead.appendChild(clockBar);
+    
+    // Iniciar actualización en tiempo real
+    updateMetaClock();
+    if (window.__metaClockInterval) clearInterval(window.__metaClockInterval);
+    window.__metaClockInterval = setInterval(updateMetaClock, 1000);
+  }
+
+  // ==========================================================================
+  // MEJORA DE HORARIOS EN TARJETAS
+  // ==========================================================================
+
+  /**
+   * Extrae hora UTC del atributo title de un chip
+   * Formato esperado: "Ventana 00:21 UTC"
+   */
+  function getUTCTimeFromChip(chip) {
+    var title = chip.getAttribute('title') || '';
+    var match = title.match(/Ventana (\d{2}):(\d{2})\s*UTC/);
+    if (match) {
+      return {
+        hours: parseInt(match[1], 10),
+        minutes: parseInt(match[2], 10)
+      };
+    }
+    return null;
+  }
+
+  /**
+   * Convierte hora UTC a hora local
+   */
+  function convertToLocalTime(utcHours, utcMinutes) {
+    var date = new Date();
+    date.setUTCHours(utcHours, utcMinutes, 0, 0);
+    var localHours = date.getHours();
+    var localMinutes = date.getMinutes();
+    return String(localHours).padStart(2, '0') + ':' + String(localMinutes).padStart(2, '0');
+  }
+
+  /**
+   * Convierte todos los horarios de una tarjeta de UTC a hora local
+   */
+  function convertScheduleToLocalTime(card) {
+    var schedulePanel = card.querySelector('.m-win');
+    if (!schedulePanel) return;
+    
+    var chips = schedulePanel.querySelectorAll('.chip.chip--ghost');
+    var hasChanges = false;
+    
+    chips.forEach(function(chip) {
+      var utcTime = getUTCTimeFromChip(chip);
+      if (utcTime) {
+        var localTime = convertToLocalTime(utcTime.hours, utcTime.minutes);
+        if (chip.textContent !== localTime) {
+          chip.textContent = localTime;
+          chip.setAttribute('data-tip', 'Hora local: ' + localTime);
+          chip.removeAttribute('title');
+          chip.classList.add('has-local-time');
+          hasChanges = true;
+        }
+      }
+    });
+    
+    if (hasChanges && !schedulePanel.querySelector('.local-indicator')) {
+      var header = document.createElement('div');
+      header.className = 'schedule-panel__header';
+      header.style.marginBottom = '8px';
+      header.style.paddingBottom = '4px';
+      header.style.borderBottom = '1px solid #2a2c35';
+      header.style.fontSize = '0.7rem';
+      header.style.color = '#b4bad0';
+      header.innerHTML = '📅 Horarios de hoy <span class="local-indicator" style="opacity:0.7">(hora local)</span>';
+      schedulePanel.insertBefore(header, schedulePanel.firstChild);
+    }
+  }
+
+  /**
+   * Obtiene el próximo horario (en timestamp) para un evento
+   */
+  function getNextScheduleTime(card) {
+    var schedulePanel = card.querySelector('.m-win');
+    if (!schedulePanel) return null;
+    
+    var chips = schedulePanel.querySelectorAll('.chip.chip--ghost');
+    if (!chips.length) return null;
+    
+    var now = new Date();
+    var nowLocal = now.getHours() * 60 + now.getMinutes();
+    var closestDiff = Infinity;
+    var closestTime = null;
+    
+    chips.forEach(function(chip) {
+      var timeStr = chip.textContent;
+      var match = timeStr.match(/(\d{2}):(\d{2})/);
+      if (!match) return;
+      
+      var hours = parseInt(match[1], 10);
+      var minutes = parseInt(match[2], 10);
+      var eventTime = hours * 60 + minutes;
+      var diff = eventTime - nowLocal;
+      
+      if (diff < 0) diff += 24 * 60;
+      
+      if (diff < closestDiff) {
+        closestDiff = diff;
+        closestTime = eventTime;
+      }
+    });
+    
+    if (closestTime === null) return null;
+    
+    var today = new Date();
+    today.setHours(Math.floor(closestTime / 60), closestTime % 60, 0, 0);
+    return today.getTime();
+  }
+
+  /**
+   * Actualiza el color del botón "Horarios" según el próximo evento
+   */
+  function updateScheduleButtonColor(card) {
+    var btn = card.querySelector('.m-win__toggle');
+    if (!btn) return;
+    
+    var nextTime = getNextScheduleTime(card);
+    if (!nextTime) {
+      btn.classList.remove('badge--success', 'badge--warning', 'badge--info');
+      return;
+    }
+    
+    var now = Date.now();
+    var timeLeft = nextTime - now;
+    
+    btn.classList.remove('badge--success', 'badge--warning', 'badge--info');
+    
+    if (timeLeft <= 0) {
+      btn.classList.add('badge--success');
+      btn.setAttribute('data-tip', '🟢 Evento activo ahora');
+    } else if (timeLeft <= 20 * 60 * 1000) {
+      btn.classList.add('badge--warning');
+      var minutesLeft = Math.ceil(timeLeft / 60000);
+      btn.setAttribute('data-tip', '🟡 Próximo evento en ' + minutesLeft + ' min');
+    } else {
+      btn.classList.add('badge--info');
+      btn.setAttribute('data-tip', '🔵 Ver todos los horarios (hora local)');
+    }
+  }
+
+  /**
+   * Resalta el próximo horario en la lista de horarios
+   */
+  function highlightNextSchedule(card) {
+    var schedulePanel = card.querySelector('.m-win');
+    if (!schedulePanel) return;
+    
+    var chips = schedulePanel.querySelectorAll('.chip.chip--ghost');
+    if (!chips.length) return;
+    
+    var now = new Date();
+    var nowLocal = now.getHours() * 60 + now.getMinutes();
+    var closestIndex = -1;
+    var closestDiff = Infinity;
+    
+    chips.forEach(function(chip, idx) {
+      var timeStr = chip.textContent;
+      var match = timeStr.match(/(\d{2}):(\d{2})/);
+      if (!match) return;
+      
+      var hours = parseInt(match[1], 10);
+      var minutes = parseInt(match[2], 10);
+      var eventTime = hours * 60 + minutes;
+      var diff = eventTime - nowLocal;
+      
+      if (diff < 0) diff += 24 * 60;
+      
+      if (diff < closestDiff) {
+        closestDiff = diff;
+        closestIndex = idx;
+      }
+    });
+    
+    chips.forEach(function(chip, idx) {
+      chip.classList.remove('chip--next');
+      if (idx === closestIndex && closestDiff !== Infinity) {
+        chip.classList.add('chip--next');
+        chip.style.fontWeight = 'bold';
+        chip.style.borderColor = '#ffd966';
+        chip.style.color = '#ffd966';
+        chip.style.backgroundColor = 'rgba(255, 217, 102, 0.1)';
+        chip.style.boxShadow = '0 0 0 1px rgba(255, 217, 102, 0.3) inset';
+      } else {
+        chip.style.fontWeight = 'normal';
+        chip.style.borderColor = '';
+        chip.style.color = '';
+        chip.style.backgroundColor = '';
+        chip.style.boxShadow = '';
+      }
+    });
+  }
+
+  /**
+   * Mejora el botón con ícono
+   */
+  function enhanceScheduleButton(card) {
+    var btn = card.querySelector('.m-win__toggle');
+    if (btn && !btn.innerHTML.includes('🕒')) {
+      btn.innerHTML = '🕒 ' + btn.textContent;
+      btn.style.transition = 'all 0.1s ease';
+    }
+  }
+
+  /**
+   * Aplica todas las mejoras de horarios a una tarjeta
+   */
+  function enhanceSchedule(card) {
+    if (!card) return;
+    
+    convertScheduleToLocalTime(card);
+    enhanceScheduleButton(card);
+    updateScheduleButtonColor(card);
+    highlightNextSchedule(card);
+  }
+
+  // ==========================================================================
+  // TEMA BASE (glow por expansión)
+  // ==========================================================================
+
   function applyMetaTheme(card) {
     if (!card) return;
 
@@ -212,57 +446,24 @@
       }
       if (!card.style.borderRadius) card.style.borderRadius = '12px';
     } catch (_) {}
+    
+    enhanceSchedule(card);
   }
+
+  // ==========================================================================
+  // APLICACIÓN A TODAS LAS TARJETAS
+  // ==========================================================================
 
   function themeMetaNow(root) {
     var host = (root || document).querySelector('#metaPanel') || root || document;
-    var cards = $$('.meta-card, .m-card', host);
+    var cards = Array.from(host.querySelectorAll('.meta-card, .m-card'));
     cards.forEach(applyMetaTheme);
   }
 
-  // --- Observer para re-renders de la lista ------------------------------------
-  var mo = null;
-  function ensureObserver() {
-    if (mo) return;
-    var panel = $('#metaPanel') || document;
-    mo = new MutationObserver(function (muts) {
-      muts.forEach(function (m) {
-        if (!m.addedNodes) return;
-        m.addedNodes.forEach(function (n) {
-          if (!(n instanceof HTMLElement)) return;
-          if (n.matches && (n.matches('.meta-card, .m-card'))) {
-            applyMetaTheme(n);
-          } else {
-            $$('.meta-card, .m-card', n).forEach(applyMetaTheme);
-          }
-        });
-      });
-    });
-    mo.observe(panel, { childList: true, subtree: true });
-  }
+  // ==========================================================================
+  // MIGRACIONES EXISTENTES
+  // ==========================================================================
 
-  // --- Hooks de navegación / arranque ------------------------------------------
-  function onRoute() { requestAnimationFrame(function(){ themeMetaNow(document); }); }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function(){ onRoute(); ensureObserver(); });
-  } else {
-    onRoute(); ensureObserver();
-  }
-
-  window.addEventListener('hashchange', function () {
-    var p = $('#metaPanel');
-    if (p && !p.hasAttribute('hidden')) onRoute();
-  });
-  document.addEventListener('gn:tabchange', function (ev) {
-    if (ev.detail && ev.detail.view === 'meta') onRoute();
-  });
-
-  /* ==========================================================================
-     EXTENSIÓN v1.1.0 — Migración a componentes canónicos
-     ========================================================================== */
-
-  // Migración de tarjetas a clase .card canónica
   function migrateCardsToCardClass(root) {
     var host = root || document;
     var metaPanel = host.querySelector('#metaPanel') || host;
@@ -270,7 +471,6 @@
     cards.forEach(function(card) { card.classList.add('card'); });
   }
 
-  // Migración de badges de estado
   function migrateStatusBadges(root) {
     var host = root || document;
     var metaPanel = host.querySelector('#metaPanel') || host;
@@ -308,7 +508,6 @@
     });
   }
 
-  // Migración de badges de expansión a pills
   function migrateExpansionBadges(root) {
     var host = root || document;
     var metaPanel = host.querySelector('#metaPanel') || host;
@@ -324,7 +523,6 @@
     });
   }
 
-  // Migración de etiquetas de infusión/drop
   function migrateItemTags(root) {
     var host = root || document;
     var metaPanel = host.querySelector('#metaPanel') || host;
@@ -348,7 +546,6 @@
     });
   }
 
-  // Mejora de textos "Próximo en X"
   function migrateNextTime(root) {
     var host = root || document;
     var metaPanel = host.querySelector('#metaPanel') || host;
@@ -362,7 +559,6 @@
     });
   }
 
-  // Aplicar todas las migraciones
   function applyMetaPolish(root) {
     var host = root || document;
     var metaPanel = host.querySelector('#metaPanel');
@@ -374,7 +570,41 @@
     migrateNextTime(metaPanel);
   }
 
-  // Observer para mejoras visuales
+  // ==========================================================================
+  // INICIALIZACIÓN DE BARRA DE HORARIOS
+  // ==========================================================================
+
+  function initMetaClockBar() {
+    var metaPanel = document.getElementById('metaPanel');
+    if (!metaPanel || metaPanel.hasAttribute('hidden')) return;
+    renderMetaClockBar(metaPanel);
+  }
+
+  // ==========================================================================
+  // OBSERVADORES
+  // ==========================================================================
+
+  var mo = null;
+  function ensureObserver() {
+    if (mo) return;
+    var panel = document.getElementById('metaPanel') || document;
+    mo = new MutationObserver(function (muts) {
+      muts.forEach(function (m) {
+        if (!m.addedNodes) return;
+        m.addedNodes.forEach(function (n) {
+          if (!(n instanceof HTMLElement)) return;
+          if (n.matches && (n.matches('.meta-card, .m-card'))) {
+            applyMetaTheme(n);
+          } else {
+            var cards = Array.from(n.querySelectorAll('.meta-card, .m-card'));
+            cards.forEach(applyMetaTheme);
+          }
+        });
+      });
+    });
+    mo.observe(panel, { childList: true, subtree: true });
+  }
+
   function ensurePolishObserver() {
     var panel = document.getElementById('metaPanel');
     if (!panel || panel.__metaPolishObserver) return;
@@ -400,7 +630,10 @@
     panel.__metaPolishObserver = observer;
   }
 
-  // Inicialización de mejoras
+  // ==========================================================================
+  // INICIALIZACIÓN
+  // ==========================================================================
+
   function initMetaPolish() {
     var metaPanel = document.getElementById('metaPanel');
     if (metaPanel && !metaPanel.hasAttribute('hidden')) {
@@ -409,23 +642,55 @@
     ensurePolishObserver();
   }
 
-  // Extender eventos existentes
+  function onRoute() { 
+    requestAnimationFrame(function(){ 
+      themeMetaNow(document);
+      applyMetaPolish(document);
+      initMetaClockBar();
+    }); 
+  }
+
+  // ==========================================================================
+  // EVENTOS
+  // ==========================================================================
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initMetaPolish);
+    document.addEventListener('DOMContentLoaded', function(){ 
+      onRoute(); 
+      ensureObserver();
+      initMetaPolish();
+    });
   } else {
+    onRoute(); 
+    ensureObserver();
     initMetaPolish();
   }
 
-  document.addEventListener('gn:tabchange', function(ev) {
+  window.addEventListener('hashchange', function () {
+    var p = document.getElementById('metaPanel');
+    if (p && !p.hasAttribute('hidden')) {
+      setTimeout(function() { initMetaClockBar(); }, 50);
+      onRoute();
+    }
+  });
+  
+  document.addEventListener('gn:tabchange', function (ev) {
     if (ev.detail && ev.detail.view === 'meta') {
-      setTimeout(function() { applyMetaPolish(document); }, 60);
+      setTimeout(function() { 
+        themeMetaNow(document);
+        applyMetaPolish(document);
+        initMetaClockBar();
+      }, 100);
     }
   });
 
   document.addEventListener('gn:tokenchange', function() {
-    setTimeout(function() { applyMetaPolish(document); }, 120);
+    setTimeout(function() { 
+      themeMetaNow(document);
+      applyMetaPolish(document);
+      initMetaClockBar();
+    }, 150);
   });
 
-  console.info('[MetaTheme] Extensión v1.1.0 activa — badges canónicos + cards + pills');
-})();
+  console.info('[MetaTheme] ready v1.3.1 — barra de horarios con UTC + resets');
 })();
