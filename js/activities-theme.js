@@ -1,13 +1,14 @@
 /*!
  * Activities Theme — migración a componentes canónicos (estilo Purchase Detail)
- * v2.5.0 (2026-03-22)
+ * v2.6.0 (2026-03-23)
  *
- * MEJORAS v2.5.0:
- *  - Barra de horarios con iconos oficiales de GW2 desde wiki
- *  - Hora server UTC y hora local con actualización en tiempo real
- *  - Cuenta regresiva para reset diario (00:00 UTC) y semanal (lunes 07:30 UTC)
- *  - Tooltips informativos con detalles de resets
+ * MEJORAS v2.6.0:
+ *  - Adaptación a nueva estructura: Home Nodes aislado en su propia pestaña
+ *  - Renderizado bajo demanda (solo cuando se activa la pestaña Home Nodes)
+ *  - Uso de API global ActivitiesAPI para comunicación con activities.js
+ *  - Eliminado renderizado automático al aplicar tema
  *
+ * v2.5.0: Barra de horarios con iconos oficiales de GW2 desde wiki
  * v2.4.0: Barra de horarios inicial
  * v2.3.0: Filtros por categoría (API/Janthir/Contratos)
  * v2.2.0: Estructura corregida basada en API real
@@ -18,7 +19,7 @@
 (function() {
   'use strict';
 
-  console.info('[ActivitiesTheme] Inicializando migración visual v2.5.0');
+  console.info('[ActivitiesTheme] Inicializando migración visual v2.6.0 - Home Nodes bajo demanda');
 
   var DEBUG = false;
 
@@ -100,15 +101,15 @@
     return capitalizeWords(formatted);
   }
 
-  // ==========================================================================
-  // Horarios y Resets (estilo Purchase Detail con iconos GW2)
+    // ==========================================================================
+  // Horarios y Resets (con iconos locales)
   // ==========================================================================
 
-  // Iconos oficiales de GW2 desde wiki
-  var ICON_UTC = 'https://wiki.guildwars2.com/images/thumb/1/11/World_completion_bouncy_icon_active.png/24px-World_completion_bouncy_icon_active.png';
-  var ICON_LOCAL = 'https://wiki.guildwars2.com/images/6/6e/Activation.png';
-  var ICON_DAILY = 'https://wiki.guildwars2.com/images/thumb/9/99/Game_menu_log_out_icon.png/24px-Game_menu_log_out_icon.png';
-  var ICON_WEEKLY = 'https://wiki.guildwars2.com/images/f/f4/Tango-recharge-darker.png';
+  // Iconos locales (descargados con descargar_ui.py)
+  var ICON_UTC = '/assets/icons/460028.png';
+  var ICON_LOCAL = '/assets/icons/841720.png';
+  var ICON_DAILY = '/assets/icons/534745.png';
+  var ICON_WEEKLY = '/assets/icons/155064.png';
 
   function formatCountdownWithSeconds(ms) {
     if (!isFinite(ms) || ms <= 0) return '—';
@@ -156,29 +157,24 @@
   function updateActivitiesClock() {
     var now = new Date();
     
-    // Hora server (UTC)
     var utcHours = now.getUTCHours().toString().padStart(2, '0');
     var utcMinutes = now.getUTCMinutes().toString().padStart(2, '0');
     var utcSeconds = now.getUTCSeconds().toString().padStart(2, '0');
     var utcTime = utcHours + ':' + utcMinutes + ':' + utcSeconds;
     
-    // Hora local
     var localHours = now.getHours().toString().padStart(2, '0');
     var localMinutes = now.getMinutes().toString().padStart(2, '0');
     var localSeconds = now.getSeconds().toString().padStart(2, '0');
     var localTime = localHours + ':' + localMinutes + ':' + localSeconds;
     
-    // Reset diario
     var dailyReset = nextDailyResetUTC();
     var dailyMs = dailyReset.getTime() - now.getTime();
     var dailyCountdown = formatCountdownWithSeconds(dailyMs);
     
-    // Reset semanal
     var weeklyReset = nextWeeklyResetUTC();
     var weeklyMs = weeklyReset.getTime() - now.getTime();
     var weeklyCountdown = formatCountdownWithSeconds(weeklyMs);
     
-    // Actualizar DOM
     var utcEl = document.getElementById('activitiesUtcTime');
     var localEl = document.getElementById('activitiesLocalTime');
     var dailyEl = document.getElementById('activitiesDailyReset');
@@ -211,29 +207,28 @@
     
     clockBar.innerHTML = `
       <div style="display: flex; align-items: center; gap: 6px;" data-tip="Hora del servidor (UTC+0)">
-        <img src="${ICON_UTC}" width="20" height="20" alt="UTC" style="filter: brightness(0.9);">
+        <img src="${ICON_UTC}" width="24" height="24" alt="UTC" style="filter: brightness(0.9);">
         <span>UTC</span>
         <strong id="activitiesUtcTime">--:--:--</strong>
       </div>
       <div style="display: flex; align-items: center; gap: 6px;" data-tip="Tu hora local">
-        <img src="${ICON_LOCAL}" width="20" height="20" alt="Local" style="filter: brightness(0.9);">
+        <img src="${ICON_LOCAL}" width="24" height="24" alt="Local" style="filter: brightness(0.9);">
         <span>Local</span>
         <strong id="activitiesLocalTime">--:--:--</strong>
       </div>
       <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
       <div style="display: flex; align-items: center; gap: 6px;" data-tip="Reset diario a las 00:00 UTC">
-        <img src="${ICON_DAILY}" width="20" height="20" alt="Reset diario" style="filter: brightness(0.9);">
+        <img src="${ICON_DAILY}" width="24" height="24" alt="Reset diario" style="filter: brightness(0.9);">
         <span>Reset diario</span>
         <strong id="activitiesDailyReset">--</strong>
       </div>
       <div style="display: flex; align-items: center; gap: 6px;" data-tip="Reset semanal los lunes a las 07:30 UTC">
-        <img src="${ICON_WEEKLY}" width="20" height="20" alt="Reset semanal" style="filter: brightness(0.9);">
+        <img src="${ICON_WEEKLY}" width="24" height="24" alt="Reset semanal" style="filter: brightness(0.9);">
         <span>Reset semanal</span>
         <strong id="activitiesWeeklyReset">--</strong>
       </div>
     `;
     
-    // Buscar el lugar correcto para insertar (junto a los tabs)
     var actHead = activitiesPanel.querySelector('.act-head');
     if (actHead) {
       actHead.style.display = 'flex';
@@ -243,7 +238,6 @@
       actHead.style.gap = '12px';
       actHead.appendChild(clockBar);
     } else {
-      // Fallback: insertar después del título
       var title = activitiesPanel.querySelector('.panel__title');
       if (title && title.nextSibling) {
         title.parentNode.insertBefore(clockBar, title.nextSibling);
@@ -253,12 +247,10 @@
       }
     }
     
-    // Iniciar actualización en tiempo real
     updateActivitiesClock();
     if (window.__activitiesClockInterval) clearInterval(window.__activitiesClockInterval);
     window.__activitiesClockInterval = setInterval(updateActivitiesClock, 1000);
   }
-
   // ==========================================================================
   // Persistencia de marcados (localStorage por día)
   // ==========================================================================
@@ -304,7 +296,6 @@
   // LISTA COMPLETA DE NODOS FÍSICOS (basado en API real)
   // ==========================================================================
 
-  // Nodos que la API devuelve (53 elementos) - NOMBRES EXACTOS de la API
   var API_NODES = [
     'advanced_cloth_rack', 'advanced_leather_rack', 'airship_cargo', 'ancient_wood_node', 'aurilium_node',
     'bandit_chest', 'basic_cloth_rack', 'basic_harvesting_nodes', 'basic_leather_rack', 'basic_lumber_nodes',
@@ -319,7 +310,6 @@
     'quartz_node', 'salvage_pile', 'snow_truffle_node', 'sprocket_generator', 'winterberry_bush', 'wintersday_tree'
   ];
 
-  // Nodos de Janthir Wilds (que pueden no estar en API aún) - 6 elementos
   var JANTHIR_NODES = [
     { id: 'honey_flower_node', name: 'Honey Flower Node', type: 'harvest', itemId: 103233 },
     { id: 'rotted_titan_amber', name: 'Rotted Titan Amber Node', type: 'mining', itemId: 103321 },
@@ -329,7 +319,6 @@
     { id: 'lowland_pine_sapling_node', name: 'Lowland Pine Sapling Node', type: 'logging', itemId: 103325 }
   ];
 
-  // Elementos que NO son consultables por API (contratos, consumibles, etc.)
   var NON_API_ITEMS = [
     { id: 'enchanted_treasure_chest', name: 'Enchanted Treasure Chest', type: 'harvest', itemId: 67234, note: 'Consumible' },
     { id: 'gift_of_candy_corn', name: 'Gift of Candy Corn', type: 'mining', itemId: 48804, note: 'Consumible' },
@@ -348,13 +337,8 @@
     { id: 'reclaimed_metal_pile', name: 'Reclaimed Metal Pile', type: 'harvest', itemId: 88410, note: 'Recuperado' }
   ];
 
-  // ==========================================================================
-  // Mapa de IDs para acceso rápido (completo)
-  // ==========================================================================
-
   var NODE_ITEM_IDS = {};
 
-  // Añadir IDs de nodos API (los que tienen itemId conocido)
   var API_NODE_ITEMS = {
     'advanced_cloth_rack': 81853, 'advanced_leather_rack': 81852, 'airship_cargo': 78468,
     'ancient_wood_node': 68091, 'aurilium_node': 73798, 'bandit_chest': 68495,
@@ -380,29 +364,22 @@
     NODE_ITEM_IDS[key] = API_NODE_ITEMS[key];
   });
 
-  // Añadir IDs de nodos Janthir
   JANTHIR_NODES.forEach(function(node) {
     NODE_ITEM_IDS[node.id] = node.itemId;
   });
 
-  // Añadir IDs de elementos no API (para mostrar imágenes)
   NON_API_ITEMS.forEach(function(item) {
     NODE_ITEM_IDS[item.id] = item.itemId;
   });
-
-  // ==========================================================================
-  // FALLBACK: URLs de imágenes hardcodeadas
-  // ==========================================================================
-
-  var FALLBACK_ICON_URLS = {
-    // Se pueden añadir según necesidad
-  };
 
   // ==========================================================================
   // Obtener token actual
   // ==========================================================================
 
   function getCurrentToken() {
+    if (window.ActivitiesAPI && typeof window.ActivitiesAPI.getToken === 'function') {
+      return window.ActivitiesAPI.getToken();
+    }
     if (window.__GN__ && typeof window.__GN__.getSelectedToken === 'function') {
       return window.__GN__.getSelectedToken();
     }
@@ -452,17 +429,6 @@
       items.forEach(function(item) {
         if (item && item.id) map[item.id] = item;
       });
-      
-      itemIds.forEach(function(id) {
-        if (!map[id] && FALLBACK_ICON_URLS[id]) {
-          map[id] = {
-            id: id,
-            name: null,
-            icon: FALLBACK_ICON_URLS[id]
-          };
-        }
-      });
-      
       return map;
     } catch (e) {
       log('Error fetching node items, usando fallback completo:', e);
@@ -473,13 +439,7 @@
   function getFallbackItems(itemIds) {
     var map = {};
     itemIds.forEach(function(id) {
-      if (FALLBACK_ICON_URLS[id]) {
-        map[id] = {
-          id: id,
-          name: null,
-          icon: FALLBACK_ICON_URLS[id]
-        };
-      }
+      map[id] = { id: id, name: null, icon: null };
     });
     return map;
   }
@@ -490,7 +450,6 @@
 
   var ALL_DISPLAY_ITEMS = [];
 
-  // Añadir nodos API (53)
   API_NODES.forEach(function(nodeId) {
     ALL_DISPLAY_ITEMS.push({
       id: nodeId,
@@ -503,7 +462,6 @@
     });
   });
 
-  // Añadir nodos Janthir (6)
   JANTHIR_NODES.forEach(function(node) {
     ALL_DISPLAY_ITEMS.push({
       id: node.id,
@@ -516,7 +474,6 @@
     });
   });
 
-  // Añadir elementos no API (15)
   NON_API_ITEMS.forEach(function(item) {
     ALL_DISPLAY_ITEMS.push({
       id: item.id,
@@ -543,27 +500,21 @@
 
   function applyFiltersAndRender() {
     var filtered = ALL_DISPLAY_ITEMS.filter(function(item) {
-      // Filtro por categoría
       if (currentFilterCategory !== 'all' && item.category !== currentFilterCategory) return false;
       
-      // Filtro por tipo
       var type = item.type;
       if (currentFilterType !== 'all' && type !== currentFilterType) return false;
       
-      // Filtro por estado (solo para nodos API)
       if (item.isApiNode && item.category === 'api') {
         var isUnlocked = unlockedNodes.has(item.id);
         if (currentFilterStatus === 'unlocked' && !isUnlocked) return false;
         if (currentFilterStatus === 'locked' && isUnlocked) return false;
       } else if (item.category === 'janthir') {
-        // Nodos Janthir: siempre considerados como bloqueados (no desbloqueados)
         if (currentFilterStatus === 'unlocked') return false;
       } else {
-        // Elementos no API: solo mostrar si filtro es 'all' o 'locked'
         if (currentFilterStatus === 'unlocked') return false;
       }
       
-      // Filtro por búsqueda
       if (currentSearchTerm) {
         var displayName = item.displayName || getDisplayName(item.id);
         if (!displayName.toLowerCase().includes(currentSearchTerm.toLowerCase())) return false;
@@ -613,7 +564,6 @@
       card.style.gap = '12px';
       card.style.padding = '14px';
       
-      // Icono de tipo (grande, con glow)
       var typeIconHtml = `
         <div class="gw-node-ico" style="
           display: inline-flex;
@@ -628,7 +578,6 @@
         ">${iconChar}</div>
       `;
       
-      // Badge de estado
       var statusBadge = '';
       if (item.category === 'api') {
         statusBadge = isUnlocked
@@ -640,7 +589,6 @@
         statusBadge = '<span class="badge badge--info" style="font-size: 0.7rem; padding: 3px 10px;">📜 Contrato / Consumible</span>';
       }
       
-      // Imagen del consumible (ícono real)
       var itemIconHtml = '';
       if (itemIcon) {
         itemIconHtml = `
@@ -699,7 +647,6 @@
         ` : ''}
       `;
       
-      // Aplicar glow al icono de tipo
       var rgba = hexToRGBA(glowColor, 0.45);
       if (rgba) {
         var iconContainer = card.querySelector('.gw-node-ico');
@@ -759,7 +706,18 @@
     }
   }
 
-  async function renderHomeNodes(activitiesPanel) {
+  // ==========================================================================
+  // RENDERIZADO PRINCIPAL DE HOME NODES (para ser llamado bajo demanda)
+  // ==========================================================================
+
+  async function renderHomeNodesInContainer(container) {
+    if (!container) {
+      log('No se proporcionó contenedor para Home Nodes');
+      return false;
+    }
+    
+    log('Renderizando Home Nodes en contenedor');
+    
     var token = getCurrentToken();
     var unlockedNodeList = await fetchUnlockedNodes(token);
     
@@ -769,7 +727,6 @@
     });
     log('Nodos desbloqueados en cuenta:', unlockedNodes.size);
     
-    // Obtener IDs de ítems para todos los elementos
     var itemIds = [];
     ALL_DISPLAY_ITEMS.forEach(function(item) {
       if (item.itemId) itemIds.push(item.itemId);
@@ -777,13 +734,9 @@
     
     currentItemsMap = await fetchNodeItems(itemIds);
     
-    var existingContainer = activitiesPanel.querySelector('#homeNodesContainer');
-    if (existingContainer) existingContainer.remove();
+    container.innerHTML = '';
     
-    var container = document.createElement('div');
-    container.id = 'homeNodesContainer';
-    
-    // Barra de filtros completa con categorías, tipos y estado
+    // Barra de filtros completa
     var filterBar = document.createElement('div');
     filterBar.className = 'chips';
     filterBar.style.marginBottom = '16px';
@@ -846,28 +799,6 @@
     container.appendChild(counter);
     container.appendChild(grid);
     
-    var body = activitiesPanel.querySelector('.panel__body') || activitiesPanel;
-    var existingGrid = body.querySelector('#homeNodesGrid');
-    var existingTitle = body.querySelector('.panel-head__title');
-    
-    if (existingTitle && existingTitle.textContent === 'Home nodes') existingTitle.remove();
-    if (existingGrid) existingGrid.parentElement?.remove();
-    
-    var separator = body.querySelector('.hr-hairline');
-    if (separator && separator.classList.contains('hr-hairline')) separator.remove();
-    
-    var newTitle = document.createElement('h3');
-    newTitle.className = 'panel-head__title';
-    newTitle.style.margin = '6px 0 10px';
-    newTitle.textContent = 'Home nodes';
-    
-    var newHr = document.createElement('hr');
-    newHr.className = 'hr-hairline';
-    
-    body.appendChild(newHr);
-    body.appendChild(newTitle);
-    body.appendChild(container);
-    
     var searchInput = document.getElementById('homeNodesSearch');
     if (searchInput) {
       searchInput.addEventListener('input', function(e) {
@@ -876,7 +807,6 @@
       });
     }
     
-    // Bind eventos de filtros de categoría
     var categoryBtns = document.querySelectorAll('.filter-category-btn');
     categoryBtns.forEach(function(btn) {
       btn.addEventListener('click', function(e) {
@@ -887,7 +817,6 @@
       });
     });
     
-    // Bind eventos de filtros de tipo
     var typeBtns = document.querySelectorAll('.filter-type-btn');
     typeBtns.forEach(function(btn) {
       btn.addEventListener('click', function(e) {
@@ -898,7 +827,6 @@
       });
     });
     
-    // Bind eventos de filtros de estado
     var statusBtns = document.querySelectorAll('.filter-status-btn');
     statusBtns.forEach(function(btn) {
       btn.addEventListener('click', function(e) {
@@ -912,51 +840,9 @@
     applyFiltersAndRender();
     return true;
   }
-  
-  function showEmptyHomeNodes(activitiesPanel) {
-    var existingContainer = activitiesPanel.querySelector('#homeNodesContainer');
-    if (existingContainer) existingContainer.remove();
-    
-    var emptyMessage = document.createElement('div');
-    emptyMessage.id = 'homeNodesContainer';
-    emptyMessage.className = 'muted';
-    emptyMessage.style.padding = '20px';
-    emptyMessage.style.textAlign = 'center';
-    emptyMessage.innerHTML = 'No se encontraron elementos de Heredad.';
-    
-    var body = activitiesPanel.querySelector('.panel__body') || activitiesPanel;
-    var existingGrid = body.querySelector('#homeNodesGrid');
-    var existingTitle = body.querySelector('.panel-head__title');
-    
-    if (existingTitle && existingTitle.textContent === 'Home nodes') existingTitle.remove();
-    if (existingGrid) existingGrid.parentElement?.remove();
-    
-    var separator = body.querySelector('.hr-hairline');
-    if (separator && separator.classList.contains('hr-hairline')) separator.remove();
-    
-    var newTitle = document.createElement('h3');
-    newTitle.className = 'panel-head__title';
-    newTitle.style.margin = '6px 0 10px';
-    newTitle.textContent = 'Home nodes';
-    
-    var newHr = document.createElement('hr');
-    newHr.className = 'hr-hairline';
-    
-    body.appendChild(newHr);
-    body.appendChild(newTitle);
-    body.appendChild(emptyMessage);
-  }
-
-  async function enhanceHomeNodes(activitiesPanel) {
-    if (!activitiesPanel || activitiesPanel.hasAttribute('hidden')) {
-      log('ActivitiesPanel no visible, skip HomeNodes');
-      return false;
-    }
-    return await renderHomeNodes(activitiesPanel);
-  }
 
   // ==========================================================================
-  // Resto de mejoras (KPIs, PSNA, etc.)
+  // Mejoras visuales (sin Home Nodes automático)
   // ==========================================================================
 
   function enhanceCards(activitiesPanel) {
@@ -1006,20 +892,6 @@
     }
   }
 
-  function enhanceWorldBosses(activitiesPanel) {
-    if (!activitiesPanel || activitiesPanel.hasAttribute('hidden')) return;
-    var wbBody = activitiesPanel.querySelector('#wbBody');
-    if (wbBody && !wbBody.classList.contains('wb-enhanced')) {
-      wbBody.classList.add('wb-enhanced');
-      wbBody.querySelectorAll('[data-wb-copy]').forEach(function(btn) {
-        if (!btn.classList.contains('btn-enhanced')) {
-          btn.classList.add('btn-enhanced');
-          btn.style.transition = 'all 0.1s ease';
-        }
-      });
-    }
-  }
-
   function enhanceWeeklies(activitiesPanel) {
     if (!activitiesPanel || activitiesPanel.hasAttribute('hidden')) return;
     var actWeekly = activitiesPanel.querySelector('#actWeekly');
@@ -1044,7 +916,7 @@
   }
 
   // ==========================================================================
-  // Aplicar todas las mejoras
+  // Aplicar mejoras visuales (excluyendo Home Nodes)
   // ==========================================================================
 
   async function applyActivitiesTheme() {
@@ -1056,20 +928,43 @@
 
     log('Aplicando mejoras visuales a Activities (panel visible)');
 
-    // Primero renderizar la barra de horarios
     renderActivitiesClockBar(activitiesPanel);
-    
-    // Luego el resto de mejoras
     enhanceCards(activitiesPanel);
     enhanceKPIs(activitiesPanel);
     enhancePSNA(activitiesPanel);
     enhanceEcto(activitiesPanel);
-    enhanceWorldBosses(activitiesPanel);
     enhanceWeeklies(activitiesPanel);
     enhanceFractales(activitiesPanel);
-    await enhanceHomeNodes(activitiesPanel);
+    
+    // NOTA: Home Nodes NO se renderiza automáticamente aquí
+    // Se renderizará bajo demanda cuando el usuario haga clic en la pestaña
     
     return true;
+  }
+
+  // ==========================================================================
+  // Configurar listener para renderizado bajo demanda desde activities.js
+  // ==========================================================================
+
+  function setupHomeNodesListener() {
+    // Escuchar el evento personalizado que activities.js dispara
+    document.addEventListener('gn:render-home-nodes', async function(event) {
+      log('Evento gn:render-home-nodes recibido');
+      var container = event.detail?.container || document.getElementById('homeNodesContainer');
+      if (container) {
+        await renderHomeNodesInContainer(container);
+      } else {
+        log('No se encontró contenedor para Home Nodes');
+      }
+    });
+    
+    // También exponer método global para que activities.js pueda llamarlo
+    window.ActivitiesTheme = window.ActivitiesTheme || {};
+    window.ActivitiesTheme.renderHomeNodes = function(container) {
+      return renderHomeNodesInContainer(container);
+    };
+    
+    log('Listener de Home Nodes configurado');
   }
 
   // ==========================================================================
@@ -1094,6 +989,7 @@
 
   function initActivitiesTheme() {
     observeActivitiesPanel();
+    setupHomeNodesListener();
     setTimeout(function() { applyActivitiesTheme(); }, 200);
   }
 
@@ -1105,7 +1001,11 @@
   });
 
   document.addEventListener('gn:tokenchange', function() {
-    setTimeout(function() { applyActivitiesTheme(); }, 200);
+    // No recargar Home Nodes automáticamente, solo marcar para recargar cuando se active
+    log('Token cambiado, marcando Home Nodes para recarga');
+    if (window.ActivitiesAPI && typeof window.ActivitiesAPI.onTokenChange === 'function') {
+      window.ActivitiesAPI.onTokenChange();
+    }
   });
 
   if (document.readyState === 'loading') {
@@ -1114,5 +1014,5 @@
     initActivitiesTheme();
   }
 
-  console.info('[ActivitiesTheme] ready v2.5.0 — barra de horarios con iconos GW2 oficiales');
+  console.info('[ActivitiesTheme] ready v2.6.0 — Home Nodes bajo demanda, sin renderizado automático');
 })();

@@ -1,13 +1,13 @@
 /*!
  * js/wv-purchase-detail.js — Vista de Detalle de Compras (Wizard's Vault)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.8.4 (2026-03-21) — Unificación de colores cromáticos
+ * Versión: 1.8.6 (2026-03-24) — Íconos oficiales en countdowns (diario, semanal, temporada)
  *
  * Cambios:
- *  - Total disponible / DISP → siempre verde
- *  - Necesaria (fijados) / NECESARIO → siempre amarillo
- *  - Δ Global / Δ → verde si ≥ 0, rojo si < 0
- *  - Consistencia visual en todo el dashboard
+ *  - Reemplazo del SVG genérico por imágenes oficiales en los countdowns
+ *  - Íconos diferenciados para reset diario, semanal y fin de temporada
+ *  - Mostrar información de temporada en el panel
+ *  - Unificación de colores: DISP verde, NECESARIO amarillo, Δ verde/rojo
  */
 
 (function (root) {
@@ -140,7 +140,25 @@
       
       .wvpd-rows{ display:grid; gap:8px; grid-template-columns: 1.2fr 1.8fr; }
       @media (max-width: 980px){ .wvpd-rows{ grid-template-columns: 1fr; } }
-      .wvpd-rot{ display:flex; gap:10px; flex-wrap:wrap; }
+      .wvpd-rot{ display:flex; gap:10px; flex-wrap:wrap; align-items: center; }
+      .wvpd-rot__pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #0c0e14;
+        padding: 4px 12px;
+        border-radius: 20px;
+        border: 1px solid #2a2c35;
+      }
+      .wvpd-rot__pill .clock-ico {
+        display: inline-flex;
+        align-items: center;
+      }
+      .wvpd-rot__pill .clock-ico img {
+        width: 18px;
+        height: 18px;
+        filter: brightness(0.9);
+      }
       .wvpd-cols{ display:flex; gap:10px; flex-wrap:wrap; }
       .wvpd-col{ flex:1 1 240px; min-width:220px; }
       .wvpd-list{ margin:0; padding:0; list-style:none; display:grid; gap:6px; }
@@ -382,6 +400,23 @@
         border: 1px solid #3a3e4a;
         pointer-events: none;
       }
+      
+      /* Bloque de temporada */
+      .wv-season {
+        margin: 4px 0 12px 0;
+        padding: 8px 12px;
+        background: #0f1116;
+        border-radius: 12px;
+        border-left: 3px solid #7bc2ff;
+      }
+      .wv-season strong {
+        font-size: 0.9rem;
+      }
+      .wv-season span {
+        font-size: 0.75rem;
+        color: #9aa2b8;
+        margin-left: 12px;
+      }
     `;
 
     var s = document.createElement('style');
@@ -448,6 +483,19 @@
     }
   }
 
+  // ------------------------------ Íconos para countdowns ------------------
+  function getCountdownIcon(type){
+    // type puede ser 'daily', 'weekly', 'season'
+    var icons = {
+      daily: '/assets/icons/523379.png',
+      weekly: '/assets/icons/523380.png',
+      season: '/assets/icons/523381.png'  // cambiar si tienes un ícono específico para temporada
+    };
+    
+    var iconUrl = icons[type] || icons.daily;
+    return '<img src="' + iconUrl + '" width="18" height="18" alt="" style="filter: brightness(0.9);">';
+  }
+
   // ------------------------------ Acceso ícono / banner ------------------
   function svgCamera() {
     return (
@@ -463,7 +511,7 @@
     if (u && /^https?:\/\//i.test(u)) {
       return '<img src="'+esc(u)+'" alt="" loading="lazy">';
     }
-    return svgCamera();
+    return '<img src="/assets/icons/3594051.png" alt="" loading="lazy" width="50" height="50">';
   }
   function bannerIconHTML(){ return accessIconHTML(); }
 
@@ -594,6 +642,9 @@
       panel.__wired = true;
       panel.innerHTML = [
         '<div class="panel-head"><h3 class="panel-head__title">Detalle de compras — Wizard’s Vault</h3></div>',
+        
+        
+        
         '<div class="panel__body">',
 
           '<div id="wvpdDash" class="wvpd-dash">',
@@ -615,9 +666,9 @@
             '<div class="wvpd-rows">',
               '<div class="wvpd-card">',
                 '<div class="wvpd-rot">',
-                  '<span class="wvpd-rot__pill"><span class="clock-ico">'+clockSvg()+'</span><strong id="wvpdCountDaily">—</strong></span>',
-                  '<span class="wvpd-rot__pill"><span class="clock-ico">'+clockSvg()+'</span><strong id="wvpdCountWeekly">—</strong></span>',
-                  '<span class="wvpd-rot__pill"><span class="clock-ico">'+clockSvg()+'</span><strong id="wvpdCountSeason">—</strong></span>',
+                  '<span class="wvpd-rot__pill"><span class="clock-ico">'+getCountdownIcon('daily')+'</span><strong id="wvpdCountDaily">—</strong></span>',
+                  '<span class="wvpd-rot__pill"><span class="clock-ico">'+getCountdownIcon('weekly')+'</span><strong id="wvpdCountWeekly">—</strong></span>',
+                  '<span class="wvpd-rot__pill"><span class="clock-ico">'+getCountdownIcon('season')+'</span><strong id="wvpdCountSeason">—</strong></span>',
                 '</div>',
                 '<div id="wvpdUsefulBox" style="margin-top:10px; display:grid; gap:8px">',
                   '<div class="wvpd-kpi__lbl">Datos útiles</div>',
@@ -696,10 +747,6 @@
     return panel;
   }
 
-  function clockSvg(){
-    return '<svg viewBox="0 0 24 24"><g fill="none" stroke="#cdd2da" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3 2"/></g></svg>';
-  }
-
   function setStatus(msg, kind){
     var msgEl = document.getElementById('wvpdStatusMsg');
     if (!msgEl) return;
@@ -748,6 +795,37 @@
     } else {
       var y = (new Date()).getUTCFullYear() % 100;
       state.currentSeason = { year:y, seq:1, season_id:null, title:null, start:null, end:null };
+    }
+    updateSeasonDisplay();
+  }
+  
+  function updateSeasonDisplay() {
+    var season = state.currentSeason;
+    var titleEl = document.getElementById('wvSeasonTitle');
+    var datesEl = document.getElementById('wvSeasonDates');
+    
+    if (!titleEl || !datesEl) return;
+    
+    if (season && season.title) {
+      titleEl.textContent = season.title;
+    } else {
+      titleEl.textContent = '—';
+    }
+    
+    if (season && season.start && season.end) {
+      var startDate = new Date(season.start);
+      var endDate = new Date(season.end);
+      
+      if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+        var options = { year: 'numeric', month: 'short', day: 'numeric' };
+        var startStr = startDate.toLocaleDateString('es-ES', options);
+        var endStr = endDate.toLocaleDateString('es-ES', options);
+        datesEl.textContent = startStr + ' — ' + endStr;
+      } else {
+        datesEl.textContent = '—';
+      }
+    } else {
+      datesEl.textContent = '—';
     }
   }
 
@@ -1203,7 +1281,7 @@
     hcells.push('<th class="right"><div class="wvpd-header-pill"><span class="wvpd-header-icon">'+aaI+'</span><span class="wvpd-header-label">necesario</span></div></th>');
     hcells.push('<th class="right"><div class="wvpd-header-pill"><span class="wvpd-header-icon">'+aaI+'</span><span class="wvpd-header-label">Δ</span></div></th>');
 
-    thead.innerHTML = '               <tr>' + hcells.join('') + ' <\/tr>';
+    thead.innerHTML = '                <tr>' + hcells.join('') + ' <\/tr>';
 
     // FILAS
     var rowsAcc = state.accounts.slice();
@@ -1273,10 +1351,10 @@
       var deltaNumber = (delta >= 0 ? '+' : '') + fmtInt(delta);
       cells.push('<td class="right"><span class="wvpd-aa-delta"><span class="' + deltaCls + '">' + deltaNumber + '</span>' + (deltaIcon ? '<span class="wvpd-aa-delta-icon ' + deltaCls + '">' + deltaIcon + '</span>' : '') + '</span><\/td>');
 
-      return '               <tr>' + cells.join('') + '<\/tr>';
+      return '                <tr>' + cells.join('') + '<\/tr>';
     }).join('');
 
-    tbody.innerHTML = body || '               <tr><td colspan="'+(1 + pins.length + 3)+'" class="center wvpd-muted">Sin datos para mostrar.<\/td><\/tr>';
+    tbody.innerHTML = body || '                <tr><td colspan="'+(1 + pins.length + 3)+'" class="center wvpd-muted">Sin datos para mostrar.<\/td><\/tr>';
 
     lazyBuildItemsCatalogForActiveColumns();
   }
@@ -1369,6 +1447,8 @@
         } catch(_){}
       });
 
+      
+      
       var _stTimer = null;
       window.addEventListener('storage', function(e){
         if (!e) return;
@@ -1385,7 +1465,10 @@
           _stTimer = setTimeout(function(){ safeRefresh(false); }, 300);
         }
       });
+      
 
+      
+      
       try {
         window.addEventListener('wv:season-store:mutate', function(){
           var p = document.getElementById('wvPDPanel');
@@ -1393,6 +1476,7 @@
           safeRefresh(false);
         });
       } catch(_){}
+      
 
       ['wvTabBtnDaily','wvTabBtnWeekly','wvTabBtnSpecial','wvTabBtnShop'].forEach(function(id){
         var b = document.getElementById(id);
@@ -1401,6 +1485,9 @@
           b.addEventListener('click', function(){ try { WVPurchaseDetail.hide(); } catch(_){ } });
         }
       });
+      
+      // Cargar temporada inicial
+      await initCurrentSeason();
     },
 
     async show(){
@@ -1462,5 +1549,5 @@
   else
     WVPurchaseDetail.initOnce();
 
-  console.info(LOG, 'ready 1.8.4 — unificación de colores: DISP verde, NECESARIO amarillo, Δ verde/rojo');
+  console.info(LOG, 'ready 1.8.6 — íconos oficiales en countdowns, temporada visible');
 })(typeof window!=='undefined' ? window : (typeof globalThis!=='undefined' ? globalThis : this));

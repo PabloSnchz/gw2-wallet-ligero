@@ -143,14 +143,13 @@
     return { id:id||null, title:title||'—', start:start||null, end:end||null };
   }
 
-  // ----------------------------- WV: Season -----------------------------
   function getWVSeason(opts){
     opts = opts || {};
     var key = 'wv_season';
     var cached = getCache(key, TTL.WV_SEASON, null, opts.nocache);
     if (cached) return Promise.resolve(cached);
 
-    // Canon + fallbacks
+    // Canon + fallbacks (SOLO estos tres)
     var u1 = API_BASE + '/v2/wizardsvault';
     var u2 = API_BASE + '/v2/wizardsvault/season';
     var u3 = API_BASE + '/v2/wizards-vault/season';
@@ -178,7 +177,6 @@
       });
     });
   }
-
   // -------------------- WV: Objetivos (daily/weekly/special) --------------------
   function _getWVObjectives(kind, token, opts){
     opts = opts || {};

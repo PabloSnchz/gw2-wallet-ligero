@@ -1,12 +1,12 @@
 /*!
  * Meta Theme (expansión/temporada) — outline + halo usando --meta-title-color
- * v1.3.1 (2026-03-22)
+ * v1.3.2 (2026-03-23)
  *
- * Cambios v1.3.1:
- *  - Añadida hora del servidor (UTC) al principio de la barra (igual que Activities)
- *  - Eliminado campo "Última actualización" (no necesario)
- *  - Mismo orden que Activities: UTC, Local, Reset diario, Reset semanal
+ * Cambios v1.3.2:
+ *  - Mejora en resaltado de horarios: evento activo en VERDE, próximo en ÁMBAR
+ *  - Corrección de lógica para detectar horario activo (ventana de 15 min)
  *
+ * v1.3.1: Barra de horarios unificada con UTC
  * v1.3.0: Barra de horarios unificada con iconos GW2
  * v1.2.2: Horarios en hora local con color dinámico
  */
@@ -14,7 +14,7 @@
 (function () {
   'use strict';
 
-  console.info('[MetaTheme] meta-theme.js v1.3.1 — barra de horarios con UTC + resets');
+  console.info('[MetaTheme] meta-theme.js v1.3.2 — horarios activos en verde, próximos en ámbar');
 
   var DEBUG = false;
 
@@ -55,10 +55,10 @@
   // ==========================================================================
 
   // Iconos oficiales de GW2 desde wiki
-  var ICON_UTC = 'https://wiki.guildwars2.com/images/thumb/1/11/World_completion_bouncy_icon_active.png/24px-World_completion_bouncy_icon_active.png';
-  var ICON_LOCAL = 'https://wiki.guildwars2.com/images/6/6e/Activation.png';
-  var ICON_DAILY = 'https://wiki.guildwars2.com/images/thumb/9/99/Game_menu_log_out_icon.png/24px-Game_menu_log_out_icon.png';
-  var ICON_WEEKLY = 'https://wiki.guildwars2.com/images/f/f4/Tango-recharge-darker.png';
+  var ICON_UTC = '/assets/icons/460028.png';
+  var ICON_LOCAL = '/assets/icons/841720.png';
+  var ICON_DAILY = '/assets/icons/534745.png';
+  var ICON_WEEKLY = '/assets/icons/155064.png';
 
   function formatCountdownWithSeconds(ms) {
     if (!isFinite(ms) || ms <= 0) return '—';
@@ -141,15 +141,11 @@
   }
 
   function renderMetaClockBar(metaPanel) {
-    // Buscar el panel-head existente
     var panelHead = metaPanel.querySelector('.panel-head');
     if (!panelHead) return;
     
-    // Guardar el título existente
     var title = panelHead.querySelector('.panel-head__title');
-    var metaTopline = panelHead.querySelector('.meta-topline');
     
-    // Crear nueva barra de horarios
     var clockBar = document.createElement('div');
     clockBar.className = 'meta-clock-bar chips';
     clockBar.style.display = 'flex';
@@ -165,50 +161,47 @@
     
     clockBar.innerHTML = `
       <div style="display: flex; align-items: center; gap: 6px;" data-tip="Hora del servidor (UTC+0)">
-        <img src="${ICON_UTC}" width="20" height="20" alt="UTC" style="filter: brightness(0.9);">
+        <img src="${ICON_UTC}" width="24" height="24" alt="UTC" style="filter: brightness(0.9);">
         <span>UTC</span>
         <strong id="metaUtcTime">--:--:--</strong>
       </div>
       <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
       <div style="display: flex; align-items: center; gap: 6px;" data-tip="Tu hora local">
-        <img src="${ICON_LOCAL}" width="20" height="20" alt="Local" style="filter: brightness(0.9);">
+        <img src="${ICON_LOCAL}" width="24" height="24" alt="Local" style="filter: brightness(0.9);">
         <span>Local</span>
         <strong id="metaLocalTime">--:--:--</strong>
       </div>
       <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
       <div style="display: flex; align-items: center; gap: 6px;" data-tip="Reset diario a las 00:00 UTC">
-        <img src="${ICON_DAILY}" width="20" height="20" alt="Reset diario" style="filter: brightness(0.9);">
+        <img src="${ICON_DAILY}" width="24" height="24" alt="Reset diario" style="filter: brightness(0.9);">
         <span>Reset diario</span>
         <strong id="metaDailyReset">--</strong>
       </div>
       <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
       <div style="display: flex; align-items: center; gap: 6px;" data-tip="Reset semanal los lunes a las 07:30 UTC">
-        <img src="${ICON_WEEKLY}" width="20" height="20" alt="Reset semanal" style="filter: brightness(0.9);">
+        <img src="${ICON_WEEKLY}" width="24" height="24" alt="Reset semanal" style="filter: brightness(0.9);">
         <span>Reset semanal</span>
         <strong id="metaWeeklyReset">--</strong>
       </div>
     `;
     
-    // Reemplazar el contenido del panel-head
     panelHead.style.display = 'flex';
     panelHead.style.justifyContent = 'space-between';
     panelHead.style.alignItems = 'center';
     panelHead.style.flexWrap = 'wrap';
     panelHead.style.gap = '12px';
     
-    // Limpiar y reconstruir
     panelHead.innerHTML = '';
     if (title) panelHead.appendChild(title);
     panelHead.appendChild(clockBar);
     
-    // Iniciar actualización en tiempo real
     updateMetaClock();
     if (window.__metaClockInterval) clearInterval(window.__metaClockInterval);
     window.__metaClockInterval = setInterval(updateMetaClock, 1000);
   }
 
   // ==========================================================================
-  // MEJORA DE HORARIOS EN TARJETAS
+  // MEJORA DE HORARIOS EN TARJETAS (v1.3.2)
   // ==========================================================================
 
   /**
@@ -347,7 +340,8 @@
   }
 
   /**
-   * Resalta el próximo horario en la lista de horarios
+   * Resalta el horario activo (verde) o el próximo (ámbar) en la lista de horarios
+   * @param {HTMLElement} card - tarjeta de evento
    */
   function highlightNextSchedule(card) {
     var schedulePanel = card.querySelector('.m-win');
@@ -358,7 +352,9 @@
     
     var now = new Date();
     var nowLocal = now.getHours() * 60 + now.getMinutes();
-    var closestIndex = -1;
+    
+    var activeIndex = -1;
+    var nextIndex = -1;
     var closestDiff = Infinity;
     
     chips.forEach(function(chip, idx) {
@@ -371,29 +367,46 @@
       var eventTime = hours * 60 + minutes;
       var diff = eventTime - nowLocal;
       
-      if (diff < 0) diff += 24 * 60;
+      // Detectar si este horario es el actual (activo)
+      // Un evento se considera activo si la hora actual está dentro de su ventana
+      // La duración típica de los eventos es 15 minutos
+      if (diff <= 0 && diff > -15) {
+        activeIndex = idx;
+      }
       
+      // Buscar el próximo (diferencia positiva más pequeña)
+      if (diff < 0) diff += 24 * 60;
       if (diff < closestDiff) {
         closestDiff = diff;
-        closestIndex = idx;
+        nextIndex = idx;
       }
     });
     
+    // Aplicar estilos
     chips.forEach(function(chip, idx) {
-      chip.classList.remove('chip--next');
-      if (idx === closestIndex && closestDiff !== Infinity) {
+      chip.classList.remove('chip--active', 'chip--next');
+      chip.style.fontWeight = 'normal';
+      chip.style.borderColor = '';
+      chip.style.color = '';
+      chip.style.backgroundColor = '';
+      chip.style.boxShadow = '';
+      
+      if (idx === activeIndex) {
+        // Activo → verde
+        chip.classList.add('chip--active');
+        chip.style.fontWeight = 'bold';
+        chip.style.borderColor = '#a0ffc8';
+        chip.style.color = '#a0ffc8';
+        chip.style.backgroundColor = 'rgba(160, 255, 200, 0.1)';
+        chip.style.boxShadow = '0 0 0 1px rgba(160, 255, 200, 0.3) inset';
+      } else if (idx === nextIndex && activeIndex === -1) {
+        // Próximo (solo si no hay activo) → ámbar
         chip.classList.add('chip--next');
         chip.style.fontWeight = 'bold';
         chip.style.borderColor = '#ffd966';
         chip.style.color = '#ffd966';
         chip.style.backgroundColor = 'rgba(255, 217, 102, 0.1)';
         chip.style.boxShadow = '0 0 0 1px rgba(255, 217, 102, 0.3) inset';
-      } else {
-        chip.style.fontWeight = 'normal';
-        chip.style.borderColor = '';
-        chip.style.color = '';
-        chip.style.backgroundColor = '';
-        chip.style.boxShadow = '';
       }
     });
   }
@@ -692,5 +705,5 @@
     }, 150);
   });
 
-  console.info('[MetaTheme] ready v1.3.1 — barra de horarios con UTC + resets');
+  console.info('[MetaTheme] ready v1.3.2 — horarios activos en verde, próximos en ámbar');
 })();
