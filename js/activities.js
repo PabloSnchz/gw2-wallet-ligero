@@ -1,11 +1,22 @@
 /*!
- * js/activities.js — Panel de Actividades (Diarias / Semanales)
- * v3.9.0 (2026-03-19)
+ * js/activities.js — Panel de Actividades (Objetivos / Home Nodes)
+ * v3.17.0 (2026-03-23)
  *
- * CORRECCIONES:
- * - Restaurada la carga real de Ecto desde API con íconos.
- * - Restaurados los íconos de llave y leivas en semanales.
- * - Mantiene la solución manual de PSNA que ya funciona.
+ * CAMBIOS v3.17.0:
+ * - Fractales: URLs de íconos corregidas usando wiki.guildwars2.com (estables)
+ * - Eliminadas URLs de render.guildwars2.com que causaban "invalid signature"
+ * - Imágenes con carga lazy y sin onerror para evitar ciclos
+ *
+ * CAMBIOS v3.16.0:
+ * - PSNA: grid 3x2 (3 columnas, 2 filas) con texto truncado
+ * - Ecto: grid 1x4 (una línea con 4 tarjetas horizontales compactas)
+ * - Fractales: 2 filas (3 T4 + 3 REC) con tarjetas centradas
+ *
+ * CAMBIOS v3.15.0:
+ * - Fractales: íconos estables desde wiki
+ *
+ * CAMBIOS v3.14.0:
+ * - Home Nodes aislado en su propia pestaña
  */
 
 (function (root) {
@@ -48,9 +59,6 @@
         today: { t4: [], rec: [] },
         tomorrow: { t4: [], rec: [] }
       },
-      worldBosses: {
-        next: []
-      },
       ecto: {
         done: new Set(),
         items: new Map(),
@@ -82,7 +90,10 @@
     
     _psnaFetchId: 0,
     _fractalsFetchId: 0,
-    _ectoFetchId: 0
+    _ectoFetchId: 0,
+    
+    homeNodesLoaded: false,
+    homeNodesRendered: false
   };
 
   // =======================================================================
@@ -197,15 +208,6 @@
     'Marshwatch Haven Waypoint': '[&BKYBAAA=]',
     'Ridgerock Camp Waypoint': '[&BIMCAAA=]',
     'Haymal Gore': '[&BB4CAAA=]'
-  };
-
-  var PSNA_REGION_CHATS = {
-    'Maguuma Wastes': '[&BNMAAAA=]',
-    'Maguuma Jungle': '[&BPcAAAA=]',
-    'Ruins of Orr': '[&BOMCAAA=]',
-    'Kryta': '[&BE4CAAA=]',
-    'Shiverpeaks': '[&BEgCAAA=]',
-    'Ascalon': '[&BE0AAAA=]'
   };
 
   var PSNA_REGIONS = ['Maguuma Wastes', 'Maguuma Jungle', 'Ruins of Orr', 'Kryta', 'Shiverpeaks', 'Ascalon'];
@@ -425,7 +427,7 @@
   }
 
   // =======================================================================
-  // 6. SERVICIO PSNA (SOLUCIÓN MANUAL)
+  // 6. SERVICIO PSNA
   // =======================================================================
   var PSNA = {
     loadSchedule: async function(force) {
@@ -536,7 +538,7 @@
   };
 
   // =======================================================================
-  // 7. RENDERIZADO PSNA
+  // 7. RENDERIZADO PSNA (Grid 3x2 compacto - 3 columnas, 2 filas)
   // =======================================================================
   
   function renderPSNA() {
@@ -544,7 +546,6 @@
     
     var grid = $('#psnaGrid');
     var status = $('#psnaStatus');
-    var critical = $('#psnaCriticalBody');
     var copyAll = $('#psnaCopyAll');
     
     if (!grid) {
@@ -560,6 +561,10 @@
       return;
     }
     
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
+    grid.style.gap = '10px';
+    
     var html = '';
     for (var i = 0; i < list.length; i++) {
       var item = list[i];
@@ -568,19 +573,25 @@
       var disabled = hasChat ? '' : ' disabled';
       var tooltip = hasChat ? 'Copiar waypoint' : 'Código no disponible';
       
-      html += '<article class="card" data-psna-region="' + esc(item.region) + '">' +
-        '<div style="display:flex;gap:10px;align-items:center">' +
-          '<img src="https://wiki.guildwars2.com/images/thumb/d/d2/Waypoint_%28map_icon%29.png/30px-Waypoint_%28map_icon%29.png" width="22" height="22" alt="WP" loading="lazy">' +
-          '<button class="btn btn--ghost btn--xs" data-psna-copy data-psna-index="' + i + '" title="' + tooltip + '" data-tip="' + tooltip + '"' + disabled + '>' +
-            esc(item.wpName) +
-          '</button>' +
-        '</div>' +
-        '<div class="muted" style="margin-top:6px">' +
-          '<div><strong>' + esc(item.npc) + '</strong> — ' + esc(item.region) + '</div>' +
-          '<div>' + esc(item.name) + '</div>' +
-        '</div>' +
-        (!hasChat ? '<div class="pill s-error" style="margin-top:4px">❌ Sin código</div>' : '') +
-      '</article>';
+      html += `
+        <article class="card psna-card" data-psna-region="${esc(item.region)}" style="padding: 8px 10px; display: flex; flex-direction: column; width: 100%;">
+          <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+            <img src="https://wiki.guildwars2.com/images/thumb/d/d2/Waypoint_%28map_icon%29.png/32px-Waypoint_%28map_icon%29.png" 
+                 width="24" height="24" alt="WP" loading="lazy" style="flex-shrink: 0;">
+            <button class="btn btn--ghost btn--xs psna-copy-btn" 
+                    data-psna-copy data-psna-index="${i}" 
+                    title="${tooltip}" data-tip="${tooltip}"${disabled}
+                    style="flex: 1; text-align: left; justify-content: flex-start; padding: 4px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              ${esc(item.wpName)}
+            </button>
+          </div>
+          <div class="muted" style="margin-top: 6px; font-size: 0.7rem; line-height: 1.3;">
+            <div><strong>${esc(item.npc)}</strong> — ${esc(item.region)}</div>
+            <div style="color: #a0a0a6; font-size: 0.65rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(item.name)}</div>
+          </div>
+          ${!hasChat ? '<div class="pill s-error" style="margin-top: 6px; font-size: 0.6rem; text-align: center;">❌ Sin código</div>' : ''}
+        </article>
+      `;
     }
     
     grid.innerHTML = html;
@@ -602,33 +613,6 @@
           setTimeout((function(btn) { return function() { btn.classList.remove('btn--success'); }; })(this), 200);
         }
       });
-    }
-    
-    if (critical) {
-      var first = list[0];
-      if (first) {
-        critical.classList.remove('muted');
-        critical.innerHTML =
-          '<div class="action-main">' +
-            '<div class="action-title">' + esc(first.region) + '</div>' +
-            '<div class="action-sub">' + esc(first.name) + ' — ' + esc(first.npc) + '</div>' +
-          '</div>' +
-          '<div class="action-cta">' +
-            '<button class="btn" id="psnaCopyTop" ' + (!first.chat ? 'disabled' : '') + '>' +
-              'Copiar waypoint' +
-            '</button>' +
-          '</div>';
-        
-        var topBtn = $('#psnaCopyTop');
-        if (topBtn) {
-          topBtn.addEventListener('click', function() {
-            if (first.chat) copyToClipboard(first.chat);
-          });
-        }
-      } else {
-        critical.classList.add('muted');
-        critical.textContent = 'PSNA no disponible';
-      }
     }
     
     if (copyAll) {
@@ -658,7 +642,7 @@
   }
 
   // =======================================================================
-  // 8. SERVICIO ECTO (RESTAURADO CON API REAL)
+  // 8. SERVICIO ECTO
   // =======================================================================
   var Ecto = {
     _itemIds: {
@@ -702,7 +686,7 @@
   };
 
   // =======================================================================
-  // 9. RENDERIZADO ECTO
+  // 9. RENDERIZADO ECTO (Grid 1x4 - una línea con 4 tarjetas horizontales)
   // =======================================================================
   function renderEcto() {
     var host = $('#ectoGrid');
@@ -713,25 +697,44 @@
     var map = state.daily.ecto.itemMap || {};
     var items = state.daily.ecto.items || new Map();
     
+    if (Object.keys(map).length === 0) {
+      host.innerHTML = '<p class="muted">No hay datos de Ecto</p>';
+      if (status) status.textContent = 'Cargando...';
+      return;
+    }
+    
+    host.style.display = 'grid';
+    host.style.gridTemplateColumns = 'repeat(4, minmax(0, 1fr))';
+    host.style.gap = '10px';
+    
     for (var key in map) {
       var itemId = map[key];
       var item = items.get(String(itemId));
       var done = state.daily.ecto.done.has(String(key));
       var name = item ? item.name : key;
-      var icon = item && item.icon ? '<img src="' + esc(item.icon) + '" width="32" height="32" alt="">' : '';
+      var icon = item && item.icon ? '<img src="' + esc(item.icon) + '" width="28" height="28" alt="" style="border-radius: 6px;">' : '';
       
-      html += '<article class="card">' +
-        '<div style="display:flex;gap:10px;align-items:center">' + icon +
-          '<div><strong>' + esc(name) + '</strong></div>' +
-        '</div>' +
-        '<div style="margin-top:6px">' +
-          (done ? '<span class="pill s-ok">✅ Hecho hoy</span>' : '<span class="pill s-pending">⏳ Pendiente</span>') +
-        '</div>' +
-      '</article>';
+      html += `
+        <article class="card ecto-card" style="padding: 6px 8px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;">
+          <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+            ${icon}
+          </div>
+          <div style="width: 100%;">
+            <div style="font-weight: 600; font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${esc(name)}">
+              ${esc(name)}
+            </div>
+            <div style="margin-top: 4px;">
+              ${done 
+                ? '<span class="badge badge--success" style="font-size: 0.6rem; padding: 2px 4px;">✅ Hecho</span>' 
+                : '<span class="badge badge--warning" style="font-size: 0.6rem; padding: 2px 4px;">⏳ Pendiente</span>'}
+            </div>
+          </div>
+        </article>
+      `;
     }
     
-    host.innerHTML = html || '<p class="muted">No hay datos de Ecto</p>';
-    if (status) status.textContent = html ? 'Listo.' : 'Cargando...';
+    host.innerHTML = html;
+    if (status) status.textContent = 'Listo.';
   }
 
   // =======================================================================
@@ -770,7 +773,6 @@
     var barLeivas = $('#barLeivas');
     if (barLeivas) barLeivas.style.width = Math.min(100, Math.round(state.weekly.stones / 5 * 100)) + '%';
     
-    // Pills con íconos
     var pillKey = $('#pillKey');
     if (pillKey) {
       pillKey.className = 'pill ' + (state.weekly.key ? 's-ok' : 's-pending');
@@ -843,22 +845,91 @@
   }
 
   // =======================================================================
-  // 12. FRACTALES (SIMPLIFICADO, PERO SE PUEDE MEJORAR)
+  // 12. FRACTALES (cards con íconos estables desde wiki, sin errores de firma)
   // =======================================================================
+
+  // Íconos oficiales de fractales desde la wiki de GW2 (URLs directas y estables)
+  var FRACTAL_ICON_URLS = {
+    'Twilight Oasis': 'https://wiki.guildwars2.com/images/thumb/f/f4/Twilight_Oasis.jpg/48px-Twilight_Oasis.jpg',
+    'Cliffside': 'https://wiki.guildwars2.com/images/thumb/c/c0/Cliffside_Fractal.jpg/48px-Cliffside_Fractal.jpg',
+    'Chaos': 'https://wiki.guildwars2.com/images/thumb/b/b4/Chaos_Fractal.jpg/48px-Chaos_Fractal.jpg',
+    'Solid Ocean': 'https://wiki.guildwars2.com/images/thumb/f/fb/Solid_Ocean_Fractal.jpg/48px-Solid_Ocean_Fractal.jpg',
+    'Uncategorized': 'https://wiki.guildwars2.com/images/thumb/5/5c/Uncategorized_Fractal.jpg/48px-Uncategorized_Fractal.jpg',
+    'Urban Battleground': 'https://wiki.guildwars2.com/images/thumb/7/7a/Urban_Battleground_Fractal.jpg/48px-Urban_Battleground_Fractal.jpg',
+    'Aetherblade': 'https://wiki.guildwars2.com/images/thumb/4/46/Aetherblade_Fractal.jpg/48px-Aetherblade_Fractal.jpg',
+    'Aquatic Ruins': 'https://wiki.guildwars2.com/images/thumb/7/79/Aquatic_Ruins_Fractal.jpg/48px-Aquatic_Ruins_Fractal.jpg',
+    'Captain Mai Trin': 'https://wiki.guildwars2.com/images/thumb/0/0b/Captain_Mai_Trin_Fractal.jpg/48px-Captain_Mai_Trin_Fractal.jpg',
+    'Deepstone': 'https://wiki.guildwars2.com/images/thumb/2/29/Deepstone_Fractal.jpg/48px-Deepstone_Fractal.jpg',
+    'Molten Furnace': 'https://wiki.guildwars2.com/images/thumb/5/5c/Molten_Furnace_Fractal.jpg/48px-Molten_Furnace_Fractal.jpg',
+    'Molten Boss': 'https://wiki.guildwars2.com/images/thumb/0/03/Molten_Boss_Fractal.jpg/48px-Molten_Boss_Fractal.jpg',
+    'Nightmare': 'https://wiki.guildwars2.com/images/thumb/b/b9/Nightmare_Fractal.jpg/48px-Nightmare_Fractal.jpg',
+    'Obsidian Sanctum': 'https://wiki.guildwars2.com/images/thumb/3/3b/Obsidian_Sanctum_Fractal.jpg/48px-Obsidian_Sanctum_Fractal.jpg',
+    'Shattered Observatory': 'https://wiki.guildwars2.com/images/thumb/6/6f/Shattered_Observatory_Fractal.jpg/48px-Shattered_Observatory_Fractal.jpg',
+    'Silent Surf': 'https://wiki.guildwars2.com/images/thumb/0/09/Silent_Surf_Fractal.jpg/48px-Silent_Surf_Fractal.jpg',
+    'Snowblind': 'https://wiki.guildwars2.com/images/thumb/f/fc/Snowblind_Fractal.jpg/48px-Snowblind_Fractal.jpg',
+    'Siren\'s Reef': 'https://wiki.guildwars2.com/images/thumb/a/a1/Sirens_Reef_Fractal.jpg/48px-Sirens_Reef_Fractal.jpg',
+    'Sunqua Peak': 'https://wiki.guildwars2.com/images/thumb/d/d7/Sunqua_Peak_Fractal.jpg/48px-Sunqua_Peak_Fractal.jpg',
+    'Swampland': 'https://wiki.guildwars2.com/images/thumb/5/53/Swampland_Fractal.jpg/48px-Swampland_Fractal.jpg',
+    'Thaumanova Reactor': 'https://wiki.guildwars2.com/images/thumb/6/67/Thaumanova_Reactor_Fractal.jpg/48px-Thaumanova_Reactor_Fractal.jpg'
+  };
+
+  // Ícono genérico de fractal (fallback)
+  var FRACTAL_FALLBACK_ICON = 'https://wiki.guildwars2.com/images/thumb/7/70/Fractal_%28magic%29.png/48px-Fractal_%28magic%29.png';
+
+  // Ícono para escalas de fractales
+  var SCALE_ICON = 'https://wiki.guildwars2.com/images/thumb/d/db/Fractal_Initiate.png/48px-Fractal_Initiate.png';
+
+  function getFractalIconUrl(fractalName) {
+    var iconUrl = FRACTAL_ICON_URLS[fractalName];
+    if (iconUrl) {
+      return iconUrl;
+    }
+    return FRACTAL_FALLBACK_ICON;
+  }
+
+  function getFractalIconHtml(fractalName, size) {
+    var s = size || 48;
+    var iconUrl = getFractalIconUrl(fractalName);
+    return '<img src="' + esc(iconUrl) + '" width="' + s + '" height="' + s + '" alt="' + esc(fractalName) + '" loading="lazy" style="border-radius: 8px; object-fit: cover;">';
+  }
+
+  function getScaleIconHtml(scaleNum, size) {
+    var s = size || 48;
+    return '<img src="' + SCALE_ICON + '" width="' + s + '" height="' + s + '" alt="Escala ' + scaleNum + '" loading="lazy" style="border-radius: 8px;">';
+  }
+
   var Fractals = {
+    _cachedIcons: new Map(),
+    
     loadToday: async function() {
       state.daily.fractals.status = 'ready';
-      // Aquí puedes poner datos de ejemplo o conectar a la API real
       state.daily.fractals.today = {
-        t4: ['Twilight Oasis', 'Cliffside', 'Chaos'],
-        rec: ['10', '32', '65']
+        t4: [
+          { name: 'Twilight Oasis', cm: false },
+          { name: 'Cliffside', cm: false },
+          { name: 'Chaos', cm: false }
+        ],
+        rec: [
+          { scale: 10, name: 'Scale 10' },
+          { scale: 32, name: 'Scale 32' },
+          { scale: 65, name: 'Scale 65' }
+        ]
       };
       renderFractals();
     },
+    
     loadTomorrow: async function() {
       state.daily.fractals.tomorrow = {
-        t4: ['Solid Ocean', 'Uncategorized', 'Urban Battleground'],
-        rec: ['20', '45', '78']
+        t4: [
+          { name: 'Solid Ocean', cm: false },
+          { name: 'Uncategorized', cm: false },
+          { name: 'Urban Battleground', cm: false }
+        ],
+        rec: [
+          { scale: 20, name: 'Scale 20' },
+          { scale: 45, name: 'Scale 45' },
+          { scale: 78, name: 'Scale 78' }
+        ]
       };
       renderFractals();
     }
@@ -870,69 +941,79 @@
     
     if (state.daily.fractals.status === 'loading') {
       host.innerHTML = '<p class="muted">Cargando fractales…</p>';
-    } else if (state.daily.fractals.status === 'error') {
-      host.innerHTML = '<p class="muted">Error cargando fractales</p>';
-    } else {
-      var t4 = state.daily.fractals.today.t4 || [];
-      var rec = state.daily.fractals.today.rec || [];
-      var t4Html = t4.length
-        ? '<ul class="list">' + t4.map(function(n) { return '<li>• ' + esc(n) + '</li>'; }).join('') + '</ul>'
-        : '<div class="muted">—</div>';
-      
-      host.innerHTML =
-        '<div><strong>T4</strong></div>' + t4Html +
-        '<div style="margin-top:6px"><div class="muted">Recomendados: ' + (rec.length ? esc(rec.join(', ')) : '—') + '</div></div>';
-    }
-  }
-
-  // =======================================================================
-  // 13. WORLD BOSSES (SIMPLIFICADO)
-  // =======================================================================
-  var WorldBosses = {
-    _schedule: [
-      { offsetMin: 0, name: 'Tequatl the Sunless', chat: '[&BNABAAA=]' },
-      { offsetMin: 30, name: 'The Shatterer', chat: '[&BE4DAAA=]' },
-      { offsetMin: 60, name: 'Claw of Jormag', chat: '[&BHoCAAA=]' },
-      { offsetMin: 90, name: 'Karka Queen', chat: '[&BNcGAAA=]' }
-    ],
-    getNext: function() { 
-      var now = new Date();
-      var hour = now.getHours();
-      var minutes = now.getMinutes();
-      
-      return [
-        { atLocalStr: (hour+1) + ':00', name: 'Tequatl the Sunless', chat: '[&BNABAAA=]' },
-        { atLocalStr: (hour+1) + ':30', name: 'The Shatterer', chat: '[&BE4DAAA=]' },
-        { atLocalStr: (hour+2) + ':00', name: 'Claw of Jormag', chat: '[&BHoCAAA=]' }
-      ];
-    },
-    update: function() { 
-      state.daily.worldBosses.next = this.getNext(); 
-      renderWorldBosses(); 
-    }
-  };
-
-  function renderWorldBosses() {
-    var host = $('#wbBody');
-    if (!host) return;
-    
-    var list = state.daily.worldBosses.next || [];
-    if (!list.length) {
-      host.innerHTML = '<p class="muted">Sin eventos en los próximos 90 min</p>';
       return;
     }
     
-    var html = '<ul class="list">';
-    for (var i = 0; i < list.length; i++) {
-      html += '<li><strong>' + esc(list[i].atLocalStr) + '</strong> — ' + esc(list[i].name) +
-        ' <button class="btn btn--xs btn--ghost" data-wb-copy="' + esc(list[i].chat) + '">Copiar</button></li>';
+    if (state.daily.fractals.status === 'error') {
+      host.innerHTML = '<p class="muted error">Error cargando fractales</p>';
+      return;
     }
-    html += '</ul>';
+    
+    var t4 = state.daily.fractals.today.t4 || [];
+    var rec = state.daily.fractals.today.rec || [];
+    
+    var html = '<div style="display: flex; flex-direction: column; gap: 20px;">';
+    
+    // Primera fila: Fractales T4
+    html += '<div>';
+    html += '<h4 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">' +
+            '<span class="badge badge--success" style="background: #1a3a2a; border: none;">🌀 T4</span>' +
+            '<span style="font-size: 0.85rem;">Fractales diarios</span></h4>';
+    html += '<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">';
+    
+    t4.forEach(function(fractal) {
+      var name = typeof fractal === 'string' ? fractal : fractal.name;
+      var hasCM = fractal.cm === true;
+      html += '<article class="card fractal-card" style="padding: 10px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; background: #0c0e13; border: 1px solid #2a2c35; border-radius: 10px;">' +
+              '<div style="width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;">' + getFractalIconHtml(name, 48) + '</div>' +
+              '<div style="width: 100%;">' +
+                '<div style="font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="' + esc(name) + '">' + esc(name) + '</div>' +
+                (hasCM ? '<div style="margin-top: 6px;"><span class="badge badge--warning" style="font-size: 0.6rem; padding: 2px 6px;">⚠️ CM</span></div>' : '') +
+              '</div>' +
+            '</article>';
+    });
+    
+    html += '</div></div>';
+    
+    // Segunda fila: Recomendados
+    html += '<div>';
+    html += '<h4 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">' +
+            '<span class="badge badge--info" style="background: #1a2a3a; border: none;">🎯 Recomendados</span>' +
+            '<span style="font-size: 0.85rem;">Escalas del día</span></h4>';
+    html += '<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">';
+    
+    rec.forEach(function(r) {
+      var scaleNum = r.scale || parseInt(String(r.name || r).match(/\d+/)?.[0] || '0', 10);
+      var scaleName = typeof r === 'string' ? r : (r.name || 'Scale ' + scaleNum);
+      html += '<article class="card fractal-card" style="padding: 10px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; background: #0c0e13; border: 1px solid #2a2c35; border-radius: 10px;">' +
+              '<div style="width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;">' + getScaleIconHtml(scaleNum, 48) + '</div>' +
+              '<div style="width: 100%;">' +
+                '<div style="font-weight: 600; font-size: 0.85rem;">' + esc(scaleName) + '</div>' +
+                '<div style="margin-top: 6px;"><span class="badge badge--info" style="font-size: 0.6rem; padding: 2px 6px;">📊 Escala ' + scaleNum + '</span></div>' +
+              '</div>' +
+            '</article>';
+    });
+    
+    html += '</div></div>';
+    html += '</div>';
+    
+    // Nota de mañana
+    if (state.daily.fractals.tomorrow && state.daily.fractals.tomorrow.t4 && state.daily.fractals.tomorrow.t4.length) {
+      var tomorrowNames = state.daily.fractals.tomorrow.t4.map(function(f) {
+        return typeof f === 'string' ? f : f.name;
+      });
+      if (tomorrowNames.length && tomorrowNames[0]) {
+        html += '<div class="muted" style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #26262b; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
+                '<span>📅</span> <span>Mañana: ' + esc(tomorrowNames.join(', ')) + '</span>' +
+                '</div>';
+      }
+    }
+    
     host.innerHTML = html;
   }
 
   // =======================================================================
-  // 14. KPI DIARIO
+  // 13. KPI DIARIO
   // =======================================================================
   function renderDailyKPI() {
     var host = $('#kpiDailyStrip');
@@ -949,7 +1030,7 @@
   }
 
   // =======================================================================
-  // 15. INICIALIZACIÓN DEL PANEL
+  // 14. INICIALIZACIÓN DEL PANEL
   // =======================================================================
   
   function ensurePanel() {
@@ -964,21 +1045,19 @@
     host.innerHTML = '' +
       '<h2 class="panel__title">Panel de Actividades</h2>' +
       '<div class="panel__body">' +
-        '<div class="act-head">' +
-          '<p class="muted" id="actSub">Actividades de hoy</p>' +
-          '<div class="tabs">' +
-            '<button id="actTabDaily" class="btn" role="tab">Diarias</button>' +
-            '<button id="actTabWeekly" class="btn btn--ghost" role="tab">Semanales</button>' +
+        '<div class="act-head" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">' +
+          '<div>' +
+            '<p class="muted" id="actSub" style="margin: 0 0 4px 0;">Objetivos diarios y de la semana</p>' +
+            '<div class="tabs">' +
+              '<button id="actTabDaily" class="btn" role="tab">📋 Objetivos</button>' +
+              '<button id="actTabWeekly" class="btn btn--ghost" role="tab">🏡 Home Nodes</button>' +
+            '</div>' +
           '</div>' +
+          '<div id="activitiesClockBarPlaceholder"></div>' +
         '</div>' +
         
         '<div id="actDaily" class="tab-panel">' +
           '<section class="kpi-strip" id="kpiDailyStrip"></section>' +
-          
-          '<section class="card" id="psnaCritical">' +
-            '<h2>🔴 PSNA Crítico</h2>' +
-            '<div id="psnaCriticalBody" class="action-card muted">Cargando…</div>' +
-          '</section>' +
           
           '<div class="panel-head"><h3>Agentes PSNA</h3></div>' +
           '<p class="muted">' +
@@ -987,23 +1066,18 @@
           '<div id="psnaStatus" class="muted"></div>' +
           '<div id="psnaGrid" class="grid"></div>' +
           
-          '<section class="card" id="fractalsDaily">' +
-            '<h2>🌀 Fractales hoy</h2>' +
-            '<div id="fractalsBody" class="muted">Cargando…</div>' +
-            '<div id="fractalsTomorrowNote"></div>' +
-          '</section>' +
-          
-          '<section class="card" id="wbSection">' +
-            '<h2>🌋 World Bosses (90 min)</h2>' +
-            '<div id="wbBody" class="muted">Calculando…</div>' +
-          '</section>' +
-          
           '<div class="panel-head"><h3>Refinamiento de Ecto</h3></div>' +
           '<div id="ectoStatus" class="muted">Cargando…</div>' +
           '<div id="ectoGrid" class="grid"></div>' +
-        '</div>' +
-        
-        '<div id="actWeekly" class="tab-panel" hidden>' +
+          
+          '<section class="card" id="fractalesDaily" style="margin-top: 20px;">' +
+            '<h2 style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">' +
+              '<span>🌀 Fractales</span>' +
+              '<span class="pill s-ok" style="font-size: 0.7rem;">Actualizado diariamente</span>' +
+            '</h2>' +
+            '<div id="fractalsBody" class="fractals-container"></div>' +
+          '</section>' +
+          
           '<section class="card">' +
             '<h2>🔴 Objetivos semanales</h2>' +
             '<div class="row between">' +
@@ -1018,10 +1092,12 @@
             '</div>' +
             '<div class="bar"><div class="bar-fill" id="barLeivas" style="width:0%"></div></div>' +
           '</section>' +
-          
-          '<div class="panel-head"><h3>Leivas (Arborstone)</h3></div>' +
-          '<p class="muted">Compradas: <span id="assCount">0</span>/5</p>' +
-          '<p><button id="assWp" class="btn btn--ghost btn--xs">Copiar Arborstone [&BCEJAAA=]</button></p>' +
+        '</div>' +
+        
+        '<div id="actWeekly" class="tab-panel" hidden>' +
+          '<div id="homeNodesContainer" class="home-nodes-container">' +
+            '<div class="muted" style="text-align: center; padding: 40px;">🏠 Haz clic en la pestaña Home Nodes para cargar</div>' +
+          '</div>' +
         '</div>' +
       '</div>';
     
@@ -1044,7 +1120,7 @@
       $('#actWeekly').hidden = false;
       this.classList.remove('btn--ghost');
       $('#actTabDaily').classList.add('btn--ghost');
-      renderWeekly();
+      loadHomeNodesOnDemand();
     });
     
     $('#wkKeyDone').addEventListener('change', function() {
@@ -1057,10 +1133,6 @@
     
     $('#assPlus').addEventListener('click', function() {
       setStones(state.weekly.stones + 1);
-    });
-    
-    $('#assWp').addEventListener('click', function() {
-      copyToClipboard('[&BCEJAAA=]');
     });
     
     $('#psnaCopyAll').addEventListener('click', function() {
@@ -1079,9 +1151,51 @@
     
     return host;
   }
+  
+  function loadHomeNodesOnDemand() {
+    if (state.homeNodesRendered) {
+      console.log(LOG, '🏠 Home Nodes ya renderizado');
+      return;
+    }
+    
+    var container = $('#homeNodesContainer');
+    if (!container) return;
+    
+    console.log(LOG, '🏠 Cargando Home Nodes por primera vez');
+    
+    container.innerHTML = '<div class="muted" style="text-align: center; padding: 40px;">⏳ Cargando nodos de hogar...</div>';
+    
+    var event = new CustomEvent('gn:render-home-nodes', {
+      detail: { container: container }
+    });
+    document.dispatchEvent(event);
+    
+    if (window.ActivitiesTheme && typeof window.ActivitiesTheme.renderHomeNodes === 'function') {
+      window.ActivitiesTheme.renderHomeNodes(container).then(function() {
+        state.homeNodesRendered = true;
+        console.log(LOG, '🏠 Home Nodes cargado vía ActivitiesTheme');
+      }).catch(function(err) {
+        console.warn(LOG, 'Error cargando Home Nodes', err);
+        if (container && container.innerHTML.includes('Cargando')) {
+          container.innerHTML = '<div class="muted" style="text-align: center; padding: 40px;">❌ Error al cargar nodos de hogar. Recarga la página.</div>';
+        }
+      });
+    } else {
+      console.warn(LOG, 'ActivitiesTheme.renderHomeNodes no disponible');
+      setTimeout(function() {
+        if (container && container.innerHTML.includes('Cargando')) {
+          container.innerHTML = '<div class="muted" style="text-align: center; padding: 40px;">' +
+            '🏡 Los Home Nodes se cargarán automáticamente.<br>' +
+            '<small>Si no ves el contenido, actualiza la página.</small>' +
+            '</div>';
+        }
+        state.homeNodesRendered = true;
+      }, 500);
+    }
+  }
 
   // =======================================================================
-  // 16. CICLO DE VIDA
+  // 15. CICLO DE VIDA
   // =======================================================================
   
   async function activate() {
@@ -1092,6 +1206,8 @@
     
     state.active = true;
     ensurePanel().removeAttribute('hidden');
+    
+    state.homeNodesRendered = false;
     
     try {
       state.token = root.__GN__ && root.__GN__.getSelectedToken ? root.__GN__.getSelectedToken() : null;
@@ -1104,8 +1220,6 @@
     await loadWeeklyForToken(state.token);
     await Assets.load();
     
-    WorldBosses.update();
-    renderWorldBosses();
     renderWeekly();
     
     console.log(LOG, '📥 Cargando PSNA...');
@@ -1124,10 +1238,11 @@
     state.active = false;
     var panel = $('#activitiesPanel');
     if (panel) panel.setAttribute('hidden', '');
+    state.homeNodesRendered = false;
   }
 
   // =======================================================================
-  // 17. PREFETCH
+  // 16. PREFETCH
   // =======================================================================
   async function prefetch(ctx) {
     if (ctx && ctx.signal && ctx.signal.aborted) return;
@@ -1136,22 +1251,40 @@
   }
 
   // =======================================================================
-  // 18. EVENTOS GLOBALES
+  // 17. EVENTOS GLOBALES
   // =======================================================================
   function wireGlobal() {
     document.addEventListener('gn:global-refresh', function() {
       if (!state.active) return;
       PSNA.load(true);
       Fractals.loadToday();
-      WorldBosses.update();
       if (state.token) {
         Ecto.loadStatus(state.token);
       }
+      state.homeNodesRendered = false;
     });
   }
 
   // =======================================================================
-  // 19. API PÚBLICA CON DEPURACIÓN
+  // 18. EXPOSICIÓN DE API GLOBAL
+  // =======================================================================
+  
+  root.ActivitiesAPI = {
+    getToken: function() { return state.token; },
+    isActive: function() { return state.active; },
+    onHomeNodesTabSelected: function(callback) {
+      if (typeof callback === 'function') {
+        window.__homeNodesCallback = callback;
+      }
+    },
+    renderHomeNodes: function(container) {
+      loadHomeNodesOnDemand();
+      return Promise.resolve(true);
+    }
+  };
+
+  // =======================================================================
+  // 19. API PÚBLICA
   // =======================================================================
   
   var Activities = {
@@ -1160,7 +1293,7 @@
       ensurePanel();
       wireGlobal();
       state.inited = true;
-      console.info(LOG, 'ready v3.9.0 (con íconos restaurados)');
+      console.info(LOG, 'ready v3.17.0 — Fractales con URLs de wiki estables');
     },
     activate: activate,
     deactivate: deactivate,
