@@ -42,8 +42,26 @@ input[type="number"]::-webkit-inner-spin-button{ appearance:none; -webkit-appear
 .an-social--twitch{ color:#9146FF }
 
 /* Hero */
-.an-hero{ height:var(--hero-h); background:url("../assets/header-texture.png") center/cover no-repeat; filter:grayscale(25%) contrast(102%) brightness(88%); border-bottom:1px solid #1a1a1d; position:relative }
-.an-overlay{ position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); z-index:110 }
+.an-hero{ 
+  height: auto;
+  min-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  background: url("../assets/header-texture.png") center/cover no-repeat; 
+  filter: grayscale(25%) contrast(102%) brightness(88%); 
+  border-bottom: 1px solid #1a1a1d; 
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.an-overlay{ 
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  transform: none;
+  z-index: 110;
+}
 
 /* ======= HERO + TABS (corrección de layout) ======= */
 .overlay-inner{
@@ -54,7 +72,13 @@ input[type="number"]::-webkit-inner-spin-button{ appearance:none; -webkit-appear
   flex-wrap: wrap;       /* permite bajar las tabs si no entra todo */
   min-height:72px;
   padding:10px 16px;
-  background:linear-gradient(180deg, rgba(14,14,16,.78), rgba(14,14,16,.95));
+  background: linear-gradient(90deg, 
+    rgba(14,14,16,0.9) 0%, 
+    rgba(14,14,16,0.85) 30%,
+    rgba(14,14,16,0.6) 70%,
+    rgba(14,14,16,0.3) 100%
+  );
+  /* Transición suave de opaco a transparente */
   backdrop-filter:blur(4px);
   border-top:1px solid #1f1f24;
   border-bottom:1px solid #1f1f24;
@@ -2553,4 +2577,22 @@ display: -webkit-box;
   background: #1a2a2a;
   color: #7bc2ff;
   border: 1px solid #2a6a6a;
+}
+
+/* FORZAR HEADER - ÚLTIMA PRIORIDAD */
+.an-header .an-hero.an-hero {
+  height: auto !important;
+  min-height: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.an-header .an-overlay.an-overlay {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  transform: none !important;
 }
