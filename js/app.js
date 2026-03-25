@@ -1193,14 +1193,12 @@
         convPut(k, copper);
       }
       const iconGem =
-        `<svg viewBox="0 0 24 24" width="16" height="16" style="vertical-align:-2px">
-           <path fill="#7dd3fc" d="M5 9 9 3h6l4 6-7 12zM9 3 5 9h14L15 3z"/>
-         </svg>`;
+        `<img src="assets/icons/502065.png" width="16" height="16" style="vertical-align:-2px" alt="">`;
       if (el.cvRef400) {
         el.cvRef400.innerHTML =
           `<span style="display:inline-flex;gap:6px;align-items:center;margin-right:8px">
-             ${iconGem}<strong>400</strong>
-           </span> ${badgesHTMLFromCopper(copper)}`;
+            ${iconGem}<strong>400</strong>
+          </span> ${badgesHTMLFromCopper(copper)}`;
         markUpdated(el.cvRef400);
       }
 

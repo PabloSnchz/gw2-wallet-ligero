@@ -1314,7 +1314,7 @@
     host.className = 'panel col-main';
     host.setAttribute('hidden', '');
 
-    host.innerHTML = '\n      <h2 class="panel__title"><img src="assets/icons/156678.png" alt="" width="24" height="24" style="vertical-align: middle; margin-right: 8px;"> Personajes y Localización</h2>\n      <div class="panel__body">\n        <div id="charAccountHeader"></div>\n        <div id="charFilters" class="chips"></div>\n        <div id="charList" class="table-wrap"></div>\n        <div id="charPagination" class="pagination-wrap"></div>\n      </div>\n    ';
+    host.innerHTML = '\n      <h2 class="panel__title"><img src="assets/icons/156678.png" alt="" width="32" height="32" style="vertical-align: middle; margin-right: 8px;"> Personajes y Localización</h2>\n      <div class="panel__body">\n        <div id="charAccountHeader"></div>\n        <div id="charFilters" class="chips"></div>\n        <div id="charList" class="table-wrap"></div>\n        <div id="charPagination" class="pagination-wrap"></div>\n      </div>\n    ';
 
     var anchor = $('#walletPanel');
     if (anchor && anchor.parentNode) {

@@ -1035,7 +1035,7 @@
     host.setAttribute('hidden', '');
     
     host.innerHTML = '' +
-      '<h2 class="panel__title"><img src="assets/icons/1302773.png" alt="" width="24" height="24" style="vertical-align: middle; margin-right: 8px;"> Panel de Actividades</h2>' +
+      '<h2 class="panel__title"><img src="assets/icons/1302773.png" alt="" width="32" height="32" style="vertical-align: middle; margin-right: 8px;"> Panel de Actividades</h2>' +
       '<div class="panel__body">' +
         '<div class="act-head" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">' +
           '<div>' +
