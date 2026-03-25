@@ -2596,3 +2596,38 @@ display: -webkit-box;
   right: auto !important;
   transform: none !important;
 }
+/* Solo para el icono de cuenta (por ID único) */
+#accountIconImg {
+  width: 40px !important;
+  height: 40px !important;
+}
+
+/* Centrar icono de cuenta */
+#sideAccountPanel .panel-head__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#accountIconImg {
+  display: block;
+  margin-top: 6px; /* ajusta este valor */
+}
+
+/* Centrar icono de navegación */
+#sideNavPanel .panel-head__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#sideNavPanel .side-head-icon {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+#sideNavPanel .side-head-icon .icon-img {
+  display: block;
+  margin-top: 4px; /* ajusta este valor */
+}
