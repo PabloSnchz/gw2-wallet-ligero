@@ -487,9 +487,9 @@
   function getCountdownIcon(type){
     // type puede ser 'daily', 'weekly', 'season'
     var icons = {
-      daily: '/assets/icons/523379.png',
-      weekly: '/assets/icons/523380.png',
-      season: '/assets/icons/523381.png'  // cambiar si tienes un ícono específico para temporada
+      daily: 'assets/icons/523379.png',
+      weekly: 'assets/icons/523380.png',
+      season: 'assets/icons/523381.png'  // cambiar si tienes un ícono específico para temporada
     };
     
     var iconUrl = icons[type] || icons.daily;
@@ -511,7 +511,7 @@
     if (u && /^https?:\/\//i.test(u)) {
       return '<img src="'+esc(u)+'" alt="" loading="lazy">';
     }
-    return '<img src="/assets/icons/3594051.png" alt="" loading="lazy" width="50" height="50">';
+    return '<img src="assets/icons/2604558.png" alt="" loading="lazy" width="40" height="40">';
   }
   function bannerIconHTML(){ return accessIconHTML(); }
 
@@ -641,10 +641,8 @@
     if (!panel.__wired){
       panel.__wired = true;
       panel.innerHTML = [
-        '<div class="panel-head"><h3 class="panel-head__title">Detalle de compras — Wizard’s Vault</h3></div>',
-        
-        
-        
+              
+                
         '<div class="panel__body">',
 
           '<div id="wvpdDash" class="wvpd-dash">',
@@ -696,7 +694,7 @@
               '<div class="wvpd-banner">',
                 '<div class="wvpd-banner__icon" id="wvpdBannerIcon">'+bannerIconHTML()+'</div>',
                 '<div>',
-                  '<div class="wvpd-banner__title">Cámara del brujo</div>',
+                  '<div class="wvpd-banner__title">Seguimiento de compras</div>',
                   '<div class="wvpd-help">Resumen estratégico y detalle por cuenta/ítem fijado.</div>',
                 '</div>',
               '</div>',

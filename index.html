@@ -98,6 +98,24 @@
       background: linear-gradient(135deg, #1a1f2e 0%, #151a28 100%);
       box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     }
+
+    /* Estilo para íconos en títulos de paneles */
+    .panel__title img {
+      vertical-align: middle;
+      margin-right: 8px;
+      transition: filter 0.2s ease;
+    }
+    .panel__title:hover img {
+      filter: brightness(1.1);
+    }
+    .panel-head__title img {
+      vertical-align: middle;
+      margin-right: 8px;
+      transition: filter 0.2s ease;
+    }
+    .panel-head__title:hover img {
+      filter: brightness(1.1);
+    }
   </style>
 </head>
 <body class="dense">
@@ -196,7 +214,10 @@
   <main class="container layout" role="main">
     <!-- ======= Panel Cartera ======= -->
     <section id="walletPanel" class="panel col-main" aria-labelledby="walletTitle">
-      <h2 class="panel__title" id="walletTitle">Divisas de la cuenta</h2>
+      <h2 class="panel__title" id="walletTitle">
+        <img src="assets/icons/733322.png" alt="" width="24" height="24">
+        Divisas de la cuenta
+      </h2>
 
       <div class="panel__body">
         <!-- Encabezado refinado: título + estado (Cuenta) -->
@@ -274,14 +295,17 @@
               </tr>
             </thead>
             <tbody><!-- JS --></tbody>
-           </table>
+          </table>
         </div>
       </div>
     </section>
 
     <!-- ======= Panel MetaEventos ======= -->
     <section id="metaPanel" class="panel col-main" aria-labelledby="metaTitle" hidden>
-      <h2 class="panel__title" id="metaTitle">Metas &amp; Eventos</h2>
+      <h2 class="panel__title" id="metaTitle">
+        <img src="assets/icons/102420.png" alt="" width="24" height="24">
+        Metas &amp; Eventos
+      </h2>
       <div class="panel__body">
 
         <div class="panel-head" style="width:100%;">
@@ -341,7 +365,10 @@
 
     <!-- ======= LOGROS ======= -->
     <section id="achievementsPanel" class="panel col-main" aria-labelledby="achievementsTitle" hidden>
-      <h2 class="panel__title" id="achievementsTitle">Logros</h2>
+      <h2 class="panel__title" id="achievementsTitle">
+        <img src="assets/icons/155059.png" alt="" width="24" height="24">
+        Logros
+      </h2>
       <div class="panel__body">
         <div class="panel-head">
           <h3 class="panel-head__title">Resumen y próximos a completar</h3>
@@ -375,7 +402,10 @@
     <!-- ======= Panel Wizard’s Vault ======= -->
     <section id="wvPanel" hidden>
       <div class="panel-head">
-        <h2 class="panel-head__title">Cámara del Brujo</h2>
+        <h2 class="panel-head__title">
+          <img src="assets/icons/3172791.png" alt="" width="24" height="24">
+          Cámara del Brujo
+        </h2>
         <span id="wvSyncNote" class="muted hidden">“Los endpoints de objetivos de Wizard’s Vault solo se actualizan después de que el jugador ha iniciado sesión en el juego.”</span>
       </div>
 
@@ -413,7 +443,7 @@
         <div class="panel-head">
           <h3 class="panel-head__title" id="sideAccTitle">
             <span class="side-head-icon">
-              <img class="icon-img" src="assets/icons/1302775.png" alt="Cuenta" width="28" height="28" loading="lazy" referrerpolicy="no-referrer">
+              <img class="icon-img" src="assets/icons/3601748.png" alt="Cuenta" width="28" height="28" loading="lazy" referrerpolicy="no-referrer">
             </span>
             Cuenta
           </h3>
@@ -654,19 +684,19 @@
   <script defer src="js/meta.js?v=3.2.1"></script>
   <script defer src="js/sidebar-nav.js?v=1.2"></script>
 
-  <script defer src="js/activities.js?v=3.17.0"></script>
-  <script defer src="js/activities-theme.js?v=2.5.0"></script>
-  <script defer src="js/characters.js?v=2.2.2"></script>
+  <script defer src="js/activities.js?v=3.18.0"></script>
+  <script defer src="js/activities-theme.js?v=2.6.0"></script>
+  <script defer src="js/characters.js?v=2.3.0"></script>
   <script defer src="js/router.js?v=2.10.4"></script>
   <script defer src="js/wv-tabs-skin.js?v=1.0.0"></script>
-  <script defer src="js/wv-purchase-detail.js?v=1.8.4"></script>
+  <script defer src="js/wv-purchase-detail.js?v=1.8.6"></script>
   
   <!-- Inicialización del icono (solo si no lo definió el usuario antes) -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       if (window.WVPurchaseDetail && typeof WVPurchaseDetail.setIcon === 'function') {
         if (!localStorage.getItem('wvpd_icon_url')) {
-          WVPurchaseDetail.setIcon('/assets/icons/3594051.png');
+          WVPurchaseDetail.setIcon('assets/icons/3594051.png');
         }
       }
     });
@@ -677,9 +707,9 @@
   <script>
     /* Íconos para pastillas de modo en WV (usando render.guildwars2.com) */
     window.WV_MODE_ICONS = {
-      pve: '/assets/icons/3240357.png',
-      pvp: '/assets/icons/3240358.png',
-      wvw: '/assets/icons/3240359.png'
+      pve: 'assets/icons/3240357.png',
+      pvp: 'assets/icons/3240358.png',
+      wvw: 'assets/icons/3240359.png'
     };
   </script>
 
@@ -731,7 +761,7 @@
       var btn = host.querySelector('#wvPDOpenBtn');
       if (!btn) return;
       btn.classList.add('wvpd-iconbtn');
-      var want = '/assets/icons/3594051.png'; // ← Ícono de Cámara del Brujo
+      var want = 'assets/icons/3594051.png'; // ← Ícono de Cámara del Brujo
       if (!btn.querySelector('img')) {
         btn.innerHTML = '<img src="'+want+'" alt="WV" width="40" height="40" loading="lazy" referrerpolicy="no-referrer">';
       } else {

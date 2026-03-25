@@ -106,10 +106,10 @@
   // ==========================================================================
 
   // Iconos locales (descargados con descargar_ui.py)
-  var ICON_UTC = '/assets/icons/460028.png';
-  var ICON_LOCAL = '/assets/icons/841720.png';
-  var ICON_DAILY = '/assets/icons/534745.png';
-  var ICON_WEEKLY = '/assets/icons/155064.png';
+  var ICON_UTC = 'assets/icons/460028.png';
+  var ICON_LOCAL = 'assets/icons/841720.png';
+  var ICON_DAILY = 'assets/icons/534745.png';
+  var ICON_WEEKLY = 'assets/icons/155064.png';
 
   function formatCountdownWithSeconds(ms) {
     if (!isFinite(ms) || ms <= 0) return '—';
