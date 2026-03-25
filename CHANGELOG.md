@@ -1,3 +1,4 @@
+```markdown
 # 📜 Changelog
 
 Todos los cambios notables de este proyecto serán documentados en este archivo.
@@ -5,6 +6,74 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato sigue las recomendaciones de  
 **Keep a Changelog** (https://keepachangelog.com/)  
 y el versionado **SemVer** (https://semver.org/).
+
+---
+
+## [5.3.0] - 2026-03-25
+
+### Added
+- **Migración completa a íconos locales**:
+  - Profesiones: íconos locales en `assets/icons/professions/2163502.png` a `2163510.png`
+  - Fractales: ícono genérico local `assets/icons/Fractal/2591.png` para todas las tarjetas
+  - Conversor: SVG reemplazados por imágenes locales (`gems-icon.png`, `gold-icon.png`)
+  - Countdowns WV: íconos de reset diario, semanal y temporada locales (`523379.png`, `523380.png`, `523381.png`)
+- **Títulos de paneles con íconos**:
+  - Cartera: `733322.png`
+  - Meta & Eventos: `102420.png`
+  - Logros: `155059.png`
+  - Cámara del Brujo: `3172791.png`
+  - Actividades: `1302773.png`
+  - Personajes: `156678.png`
+- **Corrección de rutas assets**: eliminada barra inicial `/` en todas las rutas para compatibilidad con GitHub Pages
+
+### Changed
+- **Characters.js v2.3.0**: `loadProfIcons()` ahora usa íconos locales en lugar de API
+- **Activities.js v3.19.0**: Fractales usan ícono genérico local, simplificadas funciones `getFractalIconHtml()` y `getScaleIconHtml()`
+- **wv-purchase-detail.js v1.8.6**: Countdowns con íconos locales
+- **index.html**: Conversor y títulos de paneles con íconos locales
+
+### Removed
+- Dependencia de `/v2/files` para íconos de profesión
+- Dependencia de wiki.guildwars2.com para íconos de fractales
+- SVG inline del conversor (gemas y oro)
+
+---
+
+## [5.2.0] - 2026-03-24
+
+### Added
+- **Íconos en títulos de paneles**:
+  - Cartera: `733322.png`
+  - Meta & Eventos: `102420.png`
+  - Logros: `155059.png`
+  - Cámara del Brujo: `3172791.png`
+  - Actividades: `1302773.png`
+  - Personajes: `156678.png`
+
+### Changed
+- **index.html**: Todos los títulos de paneles ahora incluyen ícono correspondiente
+- **activities.js v3.18.0**: Título del panel con ícono
+- **characters.js v2.3.0**: Título del panel con ícono
+
+---
+
+## [5.1.0] - 2026-03-24
+
+### Added
+- **Migración a íconos locales**:
+  - Sidebar: todos los íconos de navegación migrados a `assets/icons/` (28x28)
+  - Barra de tiempos (Activities): UTC, Local, Daily, Weekly
+  - Countdowns WV: diario, semanal, temporada (523379-523381)
+  - Banner y botón Purchase Detail: ícono Cámara del Brujo (3594051)
+
+### Fixed
+- **Bucle infinito en Wizard's Vault**:
+  - Restaurado endpoint correcto en `getWVSeason` (`/v2/wizardsvault`)
+  - `scheduleSeasonReset` evita reprogramación múltiple
+  - `msUntil` corregida para objetos Date
+- **Información de temporada**:
+  - `nextSeasonResetUTC` retorna null si fecha ya pasó
+  - `setWVSeasonHeader` se ejecuta correctamente al cargar
 
 ---
 
@@ -347,3 +416,4 @@ Esta versión reemplaza completamente la versión anterior de *gw2-wallet-ligero
 - Integración con `/v2/account/wallet`
 - Grilla de tarjetas
 - Vista compacta (tabla)
+```
