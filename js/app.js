@@ -1193,7 +1193,7 @@
         convPut(k, copper);
       }
       const iconGem =
-        `<img src="assets/icons/502065.png" width="16" height="16" style="vertical-align:-2px" alt="">`;
+        `<img src="assets/icons/502065.png" width="24" height="24" style="vertical-align:-2px" alt="">`;
       if (el.cvRef400) {
         el.cvRef400.innerHTML =
           `<span style="display:inline-flex;gap:6px;align-items:center;margin-right:8px">

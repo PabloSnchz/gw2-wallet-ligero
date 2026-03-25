@@ -707,7 +707,7 @@
       var item = items.get(String(itemId));
       var done = state.daily.ecto.done.has(String(key));
       var name = item ? item.name : key;
-      var icon = item && item.icon ? '<img src="' + esc(item.icon) + '" width="28" height="28" alt="" style="border-radius: 6px;">' : '';
+      var icon = item && item.icon ? '<img src="' + esc(item.icon) + '" width="36" height="36" alt="" style="border-radius: 6px;">' : '';
       
       html += `
         <article class="card ecto-card" style="padding: 6px 8px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;">
@@ -840,54 +840,20 @@
   }
 
   // =======================================================================
-  // 12. FRACTALES (cards con íconos estables desde wiki, sin errores de firma)
+  // 12. FRACTALES (cards con ícono fallback local)
   // =======================================================================
 
-  var FRACTAL_ICON_URLS = {
-    'Twilight Oasis': 'https://wiki.guildwars2.com/images/thumb/f/f4/Twilight_Oasis.jpg/48px-Twilight_Oasis.jpg',
-    'Cliffside': 'https://wiki.guildwars2.com/images/thumb/c/c0/Cliffside_Fractal.jpg/48px-Cliffside_Fractal.jpg',
-    'Chaos': 'https://wiki.guildwars2.com/images/thumb/b/b4/Chaos_Fractal.jpg/48px-Chaos_Fractal.jpg',
-    'Solid Ocean': 'https://wiki.guildwars2.com/images/thumb/f/fb/Solid_Ocean_Fractal.jpg/48px-Solid_Ocean_Fractal.jpg',
-    'Uncategorized': 'https://wiki.guildwars2.com/images/thumb/5/5c/Uncategorized_Fractal.jpg/48px-Uncategorized_Fractal.jpg',
-    'Urban Battleground': 'https://wiki.guildwars2.com/images/thumb/7/7a/Urban_Battleground_Fractal.jpg/48px-Urban_Battleground_Fractal.jpg',
-    'Aetherblade': 'https://wiki.guildwars2.com/images/thumb/4/46/Aetherblade_Fractal.jpg/48px-Aetherblade_Fractal.jpg',
-    'Aquatic Ruins': 'https://wiki.guildwars2.com/images/thumb/7/79/Aquatic_Ruins_Fractal.jpg/48px-Aquatic_Ruins_Fractal.jpg',
-    'Captain Mai Trin': 'https://wiki.guildwars2.com/images/thumb/0/0b/Captain_Mai_Trin_Fractal.jpg/48px-Captain_Mai_Trin_Fractal.jpg',
-    'Deepstone': 'https://wiki.guildwars2.com/images/thumb/2/29/Deepstone_Fractal.jpg/48px-Deepstone_Fractal.jpg',
-    'Molten Furnace': 'https://wiki.guildwars2.com/images/thumb/5/5c/Molten_Furnace_Fractal.jpg/48px-Molten_Furnace_Fractal.jpg',
-    'Molten Boss': 'https://wiki.guildwars2.com/images/thumb/0/03/Molten_Boss_Fractal.jpg/48px-Molten_Boss_Fractal.jpg',
-    'Nightmare': 'https://wiki.guildwars2.com/images/thumb/b/b9/Nightmare_Fractal.jpg/48px-Nightmare_Fractal.jpg',
-    'Obsidian Sanctum': 'https://wiki.guildwars2.com/images/thumb/3/3b/Obsidian_Sanctum_Fractal.jpg/48px-Obsidian_Sanctum_Fractal.jpg',
-    'Shattered Observatory': 'https://wiki.guildwars2.com/images/thumb/6/6f/Shattered_Observatory_Fractal.jpg/48px-Shattered_Observatory_Fractal.jpg',
-    'Silent Surf': 'https://wiki.guildwars2.com/images/thumb/0/09/Silent_Surf_Fractal.jpg/48px-Silent_Surf_Fractal.jpg',
-    'Snowblind': 'https://wiki.guildwars2.com/images/thumb/f/fc/Snowblind_Fractal.jpg/48px-Snowblind_Fractal.jpg',
-    'Siren\'s Reef': 'https://wiki.guildwars2.com/images/thumb/a/a1/Sirens_Reef_Fractal.jpg/48px-Sirens_Reef_Fractal.jpg',
-    'Sunqua Peak': 'https://wiki.guildwars2.com/images/thumb/d/d7/Sunqua_Peak_Fractal.jpg/48px-Sunqua_Peak_Fractal.jpg',
-    'Swampland': 'https://wiki.guildwars2.com/images/thumb/5/53/Swampland_Fractal.jpg/48px-Swampland_Fractal.jpg',
-    'Thaumanova Reactor': 'https://wiki.guildwars2.com/images/thumb/6/67/Thaumanova_Reactor_Fractal.jpg/48px-Thaumanova_Reactor_Fractal.jpg'
-  };
-
-  var FRACTAL_FALLBACK_ICON = 'https://wiki.guildwars2.com/images/thumb/7/70/Fractal_%28magic%29.png/48px-Fractal_%28magic%29.png';
-
-  var SCALE_ICON = 'https://wiki.guildwars2.com/images/thumb/d/db/Fractal_Initiate.png/48px-Fractal_Initiate.png';
-
-  function getFractalIconUrl(fractalName) {
-    var iconUrl = FRACTAL_ICON_URLS[fractalName];
-    if (iconUrl) {
-      return iconUrl;
-    }
-    return FRACTAL_FALLBACK_ICON;
-  }
+  // Ícono de fallback unificado (local)
+  var FRACTAL_FALLBACK_ICON = 'assets/icons/Fractal/2591.png';
 
   function getFractalIconHtml(fractalName, size) {
     var s = size || 48;
-    var iconUrl = getFractalIconUrl(fractalName);
-    return '<img src="' + esc(iconUrl) + '" width="' + s + '" height="' + s + '" alt="' + esc(fractalName) + '" loading="lazy" style="border-radius: 8px; object-fit: cover;">';
+    return '<img src="' + FRACTAL_FALLBACK_ICON + '" width="' + s + '" height="' + s + '" alt="' + esc(fractalName) + '" loading="lazy" style="border-radius: 8px; object-fit: cover;">';
   }
 
   function getScaleIconHtml(scaleNum, size) {
     var s = size || 48;
-    return '<img src="' + SCALE_ICON + '" width="' + s + '" height="' + s + '" alt="Escala ' + scaleNum + '" loading="lazy" style="border-radius: 8px;">';
+    return '<img src="' + FRACTAL_FALLBACK_ICON + '" width="' + s + '" height="' + s + '" alt="Escala ' + scaleNum + '" loading="lazy" style="border-radius: 8px;">';
   }
 
   var Fractals = {
@@ -1051,7 +1017,7 @@
         '<div id="actDaily" class="tab-panel">' +
           '<section class="kpi-strip" id="kpiDailyStrip"></section>' +
           
-          '<div class="panel-head"><h3>Agentes PSNA</h3></div>' +
+          '<div class="panel-head"><h3>Agente de red de suministros del Pacto</h3></div>' +
           '<p class="muted">' +
             '<button id="psnaCopyAll" class="btn btn--ghost btn--xs">Copiar todos</button>' +
           '</p>' +
