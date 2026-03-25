@@ -1,22 +1,17 @@
 /*!
  * js/activities.js — Panel de Actividades (Objetivos / Home Nodes)
- * v3.17.0 (2026-03-23)
+ * v3.18.0 (2026-03-24)
+ *
+ * CAMBIOS v3.18.0:
+ * - Agregado ícono al título del panel (1302773.png)
  *
  * CAMBIOS v3.17.0:
  * - Fractales: URLs de íconos corregidas usando wiki.guildwars2.com (estables)
- * - Eliminadas URLs de render.guildwars2.com que causaban "invalid signature"
- * - Imágenes con carga lazy y sin onerror para evitar ciclos
  *
  * CAMBIOS v3.16.0:
  * - PSNA: grid 3x2 (3 columnas, 2 filas) con texto truncado
  * - Ecto: grid 1x4 (una línea con 4 tarjetas horizontales compactas)
  * - Fractales: 2 filas (3 T4 + 3 REC) con tarjetas centradas
- *
- * CAMBIOS v3.15.0:
- * - Fractales: íconos estables desde wiki
- *
- * CAMBIOS v3.14.0:
- * - Home Nodes aislado en su propia pestaña
  */
 
 (function (root) {
@@ -848,7 +843,6 @@
   // 12. FRACTALES (cards con íconos estables desde wiki, sin errores de firma)
   // =======================================================================
 
-  // Íconos oficiales de fractales desde la wiki de GW2 (URLs directas y estables)
   var FRACTAL_ICON_URLS = {
     'Twilight Oasis': 'https://wiki.guildwars2.com/images/thumb/f/f4/Twilight_Oasis.jpg/48px-Twilight_Oasis.jpg',
     'Cliffside': 'https://wiki.guildwars2.com/images/thumb/c/c0/Cliffside_Fractal.jpg/48px-Cliffside_Fractal.jpg',
@@ -873,10 +867,8 @@
     'Thaumanova Reactor': 'https://wiki.guildwars2.com/images/thumb/6/67/Thaumanova_Reactor_Fractal.jpg/48px-Thaumanova_Reactor_Fractal.jpg'
   };
 
-  // Ícono genérico de fractal (fallback)
   var FRACTAL_FALLBACK_ICON = 'https://wiki.guildwars2.com/images/thumb/7/70/Fractal_%28magic%29.png/48px-Fractal_%28magic%29.png';
 
-  // Ícono para escalas de fractales
   var SCALE_ICON = 'https://wiki.guildwars2.com/images/thumb/d/db/Fractal_Initiate.png/48px-Fractal_Initiate.png';
 
   function getFractalIconUrl(fractalName) {
@@ -1030,7 +1022,7 @@
   }
 
   // =======================================================================
-  // 14. INICIALIZACIÓN DEL PANEL
+  // 14. INICIALIZACIÓN DEL PANEL (CON ÍCONO EN EL TÍTULO)
   // =======================================================================
   
   function ensurePanel() {
@@ -1043,7 +1035,7 @@
     host.setAttribute('hidden', '');
     
     host.innerHTML = '' +
-      '<h2 class="panel__title">Panel de Actividades</h2>' +
+      '<h2 class="panel__title"><img src="assets/icons/1302773.png" alt="" width="24" height="24" style="vertical-align: middle; margin-right: 8px;"> Panel de Actividades</h2>' +
       '<div class="panel__body">' +
         '<div class="act-head" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">' +
           '<div>' +
@@ -1293,7 +1285,7 @@
       ensurePanel();
       wireGlobal();
       state.inited = true;
-      console.info(LOG, 'ready v3.17.0 — Fractales con URLs de wiki estables');
+      console.info(LOG, 'ready v3.18.0 — Ícono en el título del panel');
     },
     activate: activate,
     deactivate: deactivate,

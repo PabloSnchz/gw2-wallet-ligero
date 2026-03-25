@@ -1,6 +1,9 @@
 /*!
  * js/characters.js — Panel de Personajes y Localización
- * v2.2.2 (2026-03-20)
+ * v2.3.0 (2026-03-24)
+ *
+ * CAMBIOS v2.3.0:
+ * - Agregado ícono al título del panel (156678.png)
  *
  * CORRECCIÓN v2.2.2:
  * - Persistencia visual de POIs seleccionados (ya no se pierde al elegir)
@@ -1300,7 +1303,7 @@
   }
 
   // =======================================================================
-  // 16. INICIALIZACIÓN DEL PANEL
+  // 16. INICIALIZACIÓN DEL PANEL (CON ÍCONO EN EL TÍTULO)
   // =======================================================================
   function ensurePanel() {
     var host = $('#charactersPanel');
@@ -1311,7 +1314,7 @@
     host.className = 'panel col-main';
     host.setAttribute('hidden', '');
 
-    host.innerHTML = '\n      <h2 class="panel__title">Personajes y Localización</h2>\n      <div class="panel__body">\n        <div id="charAccountHeader"></div>\n        <div id="charFilters" class="chips"></div>\n        <div id="charList" class="table-wrap"></div>\n        <div id="charPagination" class="pagination-wrap"></div>\n      </div>\n    ';
+    host.innerHTML = '\n      <h2 class="panel__title"><img src="assets/icons/156678.png" alt="" width="24" height="24" style="vertical-align: middle; margin-right: 8px;"> Personajes y Localización</h2>\n      <div class="panel__body">\n        <div id="charAccountHeader"></div>\n        <div id="charFilters" class="chips"></div>\n        <div id="charList" class="table-wrap"></div>\n        <div id="charPagination" class="pagination-wrap"></div>\n      </div>\n    ';
 
     var anchor = $('#walletPanel');
     if (anchor && anchor.parentNode) {
@@ -1326,7 +1329,7 @@
   // 17. CICLO DE VIDA
   // =======================================================================
   async function activate() {
-    console.log(LOG, 'activate v2.2.2');
+    console.log(LOG, 'activate v2.3.0');
     state.active = true;
     ensurePanel().removeAttribute('hidden');
 
@@ -1389,7 +1392,7 @@
       ensurePanel();
       wireGlobal();
       state.inited = true;
-      console.info(LOG, 'ready v2.2.2 (persistencia de POIs corregida)');
+      console.info(LOG, 'ready v2.3.0 — Ícono en el título del panel');
     },
     activate: activate,
     deactivate: deactivate,
