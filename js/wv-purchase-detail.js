@@ -511,7 +511,7 @@
     if (u && /^https?:\/\//i.test(u)) {
       return '<img src="'+esc(u)+'" alt="" loading="lazy">';
     }
-    return '<img src="assets/icons/2604558.png" alt="" loading="lazy" width="40" height="40">';
+    return '<img src="assets/icons/3126787.png" alt="" loading="lazy" width="32" height="32">';
   }
   function bannerIconHTML(){ return accessIconHTML(); }
 
@@ -642,7 +642,20 @@
       panel.__wired = true;
       panel.innerHTML = [
               
-                
+         
+            '<div class="wvpd-header__left">',
+              '<div class="wvpd-banner">',
+                '<div class="wvpd-banner__icon" id="wvpdBannerIcon">'+bannerIconHTML()+'</div>',
+                '<div>',
+                  '<div class="wvpd-banner__title">Seguimiento de compras</div>',
+                  '<div class="wvpd-help">Resumen estratégico y detalle por cuenta/ítem fijado.</div>',
+                  '</div>',
+              '</div>',
+              
+            '</div>',
+         
+
+        
         '<div class="panel__body">',
 
           '<div id="wvpdDash" class="wvpd-dash">',
@@ -689,21 +702,10 @@
             '</div>',
           '</div>',
 
-          '<div class="wvpd-header">',
-            '<div class="wvpd-header__left">',
-              '<div class="wvpd-banner">',
-                '<div class="wvpd-banner__icon" id="wvpdBannerIcon">'+bannerIconHTML()+'</div>',
-                '<div>',
-                  '<div class="wvpd-banner__title">Seguimiento de compras</div>',
-                  '<div class="wvpd-help">Resumen estratégico y detalle por cuenta/ítem fijado.</div>',
-                '</div>',
-              '</div>',
-              '<span class="wvpd-stickyhint">Tip: “Solo pendientes” y orden por Δ priorizan lo crítico.</span>',
-            '</div>',
-          '</div>',
-
+         
           '<div class="wvpd-filters" id="wvpdFilters">',
             '<input type="text" id="wvpdSearch" placeholder="Buscar cuenta…">',
+            '<span class="wvpd-stickyhint">Tip: “Solo pendientes” y orden por Δ priorizan lo crítico.</span>',
             '<label><input type="checkbox" id="wvpdOnlyPending"> Solo pendientes</label>',
             '<label><input type="checkbox" id="wvpdOnlyPendingCols"> Solo columnas con pendientes</label>',
             '<label>Orden: <select id="wvpdSort"><option value="delta">Δ (desc)</option><option value="label">Cuenta (A→Z)</option></select></label>',
