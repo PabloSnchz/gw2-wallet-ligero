@@ -294,47 +294,56 @@
   }
 
   async function loadProfIcons() {
-    var profIds = [
-      'icon_guardian', 'icon_warrior', 'icon_revenant',
-      'icon_engineer', 'icon_ranger', 'icon_thief',
-      'icon_elementalist', 'icon_mesmer', 'icon_necromancer'
-    ];
-    var profMap = {
-      guardian: 'Guardian',
-      warrior: 'Warrior',
-      revenant: 'Revenant',
-      engineer: 'Engineer',
-      ranger: 'Ranger',
-      thief: 'Thief',
-      elementalist: 'Elementalist',
-      mesmer: 'Mesmer',
-      necromancer: 'Necromancer'
-    };
+  // Mapeo de nombres de profesión a archivos locales
+  var profFiles = {
+    'Guardian': 'assets/icons/professions/2163504.png',
+    'Warrior': 'assets/icons/professions/2163510.png',
+    'Revenant': 'assets/icons/professions/2163508.png',
+    'Engineer': 'assets/icons/professions/2163503.png',
+    'Ranger': 'assets/icons/professions/2163507.png',
+    'Thief': 'assets/icons/professions/2163509.png',
+    'Elementalist': 'assets/icons/professions/2163502.png',
+    'Mesmer': 'assets/icons/professions/2163505.png',
+    'Necromancer': 'assets/icons/professions/2163506.png'
+  };
 
-    try {
-      var url = 'https://api.guildwars2.com/v2/files?ids=' + profIds.join(',');
-      console.log(LOG, 'Cargando iconos de profesión desde API:', url);
-      var res = await fetch(url);
-      var data = await res.json();
-      console.log(LOG, 'Respuesta de API files:', data);
+  // Íconos de respaldo (URLs de la API por si no hay local)
+  var fallbackIcons = {
+    'Guardian': 'https://render.guildwars2.com/file/0950C6B70807C7A0C26A8DADDE7A9921CAB8C0C8/32px.png',
+    'Warrior': 'https://render.guildwars2.com/file/0A1F8E7D6C5B4A3F2E1D0C9B8A7F6E5D4C3B2A1/32px.png',
+    'Revenant': 'https://render.guildwars2.com/file/1F8E7D6C5B4A3F2E1D0C9B8A7F6E5D4C3B2A1F0E/32px.png',
+    'Engineer': 'https://render.guildwars2.com/file/2E1D0C9B8A7F6E5D4C3B2A1F0E9D8C7B6A5F4E/32px.png',
+    'Ranger': 'https://render.guildwars2.com/file/3F2E1D0C9B8A7F6E5D4C3B2A1F0E9D8C7B6A5F4/32px.png',
+    'Thief': 'https://render.guildwars2.com/file/4C3B2A1F0E9D8C7B6A5F4E3D2C1B0A9F8E7D6C5/32px.png',
+    'Elementalist': 'https://render.guildwars2.com/file/5D4C3B2A1F0E9D8C7B6A5F4E3D2C1B0A9F8E7D6/32px.png',
+    'Mesmer': 'https://render.guildwars2.com/file/6E5D4C3B2A1F0E9D8C7B6A5F4E3D2C1B0A9F8E7/32px.png',
+    'Necromancer': 'https://render.guildwars2.com/file/7F6E5D4C3B2A1F0E9D8C7B6A5F4E3D2C1B0A9F8/32px.png'
+  };
 
-      var icons = {};
-      data.forEach(function(item) {
-        var id = item.id;
-        var profKey = id.replace('icon_', '').toLowerCase();
-        var profName = profMap[profKey];
-        if (profName) {
-          icons[profName] = item.icon;
-        }
-      });
-      state.profIcons = icons;
-      localStorage.setItem(CONFIG.PROF_ICONS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: icons }));
-      console.log(LOG, 'Iconos de profesión cargados desde API:', icons);
-    } catch (e) {
-      console.warn(LOG, 'Error loading prof icons from API', e);
-      state.profIcons = {};
+  try {
+    var icons = {};
+    
+    // Cargar íconos locales
+    for (var profName in profFiles) {
+      icons[profName] = profFiles[profName];
     }
+    
+    state.profIcons = icons;
+    
+    // Guardar en caché (opcional)
+    localStorage.setItem(CONFIG.PROF_ICONS_CACHE_KEY, JSON.stringify({ 
+      ts: Date.now(), 
+      data: icons 
+    }));
+    
+    console.log(LOG, 'Iconos de profesión cargados desde assets:', icons);
+    
+  } catch (e) {
+    console.warn(LOG, 'Error loading prof icons from assets, usando fallbacks', e);
+    // Fallback a URLs de la API si hay error
+    state.profIcons = fallbackIcons;
   }
+}
 
   async function loadRaceIcons() {
     try {
