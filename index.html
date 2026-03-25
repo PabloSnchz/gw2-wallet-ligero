@@ -685,18 +685,18 @@
   <script defer src="js/sidebar-nav.js?v=1.2"></script>
 
   <script defer src="js/activities.js?v=3.18.0"></script>
-  <script defer src="js/activities-theme.js?v=2.5.0"></script>
+  <script defer src="js/activities-theme.js?v=2.6.0"></script>
   <script defer src="js/characters.js?v=2.3.0"></script>
   <script defer src="js/router.js?v=2.10.4"></script>
   <script defer src="js/wv-tabs-skin.js?v=1.0.0"></script>
-  <script defer src="js/wv-purchase-detail.js?v=1.8.4"></script>
+  <script defer src="js/wv-purchase-detail.js?v=1.8.6"></script>
   
   <!-- Inicialización del icono (solo si no lo definió el usuario antes) -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       if (window.WVPurchaseDetail && typeof WVPurchaseDetail.setIcon === 'function') {
         if (!localStorage.getItem('wvpd_icon_url')) {
-          WVPurchaseDetail.setIcon('/assets/icons/3594051.png');
+          WVPurchaseDetail.setIcon('assets/icons/3594051.png');
         }
       }
     });
@@ -707,9 +707,9 @@
   <script>
     /* Íconos para pastillas de modo en WV (usando render.guildwars2.com) */
     window.WV_MODE_ICONS = {
-      pve: '/assets/icons/3240357.png',
-      pvp: '/assets/icons/3240358.png',
-      wvw: '/assets/icons/3240359.png'
+      pve: 'assets/icons/3240357.png',
+      pvp: 'assets/icons/3240358.png',
+      wvw: 'assets/icons/3240359.png'
     };
   </script>
 
@@ -761,7 +761,7 @@
       var btn = host.querySelector('#wvPDOpenBtn');
       if (!btn) return;
       btn.classList.add('wvpd-iconbtn');
-      var want = '/assets/icons/3594051.png'; // ← Ícono de Cámara del Brujo
+      var want = 'assets/icons/3594051.png'; // ← Ícono de Cámara del Brujo
       if (!btn.querySelector('img')) {
         btn.innerHTML = '<img src="'+want+'" alt="WV" width="40" height="40" loading="lazy" referrerpolicy="no-referrer">';
       } else {
