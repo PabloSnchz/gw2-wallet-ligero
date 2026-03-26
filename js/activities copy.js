@@ -1011,165 +1011,144 @@
   // =======================================================================
   
   function ensurePanel() {
-  var host = $('#activitiesPanel');
-  if (host) return host;
-  
-  host = document.createElement('section');
-  host.id = 'activitiesPanel';
-  host.className = 'panel col-main';
-  host.setAttribute('hidden', '');
-  
-  host.innerHTML = '' +
-    '<h2 class="panel__title"><img src="assets/icons/1302773.png" alt="" width="32" height="32" style="vertical-align: middle; margin-right: 8px;"> Panel de Actividades</h2>' +
-    '<div class="panel__body">' +
-      '<div class="act-head" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">' +
-        '<div>' +
-          '<p class="muted" id="actSub" style="margin: 0 0 4px 0;">Objetivos diarios y de la semana</p>' +
-          '<div class="tabs" style="display: flex; gap: 8px; align-items: center;">' +
-            '<button id="actTabDaily" class="btn" role="tab">📋 Objetivos</button>' +
-            '<button id="actTabWeekly" class="btn btn--ghost" role="tab">🏡 Home Nodes</button>' +
-            '<button id="refreshActivitiesBtn" class="btn btn--ghost" style="margin-left: 8px;" title="Recargar página">🔄 Refrescar</button>' +
+    var host = $('#activitiesPanel');
+    if (host) return host;
+    
+    host = document.createElement('section');
+    host.id = 'activitiesPanel';
+    host.className = 'panel col-main';
+    host.setAttribute('hidden', '');
+    
+    host.innerHTML = '' +
+      '<h2 class="panel__title"><img src="assets/icons/1302773.png" alt="" width="32" height="32" style="vertical-align: middle; margin-right: 8px;"> Panel de Actividades</h2>' +
+      '<div class="panel__body">' +
+        '<div class="act-head" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">' +
+          '<div>' +
+            '<p class="muted" id="actSub" style="margin: 0 0 4px 0;">Objetivos diarios y de la semana</p>' +
+            '<div class="tabs">' +
+              '<button id="actTabDaily" class="btn" role="tab">📋 Objetivos</button>' +
+              '<button id="actTabWeekly" class="btn btn--ghost" role="tab">🏡 Home Nodes</button>' +
+            '</div>' +
+          '</div>' +
+          '<div id="activitiesClockBarPlaceholder"></div>' +
+        '</div>' +
+        
+        '<div id="actDaily" class="tab-panel">' +
+          // NUEVA UI DE LLAVE SEMANAL
+          '<section class="weekly-key-strip" id="weeklyKeyStrip" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #1a1e2a; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px;">' +
+            '<div style="display: flex; align-items: center; gap: 12px;">' +
+              '<div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">' +
+                '<img src="assets/icons/Activities/19980.png" width="32" height="32" alt="Llave" id="weeklyKeyIcon">' +
+              '</div>' +
+              '<div>' +
+                '<div style="font-weight: 700; font-size: 1rem;">Llave semanal del León Negro</div>' +
+                '<div class="muted" style="font-size: 0.75rem;" id="weeklyKeyDescription">Detección automática por personajes Thief</div>' +
+              '</div>' +
+            '</div>' +
+            '<div id="weeklyKeyStatus" style="min-width: 140px; text-align: right;">' +
+              '<span class="badge badge--warning">⏳ Verificando...</span>' +
+            '</div>' +
+          '</section>' +
+          
+          // SECCIÓN DE OBJETIVOS SEMANALES - SOLO LEIVAS CON ICONO
+          '<section class="card">' +
+            '<h2>🔴 Objetivos semanales</h2>' +
+            '<div class="row between">' +
+              '<div style="display: flex; align-items: center; gap: 8px;">' +
+                '<img src="assets/icons/Activities/96978.png" width="24" height="24" alt="Leivas" style="vertical-align: middle;">' +
+                '<span class="pill s-pending" id="pillLeivas">Leivas: 0/5</span>' +
+              '</div>' +
+              '<div><button class="btn-ghost" id="assMinus">−</button><button class="btn-ghost" id="assPlus">+</button></div>' +
+            '</div>' +
+            '<div class="bar"><div class="bar-fill" id="barLeivas" style="width:0%"></div></div>' +
+          '</section>' +
+          
+          '<div class="panel-head"><h3>Agente de red de suministros del Pacto</h3></div>' +
+          '<p class="muted">' +
+            '<button id="psnaCopyAll" class="btn btn--ghost btn--xs">Copiar todos</button>' +
+          '</p>' +
+          '<div id="psnaStatus" class="muted"></div>' +
+          '<div id="psnaGrid" class="grid"></div>' +
+          
+          '<div class="panel-head"><h3>Refinamiento de Ecto</h3></div>' +
+          '<div id="ectoStatus" class="muted">Cargando…</div>' +
+          '<div id="ectoGrid" class="grid"></div>' +
+          
+          '<section class="card" id="fractalesDaily" style="margin-top: 20px;">' +
+            '<h2 style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">' +
+              '<span>🌀 Fractales</span>' +
+              '<span class="pill s-ok" style="font-size: 0.7rem;">Actualizado diariamente</span>' +
+            '</h2>' +
+            '<div id="fractalsBody" class="fractals-container"></div>' +
+          '</section>' +
+                    
+        '</div>' +
+        
+        '<div id="actWeekly" class="tab-panel" hidden>' +
+          '<div id="homeNodesContainer" class="home-nodes-container">' +
+            '<div class="muted" style="text-align: center; padding: 40px;">🏠 Haz clic en la pestaña Home Nodes para cargar</div>' +
           '</div>' +
         '</div>' +
-        '<div id="activitiesClockBarPlaceholder"></div>' +
-      '</div>' +
-      
-      '<div id="actDaily" class="tab-panel">' +
-        // NUEVA UI DE LLAVE SEMANAL
-        '<section class="weekly-key-strip" id="weeklyKeyStrip" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #1a1e2a; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px;">' +
-          '<div style="display: flex; align-items: center; gap: 12px;">' +
-            '<div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">' +
-              '<img src="assets/icons/Activities/19980.png" width="32" height="32" alt="Llave" id="weeklyKeyIcon">' +
-            '</div>' +
-            '<div>' +
-              '<div style="font-weight: 700; font-size: 1rem;">Llave semanal del León Negro</div>' +
-              '<div class="muted" style="font-size: 0.75rem;" id="weeklyKeyDescription">Detección automática por personajes Thief</div>' +
-            '</div>' +
-          '</div>' +
-          '<div id="weeklyKeyStatus" style="min-width: 140px; text-align: right;">' +
-            '<span class="badge badge--warning">⏳ Verificando...</span>' +
-          '</div>' +
-        '</section>' +
-        
-        // SECCIÓN DE PIEDRAS DE INVOCACIÓN VETUSTAS
-        '<section class="card">' +
-          '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">' +
-            '<img src="assets/icons/156272.png" width="28" height="28" alt="Piedra Arbórea" id="stoneWaypointBtn" style="cursor: pointer;" title="Copiar waypoint de Piedra Arbórea">' +
-            '<h2 style="margin: 0;">Piedras de invocación Vetustas</h2>' +
-          '</div>' +
-          '<div class="row between">' +
-            '<div style="display: flex; align-items: center; gap: 8px;">' +
-              '<img src="assets/icons/Activities/96978.png" width="24" height="24" alt="Leivas" style="vertical-align: middle;">' +
-              '<span class="pill s-pending" id="pillLeivas">Leivas: 0/5</span>' +
-            '</div>' +
-            '<div><button class="btn-ghost" id="assMinus">−</button><button class="btn-ghost" id="assPlus">+</button></div>' +
-          '</div>' +
-          '<div class="bar"><div class="bar-fill" id="barLeivas" style="width:0%"></div></div>' +
-        '</section>' +
-        
-        '<div class="panel-head"><h3>Agente de red de suministros del Pacto</h3></div>' +
-        '<p class="muted">' +
-          '<button id="psnaCopyAll" class="btn btn--ghost btn--xs">Copiar todos</button>' +
-        '</p>' +
-        '<div id="psnaStatus" class="muted"></div>' +
-        '<div id="psnaGrid" class="grid"></div>' +
-        
-        '<div class="panel-head"><h3>Refinamiento de Ecto</h3></div>' +
-        '<div id="ectoStatus" class="muted">Cargando…</div>' +
-        '<div id="ectoGrid" class="grid"></div>' +
-        
-        '<section class="card" id="fractalesDaily" style="margin-top: 20px;">' +
-          '<h2 style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">' +
-            '<span>🌀 Fractales</span>' +
-            '<span class="pill s-ok" style="font-size: 0.7rem;">Actualizado diariamente</span>' +
-          '</h2>' +
-          '<div id="fractalsBody" class="fractals-container"></div>' +
-        '</section>' +
-                  
-      '</div>' +
-      
-      '<div id="actWeekly" class="tab-panel" hidden>' +
-        '<div id="homeNodesContainer" class="home-nodes-container">' +
-          '<div class="muted" style="text-align: center; padding: 40px;">🏠 Haz clic en la pestaña Home Nodes para cargar</div>' +
-        '</div>' +
-      '</div>' +
-    '</div>';
-  
-  var anchor = $('#walletPanel');
-  if (anchor && anchor.parentNode) {
-    anchor.parentNode.insertBefore(host, anchor);
-  } else {
-    document.body.appendChild(host);
-  }
-  
-  $('#actTabDaily').addEventListener('click', function() {
-    $('#actDaily').hidden = false;
-    $('#actWeekly').hidden = true;
-    this.classList.remove('btn--ghost');
-    $('#actTabWeekly').classList.add('btn--ghost');
-  });
-  
-  $('#actTabWeekly').addEventListener('click', function() {
-    $('#actDaily').hidden = true;
-    $('#actWeekly').hidden = false;
-    this.classList.remove('btn--ghost');
-    $('#actTabDaily').classList.add('btn--ghost');
-    loadHomeNodesOnDemand();
-  });
-  
-  // Botón Refrescar - recarga la página
-  var refreshBtn = $('#refreshActivitiesBtn');
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', function() {
-      window.location.reload();
-    });
-  }
-  
-  // Icono de Piedra Arbórea - copiar waypoint
-  var stoneWaypointBtn = $('#stoneWaypointBtn');
-  if (stoneWaypointBtn) {
-    stoneWaypointBtn.addEventListener('click', function() {
-      copyToClipboard('Punto de Ruta de Piedra Arbórea — [&BGMNAAA=]');
-      if (window.toast) window.toast('success', 'Waypoint de Piedra Arbórea copiado');
-    });
-  }
-  
-  $('#psnaCopyAll').addEventListener('click', function() {
-    var list = state.daily.psna || [];
-    var chats = [];
-    for (var i = 0; i < list.length; i++) {
-      if (list[i].chat) chats.push(list[i].chat);
-    }
-    if (chats.length) {
-      copyToClipboard(chats.join(' '));
-      if (window.toast) window.toast('success', chats.length + ' waypoints copiados');
+      '</div>';
+    
+    var anchor = $('#walletPanel');
+    if (anchor && anchor.parentNode) {
+      anchor.parentNode.insertBefore(host, anchor);
     } else {
-      if (window.toast) window.toast('error', 'No hay waypoints disponibles');
+      document.body.appendChild(host);
     }
-  });
-  
-  // BOTONES DE LEIVAS
-  var minusBtn = document.querySelector('#assMinus');
-  var plusBtn = document.querySelector('#assPlus');
-  
-  if (minusBtn) {
-    var newMinus = minusBtn.cloneNode(true);
-    minusBtn.parentNode.replaceChild(newMinus, minusBtn);
-    newMinus.addEventListener('click', function() {
-      setStones(state.weekly.stones - 1);
+    
+    $('#actTabDaily').addEventListener('click', function() {
+      $('#actDaily').hidden = false;
+      $('#actWeekly').hidden = true;
+      this.classList.remove('btn--ghost');
+      $('#actTabWeekly').classList.add('btn--ghost');
     });
-  }
-  
-  if (plusBtn) {
-    var newPlus = plusBtn.cloneNode(true);
-    plusBtn.parentNode.replaceChild(newPlus, plusBtn);
-    newPlus.addEventListener('click', function() {
-      setStones(state.weekly.stones + 1);
+    
+    $('#actTabWeekly').addEventListener('click', function() {
+      $('#actDaily').hidden = true;
+      $('#actWeekly').hidden = false;
+      this.classList.remove('btn--ghost');
+      $('#actTabDaily').classList.add('btn--ghost');
+      loadHomeNodesOnDemand();
     });
+    
+    $('#psnaCopyAll').addEventListener('click', function() {
+      var list = state.daily.psna || [];
+      var chats = [];
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].chat) chats.push(list[i].chat);
+      }
+      if (chats.length) {
+        copyToClipboard(chats.join(' '));
+        if (window.toast) window.toast('success', chats.length + ' waypoints copiados');
+      } else {
+        if (window.toast) window.toast('error', 'No hay waypoints disponibles');
+      }
+    });
+    
+    // BOTONES DE LEIVAS - MISMO CÓDIGO QUE FUNCIONABA EN v3.18.0
+    var minusBtn = document.querySelector('#assMinus');
+    var plusBtn = document.querySelector('#assPlus');
+    
+    if (minusBtn) {
+      var newMinus = minusBtn.cloneNode(true);
+      minusBtn.parentNode.replaceChild(newMinus, minusBtn);
+      newMinus.addEventListener('click', function() {
+        setStones(state.weekly.stones - 1);
+      });
+    }
+    
+    if (plusBtn) {
+      var newPlus = plusBtn.cloneNode(true);
+      plusBtn.parentNode.replaceChild(newPlus, plusBtn);
+      newPlus.addEventListener('click', function() {
+        setStones(state.weekly.stones + 1);
+      });
+    }
+    
+    return host;
   }
-  
-  return host;
-}
   
   function loadHomeNodesOnDemand() {
     if (state.homeNodesRendered) {
