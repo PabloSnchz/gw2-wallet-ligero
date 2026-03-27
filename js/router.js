@@ -1,6 +1,11 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.10.4 (2026‑03‑24) — Fix bucle infinito en scheduleSeasonReset (no reprogramar dentro del timeout)
+ * v2.10.5 (2026‑03‑26) — Añadida ruta para Panel de Cuentas (#/account/accounts)
+ *
+ * Cambios v2.10.5:
+ *  - Añadida ruta '#/account/accounts' para el nuevo panel de cuentas
+ *  - Añadido Accounts.activate() en route()
+ *  - Actualizado setActiveNav y updateSidebarFor para soportar cuentas
  *
  * Cambios v2.10.4:
  *  - Eliminada llamada recursiva a scheduleSeasonReset dentro del timeout
@@ -24,7 +29,7 @@
 (function () {
   'use strict';
 
-  console.info('[WV] router-wv.js v2.10.4 — Fix bucle infinito en scheduleSeasonReset');
+  console.info('[WV] router-wv.js v2.10.5 — Añadida ruta para Panel de Cuentas');
 
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -113,7 +118,8 @@
           '#/account/achievements':'achievements',
           '#/account/wizards-vault':'wv',
           '#/activities':'activities',
-          '#/account/characters':'characters'
+          '#/account/characters':'characters',
+          '#/account/accounts':'accounts'
         };
         var dv = map[h]; if (dv) found = links.find(function (a) { return (a.getAttribute('data-view')||'').trim().toLowerCase()===dv; }) || null;
       }
@@ -129,11 +135,12 @@
       if (view==='cards'){ if (conv) conv.hidden=false; if (next) next.hidden=false; }
       else if (view==='meta'){ if (metaNext) metaNext.hidden=false; }
       else if (view==='achievements'){ if (ach) ach.hidden=false; }
+      else if (view==='accounts'){ /* no sidebar específico por ahora */ }
     } catch (e) { console.warn('[router] updateSidebarFor error', e); }
   }
 
   function showPanel(idToShow) {
-    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','charactersPanel'].forEach(function(id){
+    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','charactersPanel','accountsPanel'].forEach(function(id){
       var node=el(id); if (!node) return;
       if (id===idToShow) node.removeAttribute('hidden'); else node.setAttribute('hidden','hidden');
     });
@@ -838,7 +845,6 @@
           state.shop.season = season; 
           setWVSeasonHeader(season);
           console.log('[WV] Temporada cargada correctamente:', season.title);
-          // Solo programar reset si no hay uno activo
           if (!state.resetTimers.special) {
             scheduleSeasonReset();
           }
@@ -984,7 +990,6 @@
         var ms = msUntil(at);
         if (ms === 0) ms = 500;
         
-        // Limpiar timer existente
         if (state.resetTimers.special) clearTimeout(state.resetTimers.special);
         
         console.log('[WV] Programando reset de temporada en', Math.round(ms/1000/60/60/24), 'días');
@@ -995,14 +1000,10 @@
           try{ if (GW2Api && typeof GW2Api.wvInvalidateTargets==='function') GW2Api.wvInvalidateTargets(getSelectedToken()); }catch(_){}
           refreshObjectives(true);
           
-          // Obtener la nueva temporada después del reset
           GW2Api.getWVSeason({ nocache:true }).then(function(season){
             state.shop.season = season;
             setWVSeasonHeader(season);
             console.log('[WV] Nueva temporada después del reset:', season.title);
-            
-            // NO llamar a scheduleSeasonReset() aquí - eso causa el bucle
-            // El próximo reset se programará cuando se vuelva a cargar la pestaña
           }).catch(function(){
             console.warn('[WV] Error obteniendo nueva temporada después del reset');
           });
@@ -1011,7 +1012,6 @@
             WVSeasonStore.getCurrentSeasonInfo().then(function(ss){ if (ss) lastSS={year:ss.year,seq:ss.seq}; }).catch(function(){});
           }
           
-          // Limpiar el timer después de ejecutar
           state.resetTimers.special = null;
         }, ms);
       }catch(e){ console.warn('[WV] scheduleSeasonReset error', e); }
@@ -1223,6 +1223,20 @@
         return;
       }
 
+      // NUEVA RUTA: Panel de Cuentas
+      if (h === '#/account/accounts') {
+        try {
+          showPanel('accountsPanel');
+          window.Accounts?.activate?.();
+        } catch (e) {
+          console.warn('[router] Accounts.activate error', e);
+        } finally {
+          updateSidebarFor('accounts');
+          setActiveNav(h);
+        }
+        return;
+      }
+
       try { showPanel('walletPanel'); }
       catch (e) { console.warn('[router] fallback show wallet error', e); }
       finally { updateSidebarFor('cards'); setActiveNav('#/cards'); }
@@ -1273,6 +1287,15 @@
             window.Characters?.activate?.();
           } catch (e) {
             console.warn('[router] Characters.activate error', e);
+          }
+        }
+      } else if (h === '#/account/accounts') {
+        var pAccounts = document.getElementById('accountsPanel');
+        if (pAccounts && !pAccounts.hasAttribute('hidden')) {
+          try {
+            window.Accounts?.activate?.();
+          } catch (e) {
+            console.warn('[router] Accounts.activate error', e);
           }
         }
       }
