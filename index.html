@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="dark light"/>
   <meta name="theme-color" content="#111218"/>
-  <title>Bóveda del Gato Negro — v5.3.0</title>
+  <title>Bóveda del Gato Negro — v5.4.0</title>
 
   <!-- Fuente hero: Cinzel Decorative -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -435,6 +435,17 @@
       </div>
     </section>
 
+    <!-- ======= Panel de Cuentas (nuevo) ======= -->
+    <section id="accountsPanel" class="panel col-main" aria-labelledby="accountsTitle" hidden>
+      <h2 class="panel__title" id="accountsTitle">
+        <img src="assets/icons/3601748.png" alt="" width="32" height="32" style="vertical-align: middle; margin-right: 8px;">
+        Panel de Cuentas
+      </h2>
+      <div class="panel__body">
+        <!-- JS llena el contenido -->
+      </div>
+    </section>
+
     <!-- ======= SIDEBAR ======= -->
     <aside class="col-side" id="appSidebar">
 
@@ -522,6 +533,15 @@
                   <img class="icon-img" src="assets/icons/156678.png" alt="Personajes" width="28" height="28" loading="lazy" referrerpolicy="no-referrer">
                 </span>
                 <span>Personajes</span>
+              </a>
+            </li>
+
+            <li>
+              <a id="navAccounts" class="side-nav__link" href="#/account/accounts">
+                <span class="side-nav__icon">
+                  <img class="icon-img" src="assets/icons/3601748.png" alt="Cuentas" width="28" height="28" loading="lazy" referrerpolicy="no-referrer">
+                </span>
+                <span>Cuentas</span>
               </a>
             </li>
           </ul>
@@ -682,6 +702,7 @@
   </div>
 
   <!-- JS base -->
+  <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.js"></script>
   <script src="js/api-gw2.js?v=2.7.0-modular"></script>
   <script src="js/wizards-vault.js?v=1.2.1"></script>
   <script src="js/wv-season-storage.js?v=1.1.1"></script>
@@ -691,9 +712,10 @@
   <script defer src="js/meta.js?v=3.2.1"></script>
   <script defer src="js/sidebar-nav.js?v=1.2"></script>
 
-  <script defer src="js/activities.js?v=3.19.2"></script>
+  <script defer src="js/activities.js?v=3.19.3"></script>
   <script defer src="js/activities-theme.js?v=2.6.0"></script>
   <script defer src="js/characters.js?v=2.3.0"></script>
+  <script defer src="js/accounts-panel.js?v=1.2.1"></script>
   <script defer src="js/router.js?v=2.10.4"></script>
   <script defer src="js/wv-tabs-skin.js?v=1.0.0"></script>
   <script defer src="js/wv-purchase-detail.js?v=1.8.6"></script>

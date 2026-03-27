@@ -311,6 +311,32 @@
   // 5. DETECCIÓN AUTOMÁTICA DE LLAVE SEMANAL
   // =======================================================================
 
+  /**
+   * Obtiene la fecha del último reset semanal (lunes 07:30 UTC)
+   * @returns {Date} Fecha del último reset semanal
+   */
+  function getLastWeeklyResetUTC() {
+    var now = new Date();
+    var day = now.getUTCDay(); // 0 = domingo, 1 = lunes, ..., 6 = sábado
+    
+    // Días desde el último lunes (0 si hoy es lunes)
+    var daysSinceMonday = (day === 0 ? 6 : day - 1);
+    
+    var lastMonday = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() - daysSinceMonday,
+      7, 30, 0, 0  // 07:30 UTC
+    ));
+    
+    // Si hoy es lunes pero antes de las 07:30, el último reset fue el lunes pasado
+    if (day === 1 && (now.getUTCHours() < 7 || (now.getUTCHours() === 7 && now.getUTCMinutes() < 30))) {
+      lastMonday.setUTCDate(lastMonday.getUTCDate() - 7);
+    }
+    
+    return lastMonday;
+  }
+
   async function detectWeeklyKeyFromCharacters(token) {
     if (!token) {
       console.log(LOG, '[Key Detection] No hay token');
@@ -342,6 +368,9 @@
         })
       );
       
+      // Obtener el último reset semanal (lunes 07:30 UTC)
+      const lastWeeklyReset = getLastWeeklyResetUTC();
+      
       const now = Date.now();
       const keyFarmers = characters.filter(char => {
         if (!char) return false;
@@ -350,7 +379,12 @@
         
         const createdDate = new Date(char.created);
         const daysOld = (now - createdDate) / (1000 * 60 * 60 * 24);
+        
+        // Condición 1: menos de 7 días de antigüedad
         if (daysOld >= 7) return false;
+        
+        // Condición 2: creado después del último reset semanal (misma semana)
+        if (createdDate <= lastWeeklyReset) return false;
         
         return true;
       });
@@ -829,9 +863,9 @@
     var weeklyKeyDescription = $('#weeklyKeyDescription');
     if (weeklyKeyDescription) {
       if (state.weekly.key) {
-        weeklyKeyDescription.innerHTML = '✅ Detectado automáticamente por Thief reciente (nivel 10+, &lt;7 días)';
+        weeklyKeyDescription.innerHTML = '✅ Detectado automáticamente por Thief reciente (nivel 10+, &lt;7 días, misma semana)';
       } else {
-        weeklyKeyDescription.innerHTML = '🔍 Detección automática: ningún Thief reciente (nivel 10+, &lt;7 días)';
+        weeklyKeyDescription.innerHTML = '🔍 Detección automática: ningún Thief reciente (nivel 10+, &lt;7 días, misma semana)';
       }
     }
     
