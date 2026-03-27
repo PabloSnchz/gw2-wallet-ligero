@@ -1,14 +1,21 @@
 /*!
  * js/accounts-panel.js — Panel de Cuentas (cifrado local)
- * v1.3.1 (2026-03-27)
- *
- * CORRECCIÓN v1.3.1:
- * - Restaurada funcionalidad de acceso a cuentas (archivo guardado y carga manual)
- * - El asistente ahora es un bloque separado que NO elimina el formulario de carga existente
- * - Mantiene la estructura: Asistente arriba, luego sección "Acceso a cuentas"
+ * v1.3.0 (2026-03-27)
  *
  * NUEVO v1.3.0:
  * - Asistente de cuentas (modal) para crear archivos .enc desde Excel
+ * - Guía paso a paso con explicaciones de seguridad
+ * - Generación de plantilla Excel
+ * - Conversión Excel → JSON
+ * - Enriquecimiento con API de GW2 (usando keys de la Bóveda)
+ * - Cifrado final a .enc
+ *
+ * MEJORAS v1.2.1:
+ * - Vista tabla/tarjetas con botón toggle
+ * - Información sensible oculta inicialmente, se despliega al hacer click en el nombre
+ * - Copia al portapapeles al hacer click en email, contraseña o Gmail pass
+ * - Imagen de tipo de cuenta según path configurable
+ * - Sección "Más info" colapsable
  */
 
 (function (root) {
@@ -71,7 +78,7 @@
   };
 
   // =======================================================================
-  // 2. UTILIDADES BÁSICAS (idénticas a la versión anterior)
+  // 2. UTILIDADES BÁSICAS
   // =======================================================================
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.from((r || document).querySelectorAll(s)); }
@@ -317,7 +324,7 @@
   }
 
   // =======================================================================
-  // 6. RENDERIZADO DE TARJETA (idéntico a versión anterior)
+  // 6. RENDERIZADO DE TARJETA
   // =======================================================================
   function renderAccountCard(acc) {
     var login = acc.login || {};
@@ -677,7 +684,7 @@
   }
 
   // =======================================================================
-  // 7. FORMULARIO DE CARGA (completo con asistente arriba y acceso a cuentas abajo)
+  // 7. FORMULARIO DE CARGA (existente)
   // =======================================================================
   function renderLoadForm() {
     var body = document.querySelector('#accountsPanel .panel__body');
@@ -687,104 +694,22 @@
     var hasStoredFile = !!lastFile;
 
     body.innerHTML = `
-      <!-- BLOQUE ASISTENTE -->
-      <div id="assistantBlock" style="background: #1a1e2a; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid #2a2c35;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div id="accountsLoadForm" style="background: #1a1e2a; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #2a2c35;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 1.4rem;">🧙</span>
+            <span style="font-size: 1.2rem;">🧙</span>
             <div>
-              <h3 style="margin: 0; font-size: 1rem;">Asistente de cuentas</h3>
+              <h3 style="margin: 0;">Asistente de cuentas</h3>
               <div class="muted" style="font-size: 0.75rem;">Guía paso a paso para crear tu archivo seguro</div>
             </div>
           </div>
           <button id="openWizardBtn" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">➕ Crear nuevo archivo</button>
         </div>
       </div>
-
-      <!-- BLOQUE ACCESO A CUENTAS -->
-      <div id="accessBlock" style="background: #1a1e2a; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #2a2c35;">
-        <h3 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-          <img src="${CONFIG.ICONS.account}" width="24" height="24" alt="">
-          🔐 Acceso a cuentas
-        </h3>
-        
-        ${hasStoredFile ? `
-          <div style="background: #0f1116; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-              <div>
-                <strong>📁 Último archivo:</strong> ${esc(lastFile.name)}<br>
-                <span class="muted">Ingresá tu contraseña para acceder automáticamente</span>
-              </div>
-              <button id="accountsUseStoredBtn" class="btn btn--accent">🔓 Usar archivo guardado</button>
-            </div>
-          </div>
-          <hr style="border-color: #2a2c35; margin: 16px 0;">
-          <p class="muted">O seleccioná un archivo diferente:</p>
-        ` : ''}
-        
-        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
-          <div style="flex: 2;">
-            <label>Archivo cifrado (.enc)</label>
-            <input type="file" id="accountsFileInput" accept=".enc">
-          </div>
-          <div style="flex: 1;">
-            <label>Contraseña</label>
-            <input type="password" id="accountsPasswordInput" placeholder="Contraseña de descifrado">
-          </div>
-          <div>
-            <button id="accountsLoadBtn" class="btn btn--accent">🔓 Cargar y mostrar</button>
-          </div>
-        </div>
-        <div id="accountsLoadStatus" class="muted" style="margin-top: 12px;"></div>
-      </div>
-
       <div id="accountsStats"></div>
       <div id="accountsFilters"></div>
       <div id="accountsList" class="wallet-card-grid"></div>
     `;
-
-    // Evento para usar archivo guardado
-    var useStoredBtn = document.getElementById('accountsUseStoredBtn');
-    var statusEl = document.getElementById('accountsLoadStatus');
-    var fileInput = document.getElementById('accountsFileInput');
-    var passwordInput = document.getElementById('accountsPasswordInput');
-    var loadBtn = document.getElementById('accountsLoadBtn');
-
-    if (useStoredBtn) {
-      useStoredBtn.onclick = async function() {
-        var password = passwordInput.value;
-        if (!password) {
-          if (statusEl) { statusEl.textContent = '⚠️ Ingresá la contraseña'; statusEl.style.color = '#ffd966'; }
-          return;
-        }
-        if (statusEl) { statusEl.textContent = '🔓 Descifrando archivo guardado...'; statusEl.style.color = '#ffd966'; }
-        var success = await loadFromStoredFile(password);
-        if (!success && statusEl) {
-          statusEl.textContent = '❌ Contraseña incorrecta. Probá con otro archivo.';
-          statusEl.style.color = '#f28b82';
-        }
-      };
-    }
-
-    if (loadBtn) {
-      loadBtn.onclick = async function() {
-        var file = fileInput.files[0];
-        var password = passwordInput.value;
-        if (!file) { if (statusEl) statusEl.textContent = '⚠️ Seleccioná un archivo'; return; }
-        if (!password) { if (statusEl) statusEl.textContent = '⚠️ Ingresá la contraseña'; return; }
-        if (statusEl) { statusEl.textContent = '🔓 Descifrando archivo...'; statusEl.style.color = '#ffd966'; }
-        var success = await loadFromFile(file, password, true);
-        if (success && statusEl) {
-          statusEl.textContent = '✅ Archivo cargado correctamente';
-          statusEl.style.color = '#a7f3d0';
-          fileInput.value = '';
-          passwordInput.value = '';
-        } else if (statusEl) {
-          statusEl.textContent = '❌ Error al descifrar. Verificá la contraseña o el archivo.';
-          statusEl.style.color = '#f28b82';
-        }
-      };
-    }
 
     var openWizardBtn = document.getElementById('openWizardBtn');
     if (openWizardBtn && !openWizardBtn.__wired) {
@@ -792,6 +717,60 @@
       openWizardBtn.addEventListener('click', function() {
         openWizardModal();
       });
+    }
+
+    var hasData = state.data && state.data.accounts && state.data.accounts.length;
+    if (!hasData) {
+      var container = document.getElementById('accountsLoadForm');
+      if (container) {
+        var existingForm = container.querySelector('#manualLoadContainer');
+        if (!existingForm) {
+          var manualFormHtml = `
+            <div id="manualLoadContainer" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #2a2c35;">
+              <p class="muted" style="margin-bottom: 12px;">O cargá un archivo existente:</p>
+              <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+                <div style="flex: 2;">
+                  <input type="file" id="accountsFileInput" accept=".enc">
+                </div>
+                <div style="flex: 1;">
+                  <input type="password" id="accountsPasswordInput" placeholder="Contraseña">
+                </div>
+                <div>
+                  <button id="accountsLoadBtn" class="btn btn--accent">🔓 Cargar archivo</button>
+                </div>
+              </div>
+              <div id="accountsLoadStatus" class="muted" style="margin-top: 12px;"></div>
+            </div>
+          `;
+          container.insertAdjacentHTML('beforeend', manualFormHtml);
+          
+          var fileInput = document.getElementById('accountsFileInput');
+          var passwordInput = document.getElementById('accountsPasswordInput');
+          var loadBtn = document.getElementById('accountsLoadBtn');
+          var statusEl = document.getElementById('accountsLoadStatus');
+          
+          if (loadBtn) {
+            loadBtn.onclick = async function() {
+              var file = fileInput.files[0];
+              var password = passwordInput.value;
+              if (!file) { if (statusEl) statusEl.textContent = '⚠️ Seleccioná un archivo'; return; }
+              if (!password) { if (statusEl) statusEl.textContent = '⚠️ Ingresá la contraseña'; return; }
+              statusEl.textContent = '🔓 Descifrando archivo...';
+              statusEl.style.color = '#ffd966';
+              var success = await loadFromFile(file, password, true);
+              if (success) {
+                statusEl.textContent = '✅ Archivo cargado correctamente';
+                statusEl.style.color = '#a7f3d0';
+                fileInput.value = '';
+                passwordInput.value = '';
+              } else {
+                statusEl.textContent = '❌ Error al descifrar. Verificá la contraseña o el archivo.';
+                statusEl.style.color = '#f28b82';
+              }
+            };
+          }
+        }
+      }
     }
   }
 
@@ -1204,7 +1183,7 @@
       if (state.inited) return;
       ensurePanel();
       state.inited = true;
-      console.info(LOG, 'ready v1.3.1 — Asistente de cuentas integrado, acceso a cuentas intacto');
+      console.info(LOG, 'ready v1.3.0 — Asistente de cuentas integrado');
     },
     activate: activate,
     deactivate: deactivate,
