@@ -1,6 +1,12 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.10.5 (2026‑03‑26) — Añadida ruta para Panel de Cuentas (#/account/accounts)
+ * v2.10.6 (2026‑03‑27) — Añadida ruta para Pantalla de Bienvenida (#/welcome)
+ *
+ * Cambios v2.10.6:
+ *  - Añadida ruta '#/welcome' para la pantalla de bienvenida
+ *  - Añadido Welcome.activate() en route()
+ *  - Añadido lógica de redirección inicial: si es primera visita o no hay key, mostrar bienvenida
+ *  - Actualizado setActiveNav y showPanel para soportar welcome
  *
  * Cambios v2.10.5:
  *  - Añadida ruta '#/account/accounts' para el nuevo panel de cuentas
@@ -29,7 +35,7 @@
 (function () {
   'use strict';
 
-  console.info('[WV] router-wv.js v2.10.5 — Añadida ruta para Panel de Cuentas');
+  console.info('[WV] router-wv.js v2.10.6 — Añadida ruta para Pantalla de Bienvenida');
 
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -119,7 +125,8 @@
           '#/account/wizards-vault':'wv',
           '#/activities':'activities',
           '#/account/characters':'characters',
-          '#/account/accounts':'accounts'
+          '#/account/accounts':'accounts',
+          '#/welcome':'welcome'
         };
         var dv = map[h]; if (dv) found = links.find(function (a) { return (a.getAttribute('data-view')||'').trim().toLowerCase()===dv; }) || null;
       }
@@ -136,11 +143,12 @@
       else if (view==='meta'){ if (metaNext) metaNext.hidden=false; }
       else if (view==='achievements'){ if (ach) ach.hidden=false; }
       else if (view==='accounts'){ /* no sidebar específico por ahora */ }
+      else if (view==='welcome'){ /* no sidebar específico para bienvenida */ }
     } catch (e) { console.warn('[router] updateSidebarFor error', e); }
   }
 
   function showPanel(idToShow) {
-    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','charactersPanel','accountsPanel'].forEach(function(id){
+    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','charactersPanel','accountsPanel','welcomePanel'].forEach(function(id){
       var node=el(id); if (!node) return;
       if (id===idToShow) node.removeAttribute('hidden'); else node.setAttribute('hidden','hidden');
     });
@@ -1223,7 +1231,6 @@
         return;
       }
 
-      // NUEVA RUTA: Panel de Cuentas
       if (h === '#/account/accounts') {
         try {
           showPanel('accountsPanel');
@@ -1232,6 +1239,20 @@
           console.warn('[router] Accounts.activate error', e);
         } finally {
           updateSidebarFor('accounts');
+          setActiveNav(h);
+        }
+        return;
+      }
+
+      // NUEVA RUTA: Pantalla de Bienvenida
+      if (h === '#/welcome') {
+        try {
+          showPanel('welcomePanel');
+          window.Welcome?.activate?.();
+        } catch (e) {
+          console.warn('[router] Welcome.activate error', e);
+        } finally {
+          updateSidebarFor('welcome');
           setActiveNav(h);
         }
         return;
@@ -1298,6 +1319,15 @@
             console.warn('[router] Accounts.activate error', e);
           }
         }
+      } else if (h === '#/welcome') {
+        var pWelcome = document.getElementById('welcomePanel');
+        if (pWelcome && !pWelcome.hasAttribute('hidden')) {
+          try {
+            window.Welcome?.activate?.();
+          } catch (e) {
+            console.warn('[router] Welcome.activate error', e);
+          }
+        }
       }
 
     } catch (e) {
@@ -1333,6 +1363,20 @@
 
     window.addEventListener('hashchange', route);
     document.addEventListener('visibilitychange', function(){ if (WV && typeof WV.onVisibilityChange==='function') WV.onVisibilityChange(document.hidden); });
+
+    // Lógica de redirección inicial a bienvenida si es primera visita o no hay key
+    var firstVisit = !localStorage.getItem('gn_welcome_seen');
+    var hasKey = !!getSelectedToken();
+    
+    if (!hasKey || firstVisit) {
+      var currentHash = location.hash;
+      if (currentHash === '#/cards' || currentHash === '#/' || currentHash === '') {
+        location.hash = '#/welcome';
+        if (firstVisit) {
+          localStorage.setItem('gn_welcome_seen', 'true');
+        }
+      }
+    }
 
     route(); hydrateWVModePills(el('wvPanel'));
   }

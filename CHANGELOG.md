@@ -9,13 +9,91 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [5.5.0] - 2026-03-27
+
+### Added
+- **Pantalla de Bienvenida (welcome-panel.js v1.2.0)**:
+  - Nueva ruta `#/welcome` con onboarding completo
+  - Secciones: funcionalidades (7 acciones), API Key, asistente de cuentas, acceso rápido, comunidad, apoyo
+  - Iconos exclusivos para cada funcionalidad (cartera, meta, logros, WV, actividades, personajes, cuentas)
+  - Botón home en utilbar con ícono local (`assets/icons/ui/home.png`)
+  - Redirección inteligente: primera visita o sin API key → bienvenida
+  - Flag `gn_welcome_seen` en localStorage para no mostrar repetidamente
+- **Panel de Cuentas — Asistente integrado (accounts-panel.js v1.3.1)**:
+  - Modal con 4 pasos para crear archivos `.enc` desde Excel:
+    1. Descargar plantilla Excel con columnas predefinidas
+    2. Subir Excel → Generar JSON
+    3. Enriquecer con GW2 API (account name, AP, fecha creación, expansiones)
+    4. Cifrar con contraseña → archivo `.enc`
+  - Separación visual: bloque "Asistente" arriba, bloque "Acceso a cuentas" abajo
+  - Botón "➕ Crear nuevo archivo" abre el modal
+  - Persistencia de último archivo en localStorage
+  - Iconos exclusivos para cada paso del asistente
+- **Detección automática de llave semanal — Validación de semana actual (Activities v3.19.3)**:
+  - Nueva condición: personaje Thief debe haber sido creado **después** del último reset semanal (lunes 07:30 UTC)
+  - Función auxiliar `getLastWeeklyResetUTC()`
+  - Previene que Thiefs creados el domingo bloqueen la llave de la semana siguiente
+  - Leyenda actualizada: "nivel 10+, <7 días, **misma semana**"
+
+### Changed
+- **welcome-panel.js v1.2.0**:
+  - Todos los emojis reemplazados por imágenes locales en todas las secciones
+  - Iconos de comunidad: Discord, Instagram, YouTube, Twitch, GitHub, email
+  - Iconos de apoyo: PayPal, Ko-fi, café
+  - Botones "Agregar API Key" y "Gestionar Keys" abren modal correctamente
+  - Modal de API Keys cierra correctamente (backdrop, X, ESC)
+- **router.js v2.10.6**:
+  - Nueva ruta `#/welcome` agregada
+  - Lógica de redirección inicial en `onDomReady()`
+  - Actualización de `showPanel`, `setActiveNav`, `onKeySelectChange` para soportar bienvenida
+- **accounts-panel.js v1.3.1**:
+  - Mantenimiento de funcionalidad existente (carga de archivo guardado, contraseña, botón "Cambiar archivo")
+  - Corrección de bug: modal de API Keys cierra correctamente desde bienvenida
+
+### Fixed
+- **Modal de API Keys**: ahora cierra correctamente (backdrop, X, ESC) cuando se abre desde cualquier lugar
+- **Panel de cuentas**: separación visual correcta entre asistente y acceso a cuentas
+- **Modal de asistente**: corrección de margen izquierdo (div extra eliminado)
+
+---
+
+## [5.4.0] - 2026-03-26
+
+### Added
+- **Panel de Cuentas (accounts-panel.js v1.2.1)**:
+  - Cifrado local de archivos JSON con AES (CryptoJS)
+  - Persistencia de último archivo en localStorage para acceso rápido
+  - Vista dual: tarjetas / tabla con botón toggle
+  - Información sensible oculta con botón 👁️
+  - Copia al portapapeles (email, contraseña, Gmail Pass)
+  - Click en nombre de cuenta expande información adicional (mochilas, bancos, material, legendarias)
+  - Sección colapsable "Más info" con estadísticas
+  - Filtros por tipo (principales, alternativas, farming, llaves) y tags
+  - Botón "Cambiar archivo" para resetear estado
+  - Ruta `#/account/accounts`
+- **Detección automática de llave semanal (Activities v3.19.2)**:
+  - Busca personajes Thief con nivel ≥10 y menos de 7 días de antigüedad
+  - UI dedicada en la parte superior del panel de actividades
+  - Eliminado marcado manual (checkbox deshabilitado)
+- **Barra de horarios unificada** (Activities v2.5.0 / Meta v1.3.1):
+  - Iconos oficiales de GW2: UTC, Local, Reset diario, Reset semanal
+  - Actualización en tiempo real con segundos
+  - Cuenta regresiva con formato `Xd Xh Xm Xs`
+
+### Changed
+- **index.html**: Nuevo enlace en sidebar para Cuentas, agregado script de crypto-js y SheetJS
+- **router.js v2.10.5**: Nueva ruta `#/account/accounts`
+- **activities.js v3.19.3**: Mejora en detección de llave con validación de semana actual
+
+---
+
 ## [5.3.0] - 2026-03-25
 
 ### Added
 - **Migración completa a íconos locales**:
   - Profesiones: íconos locales en `assets/icons/professions/2163502.png` a `2163510.png`
   - Fractales: ícono genérico local `assets/icons/Fractal/2591.png` para todas las tarjetas
-  - Conversor: SVG reemplazados por imágenes locales (`gems-icon.png`, `gold-icon.png`)
+  - Conversor: SVG reemplazados por imágenes locales (`502065.png`, `619316.png`, `784280.png`)
   - Countdowns WV: íconos de reset diario, semanal y temporada locales (`523379.png`, `523380.png`, `523381.png`)
 - **Títulos de paneles con íconos**:
   - Cartera: `733322.png`
