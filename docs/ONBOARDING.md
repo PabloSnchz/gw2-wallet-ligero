@@ -58,16 +58,62 @@ Si hay riesgo → advertir antes de generar código.
 
 ## 🚀 Novedades v5.4
 
+### 🆕 Asistente de Cuentas (accounts-panel.js v1.3.1)
+
+Nuevo asistente integrado en el panel de cuentas que permite a los usuarios crear archivos `.enc` de forma guiada, sin necesidad de conocimientos técnicos. Todo el proceso ocurre localmente en el navegador.
+
+**Interfaz del panel:**
+```
+┌─────────────────────────────────────────────────────────┐
+│ 🧙 Asistente de cuentas              [➕ Crear nuevo archivo] │
+│ Guía paso a paso para crear tu archivo seguro          │
+├─────────────────────────────────────────────────────────┤
+│ 🔐 Acceso a cuentas                                    │
+│ 📁 Último archivo: gw2-cuentas.enc                     │
+│ [🔓 Usar archivo guardado]                             │
+│ O seleccioná un archivo diferente:                     │
+│ [📁 Archivo] [🔑 Contraseña] [🔓 Cargar y mostrar]     │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Asistente modal (4 pasos):**
+
+| Paso | Acción | Descripción |
+|------|--------|-------------|
+| **1** | 📎 Descargar plantilla Excel | Archivo con columnas predefinidas (id, nombre, email, password, apiKey, twitch_user, geforce_linked, notas, tags) |
+| **2** | 📤 Subir Excel → Generar JSON | Convierte el Excel completado a formato JSON y descarga `cuentas.json` |
+| **3** | 🌐 Enriquecer con GW2 API | Usa las API Keys de la Bóveda para obtener: account name, AP, fecha creación, expansiones detectadas |
+| **4** | 🔐 Cifrar con contraseña | Genera el archivo `.enc` listo para cargar en el panel (`gw2-cuentas.enc`) |
+
+**Funciones clave del asistente:**
+
+| Función | Propósito |
+|---------|-----------|
+| `generateExcelTemplate()` | Genera y descarga plantilla Excel con columnas predefinidas |
+| `parseExcelToJSON(file)` | Convierte archivo Excel a JSON |
+| `enrichWithGW2API(data)` | Enriquece datos con información de GW2 API |
+| `openWizardModal()` | Abre modal con los 4 pasos del asistente |
+
+**Seguridad destacada:**
+- Todo el procesamiento ocurre en el navegador
+- No hay servidores, no hay bases de datos externas
+- Los datos nunca salen de la computadora del usuario
+- Mensajes de seguridad visibles en el modal
+
+**Dependencias externas:**
+- `crypto-js` v4.2.0 (CDN) para cifrado AES
+- `xlsx.full.min.js` v0.20.2 (CDN) para manejo de archivos Excel
+
 ### 🆕 Panel de Cuentas (accounts-panel.js v1.2.1)
 
-Nuevo panel para gestión segura de múltiples cuentas de Guild Wars 2.
+Panel para gestión segura de múltiples cuentas de Guild Wars 2.
 
 **Características principales:**
 - **Cifrado local**: Archivo JSON cifrado con AES (CryptoJS) y contraseña personal
 - **Persistencia inteligente**: Guarda último archivo en `localStorage` para acceso rápido (al recargar, solo pide contraseña)
 - **Vista dual**: Tarjetas / Tabla con botón toggle (persiste en sesión)
 - **Información sensible**: Contraseñas ocultas con `••••••••`, se muestran con botón 👁️
-- **Copia al portapapeles**: Click en email, contraseña o Gmail Pass copia el valor con feedback visual
+- **Copia al portapapeles**: Click en email, contraseña o Gmail Pass copia el valor con feedback visual (toast)
 - **Expandir/colapsar**: Click en nombre de cuenta muestra información adicional (mochilas, bancos, material, legendarias)
 - **Sección colapsable "Más info"**: Contiene campos de estadísticas (mochilas, bancos, material, legendarias)
 - **Iconos personalizables**:
@@ -89,9 +135,6 @@ Nuevo panel para gestión segura de múltiples cuentas de Guild Wars 2.
 - Estado de contraseñas y expansión en memoria (sesión, no persiste entre recargas)
 
 **Ruta:** `#/account/accounts`
-
-**Dependencias externas:**
-- `crypto-js` v4.2.0 (CDN) para cifrado AES
 
 ### 🆕 Mejora en detección automática de llave semanal (Activities v3.19.3)
 
@@ -254,7 +297,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/activities.js` | v3.19.3 | Actividades diarias/semanales: PSNA, fractales, world bosses, ecto, home nodes. **Detección automática de llave semanal con validación de semana actual** |
 | `js/activities-theme.js` | v2.5.0 | Home Nodes + barra de horarios unificada con iconos GW2 |
 | `js/characters.js` | v2.3.0 | Personajes: lista, ubicación, POIs, rangos PvP/WvW. **Íconos profesión locales** |
-| `js/accounts-panel.js` | v1.2.1 | **Panel de Cuentas**: gestión segura de múltiples cuentas con cifrado local |
+| `js/accounts-panel.js` | v1.3.1 | **Panel de Cuentas**: gestión segura + asistente para creación de archivos .enc desde Excel |
 | `js/router.js` | v2.10.5 | Router con prefetch, guardas, navegación por hash, mapeo de vistas. **Incluye ruta #/account/accounts** |
 | `js/wv-purchase-detail.js` | v1.8.6 | Detalle de compras, dashboard AA, top pendientes, **íconos countdowns locales** |
 | `js/wv-tabs-skin.js` | v1.0.0 | Re-skin de tabs WV, consistente con rerenders |
@@ -262,13 +305,22 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/*-theme.js` | varios | Glows, colores, estilos temáticos por módulo |
 | `js/meta-theme.js` | v1.3.1 | Barra de horarios unificada + mejora de horarios en tarjetas |
 
-## ✅ NUEVO js/accounts-panel.js — Panel de Cuentas (v1.2.1)
+## ✅ NUEVO js/accounts-panel.js — Panel de Cuentas (v1.3.1)
 
 ### Resumen
 
-Panel que permite gestionar de forma segura múltiples cuentas de Guild Wars 2 con cifrado local y persistencia inteligente.
+Panel que permite gestionar de forma segura múltiples cuentas de Guild Wars 2 con cifrado local, persistencia inteligente y un asistente para crear archivos `.enc` desde Excel.
 
 ### ¿Qué hace?
+
+**Asistente de cuentas (modal con 4 pasos)**
+
+| Paso | Acción | Función |
+|------|--------|---------|
+| 1 | Descargar plantilla Excel | `generateExcelTemplate()` |
+| 2 | Subir Excel → Generar JSON | `parseExcelToJSON()` |
+| 3 | Enriquecer con GW2 API | `enrichWithGW2API()` |
+| 4 | Cifrar con contraseña | CryptoJS AES |
 
 **Carga de datos**
 - Archivo JSON cifrado con AES (CryptoJS) cargado desde disco local
@@ -288,14 +340,6 @@ Panel que permite gestionar de forma segura múltiples cuentas de Guild Wars 2 c
 **Sección "Más info" colapsable**
 - Contiene: mochilas, bancos, material storage, legendarias, nivel 80
 - Botón "Más info" / "Menos info" para cada cuenta
-
-**Información por cuenta**
-- Credenciales: Email, contraseña, Gmail Pass
-- GW2: Account name, fecha creación, AP, slots, mochilas, bancos, material, legendarias, nivel 80
-- Expansiones: Core, Heroic, HoT, PoF, EoD, SoTO, JW, VoE (con iconos)
-- Servicios: Twitch, GeForce Now
-- API Key
-- Notas y tags
 
 **Filtros**
 - Búsqueda por nombre, email o GW2 ID
@@ -369,6 +413,7 @@ Panel que permite gestionar de forma segura múltiples cuentas de Guild Wars 2 c
 ### Dependencias externas
 
 - `crypto-js` v4.2.0 (CDN) para cifrado AES
+- `xlsx.full.min.js` v0.20.2 (CDN) para manejo de archivos Excel
 
 ## ✅ js/activities.js — Panel de Actividades (v3.19.3)
 
@@ -728,6 +773,9 @@ assets/icons/
 - ✅ Iconos Twitch y GeForce con rutas correctas
 - ✅ Filtros funcionales
 - ✅ Botón "Cambiar archivo" para resetear estado
+- ✅ **Asistente integrado** con 4 pasos para crear archivos .enc desde Excel
+- ✅ **Plantilla Excel descargable** con columnas predefinidas
+- ✅ **Enriquecimiento automático** con GW2 API usando keys de la Bóveda
 
 ## 📌 Buenas prácticas actualizadas
 
@@ -764,6 +812,9 @@ assets/icons/
 - Copia al portapapeles con feedback visual (toast)
 - Botón "Cambiar archivo" permite resetear estado completo
 - Click en nombre de cuenta expande info (no botón adicional)
+- **Asistente**: todo el procesamiento es local, sin backend
+- **Plantilla Excel**: columnas predefinidas con ejemplos
+- **Enriquecimiento**: usa las API Keys ya almacenadas en la Bóveda
 
 ### Purchase Detail (específico)
 
@@ -790,6 +841,7 @@ assets/icons/
 - **Mar 2026:** Detección automática de llave semanal con validación de semana actual (Activities v3.19.3)
 - **Mar 2026:** Creación Panel de Cuentas (accounts-panel.js v1.2.1)
 - **Mar 2026:** Integración completa del Panel de Cuentas en router y sidebar
+- **Mar 2026:** Asistente de Cuentas con generación de .enc desde Excel (accounts-panel.js v1.3.1)
 
 ## 🎉 Estado actual del proyecto (v5.4)
 
@@ -804,5 +856,6 @@ assets/icons/
 - ✅ Characters v2.3.0 productivo: íconos profesión locales
 - ✅ Todos los assets migrados a rutas relativas (compatibles con GitHub Pages)
 - ✅ Íconos countdowns WV locales
-- ✅ **Panel de Cuentas v1.2.1 productivo**: gestión segura de múltiples cuentas, cifrado local, persistencia inteligente
+- ✅ **Panel de Cuentas v1.3.1 productivo**: gestión segura de múltiples cuentas, cifrado local, persistencia inteligente
+- ✅ **Asistente de Cuentas integrado**: creación de archivos .enc desde Excel, enriquecimiento con API, todo local
 - ✅ **Botones de Leivas funcionando correctamente** (sin regresiones)

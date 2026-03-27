@@ -1,14 +1,11 @@
 /*!
  * js/accounts-panel.js — Panel de Cuentas (cifrado local)
- * v1.3.1 (2026-03-27)
+ * v1.2.1 (2026-03-26)
  *
- * CORRECCIÓN v1.3.1:
- * - Restaurada funcionalidad de acceso a cuentas (archivo guardado y carga manual)
- * - El asistente ahora es un bloque separado que NO elimina el formulario de carga existente
- * - Mantiene la estructura: Asistente arriba, luego sección "Acceso a cuentas"
- *
- * NUEVO v1.3.0:
- * - Asistente de cuentas (modal) para crear archivos .enc desde Excel
+ * CORRECCIONES v1.2.1:
+ * - Click en nombre de cuenta expande/colapsa info sensible
+ * - Todos los iconos de cuenta usan GW2free.png (estándar)
+ * - Iconos de Twitch y GeForce Now con rutas correctas
  */
 
 (function (root) {
@@ -21,7 +18,9 @@
   var CONFIG = {
     STORAGE_LAST_FILE_KEY: 'accounts:lastFile',
     DEFAULT_ICON: 'assets/icons/Cuentas/GW2free.png',
+    // Icono único para todas las cuentas (el que pidió)
     ACCOUNT_ICON: 'assets/icons/Cuentas/GW2free.png',
+    // Tipos de cuenta con sus imágenes (para badges, no para el icono principal)
     ACCOUNT_TYPE_ICONS: {
       main: 'assets/icons/Cuentas/star.png',
       alter: 'assets/icons/Cuentas/alter.png',
@@ -65,13 +64,13 @@
       type: 'all',
       tag: 'all'
     },
-    view: 'cards',
+    view: 'cards', // 'cards' o 'table'
     showPasswords: {},
-    expandedAccounts: {}
+    expandedAccounts: {} // Para mostrar/ocultar datos sensibles al hacer click en nombre
   };
 
   // =======================================================================
-  // 2. UTILIDADES BÁSICAS (idénticas a la versión anterior)
+  // 2. UTILIDADES BÁSICAS
   // =======================================================================
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.from((r || document).querySelectorAll(s)); }
@@ -317,7 +316,7 @@
   }
 
   // =======================================================================
-  // 6. RENDERIZADO DE TARJETA (idéntico a versión anterior)
+  // 6. RENDERIZADO DE TARJETA (con todas las mejoras)
   // =======================================================================
   function renderAccountCard(acc) {
     var login = acc.login || {};
@@ -329,13 +328,16 @@
     var showPass = state.showPasswords[acc.id] || false;
     var isExpanded = state.expandedAccounts[acc.id] || false;
 
+    // Icono único para todas las cuentas (el que pidió)
     var accountIcon = CONFIG.ACCOUNT_ICON;
 
+    // Badges de tags
     var tagBadges = tags.map(function(t) {
       var icon = t === 'main' ? '⭐' : (t === 'alter' ? '🧪' : (t === 'farming' ? '🌾' : (t === 'keys' ? '🔑' : (t === 'f2p' ? '🆓' : '🏷️'))));
       return '<span class="badge badge--info" style="font-size: 0.7rem; padding: 2px 6px;">' + icon + ' ' + t + '</span>';
     }).join('');
 
+    // Expansiones
     var expOrder = ['core', 'heroic', 'heartOfThorns', 'pathOfFire', 'endOfDragons', 'secretsOfTheObscure', 'janthirWilds', 'visionsOfEternity'];
     var expIcons = [];
     expOrder.forEach(function(key) {
@@ -344,6 +346,7 @@
       }
     });
 
+    // Servicios con iconos corregidos
     var serviceIcons = [];
     if (services.twitch && services.twitch.linked) {
       serviceIcons.push('<img src="' + CONFIG.ICONS.twitch + '" width="20" height="20" title="Twitch: @' + esc(services.twitch.username || '') + '">');
@@ -355,6 +358,7 @@
     var passwordDisplay = showPass ? esc(login.password || '—') : '••••••••';
     var gmailPassDisplay = showPass ? esc(login.gmailPassword || '—') : '••••••••';
 
+    // Campos colapsables (más info)
     var moreInfoHtml = '';
     if (isExpanded) {
       moreInfoHtml = `
@@ -383,6 +387,7 @@
         '<div class="wallet-sep"></div>' +
 
         '<div class="wallet-card__body">' +
+          // Email y contraseñas (clickeables para copiar)
           '<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">' +
             '<div><img src="' + CONFIG.ICONS.gmail + '" width="16" height="16" style="vertical-align: middle;"> <strong>Email:</strong> ' +
               '<span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.email || '') + '" data-field="Email">' + esc(login.email || '—') + '</span>' +
@@ -393,26 +398,33 @@
             '</div>' +
           '</div>' +
 
+          // Gmail Pass (si existe)
           (login.gmailPassword ? '<div style="margin-top: 6px;"><img src="' + CONFIG.ICONS.googlePass + '" width="16" height="16" style="vertical-align: middle;"> <strong>Gmail Pass:</strong> ' +
             '<span style="font-family: monospace; cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.gmailPassword) + '" data-field="Gmail Pass">' + gmailPassDisplay + '</span>' +
           '</div>' : '') +
 
+          // GW2 ID, creación, AP
           '<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px;">' +
             '<div><strong>🎮 GW2 ID:</strong> ' + esc(gw2.accountName || '—') + '</div>' +
             '<div><strong>📅 Creación:</strong> ' + formatDate(gw2.created) + ' (' + formatAgeDays(gw2.created) + ')</div>' +
             '<div><strong>🏆 AP:</strong> ' + fmtNumber(gw2.achievementPoints) + '</div>' +
           '</div>' +
 
+          // Expansiones
           '<div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; align-items: center;">' +
             '<strong>📀 Expansiones:</strong> ' + (expIcons.length ? expIcons.join(' ') : '<span class="muted">—</span>') +
           '</div>' +
 
+          // Servicios
           (serviceIcons.length ? '<div style="display: flex; gap: 8px; margin-top: 8px;"><strong>🔌 Servicios:</strong> ' + serviceIcons.join(' ') + '</div>' : '') +
 
+          // API Key
           (acc.apiKey ? '<div style="margin-top: 8px;"><strong>🔑 API Key:</strong> <code>' + esc(acc.apiKey.value || acc.apiKey) + '</code></div>' : '') +
 
+          // Notas
           (acc.notes ? '<div style="margin-top: 8px; color: #a0a0a6;"><strong>📝 Notas:</strong> ' + esc(acc.notes) + '</div>' : '') +
 
+          // Más info (colapsable)
           '<div style="margin-top: 8px;">' +
             '<button class="btn-ghost btn--xs toggle-more-info" data-id="' + acc.id + '" style="font-size: 11px; padding: 2px 6px;">' + (isExpanded ? '📂 Menos info' : '📁 Más info') + '</button>' +
             moreInfoHtml +
@@ -429,6 +441,7 @@
     container.style.display = 'grid';
     container.innerHTML = accounts.map(renderAccountCard).join('');
 
+    // Toggle password
     document.querySelectorAll('.toggle-password').forEach(function(btn) {
       if (btn.__wired) return;
       btn.__wired = true;
@@ -440,6 +453,7 @@
       });
     });
 
+    // Toggle more info
     document.querySelectorAll('.toggle-more-info').forEach(function(btn) {
       if (btn.__wiredMore) return;
       btn.__wiredMore = true;
@@ -451,6 +465,7 @@
       });
     });
 
+    // Click en nombre para expandir/colapsar info sensible
     document.querySelectorAll('[data-toggle-expand]').forEach(function(el) {
       if (el.__wiredExpand) return;
       el.__wiredExpand = true;
@@ -462,6 +477,7 @@
       });
     });
 
+    // Copiar al portapapeles
     document.querySelectorAll('[data-copy]').forEach(function(el) {
       if (el.__wiredCopy) return;
       el.__wiredCopy = true;
@@ -478,6 +494,9 @@
     });
   }
 
+  // =======================================================================
+  // 7. RENDERIZADO DE TABLA
+  // =======================================================================
   function renderTableRow(acc) {
     var login = acc.login || {};
     var gw2 = acc.gw2 || {};
@@ -532,6 +551,7 @@
         '<\/table>' +
       '</div>';
 
+    // Toggle password
     document.querySelectorAll('.toggle-password').forEach(function(btn) {
       if (btn.__wired) return;
       btn.__wired = true;
@@ -543,6 +563,7 @@
       });
     });
 
+    // Toggle expand table row
     document.querySelectorAll('[data-toggle-expand-table]').forEach(function(el) {
       if (el.__wiredExpand) return;
       el.__wiredExpand = true;
@@ -554,6 +575,7 @@
       });
     });
 
+    // Copiar al portapapeles
     document.querySelectorAll('[data-copy]').forEach(function(el) {
       if (el.__wiredCopy) return;
       el.__wiredCopy = true;
@@ -677,7 +699,7 @@
   }
 
   // =======================================================================
-  // 7. FORMULARIO DE CARGA (completo con asistente arriba y acceso a cuentas abajo)
+  // 8. FORMULARIO DE CARGA
   // =======================================================================
   function renderLoadForm() {
     var body = document.querySelector('#accountsPanel .panel__body');
@@ -687,27 +709,11 @@
     var hasStoredFile = !!lastFile;
 
     body.innerHTML = `
-      <!-- BLOQUE ASISTENTE -->
-      <div id="assistantBlock" style="background: #1a1e2a; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid #2a2c35;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 1.4rem;">🧙</span>
-            <div>
-              <h3 style="margin: 0; font-size: 1rem;">Asistente de cuentas</h3>
-              <div class="muted" style="font-size: 0.75rem;">Guía paso a paso para crear tu archivo seguro</div>
-            </div>
-          </div>
-          <button id="openWizardBtn" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">➕ Crear nuevo archivo</button>
-        </div>
-      </div>
-
-      <!-- BLOQUE ACCESO A CUENTAS -->
-      <div id="accessBlock" style="background: #1a1e2a; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #2a2c35;">
+      <div id="accountsLoadForm" style="background: #1a1e2a; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #2a2c35;">
         <h3 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-          <img src="${CONFIG.ICONS.account}" width="24" height="24" alt="">
+          <img src="${CONFIG.ICONS.account}" width="28" height="28" alt="">
           🔐 Acceso a cuentas
         </h3>
-        
         ${hasStoredFile ? `
           <div style="background: #0f1116; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
@@ -721,7 +727,6 @@
           <hr style="border-color: #2a2c35; margin: 16px 0;">
           <p class="muted">O seleccioná un archivo diferente:</p>
         ` : ''}
-        
         <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
           <div style="flex: 2;">
             <label>Archivo cifrado (.enc)</label>
@@ -737,29 +742,30 @@
         </div>
         <div id="accountsLoadStatus" class="muted" style="margin-top: 12px;"></div>
       </div>
-
       <div id="accountsStats"></div>
       <div id="accountsFilters"></div>
       <div id="accountsList" class="wallet-card-grid"></div>
     `;
 
-    // Evento para usar archivo guardado
-    var useStoredBtn = document.getElementById('accountsUseStoredBtn');
-    var statusEl = document.getElementById('accountsLoadStatus');
     var fileInput = document.getElementById('accountsFileInput');
     var passwordInput = document.getElementById('accountsPasswordInput');
     var loadBtn = document.getElementById('accountsLoadBtn');
+    var statusEl = document.getElementById('accountsLoadStatus');
+    var useStoredBtn = document.getElementById('accountsUseStoredBtn');
 
     if (useStoredBtn) {
       useStoredBtn.onclick = async function() {
         var password = passwordInput.value;
         if (!password) {
-          if (statusEl) { statusEl.textContent = '⚠️ Ingresá la contraseña'; statusEl.style.color = '#ffd966'; }
+          statusEl.textContent = '⚠️ Ingresá la contraseña';
+          statusEl.style.color = '#ffd966';
           return;
         }
-        if (statusEl) { statusEl.textContent = '🔓 Descifrando archivo guardado...'; statusEl.style.color = '#ffd966'; }
+        statusEl.textContent = '🔓 Descifrando archivo guardado...';
+        statusEl.style.color = '#ffd966';
+        
         var success = await loadFromStoredFile(password);
-        if (!success && statusEl) {
+        if (!success) {
           statusEl.textContent = '❌ Contraseña incorrecta. Probá con otro archivo.';
           statusEl.style.color = '#f28b82';
         }
@@ -770,349 +776,31 @@
       loadBtn.onclick = async function() {
         var file = fileInput.files[0];
         var password = passwordInput.value;
-        if (!file) { if (statusEl) statusEl.textContent = '⚠️ Seleccioná un archivo'; return; }
-        if (!password) { if (statusEl) statusEl.textContent = '⚠️ Ingresá la contraseña'; return; }
-        if (statusEl) { statusEl.textContent = '🔓 Descifrando archivo...'; statusEl.style.color = '#ffd966'; }
+
+        if (!file) {
+          statusEl.textContent = '⚠️ Seleccioná un archivo';
+          return;
+        }
+        if (!password) {
+          statusEl.textContent = '⚠️ Ingresá la contraseña';
+          return;
+        }
+
+        statusEl.textContent = '🔓 Descifrando archivo...';
+        statusEl.style.color = '#ffd966';
+
         var success = await loadFromFile(file, password, true);
-        if (success && statusEl) {
+        if (success) {
           statusEl.textContent = '✅ Archivo cargado correctamente';
           statusEl.style.color = '#a7f3d0';
           fileInput.value = '';
           passwordInput.value = '';
-        } else if (statusEl) {
+        } else {
           statusEl.textContent = '❌ Error al descifrar. Verificá la contraseña o el archivo.';
           statusEl.style.color = '#f28b82';
         }
       };
     }
-
-    var openWizardBtn = document.getElementById('openWizardBtn');
-    if (openWizardBtn && !openWizardBtn.__wired) {
-      openWizardBtn.__wired = true;
-      openWizardBtn.addEventListener('click', function() {
-        openWizardModal();
-      });
-    }
-  }
-
-  // =======================================================================
-  // 8. MODAL DEL ASISTENTE
-  // =======================================================================
-  function openWizardModal() {
-    var existingModal = document.getElementById('accountsWizardModal');
-    if (existingModal) {
-      existingModal.hidden = false;
-      return;
-    }
-
-    var modal = document.createElement('div');
-    modal.id = 'accountsWizardModal';
-    modal.className = 'modal';
-    modal.setAttribute('role', 'dialog');
-    modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('aria-labelledby', 'wizardTitle');
-    modal.hidden = false;
-
-    modal.innerHTML = `
-      <div class="modal__backdrop" data-close="1"></div>
-      <div class="modal__dialog" style="max-width: 800px; width: 90%;">
-        <div class="modal__header">
-          <h3 id="wizardTitle" style="display: flex; align-items: center; gap: 8px;">🧙 Asistente de cuentas</h3>
-          <button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button>
-        </div>
-        <div class="modal__body" style="max-height: 70vh; overflow-y: auto;">
-          
-          <div style="background: #0a0c10; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
-            <div style="display: flex; gap: 12px; align-items: flex-start;">
-              <span style="font-size: 1.5rem;">🔒</span>
-              <div>
-                <strong style="color: #a7f3d0;">Tus datos están seguros</strong>
-                <p class="muted" style="margin: 4px 0 0;">Todo el proceso ocurre en tu navegador y tu PC. No hay servidores, no hay bases de datos externas. <strong>Ningún dato sale de tu computadora.</strong></p>
-              </div>
-            </div>
-          </div>
-
-          <div style="margin-bottom: 24px;">
-            <h4 style="margin: 0 0 8px 0;">📥 PASO 1: Descargar plantilla</h4>
-            <p class="muted" style="margin-bottom: 12px;">Completá solo lo que quieras. Todos los campos son opcionales excepto el ID. Si no te sentís seguro, no cargues contraseñas.</p>
-            <button id="wizardDownloadTemplate" class="btn btn--accent">📎 Descargar plantilla Excel</button>
-          </div>
-
-          <div style="margin-bottom: 24px;">
-            <h4 style="margin: 0 0 8px 0;">📤 PASO 2: Subir Excel → Generar JSON</h4>
-            <p class="muted" style="margin-bottom: 12px;">Convertí tu Excel a JSON. Se guardará en tu PC.</p>
-            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
-              <input type="file" id="wizardExcelFile" accept=".xlsx,.xls" style="flex: 2;">
-              <button id="wizardExcelToJson" class="btn">🔄 Generar JSON</button>
-            </div>
-            <div id="wizardStep2Status" class="muted" style="margin-top: 8px;"></div>
-          </div>
-
-          <div style="margin-bottom: 24px;">
-            <h4 style="margin: 0 0 8px 0;">🌐 PASO 3: Enriquecer con API (opcional)</h4>
-            <p class="muted" style="margin-bottom: 12px;">Usa las API Keys que ya tenés guardadas en la Bóveda. Consulta automáticamente: nombre de cuenta, AP, fecha creación, expansiones.</p>
-            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
-              <input type="file" id="wizardJsonFile" accept=".json" style="flex: 2;">
-              <button id="wizardEnrich" class="btn">✨ Enriquecer con GW2 API</button>
-            </div>
-            <div id="wizardStep3Status" class="muted" style="margin-top: 8px;"></div>
-          </div>
-
-          <div style="margin-bottom: 24px;">
-            <h4 style="margin: 0 0 8px 0;">🔐 PASO 4: Cifrar para usar en el panel</h4>
-            <p class="muted" style="margin-bottom: 12px;">Creá el archivo .enc que podés cargar en el panel. <strong>Recordá la contraseña, la vas a necesitar.</strong></p>
-            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
-              <input type="file" id="wizardEncryptFile" accept=".json" style="flex: 2;">
-              <input type="password" id="wizardPassword" placeholder="Contraseña" style="flex: 1;">
-              <button id="wizardEncrypt" class="btn btn--accent">🔒 Crear archivo .enc</button>
-            </div>
-            <div id="wizardStep4Status" class="muted" style="margin-top: 8px;"></div>
-          </div>
-
-          <hr style="border-color: #2a2c35; margin: 16px 0;">
-
-          <div>
-            <h4 style="margin: 0 0 8px 0;">📁 ¿Ya tenés tu archivo .enc?</h4>
-            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-              <button id="wizardCloseAndLoad" class="btn">👁️ Ir al panel para cargarlo</button>
-              <button id="wizardClose" class="btn btn--ghost">Cerrar</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    modal.addEventListener('click', function(e) {
-      if (e.target.getAttribute('data-close') === '1') {
-        modal.hidden = true;
-      }
-    });
-
-    document.getElementById('wizardClose')?.addEventListener('click', function() {
-      modal.hidden = true;
-    });
-
-    document.getElementById('wizardCloseAndLoad')?.addEventListener('click', function() {
-      modal.hidden = true;
-      render();
-    });
-
-    document.getElementById('wizardDownloadTemplate')?.addEventListener('click', function() {
-      generateExcelTemplate();
-    });
-
-    document.getElementById('wizardExcelToJson')?.addEventListener('click', async function() {
-      var fileInput = document.getElementById('wizardExcelFile');
-      var statusDiv = document.getElementById('wizardStep2Status');
-      if (!fileInput.files.length) {
-        statusDiv.textContent = '⚠️ Seleccioná un archivo Excel primero.';
-        statusDiv.style.color = '#ffd966';
-        return;
-      }
-      statusDiv.textContent = '📖 Leyendo archivo...';
-      statusDiv.style.color = '#ffd966';
-      try {
-        var jsonData = await parseExcelToJSON(fileInput.files[0]);
-        var jsonString = JSON.stringify(jsonData, null, 2);
-        downloadFile(jsonString, 'cuentas.json', 'application/json');
-        statusDiv.textContent = '✅ Archivo JSON generado: cuentas.json';
-        statusDiv.style.color = '#a7f3d0';
-      } catch (err) {
-        console.error(err);
-        statusDiv.textContent = '❌ Error: ' + err.message;
-        statusDiv.style.color = '#f28b82';
-      }
-    });
-
-    document.getElementById('wizardEnrich')?.addEventListener('click', async function() {
-      var fileInput = document.getElementById('wizardJsonFile');
-      var statusDiv = document.getElementById('wizardStep3Status');
-      if (!fileInput.files.length) {
-        statusDiv.textContent = '⚠️ Seleccioná un archivo JSON primero.';
-        statusDiv.style.color = '#ffd966';
-        return;
-      }
-      statusDiv.textContent = '🌐 Enriqueciendo datos con GW2 API...';
-      statusDiv.style.color = '#ffd966';
-      try {
-        var fileContent = await readFileAsText(fileInput.files[0]);
-        var data = JSON.parse(fileContent);
-        var enriched = await enrichWithGW2API(data);
-        var enrichedString = JSON.stringify(enriched, null, 2);
-        downloadFile(enrichedString, 'cuentas-enriquecidas.json', 'application/json');
-        statusDiv.textContent = '✨ Archivo enriquecido: cuentas-enriquecidas.json';
-        statusDiv.style.color = '#a7f3d0';
-      } catch (err) {
-        console.error(err);
-        statusDiv.textContent = '❌ Error: ' + err.message;
-        statusDiv.style.color = '#f28b82';
-      }
-    });
-
-    document.getElementById('wizardEncrypt')?.addEventListener('click', function() {
-      var fileInput = document.getElementById('wizardEncryptFile');
-      var password = document.getElementById('wizardPassword').value;
-      var statusDiv = document.getElementById('wizardStep4Status');
-      if (!fileInput.files.length) {
-        statusDiv.textContent = '⚠️ Seleccioná un archivo JSON primero.';
-        statusDiv.style.color = '#ffd966';
-        return;
-      }
-      if (!password) {
-        statusDiv.textContent = '⚠️ Ingresá una contraseña.';
-        statusDiv.style.color = '#ffd966';
-        return;
-      }
-      statusDiv.textContent = '🔐 Cifrando archivo...';
-      statusDiv.style.color = '#ffd966';
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          var jsonString = e.target.result;
-          var encrypted = CryptoJS.AES.encrypt(jsonString, password).toString();
-          downloadFile(encrypted, 'gw2-cuentas.enc', 'text/plain');
-          statusDiv.textContent = '✅ Archivo cifrado: gw2-cuentas.enc';
-          statusDiv.style.color = '#a7f3d0';
-          document.getElementById('wizardPassword').value = '';
-        } catch (err) {
-          statusDiv.textContent = '❌ Error al cifrar: ' + err.message;
-          statusDiv.style.color = '#f28b82';
-        }
-      };
-      reader.readAsText(fileInput.files[0]);
-    });
-  }
-
-  function downloadFile(content, filename, mimeType) {
-    var blob = new Blob([content], { type: mimeType });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  function readFileAsText(file) {
-    return new Promise(function(resolve, reject) {
-      var reader = new FileReader();
-      reader.onload = function(e) { resolve(e.target.result); };
-      reader.onerror = function(e) { reject(new Error('Error al leer el archivo')); };
-      reader.readAsText(file);
-    });
-  }
-
-  function generateExcelTemplate() {
-    var columns = [
-      'id', 'nombre', 'email', 'password', 'gmailPassword', 'apiKey',
-      'twitch_user', 'geforce_linked', 'notas', 'tags'
-    ];
-    var data = [columns];
-    var example = [
-      'mi_cuenta_1', 'Mi cuenta principal', 'usuario@ejemplo.com', '', '',
-      'ABCD-1234-EFGH-5678', 'miusuario', 'TRUE', 'Cuenta principal con todas las expansiones', 'main,full'
-    ];
-    data.push(example);
-    
-    var wsData = [data];
-    var ws = XLSX.utils.aoa_to_sheet(wsData[0]);
-    var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Cuentas');
-    XLSX.writeFile(wb, 'plantilla_cuentas.xlsx');
-    window.toast('success', 'Plantilla descargada: plantilla_cuentas.xlsx', { ttl: 2000 });
-  }
-
-  function parseExcelToJSON(file) {
-    return new Promise(function(resolve, reject) {
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          var data = new Uint8Array(e.target.result);
-          var workbook = XLSX.read(data, { type: 'array' });
-          var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          var rows = XLSX.utils.sheet_to_json(firstSheet);
-          
-          if (!rows.length) {
-            reject(new Error('El archivo Excel está vacío'));
-            return;
-          }
-          
-          var accounts = rows.map(function(row, idx) {
-            var account = {
-              id: row.id || ('cuenta_' + (idx + 1)),
-              name: row.nombre || row.name || '',
-              login: {
-                email: row.email || '',
-                password: row.password || '',
-                gmailPassword: row.gmailPassword || ''
-              },
-              services: {
-                twitch: { linked: !!(row.twitch_user), username: row.twitch_user || null },
-                geforceNow: { linked: row.geforce_linked === 'TRUE' || row.geforce_linked === true }
-              },
-              apiKey: row.apiKey ? { value: row.apiKey } : null,
-              notes: row.notas || '',
-              tags: row.tags ? row.tags.split(',').map(function(t) { return t.trim(); }) : []
-            };
-            return account;
-          });
-          
-          resolve({ version: 1, lastUpdated: new Date().toISOString().split('T')[0], accounts: accounts });
-        } catch (err) {
-          reject(err);
-        }
-      };
-      reader.onerror = function() { reject(new Error('Error al leer el archivo')); };
-      reader.readAsArrayBuffer(file);
-    });
-  }
-
-  async function enrichWithGW2API(data) {
-    var accounts = data.accounts || [];
-    var token = window.__GN__?.getSelectedToken?.() || null;
-    
-    for (var i = 0; i < accounts.length; i++) {
-      var acc = accounts[i];
-      var apiKey = acc.apiKey?.value || acc.apiKey;
-      if (!apiKey) continue;
-      
-      try {
-        var accountInfo = await fetch('https://api.guildwars2.com/v2/account?access_token=' + encodeURIComponent(apiKey));
-        if (accountInfo.ok) {
-          var info = await accountInfo.json();
-          acc.gw2 = acc.gw2 || {};
-          acc.gw2.accountName = info.name;
-          acc.gw2.created = info.created;
-          acc.gw2.achievementPoints = info.achievement_points;
-          acc.gw2.characterSlots = info.slots;
-          acc.gw2.bagSlots = info.bag_slots;
-          acc.gw2.bankSlots = info.bank_slots;
-          acc.gw2.materialStorage = info.material_storage;
-        }
-        
-        var homeNodes = await fetch('https://api.guildwars2.com/v2/account/home/nodes?access_token=' + encodeURIComponent(apiKey));
-        if (homeNodes.ok) {
-          var nodes = await homeNodes.json();
-          acc.expansions = acc.expansions || {};
-          if (nodes.some(function(n) { return n.includes('hot') || n.includes('heart_of_thorns'); })) acc.expansions.heartOfThorns = true;
-          if (nodes.some(function(n) { return n.includes('pof') || n.includes('path_of_fire'); })) acc.expansions.pathOfFire = true;
-          if (nodes.some(function(n) { return n.includes('eod') || n.includes('end_of_dragons'); })) acc.expansions.endOfDragons = true;
-          if (nodes.some(function(n) { return n.includes('soto') || n.includes('secrets_of_the_obscure'); })) acc.expansions.secretsOfTheObscure = true;
-          if (nodes.some(function(n) { return n.includes('janthir') || n.includes('janthir_wilds'); })) acc.expansions.janthirWilds = true;
-        }
-        
-        console.log(LOG, 'Enriquecida cuenta:', acc.name || acc.id);
-      } catch (e) {
-        console.warn(LOG, 'Error enriqueciendo cuenta', acc.name || acc.id, e);
-      }
-    }
-    
-    data.lastUpdated = new Date().toISOString().split('T')[0];
-    return data;
   }
 
   // =======================================================================
@@ -1204,7 +892,7 @@
       if (state.inited) return;
       ensurePanel();
       state.inited = true;
-      console.info(LOG, 'ready v1.3.1 — Asistente de cuentas integrado, acceso a cuentas intacto');
+      console.info(LOG, 'ready v1.2.1');
     },
     activate: activate,
     deactivate: deactivate,
