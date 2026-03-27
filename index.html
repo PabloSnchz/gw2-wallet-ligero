@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="dark light"/>
   <meta name="theme-color" content="#111218"/>
-  <title>Bóveda del Gato Negro — v5.4.0</title>
+  <title>Bóveda del Gato Negro — v5.5.0</title>
 
   <!-- Fuente hero: Cinzel Decorative -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -130,6 +130,10 @@
   <header class="an-header" role="banner">
     <div class="an-utilbar">
       <div class="an-util-left">
+        <!-- Botón Home (nuevo) -->
+        <a class="an-util-link an-home-link" href="#/welcome" title="Inicio">
+          <img src="assets\icons\Welcome\3380755.png" width="18" height="18" alt="Inicio" style="vertical-align: middle;">
+        </a>
         <a class="an-util-link" href="https://wiki.guildwars2.com/wiki/Main_Page" target="_blank" rel="noopener">Wiki GW2</a>
         <a class="an-util-link" href="https://en-forum.guildwars2.com/" target="_blank" rel="noopener">Foros</a>
         <a class="an-util-link" href="https://help.guildwars2.com/hc" target="_blank" rel="noopener">Ayuda</a>
@@ -212,6 +216,17 @@
 
   <!-- ======= MAIN ======= -->
   <main class="container layout" role="main">
+    <!-- ======= Panel de Bienvenida ======= -->
+    <section id="welcomePanel" class="panel col-main" aria-labelledby="welcomeTitle" hidden>
+      <h2 class="panel__title" id="welcomeTitle">
+        <img src="assets/icons/Welcome/3380755.png" alt="" width="32" height="32" style="vertical-align: middle; margin-right: 8px;">
+        Bienvenido a la Bóveda
+      </h2>
+      <div class="panel__body">
+        <!-- JS llena el contenido -->
+      </div>
+    </section>
+
     <!-- ======= Panel Cartera ======= -->
     <section id="walletPanel" class="panel col-main" aria-labelledby="walletTitle">
       <h2 class="panel__title" id="walletTitle">
@@ -435,7 +450,7 @@
       </div>
     </section>
 
-    <!-- ======= Panel de Cuentas (nuevo) ======= -->
+    <!-- ======= Panel de Cuentas ======= -->
     <section id="accountsPanel" class="panel col-main" aria-labelledby="accountsTitle" hidden>
       <h2 class="panel__title" id="accountsTitle">
         <img src="assets/icons/3601748.png" alt="" width="32" height="32" style="vertical-align: middle; margin-right: 8px;">
@@ -718,7 +733,8 @@
   <script defer src="js/activities-theme.js?v=2.6.0"></script>
   <script defer src="js/characters.js?v=2.3.0"></script>
   <script defer src="js/accounts-panel.js?v=1.3.0"></script>
-  <script defer src="js/router.js?v=2.10.4"></script>
+  <script defer src="js/welcome-panel.js?v=1.0.0"></script>
+  <script defer src="js/router.js?v=2.10.6"></script>
   <script defer src="js/wv-tabs-skin.js?v=1.0.0"></script>
   <script defer src="js/wv-purchase-detail.js?v=1.8.6"></script>
   

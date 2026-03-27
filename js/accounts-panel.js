@@ -691,37 +691,46 @@
       <div id="assistantBlock" style="background: #1a1e2a; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid #2a2c35;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 1.4rem;">🧙</span>
+            <img src="assets/icons/Welcome/2604904.png" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain;">
             <div>
               <h3 style="margin: 0; font-size: 1rem;">Asistente de cuentas</h3>
               <div class="muted" style="font-size: 0.75rem;">Guía paso a paso para crear tu archivo seguro</div>
             </div>
           </div>
-          <button id="openWizardBtn" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">➕ Crear nuevo archivo</button>
+          <button id="openWizardBtn" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">
+            <img src="assets/icons/Welcome/155911.png" width="18" height="18" alt="" style="filter: brightness(0.9);">
+            Crear nuevo archivo
+          </button>
         </div>
       </div>
 
       <!-- BLOQUE ACCESO A CUENTAS -->
       <div id="accessBlock" style="background: #1a1e2a; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #2a2c35;">
         <h3 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-          <img src="${CONFIG.ICONS.account}" width="24" height="24" alt="">
-          🔐 Acceso a cuentas
+          <img src="assets/icons/Welcome/733266.png" width="24" height="24" alt="">
+          Acceso a cuentas
         </h3>
         
         ${hasStoredFile ? `
           <div style="background: #0f1116; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
               <div>
-                <strong>📁 Último archivo:</strong> ${esc(lastFile.name)}<br>
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                  <img src="assets/icons/Welcome/102353.png" width="18" height="18" alt="" style="filter: brightness(0.9);">
+                  <strong>Último archivo:</strong> ${esc(lastFile.name)}
+                </div>
                 <span class="muted">Ingresá tu contraseña para acceder automáticamente</span>
               </div>
-              <button id="accountsUseStoredBtn" class="btn btn--accent">🔓 Usar archivo guardado</button>
+              <button id="accountsUseStoredBtn" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">
+                <img src="assets/icons/Welcome/834002.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
+                Usar archivo guardado
+              </button>
             </div>
           </div>
           <hr style="border-color: #2a2c35; margin: 16px 0;">
           <p class="muted">O seleccioná un archivo diferente:</p>
         ` : ''}
-        
+
         <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
           <div style="flex: 2;">
             <label>Archivo cifrado (.enc)</label>
@@ -732,11 +741,13 @@
             <input type="password" id="accountsPasswordInput" placeholder="Contraseña de descifrado">
           </div>
           <div>
-            <button id="accountsLoadBtn" class="btn btn--accent">🔓 Cargar y mostrar</button>
+            <button id="accountsLoadBtn" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">
+              <img src="assets/icons/Welcome/528726.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
+              Cargar y mostrar
+            </button>
           </div>
         </div>
         <div id="accountsLoadStatus" class="muted" style="margin-top: 12px;"></div>
-      </div>
 
       <div id="accountsStats"></div>
       <div id="accountsFilters"></div>
@@ -817,54 +828,81 @@
       <div class="modal__backdrop" data-close="1"></div>
       <div class="modal__dialog" style="max-width: 800px; width: 90%;">
         <div class="modal__header">
-          <h3 id="wizardTitle" style="display: flex; align-items: center; gap: 8px;">🧙 Asistente de cuentas</h3>
+          <h3 id="wizardTitle" style="display: flex; align-items: center; gap: 8px;">
+            <img src="assets/icons/Welcome/2604904.png" width="28" height="28" alt="" style="filter: brightness(0.9); object-fit: contain;">
+            Asistente de cuentas
+          </h3>
           <button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button>
         </div>
         <div class="modal__body" style="max-height: 70vh; overflow-y: auto;">
           
           <div style="background: #0a0c10; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
             <div style="display: flex; gap: 12px; align-items: flex-start;">
-              <span style="font-size: 1.5rem;">🔒</span>
+              <img src="assets/icons/welcome/733266.png" width="28" height="28" alt="" style="filter: brightness(0.9); object-fit: contain;">
               <div>
                 <strong style="color: #a7f3d0;">Tus datos están seguros</strong>
                 <p class="muted" style="margin: 4px 0 0;">Todo el proceso ocurre en tu navegador y tu PC. No hay servidores, no hay bases de datos externas. <strong>Ningún dato sale de tu computadora.</strong></p>
               </div>
             </div>
           </div>
-
+          
           <div style="margin-bottom: 24px;">
-            <h4 style="margin: 0 0 8px 0;">📥 PASO 1: Descargar plantilla</h4>
+            <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
+              <img src="assets/icons/welcome/102619.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
+              PASO 1: Descargar plantilla
+            </h4>
             <p class="muted" style="margin-bottom: 12px;">Completá solo lo que quieras. Todos los campos son opcionales excepto el ID. Si no te sentís seguro, no cargues contraseñas.</p>
-            <button id="wizardDownloadTemplate" class="btn btn--accent">📎 Descargar plantilla Excel</button>
+            <button id="wizardDownloadTemplate" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">
+              <img src="assets/icons/welcome/563464.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
+              Descargar plantilla Excel
+            </button>
           </div>
 
           <div style="margin-bottom: 24px;">
-            <h4 style="margin: 0 0 8px 0;">📤 PASO 2: Subir Excel → Generar JSON</h4>
+            <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
+              <img src="assets/icons/welcome/102620.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
+              PASO 2: Subir Excel → Generar JSON
+            </h4>
             <p class="muted" style="margin-bottom: 12px;">Convertí tu Excel a JSON. Se guardará en tu PC.</p>
             <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
               <input type="file" id="wizardExcelFile" accept=".xlsx,.xls" style="flex: 2;">
-              <button id="wizardExcelToJson" class="btn">🔄 Generar JSON</button>
+              <button id="wizardExcelToJson" class="btn" style="display: flex; align-items: center; gap: 6px;">
+                <img src="assets/icons/welcome/102609.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
+                Generar JSON
+              </button>
             </div>
             <div id="wizardStep2Status" class="muted" style="margin-top: 8px;"></div>
-          </div>
+          </div>        
 
           <div style="margin-bottom: 24px;">
-            <h4 style="margin: 0 0 8px 0;">🌐 PASO 3: Enriquecer con API (opcional)</h4>
+            <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
+              <img src="assets/icons/welcome/1770705.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
+              PASO 3: Enriquecer con API (opcional)
+            </h4>
             <p class="muted" style="margin-bottom: 12px;">Usa las API Keys que ya tenés guardadas en la Bóveda. Consulta automáticamente: nombre de cuenta, AP, fecha creación, expansiones.</p>
             <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
               <input type="file" id="wizardJsonFile" accept=".json" style="flex: 2;">
-              <button id="wizardEnrich" class="btn">✨ Enriquecer con GW2 API</button>
+              <button id="wizardEnrich" class="btn" style="display: flex; align-items: center; gap: 6px;">
+                <img src="assets/icons/welcome/102449.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
+                Enriquecer con GW2 API
+              </button>
             </div>
             <div id="wizardStep3Status" class="muted" style="margin-top: 8px;"></div>
           </div>
 
           <div style="margin-bottom: 24px;">
-            <h4 style="margin: 0 0 8px 0;">🔐 PASO 4: Cifrar para usar en el panel</h4>
+            <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
+              <img src="assets/icons/welcome/544515.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
+              PASO 4: Cifrar para usar en el panel
+            </h4>
             <p class="muted" style="margin-bottom: 12px;">Creá el archivo .enc que podés cargar en el panel. <strong>Recordá la contraseña, la vas a necesitar.</strong></p>
             <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
               <input type="file" id="wizardEncryptFile" accept=".json" style="flex: 2;">
               <input type="password" id="wizardPassword" placeholder="Contraseña" style="flex: 1;">
-              <button id="wizardEncrypt" class="btn btn--accent">🔒 Crear archivo .enc</button>
+              <button id="wizardEncrypt" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">
+                <img src="assets/icons/welcome/733266.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
+                Crear archivo .enc
+              </button>
             </div>
             <div id="wizardStep4Status" class="muted" style="margin-top: 8px;"></div>
           </div>
@@ -872,10 +910,19 @@
           <hr style="border-color: #2a2c35; margin: 16px 0;">
 
           <div>
-            <h4 style="margin: 0 0 8px 0;">📁 ¿Ya tenés tu archivo .enc?</h4>
+            <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
+              <img src="assets/icons/welcome/102353.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
+              ¿Ya tenés tu archivo .enc?
+            </h4>
             <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-              <button id="wizardCloseAndLoad" class="btn">👁️ Ir al panel para cargarlo</button>
-              <button id="wizardClose" class="btn btn--ghost">Cerrar</button>
+              <button id="wizardCloseAndLoad" class="btn" style="display: flex; align-items: center; gap: 6px;">
+                <img src="assets/icons/welcome/528726.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
+                Ir al panel para cargarlo
+              </button>
+              <button id="wizardClose" class="btn btn--ghost" style="display: flex; align-items: center; gap: 6px;">
+                <img src="assets/icons/welcome/156107.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
