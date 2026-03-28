@@ -1,6 +1,6 @@
-# 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v5.5)
+# 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v5.6)
 
-Fecha: 2026-03-27
+Fecha: 2026-03-28
 Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `accounts-panel.js`, `welcome-panel.js`, `*-theme.js`, `app.css`
 
 ## 📌 BAI — Bloque de Alineamiento Instantáneo
@@ -56,7 +56,7 @@ Bóveda del Gato Negro es una web app vanilla JS modular, sin framework, con foc
 
 Si hay riesgo → advertir antes de generar código.
 
-## 🚀 Novedades v5.5
+## 🚀 Novedades v5.6
 
 ### 🆕 Pantalla de Bienvenida (welcome-panel.js v1.2.0)
 
@@ -105,7 +105,7 @@ Nuevo asistente integrado en el panel de cuentas que permite a los usuarios crea
 
 | Paso | Acción | Icono | Descripción |
 |------|--------|-------|-------------|
-| **1** | Descargar plantilla Excel | 📥 | Archivo con columnas predefinidas (id, nombre, email, password, apiKey, twitch_user, geforce_linked, notas, tags) |
+| **1** | Descargar plantilla Excel | 📥 | Archivo con columnas predefinidas (id, nombre, email, password, apiKey, twitch_user, twitch_email, twitch_password, geforce_linked, notas, tags) |
 | **2** | Subir Excel → Generar JSON | 📤 | Convierte el Excel completado a formato JSON y descarga `cuentas.json` |
 | **3** | Enriquecer con GW2 API | 🌐 | Usa las API Keys de la Bóveda para obtener: account name, AP, fecha creación, expansiones detectadas |
 | **4** | Cifrar con contraseña | 🔐 | Genera el archivo `.enc` listo para cargar en el panel (`gw2-cuentas.enc`) |
@@ -129,18 +129,27 @@ Nuevo asistente integrado en el panel de cuentas que permite a los usuarios crea
 - `crypto-js` v4.2.0 (CDN) para cifrado AES
 - `xlsx.full.min.js` v0.20.2 (CDN) para manejo de archivos Excel
 
-### 🆕 Panel de Cuentas (accounts-panel.js v1.2.1)
+### 🆕 Panel de Cuentas — Rediseño completo (accounts-panel.js v1.9.0)
 
-Panel para gestión segura de múltiples cuentas de Guild Wars 2.
+Panel para gestión segura de múltiples cuentas de Guild Wars 2 con cifrado local, persistencia inteligente y un asistente para crear archivos `.enc` desde Excel.
 
 **Características principales:**
 - **Cifrado local**: Archivo JSON cifrado con AES (CryptoJS) y contraseña personal
 - **Persistencia inteligente**: Guarda último archivo en `localStorage` para acceso rápido (al recargar, solo pide contraseña)
 - **Vista dual**: Tarjetas / Tabla con botón toggle (persiste en sesión)
-- **Información sensible**: Contraseñas ocultas con `••••••••`, se muestran con botón 👁️
-- **Copia al portapapeles**: Click en email, contraseña o Gmail Pass copia el valor con feedback visual (toast)
+- **Información sensible**: Contraseñas ocultas con `••••••••`, se muestran con botón 👁️ (reemplazado por imagen local `assets/icons/welcome/528726.png`)
+- **Copia al portapapeles**: Click en email, contraseña, Gmail Pass, Twitch username, Twitch email, Twitch password o API Key copia el valor con feedback visual (toast)
 - **Expandir/colapsar**: Click en nombre de cuenta muestra información adicional (mochilas, bancos, material, legendarias)
-- **Sección colapsable "Más info"**: Contiene campos de estadísticas (mochilas, bancos, material, legendarias)
+- **Secciones colapsables**: Credenciales, GW2 Avanzado, Expansiones, Servicios y API
+- **Subsección "Servicios"**: Dentro de Servicios y API, muestra detalle de Twitch y GeForce Now
+- **Twitch detallado**: Username (copiable), Email (copiable si existe), Password (toggle independiente + copiable si existe)
+- **GeForce Now**: Texto "Vinculado" con imagen local `assets/icons/Welcome/156108.png` en lugar de emoji ✅
+- **Iconos separados para títulos de secciones vs campos internos**:
+  - Credenciales (título): `assets/icons/Welcome/733266.png`
+  - Contraseña (campo): `assets/icons/Cuentas/733265.png` (se mantiene)
+  - GW2 Avanzado (título): `assets/icons/Cuentas/358409.png`
+  - Chars (campo): `assets/icons/Cuentas/156409.png` (se mantiene)
+- **Barra de estadísticas**: Separadores optimizados con `margin: 0 -6px` para mejor ajuste en zoom 100%
 - **Iconos personalizables**:
   - Icono de cuenta (todas): `assets/icons/Cuentas/GW2free.png`
   - Icono de Twitch: `assets/icons/Cuentas/twitchlogo.png`
@@ -151,13 +160,14 @@ Panel para gestión segura de múltiples cuentas de Guild Wars 2.
 - Credenciales: Email, contraseña, Gmail Pass
 - GW2: Account name, fecha creación, AP, slots de personaje, mochilas, bancos, material storage, legendarias, nivel 80
 - Expansiones: Core, Heroic, HoT, PoF, EoD, SoTO, JW, VoE (con iconos)
-- Servicios: Twitch, GeForce Now
+- Servicios: Twitch (username, email, password), GeForce Now
 - API Key
-- Notas y tags
+- Notas y tags (main, alter, f2p, farming, keys, weekly, taxi)
 
 **Persistencia:**
 - `accounts:lastFile` → Último archivo cifrado cargado (localStorage)
-- Estado de contraseñas y expansión en memoria (sesión, no persiste entre recargas)
+- Estado de contraseñas (GW2 y Twitch) en memoria (sesión, no persiste entre recargas)
+- Estado de expansión de secciones en memoria (sesión)
 
 **Ruta:** `#/account/accounts`
 
@@ -309,9 +319,9 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 - `#/activities` — Actividades
 - `#/account/characters` — Personajes
 - `#/account/accounts` — Cuentas
-- `#/welcome` — Pantalla de Bienvenida (NUEVO)
+- `#/welcome` — Pantalla de Bienvenida
 
-## 🧩 Responsabilidades por archivo (Consolidado v5.5)
+## 🧩 Responsabilidades por archivo (Consolidado v5.6)
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
@@ -324,7 +334,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/activities.js` | v3.19.3 | Actividades diarias/semanales: PSNA, fractales, world bosses, ecto, home nodes. **Detección automática de llave semanal con validación de semana actual** |
 | `js/activities-theme.js` | v2.5.0 | Home Nodes + barra de horarios unificada con iconos GW2 |
 | `js/characters.js` | v2.3.0 | Personajes: lista, ubicación, POIs, rangos PvP/WvW. **Íconos profesión locales** |
-| `js/accounts-panel.js` | v1.3.1 | **Panel de Cuentas**: gestión segura + asistente para creación de archivos .enc desde Excel |
+| `js/accounts-panel.js` | **v1.9.0** | **Panel de Cuentas**: gestión segura + asistente para creación de archivos .enc desde Excel. **Rediseño completo con iconos locales, Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada** |
 | `js/welcome-panel.js` | v1.2.0 | **Pantalla de Bienvenida**: onboarding, accesos rápidos, enlaces comunitarios y apoyo |
 | `js/router.js` | v2.10.6 | Router con prefetch, guardas, navegación por hash, mapeo de vistas. **Incluye rutas #/account/accounts y #/welcome, redirección inicial** |
 | `js/wv-purchase-detail.js` | v1.8.6 | Detalle de compras, dashboard AA, top pendientes, **íconos countdowns locales** |
@@ -397,7 +407,7 @@ Pantalla de inicio que se muestra en primera visita o cuando no hay API key sele
 | PayPal | `assets/icons/welcome/paypal-icon.png` |
 | Ko-fi | `assets/icons/welcome/kofi-icon.png` |
 
-## ✅ js/accounts-panel.js — Panel de Cuentas (v1.3.1)
+## ✅ js/accounts-panel.js — Panel de Cuentas (v1.9.0)
 
 ### Resumen
 
@@ -425,29 +435,40 @@ Panel que permite gestionar de forma segura múltiples cuentas de Guild Wars 2 c
 - Botón toggle para cambiar entre vistas (persiste en sesión)
 
 **Gestión de información sensible**
-- Contraseñas ocultas con `••••••••`, se muestran con botón 👁️
-- Click en email, contraseña o Gmail Pass copia al portapapeles con feedback visual (toast)
+- Contraseñas ocultas con `••••••••`, se muestran con botón 👁️ (reemplazado por imagen local `assets/icons/welcome/528726.png`)
+- Click en email, contraseña, Gmail Pass, Twitch username, Twitch email, Twitch password o API Key copia al portapapeles con feedback visual (toast)
 - Click en nombre de cuenta expande información adicional (mochilas, bancos, material, legendarias)
 
-**Sección "Más info" colapsable**
-- Contiene: mochilas, bancos, material storage, legendarias, nivel 80
-- Botón "Más info" / "Menos info" para cada cuenta
+**Secciones colapsables**
+- **Credenciales**: Contraseña, Gmail Pass (icono título: `733266.png`, campo contraseña: `733265.png`)
+- **GW2 Avanzado**: Chars, Mochilas, Bancos, Material, Legendarias, Nivel 80 (icono título: `358409.png`, campo Chars: `156409.png`)
+- **Expansiones**: Iconos de expansiones
+- **Servicios y API**:
+  - Subsección **Servicios** (colapsable) que contiene:
+    - Twitch: username (copiable), email (copiable si existe), password (toggle independiente + copiable si existe)
+    - GeForce Now: texto "Vinculado" con imagen `assets/icons/Welcome/156108.png` (reemplazo de emoji ✅)
+  - API Key (copiable)
 
 **Filtros**
 - Búsqueda por nombre, email o GW2 ID
-- Tipo: Principales, Alternativas, Farming, Llaves
-- Tags personalizados
+- Tipo: Principales, Alternativas, Free to Play
+- Tags personalizados (farming, keys, weekly, taxi)
+
+**Barra de estadísticas**
+- Muestra total de cuentas, principales, alternativas, F2P, y tags adicionales
+- Separadores optimizados con `margin: 0 -6px` para mejor ajuste en zoom 100%
 
 **Persistencia**
 - `accounts:lastFile` → Último archivo cifrado (localStorage)
-- Estado de contraseñas y expansión en memoria (sesión)
+- Estado de contraseñas (GW2 y Twitch) en memoria (sesión)
+- Estado de expansión de secciones en memoria (sesión)
 
 ### Estructura de datos JSON
 
 ```json
 {
   "version": 1,
-  "lastUpdated": "2026-03-26",
+  "lastUpdated": "2026-03-28",
   "accounts": [
     {
       "id": "unique_id",
@@ -479,7 +500,12 @@ Panel que permite gestionar de forma segura múltiples cuentas de Guild Wars 2 c
         "visionsOfEternity": false
       },
       "services": {
-        "twitch": { "linked": true, "username": "usuario" },
+        "twitch": {
+          "linked": true,
+          "username": "usuario_twitch",
+          "email": "twitch@email.com",
+          "password": "contraseña_twitch"
+        },
         "geforceNow": { "linked": true }
       },
       "apiKey": { "value": "API-KEY-AQUI" },
@@ -737,7 +763,9 @@ assets/icons/
 │   ├── wv-icon.png
 │   ├── activities-icon.png
 │   ├── characters-icon.png
-│   └── accounts-icon.png
+│   ├── accounts-icon.png
+│   ├── 528726.png               # Ícono ojo (toggle contraseñas)
+│   └── 156108.png               # Check GeForce Now
 ├── Fractal/
 │   └── 2591.png                # Ícono genérico fractales
 ├── professions/
@@ -768,7 +796,12 @@ assets/icons/
 │   ├── alter.png               # Alternativa (badge)
 │   ├── farming.png             # Farming (badge)
 │   ├── key.png                 # Llaves (badge)
-│   └── f2p.png                 # F2P (badge)
+│   ├── f2p.png                 # F2P (badge)
+│   ├── 733265.png              # Contraseña (campo)
+│   ├── 733266.png              # Credenciales (título)
+│   ├── 156409.png              # Chars (campo)
+│   ├── 358409.png              # GW2 Avanzado (título)
+│   └── ...
 └── ...
 ```
 
@@ -782,7 +815,7 @@ assets/icons/
 - Accounts: escucha `gn:tokenchange` → limpia estado (opcional)
 - WVSeasonStore: migración legacy en background
 
-## 🧪 Checklists de Salud (v5.5)
+## 🧪 Checklists de Salud (v5.6)
 
 ### Orden de scripts (obligatorio)
 
@@ -814,7 +847,7 @@ assets/icons/
 - `gn_home_nodes_marked` → ✔
 - `wvpd_icon_url` → ✔ (ahora local)
 - `accounts:lastFile` → ✔
-- `gn_welcome_seen` → ✔ (NUEVO)
+- `gn_welcome_seen` → ✔
 
 ### Purchase Detail
 
@@ -868,26 +901,33 @@ assets/icons/
 - Vista tarjetas/tabla
 - Paginación
 
-### Accounts
+### Accounts (v1.9.0)
 
 - ✅ Panel accesible vía `#/account/accounts`
 - ✅ Enlace en sidebar
 - ✅ Carga de archivo `.enc` con contraseña
 - ✅ Persistencia de último archivo en localStorage
 - ✅ Vista tarjetas / tabla con botón toggle
-- ✅ Contraseñas ocultas con botón 👁️
-- ✅ Copia al portapapeles (email, contraseña, Gmail Pass)
+- ✅ Contraseñas ocultas con botón 👁️ (imagen local `528726.png`)
+- ✅ Copia al portapapeles (email, contraseña GW2, Gmail Pass, Twitch username, Twitch email, Twitch password, API Key)
 - ✅ Click en nombre expande información adicional
-- ✅ Sección "Más info" colapsable (mochilas, bancos, material, legendarias)
-- ✅ Icono único `GW2free.png` para todas las cuentas
-- ✅ Iconos Twitch y GeForce con rutas correctas
-- ✅ Filtros funcionales
+- ✅ Secciones colapsables: Credenciales, GW2 Avanzado, Expansiones, Servicios y API
+- ✅ Subsección "Servicios" colapsable dentro de Servicios y API
+- ✅ Twitch: username (copiable), email (copiable si existe), password (toggle independiente + copiable si existe)
+- ✅ GeForce Now: imagen local `156108.png` en lugar de emoji ✅
+- ✅ Iconos separados para títulos de secciones vs campos internos:
+  - Credenciales (título): `733266.png`
+  - Contraseña (campo): `733265.png`
+  - GW2 Avanzado (título): `358409.png`
+  - Chars (campo): `156409.png`
+- ✅ Barra de estadísticas con separadores optimizados (`margin: 0 -6px`)
+- ✅ Filtros funcionales (búsqueda, tipo, tags)
 - ✅ Botón "Cambiar archivo" para resetear estado
 - ✅ **Asistente integrado** con 4 pasos para crear archivos .enc desde Excel
-- ✅ **Plantilla Excel descargable** con columnas predefinidas
+- ✅ **Plantilla Excel descargable** con columnas: id, nombre, email, password, gmailPassword, apiKey, twitch_user, twitch_email, twitch_password, geforce_linked, notas, tags
 - ✅ **Enriquecimiento automático** con GW2 API usando keys de la Bóveda
 
-### Welcome (NUEVO)
+### Welcome
 
 - ✅ Panel accesible vía `#/welcome`
 - ✅ Botón home en utilbar
@@ -935,8 +975,11 @@ assets/icons/
 - Botón "Cambiar archivo" permite resetear estado completo
 - Click en nombre de cuenta expande info (no botón adicional)
 - **Asistente**: todo el procesamiento es local, sin backend
-- **Plantilla Excel**: columnas predefinidas con ejemplos
+- **Plantilla Excel**: columnas predefinidas con ejemplos (incluye twitch_user, twitch_email, twitch_password)
 - **Enriquecimiento**: usa las API Keys ya almacenadas en la Bóveda
+- **Iconos**: reemplazo completo de emojis por imágenes locales
+- **Toggles**: ícono de ojo unificado (`528726.png`) para todas las contraseñas
+- **Twitch**: información detallada en subsección colapsable con toggles independientes
 
 ### Welcome (específico)
 
@@ -952,7 +995,7 @@ assets/icons/
 - Banner y botón con ícono local
 - Timers con formato unificado
 
-## 🧾 Historial de decisiones (v5.5)
+## 🧾 Historial de decisiones (v5.6)
 
 - **Q4 2025:** eliminación listener Ach → router controla todo
 - **Q1 2026:** watchdog Achievements (5s) + pipeline conservador
@@ -975,8 +1018,9 @@ assets/icons/
 - **Mar 2026:** Creación Pantalla de Bienvenida (welcome-panel.js v1.2.0)
 - **Mar 2026:** Botón home en utilbar con icono
 - **Mar 2026:** Redirección inicial a bienvenida en primera visita o sin API key
+- **Mar 2026:** **Rediseño completo Panel de Cuentas v1.9.0** — iconos locales, Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada, separadores compactos
 
-## 🎉 Estado actual del proyecto (v5.5)
+## 🎉 Estado actual del proyecto (v5.6)
 
 - ✅ Navegación estable y desacoplada
 - ✅ Achievements sin doble pipeline (watchdog ok)
@@ -989,8 +1033,10 @@ assets/icons/
 - ✅ Characters v2.3.0 productivo: íconos profesión locales
 - ✅ Todos los assets migrados a rutas relativas (compatibles con GitHub Pages)
 - ✅ Íconos countdowns WV locales
-- ✅ **Panel de Cuentas v1.3.1 productivo**: gestión segura de múltiples cuentas, cifrado local, persistencia inteligente, asistente integrado
+- ✅ **Panel de Cuentas v1.9.0 productivo**: gestión segura de múltiples cuentas, cifrado local, persistencia inteligente, asistente integrado, rediseño completo con iconos locales, Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada
 - ✅ **Pantalla de Bienvenida v1.2.0 productiva**: onboarding, accesos rápidos, enlaces comunitarios y apoyo
 - ✅ **Botón home en utilbar**: accesible desde cualquier lugar
 - ✅ **Redirección inteligente**: primera visita o sin key → bienvenida
 - ✅ **Botones de Leivas funcionando correctamente** (sin regresiones)
+
+---

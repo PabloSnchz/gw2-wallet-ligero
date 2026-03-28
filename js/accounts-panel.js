@@ -1,6 +1,24 @@
 /*!
  * js/accounts-panel.js — Panel de Cuentas (cifrado local)
- * v1.6.0 (2026-03-28)
+ * v1.9.0 (2026-03-28)
+ *
+ * MEJORAS v1.9.0:
+ * - Iconos separados para títulos de secciones:
+ *   • Credenciales: assets/icons/Welcome/733266.png
+ *   • GW2 Avanzado: assets/icons/Cuentas/358409.png
+ * - Los campos internos mantienen sus iconos originales:
+ *   • Contraseña: assets/icons/Cuentas/733265.png
+ *   • Chars: assets/icons/Cuentas/156409.png
+ * - Reemplazo de emoji ✅ por imagen en GeForce Now
+ *
+ * MEJORAS v1.8.0:
+ * - Twitch dentro de subsección colapsable "Servicios" dentro de Servicios y API
+ * - Corrección completa de contraseña Twitch (visible y toggle funcional)
+ * - Plantilla Excel actualizada con columna twitch_user
+ *
+ * MEJORAS v1.7.0:
+ * - Reemplazo de emoji 👁️ por imagen local (assets/icons/welcome/528726.png)
+ * - Información detallada de Twitch en Servicios y API
  *
  * MEJORAS v1.6.0:
  * - Reemplazo completo de emojis por imágenes en las tarjetas
@@ -58,12 +76,14 @@
     // Iconos de UI para tarjetas
     CARD_ICONS: {
       email: 'assets/icons/Cuentas/gmail.png',
-      lock: 'assets/icons/Cuentas/733265.png',
+      lock: 'assets/icons/Cuentas/733265.png',           // Campo Contraseña (se mantiene)
+      credentialsTitle: 'assets/icons/Welcome/733266.png', // Título Credenciales (nuevo)
       gmailPass: 'assets/icons/Cuentas/155048.png',
       gw2id: 'assets/icons/Cuentas/358353.png',
       calendar: 'assets/icons/Cuentas/156407.png',
       trophy: 'assets/icons/Cuentas/156403.png',
-      character: 'assets/icons/Cuentas/156409.png',
+      character: 'assets/icons/Cuentas/156409.png',      // Campo Chars (se mantiene)
+      advancedTitle: 'assets/icons/Cuentas/358409.png',  // Título GW2 Avanzado (nuevo)
       bag: 'assets/icons/Cuentas/157098.png',
       bank: 'assets/icons/Cuentas/156670.png',
       material: 'assets/icons/Cuentas/255373.png',
@@ -73,7 +93,8 @@
       apiKey: 'assets/icons/Cuentas/155048.png',
       note: 'assets/icons/Cuentas/1228929.png',
       chevronRight: 'assets/icons/Cuentas/528716.png',
-      chevronDown: 'assets/icons/Cuentas/528717.png'
+      chevronDown: 'assets/icons/Cuentas/528717.png',
+      eye: 'assets/icons/welcome/528726.png'
     },
     
     ICONS: {
@@ -112,7 +133,8 @@
       tag: 'all'
     },
     view: 'cards',
-    showPasswords: {},
+    showPasswords: {},        // Para contraseñas de GW2 y Gmail Pass
+    showTwitchPasswords: {},  // Para contraseñas de Twitch
     expandedAccounts: {}
   };
 
@@ -269,6 +291,7 @@
       state.fileName = file.name;
       state.passwordHash = simpleHash(password);
       state.showPasswords = {};
+      state.showTwitchPasswords = {};
       state.expandedAccounts = {};
       
       if (rememberFile !== false) {
@@ -300,6 +323,7 @@
       state.fileName = lastFile.name;
       state.passwordHash = simpleHash(password);
       state.showPasswords = {};
+      state.showTwitchPasswords = {};
       state.expandedAccounts = {};
       render();
       window.toast('success', 'Cuentas cargadas automáticamente', { ttl: 1500 });
@@ -350,6 +374,7 @@
     var tags = getAccountTypeTags(acc);
     var isMain = isMainAccount(acc);
     var showPass = state.showPasswords[acc.id] || false;
+    var showTwitchPass = state.showTwitchPasswords[acc.id] || false;
 
     // Estados de secciones colapsables
     var expandedSections = state.expandedAccounts[acc.id] || {};
@@ -357,6 +382,7 @@
     var showAdvanced = expandedSections.advanced || false;
     var showExpansions = expandedSections.expansions || false;
     var showServicesApi = expandedSections.servicesApi || false;
+    var showServicesDetail = expandedSections.servicesDetail || false; // Subsección de Servicios
 
     // 1. ICONO DECORATIVO (izquierda) - SIEMPRE ALEATORIO
     var decorativeIcon = getRandomDecorativeIcon();
@@ -401,14 +427,86 @@
       }
     });
 
-    // Servicios
+    // Servicios - íconos simples para el header
     var serviceIcons = [];
     if (services.twitch && services.twitch.linked) {
-      serviceIcons.push('<img src="' + CONFIG.ICONS.twitch + '" width="20" height="20" title="Twitch: @' + esc(services.twitch.username || '') + '">');
+      serviceIcons.push('<img src="' + CONFIG.ICONS.twitch + '" width="20" height="20" title="Twitch vinculado">');
     }
     if (services.geforceNow && services.geforceNow.linked) {
       serviceIcons.push('<img src="' + CONFIG.ICONS.geforce + '" width="20" height="20" title="GeForce Now vinculado">');
     }
+
+    // Información detallada de Twitch (para mostrar dentro de Servicios)
+    var twitchDetailHtml = '';
+    if (services.twitch && services.twitch.linked) {
+      var twitchUsername = services.twitch.username || '';
+      var twitchEmail = services.twitch.email || '';
+      var twitchPassword = services.twitch.password || '';
+      var twitchPassDisplay = showTwitchPass ? esc(twitchPassword) : '••••••••';
+      
+      twitchDetailHtml = '<div style="margin-left: 20px; margin-top: 8px; padding-left: 12px; border-left: 2px solid #2a2c35;">';
+      twitchDetailHtml += '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">';
+      twitchDetailHtml += '<img src="' + CONFIG.ICONS.twitch + '" width="16" height="16" style="vertical-align: middle;">';
+      twitchDetailHtml += '<strong>Twitch:</strong> ';
+      twitchDetailHtml += '<span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(twitchUsername) + '" data-field="Usuario Twitch">@' + esc(twitchUsername || '—') + '</span>';
+      twitchDetailHtml += '</div>';
+      
+      if (twitchEmail) {
+        twitchDetailHtml += '<div style="margin-left: 24px; margin-top: 6px; display: flex; align-items: center; gap: 8px;">';
+        twitchDetailHtml += '<img src="' + CONFIG.CARD_ICONS.email + '" width="14" height="14" style="vertical-align: middle;">';
+        twitchDetailHtml += '<span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(twitchEmail) + '" data-field="Email Twitch">' + esc(twitchEmail) + '</span>';
+        twitchDetailHtml += '</div>';
+      }
+      
+      twitchDetailHtml += '<div style="margin-left: 24px; margin-top: 6px; display: flex; align-items: center; gap: 8px;">';
+      twitchDetailHtml += '<img src="' + CONFIG.CARD_ICONS.lock + '" width="14" height="14" style="vertical-align: middle;">';
+      twitchDetailHtml += '<span style="font-family: monospace; cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(twitchPassword) + '" data-field="Contraseña Twitch">' + twitchPassDisplay + '</span>';
+      twitchDetailHtml += '<button class="btn-ghost toggle-twitch-password" data-id="' + acc.id + '" style="padding: 2px 4px; display: inline-flex; align-items: center;">';
+      twitchDetailHtml += '<img src="' + CONFIG.CARD_ICONS.eye + '" width="14" height="14" alt="Mostrar contraseña" style="vertical-align: middle;">';
+      twitchDetailHtml += '</button>';
+      twitchDetailHtml += '</div>';
+      
+      twitchDetailHtml += '</div>';
+    }
+
+    // GeForce Now texto adicional (con imagen en lugar de emoji)
+    var geforceTextHtml = '';
+    if (services.geforceNow && services.geforceNow.linked) {
+      geforceTextHtml = '<div style="margin-left: 20px; margin-top: 6px;"><img src="' + CONFIG.ICONS.geforce + '" width="14" height="14" style="vertical-align: middle;"> <span style="color: #a0a0a6;">GeForce Now: <img src="assets/icons/Welcome/156108.png" width="14" height="14" alt="Vinculado" style="vertical-align: middle;"> Vinculado</span></div>';
+    }
+
+    // Subsección "Servicios" colapsable
+    var servicesSubsectionHtml = '';
+    if (serviceIcons.length > 0) {
+      var chevronIcon = showServicesDetail ? CONFIG.CARD_ICONS.chevronDown : CONFIG.CARD_ICONS.chevronRight;
+      servicesSubsectionHtml = `
+        <div style="margin-top: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;" data-toggle-services="${acc.id}">
+            <img src="${chevronIcon}" width="12" height="12" alt="" style="filter: brightness(0.9);">
+            <img src="${CONFIG.CARD_ICONS.services}" width="16" height="16" alt="" style="filter: brightness(0.9);">
+            <span style="font-weight: 600; font-size: 0.85rem;">Servicios</span>
+            <span style="margin-left: 4px;">${serviceIcons.join(' ')}</span>
+          </div>
+          <div id="services-detail-${acc.id}" style="${showServicesDetail ? '' : 'display: none;'} margin-top: 8px; padding-left: 24px;">
+            ${twitchDetailHtml}
+            ${geforceTextHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    // API Key
+    var apiKeyHtml = '';
+    if (acc.apiKey) {
+      var apiKeyValue = acc.apiKey.value || acc.apiKey;
+      apiKeyHtml = '<div style="margin-top: 8px;"><img src="' + CONFIG.CARD_ICONS.apiKey + '" width="16" height="16" style="vertical-align: middle;"> <strong>API Key:</strong> <code style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(apiKeyValue) + '" data-field="API Key">' + esc(apiKeyValue) + '</code></div>';
+    }
+
+    // Servicios y API (contenedor principal)
+    var servicesApiHtml = '<div style="display: flex; flex-direction: column; gap: 4px;">';
+    servicesApiHtml += servicesSubsectionHtml;
+    servicesApiHtml += apiKeyHtml;
+    servicesApiHtml += '</div>';
 
     // Función para sección colapsable con iconos de chevron
     function renderCollapsibleSection(title, iconSrc, sectionKey, isOpen, contentHtml) {
@@ -432,7 +530,9 @@
       <div style="display: flex; flex-direction: column; gap: 6px;">
         <div><img src="${CONFIG.CARD_ICONS.lock}" width="16" height="16" style="vertical-align: middle;"> <strong>Contraseña:</strong> 
           <span style="font-family: monospace; cursor: pointer; text-decoration: underline dotted;" data-copy="${esc(login.password || '')}" data-field="Contraseña">${passwordDisplay}</span>
-          <button class="btn-ghost toggle-password" data-id="${acc.id}" style="padding: 2px 4px; font-size: 12px;">👁️</button>
+          <button class="btn-ghost toggle-password" data-id="${acc.id}" style="padding: 2px 4px; display: inline-flex; align-items: center;">
+            <img src="${CONFIG.CARD_ICONS.eye}" width="14" height="14" alt="Mostrar contraseña" style="vertical-align: middle;">
+          </button>
         </div>
         ${login.gmailPassword ? `<div><img src="${CONFIG.CARD_ICONS.gmailPass}" width="16" height="16" style="vertical-align: middle;"> <strong>Gmail Pass:</strong> 
           <span style="font-family: monospace; cursor: pointer; text-decoration: underline dotted;" data-copy="${esc(login.gmailPassword)}" data-field="Gmail Pass">${gmailPassDisplay}</span>
@@ -454,13 +554,6 @@
     var expansionsHtml = `
       <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
         ${expIcons.length ? expIcons.join(' ') : '<span class="muted">—</span>'}
-      </div>
-    `;
-
-    var servicesApiHtml = `
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        ${serviceIcons.length ? `<div><img src="${CONFIG.CARD_ICONS.services}" width="16" height="16" style="vertical-align: middle;"> <strong>Servicios:</strong> ${serviceIcons.join(' ')}</div>` : ''}
-        ${acc.apiKey ? `<div><img src="${CONFIG.CARD_ICONS.apiKey}" width="16" height="16" style="vertical-align: middle;"> <strong>API Key:</strong> <code>${esc(acc.apiKey.value || acc.apiKey)}</code></div>` : ''}
       </div>
     `;
 
@@ -491,10 +584,10 @@
             '<div><img src="' + CONFIG.CARD_ICONS.trophy + '" width="16" height="16" style="vertical-align: middle;"> <strong>AP:</strong> ' + fmtNumber(gw2.achievementPoints) + '</div>' +
           '</div>' +
 
-          renderCollapsibleSection('Credenciales', CONFIG.CARD_ICONS.lock, 'credentials', showCredentials, credentialsHtml) +
-          renderCollapsibleSection('GW2 Avanzado', CONFIG.CARD_ICONS.character, 'advanced', showAdvanced, advancedHtml) +
+          renderCollapsibleSection('Credenciales', CONFIG.CARD_ICONS.credentialsTitle, 'credentials', showCredentials, credentialsHtml) +
+          renderCollapsibleSection('GW2 Avanzado', CONFIG.CARD_ICONS.advancedTitle, 'advanced', showAdvanced, advancedHtml) +
           (expIcons.length ? renderCollapsibleSection('Expansiones', CONFIG.ICONS.expansions.core, 'expansions', showExpansions, expansionsHtml) : '') +
-          ((serviceIcons.length || acc.apiKey) ? renderCollapsibleSection('Servicios y API', CONFIG.CARD_ICONS.services, 'servicesApi', showServicesApi, servicesApiHtml) : '') +
+          renderCollapsibleSection('Servicios y API', CONFIG.CARD_ICONS.services, 'servicesApi', showServicesApi, servicesApiHtml) +
 
           (acc.notes ? '<div style="margin-top: 12px; color: #a0a0a6; display: flex; align-items: center; gap: 6px;"><img src="' + CONFIG.CARD_ICONS.note + '" width="16" height="16" alt=""><strong>Notas:</strong> ' + esc(acc.notes) + '</div>' : '') +
         '</div>' +
@@ -509,7 +602,7 @@
     container.style.display = 'grid';
     container.innerHTML = accounts.map(renderAccountCard).join('');
 
-    // Toggle password
+    // Toggle password GW2
     document.querySelectorAll('.toggle-password').forEach(function(btn) {
       if (btn.__wired) return;
       btn.__wired = true;
@@ -521,7 +614,19 @@
       });
     });
 
-    // Toggle secciones colapsables
+    // Toggle password Twitch
+    document.querySelectorAll('.toggle-twitch-password').forEach(function(btn) {
+      if (btn.__wiredTwitch) return;
+      btn.__wiredTwitch = true;
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var id = btn.getAttribute('data-id');
+        state.showTwitchPasswords[id] = !state.showTwitchPasswords[id];
+        renderList();
+      });
+    });
+
+    // Toggle secciones colapsables principales
     document.querySelectorAll('[data-toggle-section]').forEach(function(el) {
       if (el.__wiredSection) return;
       el.__wiredSection = true;
@@ -531,6 +636,20 @@
         var section = el.getAttribute('data-section');
         var current = state.expandedAccounts[id] || {};
         current[section] = !current[section];
+        state.expandedAccounts[id] = current;
+        renderList();
+      });
+    });
+
+    // Toggle subsección Servicios
+    document.querySelectorAll('[data-toggle-services]').forEach(function(el) {
+      if (el.__wiredServices) return;
+      el.__wiredServices = true;
+      el.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var id = el.getAttribute('data-toggle-services');
+        var current = state.expandedAccounts[id] || {};
+        current.servicesDetail = !current.servicesDetail;
         state.expandedAccounts[id] = current;
         renderList();
       });
@@ -581,13 +700,22 @@
   function renderTableRow(acc) {
     var login = acc.login || {};
     var gw2 = acc.gw2 || {};
+    var services = acc.services || {};
     var tags = getAccountTypeTags(acc);
     var decorativeIcon = getRandomDecorativeIcon();
     var isExpanded = state.expandedAccounts[acc.id] ? Object.keys(state.expandedAccounts[acc.id]).length > 0 : false;
 
     var showPass = state.showPasswords[acc.id] || false;
+    var showTwitchPass = state.showTwitchPasswords[acc.id] || false;
     var passwordDisplay = showPass ? esc(login.password || '—') : '••••••••';
     var gmailPassDisplay = showPass ? esc(login.gmailPassword || '—') : '••••••••';
+    
+    // Twitch info para tabla
+    var twitchInfo = '';
+    if (services.twitch && services.twitch.linked) {
+      var twitchUsername = services.twitch.username || '';
+      twitchInfo = '<div class="muted" style="font-size: 11px;"><img src="' + CONFIG.ICONS.twitch + '" width="12" height="12" style="vertical-align: middle;"> Twitch: @' + esc(twitchUsername) + '</div>';
+    }
 
     // Tipo de cuenta para tabla
     var accountType = null;
@@ -621,9 +749,10 @@
         '}<img src="' + decorativeIcon + '" width="24" height="24" alt=""><\/td>' +
         '}<strong style="cursor: pointer;" data-toggle-expand-table data-id="' + acc.id + '">' + esc(acc.name || 'Cuenta') + '</strong>' +
           (isExpanded ? '<div class="muted" style="font-size: 11px; margin-top: 4px;">' + (acc.notes || '') + '</div>' : '') +
+          twitchInfo +
         '<\/td>' +
         '}<div><img src="' + CONFIG.CARD_ICONS.email + '" width="14" height="14" style="vertical-align: middle;"> <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.email || '') + '" data-field="Email">' + esc(login.email || '—') + '</span></div>' +
-          '<div class="muted" style="font-size: 11px;"><img src="' + CONFIG.CARD_ICONS.lock + '" width="12" height="12" style="vertical-align: middle;"> Pass: <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.password || '') + '" data-field="Contraseña">' + passwordDisplay + '</span> <button class="btn-ghost toggle-password" data-id="' + acc.id + '" style="padding: 0 4px;">👁️</button></div>' +
+          '<div class="muted" style="font-size: 11px;"><img src="' + CONFIG.CARD_ICONS.lock + '" width="12" height="12" style="vertical-align: middle;"> Pass: <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.password || '') + '" data-field="Contraseña">' + passwordDisplay + '</span> <button class="btn-ghost toggle-password" data-id="' + acc.id + '" style="padding: 0 4px; display: inline-flex; align-items: center;"><img src="' + CONFIG.CARD_ICONS.eye + '" width="12" height="12" alt=""></button></div>' +
           (login.gmailPassword ? '<div class="muted" style="font-size: 11px;"><img src="' + CONFIG.CARD_ICONS.gmailPass + '" width="12" height="12" style="vertical-align: middle;"> Gmail: <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.gmailPassword) + '" data-field="Gmail Pass">' + gmailPassDisplay + '</span></div>' : '') +
         '<\/td>' +
         '}<img src="' + CONFIG.CARD_ICONS.gw2id + '" width="14" height="14" style="vertical-align: middle;"> ' + esc(gw2.accountName || '—') + '<\/td>' +
@@ -706,19 +835,76 @@
       container.innerHTML = '';
       return;
     }
+    
+    // Contar por tipo
     var total = accounts.length;
     var mains = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('main') !== -1; }).length;
     var alters = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('alter') !== -1; }).length;
-    var totalAP = accounts.reduce(function(sum, a) { return sum + (a.gw2 && a.gw2.achievementPoints || 0); }, 0);
-    var totalLegendaries = accounts.reduce(function(sum, a) { return sum + (a.gw2 && a.gw2.legendaries || 0); }, 0);
+    var f2ps = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('f2p') !== -1; }).length;
+    
+    // Contar por tags adicionales
+    var keys = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('keys') !== -1; }).length;
+    var farming = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('farming') !== -1; }).length;
+    var weekly = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('weekly') !== -1; }).length;
+    var taxi = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('taxi') !== -1; }).length;
     
     container.innerHTML = '' +
-      '<div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; padding: 12px; background: #1a1e2a; border-radius: 12px;">' +
-        '<div><strong>📊 Total:</strong> ' + total + ' cuentas</div>' +
-        '<div><strong>⭐ Principales:</strong> ' + mains + '</div>' +
-        '<div><strong>🧪 Alternativas:</strong> ' + alters + '</div>' +
-        '<div><strong>🏆 AP total:</strong> ' + fmtNumber(totalAP) + '</div>' +
-        '<div><strong>🎖️ Legendarias:</strong> ' + totalLegendaries + '</div>' +
+      '<div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; padding: 12px 16px; background: #1a1e2a; border-radius: 12px;">' +
+        
+        // Total
+        '<div style="display: flex; align-items: center; gap: 8px;">' +
+          '<img src="assets/icons/Cuentas/1770683.png" width="20" height="20" alt="Total" style="filter: brightness(0.9);">' +
+          '<strong>Total:</strong> ' + total + ' cuentas' +
+        '</div>' +
+        
+        // Separador (ahora con margin negativo para reducir espacio)
+        '<span style="color: #c5c5c5; margin: 0 -6px;">|</span>' +
+        
+        // Principales
+        '<div style="display: flex; align-items: center; gap: 8px;">' +
+          '<img src="assets/icons/Cuentas/547827.png" width="20" height="20" alt="Principales" style="filter: brightness(0.9);">' +
+          '<strong>Principales:</strong> ' + mains +
+        '</div>' +
+        
+        // Alternativas
+        '<div style="display: flex; align-items: center; gap: 8px;">' +
+          '<img src="assets/icons/Cuentas/157375.png" width="20" height="20" alt="Alternativas" style="filter: brightness(0.9);">' +
+          '<strong>Alternativas:</strong> ' + alters +
+        '</div>' +
+        
+        // F2P
+        '<div style="display: flex; align-items: center; gap: 8px;">' +
+          '<img src="assets/icons/Cuentas/102538.png" width="20" height="20" alt="F2P" style="filter: brightness(0.9);">' +
+          '<strong>F2P:</strong> ' + f2ps +
+        '</div>' +
+        
+        // Separador (ahora con margin negativo para reducir espacio)
+        '<span style="color: #c5c5c5; margin: 0 -6px;">|</span>' +
+        
+        // Llaves (Keys)
+        '<div style="display: flex; align-items: center; gap: 8px;">' +
+          '<img src="assets/icons/Cuentas/1716669.png" width="20" height="20" alt="Llaves" style="filter: brightness(0.9);">' +
+          '<strong>Llaves:</strong> ' + keys +
+        '</div>' +
+        
+        // Farming
+        '<div style="display: flex; align-items: center; gap: 8px;">' +
+          '<img src="assets/icons/Cuentas/157332.png" width="20" height="20" alt="Farming" style="filter: brightness(0.9);">' +
+          '<strong>Farming:</strong> ' + farming +
+        '</div>' +
+        
+        // Weekly
+        '<div style="display: flex; align-items: center; gap: 8px;">' +
+          '<img src="assets/icons/Cuentas/240679.png" width="20" height="20" alt="Weekly" style="filter: brightness(0.9);">' +
+          '<strong>Weekly:</strong> ' + weekly +
+        '</div>' +
+        
+        // Taxi
+        '<div style="display: flex; align-items: center; gap: 8px;">' +
+          '<img src="assets/icons/Cuentas/102438.png" width="20" height="20" alt="Taxi" style="filter: brightness(0.9);">' +
+          '<strong>Taxi:</strong> ' + taxi +
+        '</div>' +
+        
       '</div>';
   }
 
@@ -747,7 +933,7 @@
       };
       var iconSrc = iconMap[tag] || CONFIG.DECORATIVE_ICONS[0];
       var displayName = tag.charAt(0).toUpperCase() + tag.slice(1);
-      return '<option value="' + tag + '" ' + (state.filters.tag === tag ? 'selected' : '') + '><img src="' + iconSrc + '" width="14" height="14" style="vertical-align: middle;"> ' + displayName + '</option>';
+      return '<option value="' + tag + '" ' + (state.filters.tag === tag ? 'selected' : '') + '>' + displayName + '</option>';
     }).join('');
 
     container.innerHTML = '' +
@@ -758,9 +944,9 @@
         '<div class="chip">' +
           '<select id="accountsTypeFilter">' +
             '<option value="all"' + (state.filters.type === 'all' ? ' selected' : '') + '>Todos los tipos</option>' +
-            '<option value="main"' + (state.filters.type === 'main' ? ' selected' : '') + '><img src="' + CONFIG.TYPE_ICONS.main + '" width="14" height="14" style="vertical-align: middle;"> Principales</option>' +
-            '<option value="alter"' + (state.filters.type === 'alter' ? ' selected' : '') + '><img src="' + CONFIG.TYPE_ICONS.alter + '" width="14" height="14" style="vertical-align: middle;"> Alternativas</option>' +
-            '<option value="f2p"' + (state.filters.type === 'f2p' ? ' selected' : '') + '><img src="' + CONFIG.TYPE_ICONS.f2p + '" width="14" height="14" style="vertical-align: middle;"> Free to Play</option>' +
+            '<option value="main"' + (state.filters.type === 'main' ? ' selected' : '') + '>Principales</option>' +
+            '<option value="alter"' + (state.filters.type === 'alter' ? ' selected' : '') + '>Alternativas</option>' +
+            '<option value="f2p"' + (state.filters.type === 'f2p' ? ' selected' : '') + '>Free to Play</option>' +
           '</select>' +
         '</div>' +
         (tagOptions ? '<div class="chip"><select id="accountsTagFilter"><option value="all">Todos los tags</option>' + tagOptions + '</select></div>' : '') +
@@ -1197,12 +1383,12 @@
   function generateExcelTemplate() {
     var columns = [
       'id', 'nombre', 'email', 'password', 'gmailPassword', 'apiKey',
-      'twitch_user', 'geforce_linked', 'notas', 'tags'
+      'twitch_user', 'twitch_email', 'twitch_password', 'geforce_linked', 'notas', 'tags'
     ];
     var data = [columns];
     var example = [
       'mi_cuenta_1', 'Mi cuenta principal', 'usuario@ejemplo.com', '', '',
-      'ABCD-1234-EFGH-5678', 'miusuario', 'TRUE', 'Cuenta principal con todas las expansiones', 'main,full'
+      'ABCD-1234-EFGH-5678', 'miusuario', 'miusuario@twitch.com', '', 'TRUE', 'Cuenta principal con todas las expansiones', 'main,full'
     ];
     data.push(example);
     
@@ -1239,7 +1425,12 @@
                 gmailPassword: row.gmailPassword || ''
               },
               services: {
-                twitch: { linked: !!(row.twitch_user), username: row.twitch_user || null },
+                twitch: { 
+                  linked: !!(row.twitch_user), 
+                  username: row.twitch_user || null,
+                  email: row.twitch_email || null,
+                  password: row.twitch_password || null
+                },
                 geforceNow: { linked: row.geforce_linked === 'TRUE' || row.geforce_linked === true }
               },
               apiKey: row.apiKey ? { value: row.apiKey } : null,
@@ -1395,7 +1586,7 @@
       if (state.inited) return;
       ensurePanel();
       state.inited = true;
-      console.info(LOG, 'ready v1.6.0 — Todos los emojis reemplazados por imágenes');
+      console.info(LOG, 'ready v1.9.0 — Iconos separados para títulos de secciones, GeForce Now con imagen');
     },
     activate: activate,
     deactivate: deactivate,

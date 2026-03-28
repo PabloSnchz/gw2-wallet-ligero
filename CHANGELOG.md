@@ -9,6 +9,38 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [5.6.0] - 2026-03-28
+
+### Added
+- **Panel de Cuentas — Rediseño completo (accounts-panel.js v1.9.0)**:
+  - **Información detallada de Twitch** dentro de subsección "Servicios" colapsable:
+    - Username con @ (copiable al portapapeles)
+    - Email (copiable, si existe)
+    - Password (toggle independiente + copiable, si existe)
+  - **Iconos separados para títulos de secciones vs campos internos**:
+    - Credenciales (título): nuevo icono `assets/icons/Welcome/733266.png`
+    - Contraseña (campo): mantiene `assets/icons/Cuentas/733265.png`
+    - GW2 Avanzado (título): nuevo icono `assets/icons/Cuentas/358409.png`
+    - Chars (campo): mantiene `assets/icons/Cuentas/156409.png`
+  - **Reemplazo de emoji 👁️ por imagen local** en todos los toggles de contraseña (`assets/icons/welcome/528726.png`)
+  - **Reemplazo de emoji ✅ por imagen local** en GeForce Now (`assets/icons/Welcome/156108.png`)
+  - **Barra de estadísticas optimizada**: separadores con `margin: 0 -6px` para mejor ajuste en zoom 100%
+  - **Plantilla Excel actualizada**: nuevas columnas `twitch_user`, `twitch_email`, `twitch_password`
+
+### Changed
+- **accounts-panel.js v1.9.0**:
+  - Subsección "Servicios" colapsable dentro de Servicios y API
+  - Toggle independiente para contraseña Twitch (`state.showTwitchPasswords`)
+  - Estado de expansión de secciones persistente en memoria (no localStorage)
+  - Copia al portapapeles extendida a Twitch username, email y password
+- **Plantilla Excel**: incluye ahora columnas `twitch_user`, `twitch_email`, `twitch_password` para capturar datos completos de Twitch
+
+### Fixed
+- **Contraseña Twitch**: ahora se muestra correctamente (oculta por defecto) con toggle funcional
+- **Barra de estadísticas**: separadores optimizados para que no rompa en dos líneas en zoom 100%
+
+---
+
 ## [5.5.0] - 2026-03-27
 
 ### Added
