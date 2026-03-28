@@ -1,6 +1,6 @@
 /*!
  * js/settings-manager.js — Gestión de Exportación/Importación de configuración
- * v1.0.1 (2026-03-28)
+ * v1.0.2 (2026-03-28)
  * 
  * Permite exportar e importar toda la configuración de la app:
  * - API Keys (nombres + keys, key seleccionada)
@@ -10,6 +10,8 @@
  * - Characters (POIs asignados, historial de ubicaciones)
  * - Meta (hecho hoy, favoritos)
  * - Global (welcomeSeen)
+ * 
+ * v1.0.2: Agregados métodos exportData() e importFromData() para sincronización con GitHub Gist
  */
 
 (function(root) {
@@ -197,7 +199,7 @@
   }
   
   /**
-   * Exporta TODA la configuración
+   * Exporta TODA la configuración (para descarga manual)
    */
   function exportAll() {
     var exportData = {
@@ -231,6 +233,26 @@
     } else {
       console.log(LOG, 'Configuración exportada');
     }
+  }
+  
+  /**
+   * Exporta datos a formato JSON (para sincronización con GitHub Gist)
+   */
+  function exportData() {
+    return {
+      version: EXPORT_VERSION,
+      exportedAt: new Date().toISOString(),
+      app: 'gw2-wallet-ligero',
+      data: {
+        apiKeys: exportApiKeys(),
+        wv: exportWVData(),
+        wallet: exportWalletData(),
+        activities: exportActivitiesData(),
+        characters: exportCharactersData(),
+        meta: exportMetaData(),
+        global: exportGlobalData()
+      }
+    };
   }
   
   // =======================================================================
@@ -424,7 +446,30 @@
   }
   
   /**
-   * Importa con confirmación visual
+   * Importa desde un objeto JSON (para sincronización con GitHub Gist)
+   */
+  async function importFromData(importData) {
+    try {
+      validateImportData(importData);
+      
+      importApiKeys(importData.data.apiKeys);
+      importWVData(importData.data.wv);
+      importWalletData(importData.data.wallet);
+      importActivitiesData(importData.data.activities);
+      importCharactersData(importData.data.characters);
+      importMetaData(importData.data.meta);
+      importGlobalData(importData.data.global);
+      
+      console.log(LOG, 'Configuración importada desde datos');
+      return { success: true };
+    } catch (err) {
+      console.error(LOG, 'Error importando desde datos:', err);
+      throw err;
+    }
+  }
+  
+  /**
+   * Importa con confirmación visual (desde archivo)
    */
   async function importAll() {
     return new Promise(function(resolve, reject) {
@@ -477,7 +522,7 @@
   // =======================================================================
   
   function init() {
-    console.info(LOG, 'Settings Manager v1.0.1 inicializado');
+    console.info(LOG, 'Settings Manager v1.0.2 inicializado');
     
     // Buscar botones en el DOM (se ejecuta después de que index.html cargue)
     function bindButtons() {
@@ -527,8 +572,10 @@
   var SettingsManager = {
     init: init,
     exportAll: exportAll,
+    exportData: exportData,
     importAll: importAll,
     importFromFile: importFromFile,
+    importFromData: importFromData,
     _debug: function() {
       return {
         version: EXPORT_VERSION,

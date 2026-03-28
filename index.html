@@ -315,6 +315,12 @@
           Restaurar
         </button>
         
+        <!-- Botón Sincronizar GitHub Gist -->
+        <button id="syncGistBtn" class="an-util-link" title="Sincronizar con GitHub Gist" style="background: none; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 0;">
+          <img src="assets/icons/2015716.png" width="16" height="16" alt="Sincronizar">
+          Sincronizar
+        </button>
+        
         <span class="an-sep">|</span>
         
         <!-- Redes sociales con imágenes locales -->
@@ -845,6 +851,63 @@
     </div>
   </div>
 
+  <!-- Modal: Sincronización con GitHub Gist -->
+  <div id="gistSyncModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="gistSyncTitle" hidden>
+    <div class="modal__backdrop" data-close="1"></div>
+    <div class="modal__dialog" role="document" style="max-width: 550px;">
+      <header class="modal__header">
+        <h3 id="gistSyncTitle" style="display: flex; align-items: center; gap: 8px;">
+          <img src="assets/icons/2015716.png" width="24" height="24" alt="">
+          Sincronización con GitHub Gist
+        </h3>
+        <button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button>
+      </header>
+
+      <div class="modal__body">
+        <div id="gistSyncStatus" class="muted" style="margin-bottom: 16px; padding: 8px; background: #0f1116; border-radius: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <img src="assets/icons/Welcome/544515.png" width="16" height="16" alt="">
+            <span id="gistStatusText">Verificando estado...</span>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom: 16px;">
+          <label for="ghTokenInput">Token de GitHub (permisos <code>gist</code>)</label>
+          <input type="password" id="ghTokenInput" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
+          <p class="muted" style="font-size: 11px; margin-top: 4px;">
+            <a href="https://github.com/settings/tokens" target="_blank">Generar token en GitHub</a> → Seleccionar "gist"
+          </p>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+          <button id="gistSaveTokenBtn" class="btn btn--accent" style="display: inline-flex; align-items: center; gap: 6px;">
+            <img src="assets/icons/Welcome/156108.png" width="16" height="16" alt="">
+            Guardar token
+          </button>
+          <button id="gistClearTokenBtn" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px;">
+            <img src="assets/icons/Welcome/156107.png" width="16" height="16" alt="">
+            Eliminar token
+          </button>
+        </div>
+
+        <hr style="border-color: #2a2c35; margin: 16px 0;">
+
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button id="gistUploadBtn" class="btn" style="display: inline-flex; align-items: center; gap: 6px;">
+            <img src="assets/icons/155033.png" width="16" height="16" alt="">
+            Subir configuración a la nube
+          </button>
+          <button id="gistDownloadBtn" class="btn" style="display: inline-flex; align-items: center; gap: 6px;">
+            <img src="assets/icons/2015716.png" width="16" height="16" alt="">
+            Sincronizar desde la nube
+          </button>
+        </div>
+
+        <div id="gistActionStatus" class="muted" style="margin-top: 12px;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- JS base -->
   <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.js"></script>
   <!-- SheetJS para manejo de Excel -->
@@ -862,7 +925,8 @@
   <script defer src="js/activities-theme.js?v=2.6.0"></script>
   <script defer src="js/characters.js?v=2.3.0"></script>
   <script defer src="js/accounts-panel.js?v=1.9.0"></script>
-  <script defer src="js/settings-manager.js?v=1.0.0"></script>
+  <script defer src="js/settings-manager.js?v=1.0.1"></script>
+  <script defer src="js/gist-sync.js?v=1.0.0"></script>
   <script defer src="js/welcome-panel.js?v=1.2.0"></script>
   <script defer src="js/router.js?v=2.10.6"></script>
   <script defer src="js/wv-tabs-skin.js?v=1.0.0"></script>
@@ -1153,6 +1217,148 @@
     mo.observe(panel, { childList:true, subtree:true, attributes:true, attributeFilter:['hidden'] });
   }
 })();
+</script>
+
+<!-- Script para manejar el modal de sincronización -->
+<script>
+  (function() {
+    var modal = document.getElementById('gistSyncModal');
+    var syncBtn = document.getElementById('syncGistBtn');
+    
+    function openModal() {
+      if (modal) modal.hidden = false;
+      updateGistStatus();
+    }
+    
+    function closeModal() {
+      if (modal) modal.hidden = true;
+    }
+    
+    async function updateGistStatus() {
+      var statusSpan = document.getElementById('gistStatusText');
+      if (!statusSpan) return;
+      
+      if (!window.GistSync) {
+        statusSpan.innerHTML = '⚠️ Módulo de sincronización no disponible';
+        return;
+      }
+      
+      try {
+        var status = await window.GistSync.getStatus();
+        if (status.hasToken && status.hasGist && status.gistInfo && !status.gistInfo.error) {
+          var date = new Date(status.gistInfo.updatedAt);
+          statusSpan.innerHTML = '✅ Conectado con GitHub · Última sincronización: ' + date.toLocaleString();
+        } else if (status.hasToken) {
+          statusSpan.innerHTML = '⚠️ Token configurado, pero sin Gist. Subí tu configuración primero.';
+        } else {
+          statusSpan.innerHTML = '🔴 No configurado. Ingresá tu token de GitHub para comenzar.';
+        }
+      } catch (e) {
+        statusSpan.innerHTML = '❌ Error al verificar estado: ' + e.message;
+      }
+    }
+    
+    if (syncBtn) {
+      syncBtn.addEventListener('click', openModal);
+    }
+    
+    if (modal) {
+      modal.addEventListener('click', function(e) {
+        if (e.target.getAttribute('data-close') === '1') {
+          closeModal();
+        }
+      });
+    }
+    
+    // Guardar token
+    var saveTokenBtn = document.getElementById('gistSaveTokenBtn');
+    if (saveTokenBtn) {
+      saveTokenBtn.addEventListener('click', async function() {
+        var tokenInput = document.getElementById('ghTokenInput');
+        var statusDiv = document.getElementById('gistActionStatus');
+        var token = tokenInput.value.trim();
+        
+        if (!token) {
+          statusDiv.textContent = '⚠️ Ingresá un token de GitHub';
+          statusDiv.style.color = '#ffd966';
+          return;
+        }
+        
+        statusDiv.textContent = '🔐 Verificando token...';
+        statusDiv.style.color = '#ffd966';
+        
+        try {
+          var result = await window.GistSync.setupToken(token, true);
+          statusDiv.textContent = '✅ Token configurado correctamente. Gist creado/actualizado.';
+          statusDiv.style.color = '#a7f3d0';
+          tokenInput.value = '';
+          updateGistStatus();
+        } catch (err) {
+          statusDiv.textContent = '❌ Error: ' + err.message;
+          statusDiv.style.color = '#f28b82';
+        }
+      });
+    }
+    
+    // Eliminar token
+    var clearTokenBtn = document.getElementById('gistClearTokenBtn');
+    if (clearTokenBtn) {
+      clearTokenBtn.addEventListener('click', function() {
+        if (confirm('¿Eliminar token de GitHub? Perderás la sincronización.')) {
+          window.GistSync.clearSync();
+          document.getElementById('ghTokenInput').value = '';
+          updateGistStatus();
+          var statusDiv = document.getElementById('gistActionStatus');
+          if (statusDiv) {
+            statusDiv.textContent = '✅ Token eliminado';
+            statusDiv.style.color = '#a7f3d0';
+          }
+        }
+      });
+    }
+    
+    // Subir configuración
+    var uploadBtn = document.getElementById('gistUploadBtn');
+    if (uploadBtn) {
+      uploadBtn.addEventListener('click', async function() {
+        var statusDiv = document.getElementById('gistActionStatus');
+        statusDiv.textContent = '📤 Subiendo configuración...';
+        statusDiv.style.color = '#ffd966';
+        
+        try {
+          var result = await window.GistSync.uploadConfig();
+          statusDiv.textContent = '✅ Configuración subida correctamente.';
+          statusDiv.style.color = '#a7f3d0';
+          updateGistStatus();
+        } catch (err) {
+          statusDiv.textContent = '❌ Error: ' + err.message;
+          statusDiv.style.color = '#f28b82';
+        }
+      });
+    }
+    
+    // Sincronizar (descargar)
+    var downloadBtn = document.getElementById('gistDownloadBtn');
+    if (downloadBtn) {
+      downloadBtn.addEventListener('click', async function() {
+        var statusDiv = document.getElementById('gistActionStatus');
+        statusDiv.textContent = '📥 Sincronizando desde la nube...';
+        statusDiv.style.color = '#ffd966';
+        
+        try {
+          var result = await window.GistSync.downloadAndSync();
+          statusDiv.textContent = '✅ Configuración sincronizada. Recargando...';
+          statusDiv.style.color = '#a7f3d0';
+          setTimeout(function() {
+            location.reload();
+          }, 1000);
+        } catch (err) {
+          statusDiv.textContent = '❌ Error: ' + err.message;
+          statusDiv.style.color = '#f28b82';
+        }
+      });
+    }
+  })();
 </script>
 
 </body>
