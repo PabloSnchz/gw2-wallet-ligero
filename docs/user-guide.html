@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bóveda del Gato Negro — Guía de usuario</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: #0e0e10;
+      color: #e9e9ee;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.5;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #141418;
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 0 0 1px #1d1d20 inset, 0 8px 24px rgba(0,0,0,0.3);
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    h1 img {
+      width: 48px;
+      height: 48px;
+    }
+    .version {
+      color: #a0a0a6;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #242428;
+    }
+    h2 {
+      font-size: 1.5rem;
+      margin: 32px 0 16px 0;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #ffd966;
+      display: inline-block;
+    }
+    h3 {
+      font-size: 1.25rem;
+      margin: 24px 0 12px 0;
+      color: #ffd966;
+    }
+    h4 {
+      font-size: 1.1rem;
+      margin: 16px 0 8px 0;
+      color: #bcd0ff;
+    }
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .module-card {
+      background: #1a1e2a;
+      border: 1px solid #2a2c35;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .module-icon {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+      background: #0f1116;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+    }
+    .module-icon img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+    }
+    .module-content {
+      flex: 1;
+    }
+    .module-content strong {
+      font-size: 1.1rem;
+      display: block;
+      margin-bottom: 6px;
+    }
+    .badge {
+      display: inline-block;
+      background: #2a2c35;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      margin-right: 6px;
+      margin-top: 8px;
+    }
+    .badge-success {
+      background: #1f3328;
+      color: #a7f3d0;
+    }
+    .steps {
+      background: #0f1116;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    .step {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+      align-items: flex-start;
+    }
+    .step:last-child {
+      margin-bottom: 0;
+    }
+    .step-number {
+      background: #ffd966;
+      color: #0e0e10;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    .step-content {
+      flex: 1;
+    }
+    hr {
+      border-color: #2a2c35;
+      margin: 24px 0;
+    }
+    .footer-note {
+      text-align: center;
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid #2a2c35;
+      color: #a0a0a6;
+      font-size: 0.85rem;
+    }
+    ul, ol {
+      padding-left: 24px;
+      margin: 12px 0;
+    }
+    li {
+      margin: 6px 0;
+    }
+    a {
+      color: #ffd966;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    code {
+      background: #0a0c10;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-family: monospace;
+    }
+    .social-icons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin: 16px 0;
+    }
+    .social-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #1a1e2a;
+      padding: 8px 16px;
+      border-radius: 40px;
+      border: 1px solid #2a2c35;
+    }
+    .social-link img {
+      width: 20px;
+      height: 20px;
+    }
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 1.6rem;
+      }
+      h2 {
+        font-size: 1.3rem;
+      }
+      .step {
+        flex-direction: column;
+        gap: 8px;
+      }
+      .module-card {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>
+      <img src="../assets/logo-gato-negro.png" alt="Logo">
+      Bóveda del Gato Negro
+    </h1>
+    <div class="version">📘 Guía de usuario — v5.5.0</div>
+
+    <p><strong>🐈‍⬛ Tu centro de control para Guild Wars 2</strong><br>
+    Una herramienta web gratuita que te ayuda a gestionar todo lo relacionado con tu cuenta de Guild Wars 2. <strong>Todo ocurre en tu navegador</strong> — tus datos nunca salen de tu computadora.</p>
+
+    <h2>🚀 ¿Cómo empiezo?</h2>
+    <ol>
+      <li>📱 Entrá a la página: <code>https://pablosnchz.github.io/gw2-wallet-ligero/</code></li>
+      <li>🔑 Agregá tu API Key (la obtenés en <a href="https://account.arena.net/applications" target="_blank">account.arena.net/applications</a>)</li>
+      <li>🧭 Explorá los módulos desde la barra lateral</li>
+    </ol>
+
+    <h2>🧭 Módulos de la Bóveda</h2>
+
+    <div class="module-grid">
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/733322.png" alt="Cartera"></div>
+        <div class="module-content">
+          <strong>Cartera</strong>
+          <p>Muestra todas tus divisas: oro, gemas, karma, laureles, etc.</p>
+          <span class="badge">✅ Vista tarjetas/tabla</span>
+          <span class="badge">🔍 Filtros</span>
+          <span class="badge">📌 Fijar favoritas</span>
+        </div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/102420.png" alt="Meta & Eventos"></div>
+        <div class="module-content">
+          <strong>Meta & Eventos</strong>
+          <p>Horarios de world bosses y meta eventos en tu zona horaria.</p>
+          <span class="badge">⏰ Horarios locales</span>
+          <span class="badge">⭐ Favoritos (6)</span>
+          <span class="badge">✅ Hecho hoy</span>
+        </div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/155059.png" alt="Logros"></div>
+        <div class="module-content">
+          <strong>Logros</strong>
+          <p>Progreso de logros y cuáles están cerca de completarse.</p>
+          <span class="badge">📊 Barras de progreso</span>
+          <span class="badge">🔎 Filtros PvE/PvP/WvW</span>
+        </div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/3172791.png" alt="Cámara del Brujo"></div>
+        <div class="module-content">
+          <strong>Cámara del Brujo</strong>
+          <p>Objetivos diarios, semanales y tienda de Aclamación Astral.</p>
+          <span class="badge">📅 Diarias/Semanales</span>
+          <span class="badge">🛒 Tienda AA</span>
+          <span class="badge">📌 Fijar items</span>
+        </div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/1302773.png" alt="Actividades"></div>
+        <div class="module-content">
+          <strong>Actividades</strong>
+          <p>Llave semanal, Leivas, Home Nodes y más.</p>
+          <span class="badge">🔑 Detección automática llave</span>
+          <span class="badge">🪨 Leivas (0-5)</span>
+          <span class="badge">🏡 Home Nodes</span>
+        </div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/156678.png" alt="Personajes"></div>
+        <div class="module-content">
+          <strong>Personajes</strong>
+          <p>Lista de personajes, nivel, profesión y ubicación.</p>
+          <span class="badge">🎭 Filtros</span>
+          <span class="badge">📍 POIs asignables</span>
+        </div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/3601748.png" alt="Cuentas"></div>
+        <div class="module-content">
+          <strong>Cuentas</strong>
+          <p>Guardá emails, contraseñas y API Keys de forma segura.</p>
+          <span class="badge badge-success">🔒 Todo en tu PC</span>
+          <span class="badge">🧙 Asistente 4 pasos</span>
+        </div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/502065.png" alt="Conversor"></div>
+        <div class="module-content">
+          <strong>Conversor</strong>
+          <p>Calculá gemas ↔ oro con atajos rápidos.</p>
+          <span class="badge">💎 100/400/800/1200 gemas</span>
+          <span class="badge">🪙 10/100/250 oro</span>
+          <span class="badge">📊 Índice de conveniencia</span>
+        </div>
+      </div>
+    </div>
+
+    <h2>🧙 Asistente de cuentas</h2>
+    <p>Creá tu archivo seguro en 4 pasos:</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content"><strong>📎 Descargar plantilla</strong><br>Archivo Excel con columnas predefinidas (id, nombre, email, password, apiKey, twitch_user, geforce_linked, notas, tags)</div>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content"><strong>📤 Subir Excel → Generar JSON</strong><br>Convertí tu Excel a JSON y descargá el archivo</div>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content"><strong>🌐 Enriquecer con API (opcional)</strong><br>Completá datos de GW2 automáticamente (nombre de cuenta, AP, fecha creación, expansiones)</div>
+      </div>
+      <div class="step">
+        <div class="step-number">4</div>
+        <div class="step-content"><strong>🔐 Cifrar con contraseña</strong><br>Creá tu archivo <code>.enc</code> para cargar en el panel</div>
+      </div>
+    </div>
+    <p>🔒 <strong>Seguridad:</strong> Todo ocurre en tu navegador. Ningún dato sale de tu computadora.</p>
+
+    <h2>💱 Conversor Gem ↔ Gold</h2>
+    <ul>
+      <li><strong>💎 Conseguir gemas:</strong> Ingresá gemas → te mostramos el costo en oro</li>
+      <li><strong>🪙 Conseguir oro:</strong> Ingresá oro → te mostramos cuántas gemas podés comprar</li>
+      <li><strong>🎯 Atajos rápidos:</strong> 100, 400, 800, 1200 gemas / 10, 100, 250 de oro</li>
+      <li><strong>📊 Índice de conveniencia:</strong> Te dice si es buen momento para comprar (basado en 400 gemas)</li>
+    </ul>
+
+    <h2>🔑 Detección automática de llave semanal</h2>
+    <p>La Bóveda detecta automáticamente si ya reclamaste la llave del León Negro esta semana:</p>
+    <ul>
+      <li>✅ Busca personajes <strong>Thief</strong> con nivel ≥10</li>
+      <li>✅ Antigüedad <strong>menos de 7 días</strong></li>
+      <li>✅ <strong>Creados después del último reset</strong> (lunes 07:30 UTC)</li>
+    </ul>
+    <p>Si creaste un Thief el domingo y al día siguiente es lunes, la llave estará disponible (no bloqueada por el personaje anterior).</p>
+
+    <h2>🌐 Comunidad</h2>
+    <p>¿Preguntas, sugerencias o querés reportar un bug?</p>
+    <div class="social-icons">
+      <a href="https://discord.gg/ZGNsfsqyKe" target="_blank" class="social-link">
+        <img src="../assets/icons/Welcome/discord.png" alt="Discord"> Discord
+      </a>
+      <a href="https://www.instagram.com/pablin.schez/" target="_blank" class="social-link">
+        <img src="../assets/icons/Welcome/instagram.png" alt="Instagram"> Instagram
+      </a>
+      <a href="https://www.youtube.com/@pablinschez" target="_blank" class="social-link">
+        <img src="../assets/icons/Welcome/youtube.png" alt="YouTube"> YouTube
+      </a>
+      <a href="https://www.twitch.tv/pblsnchz" target="_blank" class="social-link">
+        <img src="../assets/icons/Welcome/twitchlogo.png" alt="Twitch"> Twitch
+      </a>
+      <a href="https://github.com/PabloSnchz" target="_blank" class="social-link">
+        <img src="../assets/icons/Welcome/github.png" alt="GitHub"> GitHub
+      </a>
+    </div>
+    <p>📧 Email: <code>contacto@bovedagatonegro.com</code></p>
+
+    <h2>☕ Apoyar el proyecto</h2>
+    <div class="social-icons">
+      <a href="https://www.paypal.com/paypalme/pblsnchz" target="_blank" class="social-link">
+        <img src="../assets/icons/Welcome/payp.png" alt="PayPal"> PayPal
+      </a>
+      <a href="https://ko-fi.com/pablinschez" target="_blank" class="social-link">
+        <img src="../assets/icons/Welcome/kofi.png" alt="Ko-fi"> Ko-fi
+      </a>
+    </div>
+    <p>Tu apoyo ayuda a mantener el servidor y desarrollar nuevas funciones.</p>
+
+    <hr>
+
+    <h2>📝 Resumen rápido</h2>
+    <div class="module-grid">
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/733322.png" alt="Cartera"></div>
+        <div class="module-content"><strong>Cartera</strong> — Divisas de la cuenta</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/102420.png" alt="Meta"></div>
+        <div class="module-content"><strong>Meta & Eventos</strong> — World bosses y metas</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/155059.png" alt="Logros"></div>
+        <div class="module-content"><strong>Logros</strong> — Progreso de logros</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/3172791.png" alt="WV"></div>
+        <div class="module-content"><strong>Cámara del Brujo</strong> — Objetivos y tienda AA</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/1302773.png" alt="Actividades"></div>
+        <div class="module-content"><strong>Actividades</strong> — Llave, Leivas, Home Nodes</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/156678.png" alt="Personajes"></div>
+        <div class="module-content"><strong>Personajes</strong> — Lista de personajes</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/3601748.png" alt="Cuentas"></div>
+        <div class="module-content"><strong>Cuentas</strong> — Guardá cuentas seguras</div>
+      </div>
+      <div class="module-card">
+        <div class="module-icon"><img src="../assets/icons/502065.png" alt="Conversor"></div>
+        <div class="module-content"><strong>Conversor</strong> — Gemas ↔ oro</div>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      🐈‍⬛ <strong>Bóveda del Gato Negro</strong> — v5.5.0<br>
+      © Comunidad Gato Negro — Herramientas para GW2<br>
+      Actualizado el 27 de marzo de 2026
+    </div>
+  </div>
+</body>
+</html>

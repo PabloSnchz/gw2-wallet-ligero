@@ -1,14 +1,19 @@
 /*!
  * js/accounts-panel.js — Panel de Cuentas (cifrado local)
- * v1.3.1 (2026-03-27)
+ * v1.6.0 (2026-03-28)
  *
- * CORRECCIÓN v1.3.1:
- * - Restaurada funcionalidad de acceso a cuentas (archivo guardado y carga manual)
- * - El asistente ahora es un bloque separado que NO elimina el formulario de carga existente
- * - Mantiene la estructura: Asistente arriba, luego sección "Acceso a cuentas"
+ * MEJORAS v1.6.0:
+ * - Reemplazo completo de emojis por imágenes en las tarjetas
+ * - Nuevos iconos para: GW2 ID, Creación, AP, Chars, Mochilas, Bancos, Material, Legendarias, Nivel 80, Notas
+ * - Chevron expandible con iconos (▶️/▼) convertidos a imágenes
  *
- * NUEVO v1.3.0:
- * - Asistente de cuentas (modal) para crear archivos .enc desde Excel
+ * MEJORAS v1.5.0:
+ * - Icono decorativo aleatorio a la izquierda (9 iconos)
+ * - Tipo de cuenta excluyente: main, alter, f2p
+ * - Tags adicionales combinables: farming, keys, weekly, taxi
+ *
+ * MEJORAS v1.4.0:
+ * - Rediseño de tarjetas con secciones colapsables
  */
 
 (function (root) {
@@ -21,15 +26,56 @@
   var CONFIG = {
     STORAGE_LAST_FILE_KEY: 'accounts:lastFile',
     DEFAULT_ICON: 'assets/icons/Cuentas/GW2free.png',
-    ACCOUNT_ICON: 'assets/icons/Cuentas/GW2free.png',
-    ACCOUNT_TYPE_ICONS: {
-      main: 'assets/icons/Cuentas/star.png',
-      alter: 'assets/icons/Cuentas/alter.png',
-      farming: 'assets/icons/Cuentas/farming.png',
-      keys: 'assets/icons/Cuentas/key.png',
-      f2p: 'assets/icons/Cuentas/f2p.png',
-      default: 'assets/icons/Cuentas/GW2free.png'
+    
+    // Iconos decorativos (aleatorios para la izquierda)
+    DECORATIVE_ICONS: [
+      'assets/icons/Cuentas/1770678.png',
+      'assets/icons/Cuentas/1770679.png',
+      'assets/icons/Cuentas/1770680.png',
+      'assets/icons/Cuentas/1770681.png',
+      'assets/icons/Cuentas/1770682.png',
+      'assets/icons/Cuentas/1770683.png',
+      'assets/icons/Cuentas/1770684.png',
+      'assets/icons/Cuentas/1770685.png',
+      'assets/icons/Cuentas/1770686.png'
+    ],
+    
+    // Iconos de tipo de cuenta (excluyentes)
+    TYPE_ICONS: {
+      main: 'assets/icons/Cuentas/547827.png',
+      alter: 'assets/icons/Cuentas/157375.png',
+      f2p: 'assets/icons/Cuentas/102538.png'
     },
+    
+    // Iconos de tags adicionales (combinables)
+    TAG_ICONS: {
+      farming: 'assets/icons/Cuentas/157332.png',
+      keys: 'assets/icons/Cuentas/1716669.png',
+      weekly: 'assets/icons/Cuentas/240679.png',
+      taxi: 'assets/icons/Cuentas/102438.png'
+    },
+    
+    // Iconos de UI para tarjetas
+    CARD_ICONS: {
+      email: 'assets/icons/Cuentas/gmail.png',
+      lock: 'assets/icons/Cuentas/733265.png',
+      gmailPass: 'assets/icons/Cuentas/155048.png',
+      gw2id: 'assets/icons/Cuentas/358353.png',
+      calendar: 'assets/icons/Cuentas/156407.png',
+      trophy: 'assets/icons/Cuentas/156403.png',
+      character: 'assets/icons/Cuentas/156409.png',
+      bag: 'assets/icons/Cuentas/157098.png',
+      bank: 'assets/icons/Cuentas/156670.png',
+      material: 'assets/icons/Cuentas/255373.png',
+      medal: 'assets/icons/Cuentas/157085.png',
+      sword: 'assets/icons/Cuentas/1424243.png',
+      services: 'assets/icons/welcome/102609.png',
+      apiKey: 'assets/icons/Cuentas/155048.png',
+      note: 'assets/icons/Cuentas/1228929.png',
+      chevronRight: 'assets/icons/Cuentas/528716.png',
+      chevronDown: 'assets/icons/Cuentas/528717.png'
+    },
+    
     ICONS: {
       account: 'assets/icons/Cuentas/GW2free.png',
       lock: 'assets/icons/Cuentas/candado GW2.png',
@@ -71,7 +117,7 @@
   };
 
   // =======================================================================
-  // 2. UTILIDADES BÁSICAS (idénticas a la versión anterior)
+  // 2. UTILIDADES BÁSICAS
   // =======================================================================
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.from((r || document).querySelectorAll(s)); }
@@ -117,39 +163,12 @@
     if (account.tags && Array.isArray(account.tags)) {
       tags.push.apply(tags, account.tags);
     }
-    if (account.login && account.login.email) {
-      var email = account.login.email.toLowerCase();
-      if (email.includes('alter') || email.includes('farm') || /^gw2play\d+/.test(email)) {
-        if (tags.indexOf('alter') === -1) tags.push('alter');
-        if (tags.indexOf('farming') === -1) tags.push('farming');
-      }
-    }
-    if (account.name && account.name.toLowerCase().includes('principal')) {
-      if (tags.indexOf('main') === -1) tags.push('main');
-    }
-    if (account.tags && account.tags.includes('f2p')) tags.push('f2p');
-    if (account.tags && account.tags.includes('keys')) tags.push('keys');
     return tags;
-  }
-
-  function getMainAccountType(account) {
-    var tags = getAccountTypeTags(account);
-    if (tags.includes('main')) return 'main';
-    if (tags.includes('alter')) return 'alter';
-    if (tags.includes('farming')) return 'farming';
-    if (tags.includes('keys')) return 'keys';
-    if (tags.includes('f2p')) return 'f2p';
-    return 'default';
-  }
-
-  function getAccountTypeIcon(account) {
-    var type = getMainAccountType(account);
-    return CONFIG.ACCOUNT_TYPE_ICONS[type] || CONFIG.ACCOUNT_TYPE_ICONS.default;
   }
 
   function isMainAccount(account) {
     var tags = getAccountTypeTags(account);
-    return tags.includes('main') || (account.name && account.name.toLowerCase().includes('principal'));
+    return tags.indexOf('main') !== -1;
   }
 
   function getExpansionIcon(expKey, isOwned) {
@@ -176,6 +195,11 @@
       console.warn(LOG, 'clipboard error', e);
       window.prompt('Copiar ' + fieldName + ':', text);
     }
+  }
+
+  function getRandomDecorativeIcon() {
+    var randomIndex = Math.floor(Math.random() * CONFIG.DECORATIVE_ICONS.length);
+    return CONFIG.DECORATIVE_ICONS[randomIndex];
   }
 
   // =======================================================================
@@ -303,21 +327,20 @@
       }
       if (filters.type !== 'all') {
         var tags = getAccountTypeTags(acc);
-        if (filters.type === 'main' && !tags.includes('main') && !isMainAccount(acc)) return false;
-        if (filters.type === 'alter' && !tags.includes('alter')) return false;
-        if (filters.type === 'farming' && !tags.includes('farming')) return false;
-        if (filters.type === 'keys' && !tags.includes('keys')) return false;
+        if (filters.type === 'main' && tags.indexOf('main') === -1) return false;
+        if (filters.type === 'alter' && tags.indexOf('alter') === -1) return false;
+        if (filters.type === 'f2p' && tags.indexOf('f2p') === -1) return false;
       }
       if (filters.tag !== 'all') {
         var accTags = getAccountTypeTags(acc);
-        if (!accTags.includes(filters.tag)) return false;
+        if (accTags.indexOf(filters.tag) === -1) return false;
       }
       return true;
     });
   }
 
   // =======================================================================
-  // 6. RENDERIZADO DE TARJETA (idéntico a versión anterior)
+  // 6. RENDERIZADO DE TARJETA CON ICONOS DE UI
   // =======================================================================
   function renderAccountCard(acc) {
     var login = acc.login || {};
@@ -327,15 +350,49 @@
     var tags = getAccountTypeTags(acc);
     var isMain = isMainAccount(acc);
     var showPass = state.showPasswords[acc.id] || false;
-    var isExpanded = state.expandedAccounts[acc.id] || false;
 
-    var accountIcon = CONFIG.ACCOUNT_ICON;
+    // Estados de secciones colapsables
+    var expandedSections = state.expandedAccounts[acc.id] || {};
+    var showCredentials = expandedSections.credentials || false;
+    var showAdvanced = expandedSections.advanced || false;
+    var showExpansions = expandedSections.expansions || false;
+    var showServicesApi = expandedSections.servicesApi || false;
 
-    var tagBadges = tags.map(function(t) {
-      var icon = t === 'main' ? '⭐' : (t === 'alter' ? '🧪' : (t === 'farming' ? '🌾' : (t === 'keys' ? '🔑' : (t === 'f2p' ? '🆓' : '🏷️'))));
-      return '<span class="badge badge--info" style="font-size: 0.7rem; padding: 2px 6px;">' + icon + ' ' + t + '</span>';
-    }).join('');
+    // 1. ICONO DECORATIVO (izquierda) - SIEMPRE ALEATORIO
+    var decorativeIcon = getRandomDecorativeIcon();
+    
+    // 2. TIPO DE CUENTA (excluyente) - main, alter, f2p
+    var accountType = null;
+    if (tags.indexOf('main') !== -1) {
+      accountType = 'main';
+    } else if (tags.indexOf('alter') !== -1) {
+      accountType = 'alter';
+    } else if (tags.indexOf('f2p') !== -1) {
+      accountType = 'f2p';
+    }
+    
+    var typeIconHtml = '';
+    if (accountType && CONFIG.TYPE_ICONS[accountType]) {
+      typeIconHtml = '<img src="' + CONFIG.TYPE_ICONS[accountType] + '" width="20" height="20" alt="' + accountType + '" title="' + accountType + '" style="filter: brightness(0.9); margin-left: 4px; cursor: help;">';
+    }
+    
+    // 3. TAGS ADICIONALES (combinables) - farming, keys, weekly, taxi
+    var tagIconsHtml = '';
+    var tagOrder = ['farming', 'keys', 'weekly', 'taxi'];
+    for (var i = 0; i < tagOrder.length; i++) {
+      var tag = tagOrder[i];
+      if (tags.indexOf(tag) !== -1 && CONFIG.TAG_ICONS[tag]) {
+        tagIconsHtml += '<img src="' + CONFIG.TAG_ICONS[tag] + '" width="20" height="20" alt="' + tag + '" title="' + tag + '" style="filter: brightness(0.9); margin-left: 4px; cursor: help;">';
+      }
+    }
+    
+    // Unir todos los iconos de la derecha
+    var rightIcons = typeIconHtml + tagIconsHtml;
 
+    var passwordDisplay = showPass ? esc(login.password || '—') : '••••••••';
+    var gmailPassDisplay = showPass ? esc(login.gmailPassword || '—') : '••••••••';
+
+    // Expansiones
     var expOrder = ['core', 'heroic', 'heartOfThorns', 'pathOfFire', 'endOfDragons', 'secretsOfTheObscure', 'janthirWilds', 'visionsOfEternity'];
     var expIcons = [];
     expOrder.forEach(function(key) {
@@ -344,6 +401,7 @@
       }
     });
 
+    // Servicios
     var serviceIcons = [];
     if (services.twitch && services.twitch.linked) {
       serviceIcons.push('<img src="' + CONFIG.ICONS.twitch + '" width="20" height="20" title="Twitch: @' + esc(services.twitch.username || '') + '">');
@@ -352,71 +410,93 @@
       serviceIcons.push('<img src="' + CONFIG.ICONS.geforce + '" width="20" height="20" title="GeForce Now vinculado">');
     }
 
-    var passwordDisplay = showPass ? esc(login.password || '—') : '••••••••';
-    var gmailPassDisplay = showPass ? esc(login.gmailPassword || '—') : '••••••••';
-
-    var moreInfoHtml = '';
-    if (isExpanded) {
-      moreInfoHtml = `
-        <div class="wallet-card__more-info" style="margin-top: 12px; padding-top: 8px; border-top: 1px solid #2a2c35;">
-          <div style="display: flex; gap: 16px; flex-wrap: wrap;">
-            <span><strong>📦 Mochilas:</strong> ${gw2.bagSlots || '—'}</span>
-            <span><strong>🏦 Bancos:</strong> ${gw2.bankSlots || '—'}</span>
-            <span><strong>🧪 Material:</strong> ${gw2.materialStorage || '—'}</span>
-            <span><strong>🎖️ Legendarias:</strong> ${gw2.legendaries || 0}</span>
-            ${gw2.level80 !== undefined ? `<span><strong>⚔️ Nivel 80:</strong> ${gw2.level80 ? '✅ Sí' : '❌ No'}</span>` : ''}
+    // Función para sección colapsable con iconos de chevron
+    function renderCollapsibleSection(title, iconSrc, sectionKey, isOpen, contentHtml) {
+      var chevronIcon = isOpen ? CONFIG.CARD_ICONS.chevronDown : CONFIG.CARD_ICONS.chevronRight;
+      return `
+        <div style="margin-top: 12px; border-top: 1px solid #2a2c35; padding-top: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;" data-toggle-section="${acc.id}" data-section="${sectionKey}">
+            <img src="${chevronIcon}" width="12" height="12" alt="" style="filter: brightness(0.9);">
+            <img src="${iconSrc}" width="16" height="16" alt="" style="filter: brightness(0.9);">
+            <span style="font-weight: 600; font-size: 0.85rem;">${title}</span>
+          </div>
+          <div id="section-${acc.id}-${sectionKey}" style="${isOpen ? '' : 'display: none;'} margin-top: 8px; padding-left: 24px;">
+            ${contentHtml}
           </div>
         </div>
       `;
     }
 
+    // Contenido de secciones con iconos
+    var credentialsHtml = `
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div><img src="${CONFIG.CARD_ICONS.lock}" width="16" height="16" style="vertical-align: middle;"> <strong>Contraseña:</strong> 
+          <span style="font-family: monospace; cursor: pointer; text-decoration: underline dotted;" data-copy="${esc(login.password || '')}" data-field="Contraseña">${passwordDisplay}</span>
+          <button class="btn-ghost toggle-password" data-id="${acc.id}" style="padding: 2px 4px; font-size: 12px;">👁️</button>
+        </div>
+        ${login.gmailPassword ? `<div><img src="${CONFIG.CARD_ICONS.gmailPass}" width="16" height="16" style="vertical-align: middle;"> <strong>Gmail Pass:</strong> 
+          <span style="font-family: monospace; cursor: pointer; text-decoration: underline dotted;" data-copy="${esc(login.gmailPassword)}" data-field="Gmail Pass">${gmailPassDisplay}</span>
+        </div>` : ''}
+      </div>
+    `;
+
+    var advancedHtml = `
+      <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+        <span><img src="${CONFIG.CARD_ICONS.character}" width="16" height="16" style="vertical-align: middle;"> <strong>Chars:</strong> ${gw2.characterSlots || gw2.characterCount || '—'}</span>
+        <span><img src="${CONFIG.CARD_ICONS.bag}" width="16" height="16" style="vertical-align: middle;"> <strong>Mochilas:</strong> ${gw2.bagSlots || '—'}</span>
+        <span><img src="${CONFIG.CARD_ICONS.bank}" width="16" height="16" style="vertical-align: middle;"> <strong>Bancos:</strong> ${gw2.bankSlots || '—'}</span>
+        <span><img src="${CONFIG.CARD_ICONS.material}" width="16" height="16" style="vertical-align: middle;"> <strong>Material:</strong> ${gw2.materialStorage || '—'}</span>
+        <span><img src="${CONFIG.CARD_ICONS.medal}" width="16" height="16" style="vertical-align: middle;"> <strong>Legendarias:</strong> ${gw2.legendaries || 0}</span>
+        ${gw2.level80 !== undefined ? `<span><img src="${CONFIG.CARD_ICONS.sword}" width="16" height="16" style="vertical-align: middle;"> <strong>Nivel 80:</strong> ${gw2.level80 ? '✅ Sí' : '❌ No'}</span>` : ''}
+      </div>
+    `;
+
+    var expansionsHtml = `
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+        ${expIcons.length ? expIcons.join(' ') : '<span class="muted">—</span>'}
+      </div>
+    `;
+
+    var servicesApiHtml = `
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        ${serviceIcons.length ? `<div><img src="${CONFIG.CARD_ICONS.services}" width="16" height="16" style="vertical-align: middle;"> <strong>Servicios:</strong> ${serviceIcons.join(' ')}</div>` : ''}
+        ${acc.apiKey ? `<div><img src="${CONFIG.CARD_ICONS.apiKey}" width="16" height="16" style="vertical-align: middle;"> <strong>API Key:</strong> <code>${esc(acc.apiKey.value || acc.apiKey)}</code></div>` : ''}
+      </div>
+    `;
+
     return '' +
       '<article class="wallet-card" style="' + (isMain ? 'border-left: 3px solid #ffd966;' : '') + '">' +
         '<div class="wallet-card__top">' +
           '<div class="wallet-card__iconWrap">' +
-            '<img src="' + accountIcon + '" width="30" height="30" alt="Cuenta" loading="lazy">' +
+            '<img src="' + decorativeIcon + '" width="30" height="30" alt="Cuenta" loading="lazy" style="filter: brightness(0.9);">' +
           '</div>' +
-          '<div class="wallet-card__name" style="font-weight: 700; cursor: pointer;" data-account-id="' + acc.id + '" data-toggle-expand>' + esc(acc.name || 'Cuenta') + '</div>' +
-          '<div class="wallet-card__meta" style="justify-content: flex-end;">' + tagBadges + '</div>' +
+          '<div class="wallet-card__name" style="font-weight: 700; cursor: pointer;" data-account-id="' + acc.id + '" data-toggle-expand-name>' + esc(acc.name || 'Cuenta') + '</div>' +
+          '<div class="wallet-card__meta" style="justify-content: flex-end; display: flex; align-items: center; gap: 2px;">' +
+            rightIcons +
+          '</div>' +
         '</div>' +
 
         '<div class="wallet-sep"></div>' +
 
         '<div class="wallet-card__body">' +
           '<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">' +
-            '<div><img src="' + CONFIG.ICONS.gmail + '" width="16" height="16" style="vertical-align: middle;"> <strong>Email:</strong> ' +
+            '<div><img src="' + CONFIG.CARD_ICONS.email + '" width="16" height="16" style="vertical-align: middle;"> <strong>Email:</strong> ' +
               '<span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.email || '') + '" data-field="Email">' + esc(login.email || '—') + '</span>' +
             '</div>' +
-            '<div><img src="' + CONFIG.ICONS.lock + '" width="16" height="16" style="vertical-align: middle;"> <strong>Contraseña:</strong> ' +
-              '<span style="font-family: monospace; cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.password || '') + '" data-field="Contraseña">' + passwordDisplay + '</span> ' +
-              '<button class="btn-ghost toggle-password" data-id="' + acc.id + '" style="padding: 2px 4px; font-size: 12px;">👁️</button>' +
-            '</div>' +
           '</div>' +
 
-          (login.gmailPassword ? '<div style="margin-top: 6px;"><img src="' + CONFIG.ICONS.googlePass + '" width="16" height="16" style="vertical-align: middle;"> <strong>Gmail Pass:</strong> ' +
-            '<span style="font-family: monospace; cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.gmailPassword) + '" data-field="Gmail Pass">' + gmailPassDisplay + '</span>' +
-          '</div>' : '') +
-
-          '<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px;">' +
-            '<div><strong>🎮 GW2 ID:</strong> ' + esc(gw2.accountName || '—') + '</div>' +
-            '<div><strong>📅 Creación:</strong> ' + formatDate(gw2.created) + ' (' + formatAgeDays(gw2.created) + ')</div>' +
-            '<div><strong>🏆 AP:</strong> ' + fmtNumber(gw2.achievementPoints) + '</div>' +
+          '<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 8px;">' +
+            '<div><img src="' + CONFIG.CARD_ICONS.gw2id + '" width="16" height="16" style="vertical-align: middle;"> <strong>GW2 ID:</strong> ' + esc(gw2.accountName || '—') + '</div>' +
+            '<div><img src="' + CONFIG.CARD_ICONS.calendar + '" width="16" height="16" style="vertical-align: middle;"> <strong>Creación:</strong> ' + formatDate(gw2.created) + ' (' + formatAgeDays(gw2.created) + ')</div>' +
+            '<div><img src="' + CONFIG.CARD_ICONS.trophy + '" width="16" height="16" style="vertical-align: middle;"> <strong>AP:</strong> ' + fmtNumber(gw2.achievementPoints) + '</div>' +
           '</div>' +
 
-          '<div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; align-items: center;">' +
-            '<strong>📀 Expansiones:</strong> ' + (expIcons.length ? expIcons.join(' ') : '<span class="muted">—</span>') +
-          '</div>' +
+          renderCollapsibleSection('Credenciales', CONFIG.CARD_ICONS.lock, 'credentials', showCredentials, credentialsHtml) +
+          renderCollapsibleSection('GW2 Avanzado', CONFIG.CARD_ICONS.character, 'advanced', showAdvanced, advancedHtml) +
+          (expIcons.length ? renderCollapsibleSection('Expansiones', CONFIG.ICONS.expansions.core, 'expansions', showExpansions, expansionsHtml) : '') +
+          ((serviceIcons.length || acc.apiKey) ? renderCollapsibleSection('Servicios y API', CONFIG.CARD_ICONS.services, 'servicesApi', showServicesApi, servicesApiHtml) : '') +
 
-          (serviceIcons.length ? '<div style="display: flex; gap: 8px; margin-top: 8px;"><strong>🔌 Servicios:</strong> ' + serviceIcons.join(' ') + '</div>' : '') +
-
-          (acc.apiKey ? '<div style="margin-top: 8px;"><strong>🔑 API Key:</strong> <code>' + esc(acc.apiKey.value || acc.apiKey) + '</code></div>' : '') +
-
-          (acc.notes ? '<div style="margin-top: 8px; color: #a0a0a6;"><strong>📝 Notas:</strong> ' + esc(acc.notes) + '</div>' : '') +
-
-          '<div style="margin-top: 8px;">' +
-            '<button class="btn-ghost btn--xs toggle-more-info" data-id="' + acc.id + '" style="font-size: 11px; padding: 2px 6px;">' + (isExpanded ? '📂 Menos info' : '📁 Más info') + '</button>' +
-            moreInfoHtml +
-          '</div>' +
+          (acc.notes ? '<div style="margin-top: 12px; color: #a0a0a6; display: flex; align-items: center; gap: 6px;"><img src="' + CONFIG.CARD_ICONS.note + '" width="16" height="16" alt=""><strong>Notas:</strong> ' + esc(acc.notes) + '</div>' : '') +
         '</div>' +
       '</article>';
   }
@@ -429,6 +509,7 @@
     container.style.display = 'grid';
     container.innerHTML = accounts.map(renderAccountCard).join('');
 
+    // Toggle password
     document.querySelectorAll('.toggle-password').forEach(function(btn) {
       if (btn.__wired) return;
       btn.__wired = true;
@@ -440,28 +521,47 @@
       });
     });
 
-    document.querySelectorAll('.toggle-more-info').forEach(function(btn) {
-      if (btn.__wiredMore) return;
-      btn.__wiredMore = true;
-      btn.addEventListener('click', function(e) {
+    // Toggle secciones colapsables
+    document.querySelectorAll('[data-toggle-section]').forEach(function(el) {
+      if (el.__wiredSection) return;
+      el.__wiredSection = true;
+      el.addEventListener('click', function(e) {
         e.stopPropagation();
-        var id = btn.getAttribute('data-id');
-        state.expandedAccounts[id] = !state.expandedAccounts[id];
+        var id = el.getAttribute('data-toggle-section');
+        var section = el.getAttribute('data-section');
+        var current = state.expandedAccounts[id] || {};
+        current[section] = !current[section];
+        state.expandedAccounts[id] = current;
         renderList();
       });
     });
 
-    document.querySelectorAll('[data-toggle-expand]').forEach(function(el) {
-      if (el.__wiredExpand) return;
-      el.__wiredExpand = true;
+    // Click en nombre para expandir/colapsar todo
+    document.querySelectorAll('[data-toggle-expand-name]').forEach(function(el) {
+      if (el.__wiredName) return;
+      el.__wiredName = true;
       el.addEventListener('click', function(e) {
         e.stopPropagation();
         var id = el.getAttribute('data-account-id');
-        state.expandedAccounts[id] = !state.expandedAccounts[id];
+        var current = state.expandedAccounts[id] || {};
+        var allClosed = !current.credentials && !current.advanced && !current.expansions && !current.servicesApi;
+        if (allClosed) {
+          current.credentials = true;
+          current.advanced = true;
+          current.expansions = true;
+          current.servicesApi = true;
+        } else {
+          current.credentials = false;
+          current.advanced = false;
+          current.expansions = false;
+          current.servicesApi = false;
+        }
+        state.expandedAccounts[id] = current;
         renderList();
       });
     });
 
+    // Copiar al portapapeles
     document.querySelectorAll('[data-copy]').forEach(function(el) {
       if (el.__wiredCopy) return;
       el.__wiredCopy = true;
@@ -482,29 +582,54 @@
     var login = acc.login || {};
     var gw2 = acc.gw2 || {};
     var tags = getAccountTypeTags(acc);
-    var accountIcon = CONFIG.ACCOUNT_ICON;
-    var isExpanded = state.expandedAccounts[acc.id] || false;
+    var decorativeIcon = getRandomDecorativeIcon();
+    var isExpanded = state.expandedAccounts[acc.id] ? Object.keys(state.expandedAccounts[acc.id]).length > 0 : false;
 
     var showPass = state.showPasswords[acc.id] || false;
     var passwordDisplay = showPass ? esc(login.password || '—') : '••••••••';
     var gmailPassDisplay = showPass ? esc(login.gmailPassword || '—') : '••••••••';
 
+    // Tipo de cuenta para tabla
+    var accountType = null;
+    if (tags.indexOf('main') !== -1) {
+      accountType = 'main';
+    } else if (tags.indexOf('alter') !== -1) {
+      accountType = 'alter';
+    } else if (tags.indexOf('f2p') !== -1) {
+      accountType = 'f2p';
+    }
+    
+    var typeIconHtml = '';
+    if (accountType && CONFIG.TYPE_ICONS[accountType]) {
+      typeIconHtml = '<img src="' + CONFIG.TYPE_ICONS[accountType] + '" width="16" height="16" alt="' + accountType + '" title="' + accountType + '" style="filter: brightness(0.9); margin-left: 4px; cursor: help;">';
+    }
+    
+    // Tags adicionales para tabla
+    var tagIconsHtml = '';
+    var tagOrder = ['farming', 'keys', 'weekly', 'taxi'];
+    for (var i = 0; i < tagOrder.length; i++) {
+      var tag = tagOrder[i];
+      if (tags.indexOf(tag) !== -1 && CONFIG.TAG_ICONS[tag]) {
+        tagIconsHtml += '<img src="' + CONFIG.TAG_ICONS[tag] + '" width="16" height="16" alt="' + tag + '" title="' + tag + '" style="filter: brightness(0.9); margin-left: 4px; cursor: help;">';
+      }
+    }
+    
+    var rightIcons = typeIconHtml + tagIconsHtml;
+
     return '' +
       '<tr data-id="' + acc.id + '" style="' + (isMainAccount(acc) ? 'background: rgba(255,217,102,0.08);' : '') + '">' +
-        '<td><img src="' + accountIcon + '" width="24" height="24" alt=""><\/td>' +
-        '<td>' +
-          '<strong style="cursor: pointer;" data-toggle-expand-table data-id="' + acc.id + '">' + esc(acc.name || 'Cuenta') + '</strong>' +
+        '}<img src="' + decorativeIcon + '" width="24" height="24" alt=""><\/td>' +
+        '}<strong style="cursor: pointer;" data-toggle-expand-table data-id="' + acc.id + '">' + esc(acc.name || 'Cuenta') + '</strong>' +
           (isExpanded ? '<div class="muted" style="font-size: 11px; margin-top: 4px;">' + (acc.notes || '') + '</div>' : '') +
         '<\/td>' +
-        '<td>' +
-          '<div><span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.email || '') + '" data-field="Email">' + esc(login.email || '—') + '</span></div>' +
-          '<div class="muted" style="font-size: 11px;">Pass: <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.password || '') + '" data-field="Contraseña">' + passwordDisplay + '</span> <button class="btn-ghost toggle-password" data-id="' + acc.id + '" style="padding: 0 4px;">👁️</button></div>' +
-          (login.gmailPassword ? '<div class="muted" style="font-size: 11px;">Gmail: <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.gmailPassword) + '" data-field="Gmail Pass">' + gmailPassDisplay + '</span></div>' : '') +
+        '}<div><img src="' + CONFIG.CARD_ICONS.email + '" width="14" height="14" style="vertical-align: middle;"> <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.email || '') + '" data-field="Email">' + esc(login.email || '—') + '</span></div>' +
+          '<div class="muted" style="font-size: 11px;"><img src="' + CONFIG.CARD_ICONS.lock + '" width="12" height="12" style="vertical-align: middle;"> Pass: <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.password || '') + '" data-field="Contraseña">' + passwordDisplay + '</span> <button class="btn-ghost toggle-password" data-id="' + acc.id + '" style="padding: 0 4px;">👁️</button></div>' +
+          (login.gmailPassword ? '<div class="muted" style="font-size: 11px;"><img src="' + CONFIG.CARD_ICONS.gmailPass + '" width="12" height="12" style="vertical-align: middle;"> Gmail: <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.gmailPassword) + '" data-field="Gmail Pass">' + gmailPassDisplay + '</span></div>' : '') +
         '<\/td>' +
-        '<td>' + esc(gw2.accountName || '—') + '<\/td>' +
-        '<td class="right">' + fmtNumber(gw2.achievementPoints) + '<\/td>' +
-        '<td class="right">' + (gw2.legendaries || 0) + '<\/td>' +
-        '<td>' + tags.map(function(t) { return '<span class="badge badge--info" style="font-size: 0.6rem;">' + t + '</span>'; }).join(' ') + '<\/td>' +
+        '}<img src="' + CONFIG.CARD_ICONS.gw2id + '" width="14" height="14" style="vertical-align: middle;"> ' + esc(gw2.accountName || '—') + '<\/td>' +
+        '<td class="right"><img src="' + CONFIG.CARD_ICONS.trophy + '" width="14" height="14" style="vertical-align: middle;"> ' + fmtNumber(gw2.achievementPoints) + '<\/td>' +
+        '<td class="right"><img src="' + CONFIG.CARD_ICONS.medal + '" width="14" height="14" style="vertical-align: middle;"> ' + (gw2.legendaries || 0) + '<\/td>' +
+        '}<div style="display: flex; align-items: center; gap: 2px;">' + rightIcons + '<\/div><\/td>' +
       '<\/tr>';
   }
 
@@ -549,7 +674,13 @@
       el.addEventListener('click', function(e) {
         e.stopPropagation();
         var id = el.getAttribute('data-id');
-        state.expandedAccounts[id] = !state.expandedAccounts[id];
+        var current = state.expandedAccounts[id] || {};
+        var isExpanded = Object.keys(current).length > 0;
+        if (isExpanded) {
+          state.expandedAccounts[id] = {};
+        } else {
+          state.expandedAccounts[id] = { credentials: true, advanced: true, expansions: true, servicesApi: true };
+        }
         renderList();
       });
     });
@@ -576,8 +707,8 @@
       return;
     }
     var total = accounts.length;
-    var mains = accounts.filter(function(a) { return isMainAccount(a); }).length;
-    var alters = accounts.filter(function(a) { return getAccountTypeTags(a).includes('alter'); }).length;
+    var mains = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('main') !== -1; }).length;
+    var alters = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('alter') !== -1; }).length;
     var totalAP = accounts.reduce(function(sum, a) { return sum + (a.gw2 && a.gw2.achievementPoints || 0); }, 0);
     var totalLegendaries = accounts.reduce(function(sum, a) { return sum + (a.gw2 && a.gw2.legendaries || 0); }, 0);
     
@@ -605,7 +736,18 @@
     });
 
     var tagOptions = Array.from(allTags).sort().map(function(tag) {
-      return '<option value="' + tag + '" ' + (state.filters.tag === tag ? 'selected' : '') + '>' + tag.charAt(0).toUpperCase() + tag.slice(1) + '</option>';
+      var iconMap = {
+        main: CONFIG.TYPE_ICONS.main,
+        alter: CONFIG.TYPE_ICONS.alter,
+        f2p: CONFIG.TYPE_ICONS.f2p,
+        farming: CONFIG.TAG_ICONS.farming,
+        keys: CONFIG.TAG_ICONS.keys,
+        weekly: CONFIG.TAG_ICONS.weekly,
+        taxi: CONFIG.TAG_ICONS.taxi
+      };
+      var iconSrc = iconMap[tag] || CONFIG.DECORATIVE_ICONS[0];
+      var displayName = tag.charAt(0).toUpperCase() + tag.slice(1);
+      return '<option value="' + tag + '" ' + (state.filters.tag === tag ? 'selected' : '') + '><img src="' + iconSrc + '" width="14" height="14" style="vertical-align: middle;"> ' + displayName + '</option>';
     }).join('');
 
     container.innerHTML = '' +
@@ -616,10 +758,9 @@
         '<div class="chip">' +
           '<select id="accountsTypeFilter">' +
             '<option value="all"' + (state.filters.type === 'all' ? ' selected' : '') + '>Todos los tipos</option>' +
-            '<option value="main"' + (state.filters.type === 'main' ? ' selected' : '') + '>⭐ Principales</option>' +
-            '<option value="alter"' + (state.filters.type === 'alter' ? ' selected' : '') + '>🧪 Alternativas</option>' +
-            '<option value="farming"' + (state.filters.type === 'farming' ? ' selected' : '') + '>🌾 Farming</option>' +
-            '<option value="keys"' + (state.filters.type === 'keys' ? ' selected' : '') + '>🔑 Llaves</option>' +
+            '<option value="main"' + (state.filters.type === 'main' ? ' selected' : '') + '><img src="' + CONFIG.TYPE_ICONS.main + '" width="14" height="14" style="vertical-align: middle;"> Principales</option>' +
+            '<option value="alter"' + (state.filters.type === 'alter' ? ' selected' : '') + '><img src="' + CONFIG.TYPE_ICONS.alter + '" width="14" height="14" style="vertical-align: middle;"> Alternativas</option>' +
+            '<option value="f2p"' + (state.filters.type === 'f2p' ? ' selected' : '') + '><img src="' + CONFIG.TYPE_ICONS.f2p + '" width="14" height="14" style="vertical-align: middle;"> Free to Play</option>' +
           '</select>' +
         '</div>' +
         (tagOptions ? '<div class="chip"><select id="accountsTagFilter"><option value="all">Todos los tags</option>' + tagOptions + '</select></div>' : '') +
@@ -1178,7 +1319,10 @@
         body.innerHTML = `
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
             <div class="muted">📁 Archivo: <strong>${esc(state.fileName)}</strong></div>
-            <button id="accountsChangeFileBtn" class="btn btn--ghost btn--xs">Cambiar archivo</button>
+            <button id="accountsChangeFileBtn" class="btn btn--ghost btn--xs" style="display: inline-flex; align-items: center; gap: 4px;">
+              <img src="assets/icons/Welcome/102353.png" width="14" height="14" alt="" style="filter: brightness(0.9);">
+              Cambiar archivo
+            </button>
           </div>
           <div id="accountsStats"></div>
           <div id="accountsFilters"></div>
@@ -1251,7 +1395,7 @@
       if (state.inited) return;
       ensurePanel();
       state.inited = true;
-      console.info(LOG, 'ready v1.3.1 — Asistente de cuentas integrado, acceso a cuentas intacto');
+      console.info(LOG, 'ready v1.6.0 — Todos los emojis reemplazados por imágenes');
     },
     activate: activate,
     deactivate: deactivate,
