@@ -9,6 +9,47 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [5.7.0] - 2026-03-28
+
+### Added
+- **Sistema de Backup/Restaurar (settings-manager.js v1.0.1)**:
+  - Exportación completa de configuración a archivo JSON
+  - Importación con validación de versión y confirmación de sobrescritura
+  - Botones "Backup" (`assets/icons/155034.png`) y "Restaurar" (`assets/icons/155033.png`) en utilbar
+  - Datos exportados: API Keys, Wizard's Vault (pins y marcas), Wallet (pins, snapshots, vista compacta), Activities (toggles, home nodes), Characters (POIs, ubicaciones), Meta (favoritos, hecho hoy), configuración global (`gn_welcome_seen`)
+  - Formato JSON versión 3.0 con timestamp de exportación
+- **Header compacto**:
+  - Altura reducida de ~140px a ~60px
+  - Logo + nombre en una sola línea con tipografía Cinzel Decorative
+  - Eliminación del hero y tabs (navegación ahora solo en sidebar)
+  - Responsive: en móvil se apila verticalmente
+- **Mejoras en Cámara del Brujo (WV)**:
+  - Reemplazo de texto largo por ícono `assets/icons/155018.png` con tooltip
+  - Ícono ubicado junto al título "Cámara del Brujo"
+- **Iconos de redes sociales en utilbar**:
+  - Discord: `assets/icons/Welcome/discord.png`
+  - Instagram: `assets/icons/Welcome/instagram.png`
+  - YouTube: `assets/icons/Welcome/youtube.png`
+  - Twitch: `assets/icons/Welcome/twitchlogo.png`
+  - GitHub: `assets/icons/Welcome/github.png` (nuevo)
+
+### Changed
+- **settings-manager.js v1.0.1**:
+  - Corrección de claves de localStorage para API Keys: ahora usa `gw2_keys` y `gw2_selected_key_v1`
+  - Mejora en logs de depuración
+- **index.html**:
+  - Header compacto con nueva estructura
+  - Botones Backup/Restaurar en utilbar
+  - Reemplazo de SVGs de redes sociales por imágenes locales
+  - Tooltip WV con ícono `155018.png`
+- **Archivos de documentación**: README.md, ONBOARDING.md actualizados a v5.7.0
+
+### Fixed
+- **Desborde de sidebar en WV**: corregido con estilos de contención y reubicación del ícono de información
+- **Header pisando contenido**: resuelto con header compacto
+
+---
+
 ## [5.6.0] - 2026-03-28
 
 ### Added
