@@ -1,7 +1,4 @@
-Tienes toda la razón. Me disculpo. Voy a integrar las mejoras del Panel de Cuentas manteniendo TODO el contenido original del README, solo actualizando las secciones relevantes.
-
----
-
+```markdown
 # 🐈‍⬛ Bóveda del Gato Negro — GW2 Wallet & MetaEventos
 
 Aplicación liviana para Guild Wars 2 que permite consultar:
@@ -19,19 +16,28 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 - 📊 Detalle de compras Wizard’s Vault — KPIs de Aclamación Astral
 - 🔐 **Panel de Cuentas** — Gestión segura de múltiples cuentas con cifrado local
 - 🧙 **Pantalla de Bienvenida** — Onboarding y accesos rápidos
+- 💾 **Sistema de Backup/Restaurar** — Exporta/importa toda la configuración entre dispositivos
 
 👉 **Página oficial (Deploy GitHub Pages):**  
 https://pablosnchz.github.io/gw2-wallet-ligero/
 
 ---
 
-## ✨ Novedades principales — v5.6.0
+## ✨ Novedades principales — v5.7.0
 
-### 🧙 Pantalla de Bienvenida (NUEVO)
+### 💾 Sistema de Backup/Restaurar (NUEVO)
+- **Exportación completa**: API Keys, Wizard's Vault (pins y marcas), Wallet (pins, snapshots, vista compacta), Activities (toggles, home nodes), Characters (POIs, ubicaciones), Meta (favoritos, hecho hoy), configuración global
+- **Importación**: validación de versión, confirmación de sobrescritura, recarga automática
+- **Botones en utilbar**: Backup (`assets/icons/155034.png`) y Restaurar (`assets/icons/155033.png`)
+- **Formato JSON**: versión 3.0 con timestamp de exportación
+- **Claves correctas**: usa `gw2_keys` y `gw2_selected_key_v1` para API Keys
+- **Ruta:** botones siempre visibles en la barra superior
+
+### 🧙 Pantalla de Bienvenida
 - Pantalla de inicio que se muestra en primera visita o cuando no hay API key seleccionada
 - **Ruta:** `#/welcome`
 - **Secciones completas**: funcionalidades, API Key, asistente de cuentas, acceso rápido, comunidad, apoyo
-- **Botón home** en el utilbar con ícono local (`assets/icons/ui/home.png`)
+- **Botón home** en el utilbar con ícono local (`assets/icons/Welcome/3380755.png`)
 - **Redirección inteligente**: primera visita o sin key → bienvenida
 - **Flag `gn_welcome_seen`** en localStorage para no mostrar repetidamente
 - **Iconos exclusivos** para cada funcionalidad en la lista (cartera, meta, logros, WV, actividades, personajes, cuentas)
@@ -71,6 +77,8 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 - **Rutas assets**: Eliminada barra inicial `/` para compatibilidad con GitHub Pages
 - **Ícono ojo**: Reemplazo de emoji 👁️ por imagen local `assets/icons/welcome/528726.png` en todos los toggles de contraseña
 - **Check GeForce Now**: Reemplazo de emoji ✅ por imagen local `assets/icons/Welcome/156108.png`
+- **Ícono información**: Reemplazo de texto largo en WV por ícono `assets/icons/155018.png` con tooltip
+- **Redes sociales**: Reemplazo de SVGs por imágenes locales en utilbar (`discord.png`, `instagram.png`, `youtube.png`, `twitchlogo.png`, `github.png`)
 
 ### 🎨 Títulos de paneles con íconos
 | Módulo | Ícono |
@@ -82,7 +90,14 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 | Actividades | `assets/icons/1302773.png` |
 | Personajes | `assets/icons/156678.png` |
 | Cuentas | `assets/icons/Cuentas/GW2free.png` |
-| Bienvenida | `assets/icons/ui/home.png` |
+| Bienvenida | `assets/icons/Welcome/3380755.png` |
+
+### 🧭 Header Compacto
+- **Altura reducida**: ~60px (vs ~140px anterior)
+- **Logo + nombre**: en una sola línea con tipografía Cinzel Decorative
+- **Eliminación de hero**: las tabs del hero ya no son necesarias (la navegación está en sidebar)
+- **Responsive**: en móvil se apila verticalmente
+- **Botones Backup/Restaurar**: siempre visibles junto a las redes sociales
 
 ### 🔑 Detección automática de llave semanal — v3.19.3
 - **Nueva lógica**: busca Thiefs con nivel ≥10, <7 días de antigüedad, **y creados después del último reset semanal** (lunes 07:30 UTC)
@@ -139,6 +154,7 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 - Router robusto con marcado de nav confiable y sidebar contextual correcto
 - Manejo defensivo con try/finally: aunque falle WV internamente, la pastilla y el sidebar se actualizan igual
 - Estructura de WV (objetivos + shop) consolidada, con auto-refresh de tienda, toolbar y persistencias por cuenta
+- **Mejora visual**: reemplazo de texto largo por ícono `155018.png` con tooltip junto al título
 
 ### 💰 Wallet — Rework de tarjetas
 - Reemplazo de estrella por 📌 pin con persistencia por cuenta y migración automática
@@ -185,11 +201,12 @@ Definí en `index.html` (antes de router.js):
 
 ---
 
-## 📦 Archivos clave (v5.6.0)
+## 📦 Archivos clave (v5.7.0)
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
 | `js/accounts-panel.js` | **v1.9.0** | Panel de Cuentas + asistente para crear archivos .enc desde Excel. **Rediseño completo: iconos locales, Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada** |
+| `js/settings-manager.js` | **v1.0.1** | **Sistema de Backup/Restaurar**: exportación/importación completa de configuración (API Keys, WV pins, Wallet, Activities, Characters, Meta, global) |
 | `js/welcome-panel.js` | v1.2.0 | Pantalla de Bienvenida con onboarding, accesos rápidos, comunidad y apoyo |
 | `js/activities.js` | v3.19.3 | Actividades diarias/semanales. **Detección automática de llave semanal** |
 | `js/activities-theme.js` | v2.5.0 | Home Nodes + barra de horarios unificada con iconos GW2 |
@@ -202,7 +219,7 @@ Definí en `index.html` (antes de router.js):
 
 ---
 
-## 🖼️ Assets locales (estructura v5.6.0)
+## 🖼️ Assets locales (estructura v5.7.0)
 
 ```
 assets/icons/
@@ -223,6 +240,9 @@ assets/icons/
 ├── 3240357.png                 # WV PvE
 ├── 3240358.png                 # WV PvP
 ├── 3240359.png                 # WV WvW
+├── 155033.png                  # Importar (Restaurar)
+├── 155034.png                  # Exportar (Backup)
+├── 155018.png                  # Info (tooltip WV)
 ├── ui/
 │   ├── home.png                # Home (utilbar y bienvenida)
 │   ├── utc-icon.png
@@ -256,7 +276,8 @@ assets/icons/
 │   ├── characters-icon.png
 │   ├── accounts-icon.png
 │   ├── 528726.png               # Ícono ojo (toggle contraseñas)
-│   └── 156108.png               # Check GeForce Now
+│   ├── 156108.png               # Check GeForce Now
+│   └── 3380755.png              # Home (nuevo)
 ├── Fractal/
 │   └── 2591.png                # Ícono genérico fractales
 ├── professions/
@@ -299,25 +320,29 @@ assets/icons/
 
 ## 🧪 Cómo probar las novedades
 
-1. **Pantalla de Bienvenida**: Recargar sin API key o limpiar localStorage (`gn_welcome_seen`) → ver bienvenida
-2. **Botón home**: Clic en icono home en utilbar → ir a `#/welcome`
-3. **Panel de Cuentas**: Navegar a `#/account/accounts` → usar asistente para crear archivo .enc
-4. **Asistente de Cuentas**: Abrir modal → seguir 4 pasos con iconos (plantilla Excel incluye columnas twitch_user, twitch_email, twitch_password)
-5. **Twitch en Cuentas**: Cargar archivo .enc con datos Twitch → expandir "Servicios y API" → expandir "Servicios" → ver username (copiable), email (copiable si existe), password (toggle independiente + copiable si existe)
-6. **GeForce Now en Cuentas**: Verificar que el texto "Vinculado" usa imagen local en lugar de emoji ✅
-7. **Iconos de secciones en Cuentas**: Verificar que Credenciales y GW2 Avanzado tienen nuevos iconos, mientras que Contraseña y Chars mantienen los originales
-8. **Barra de estadísticas en Cuentas**: Verificar que los separadores están optimizados y no rompen en zoom 100%
-9. **Detección de llave semanal**: Ver panel de actividades → UI de llave con leyenda "misma semana"
-10. **Barra de horarios**: Navegar a **Actividades** o **Meta & Eventos** → ver barra con iconos GW2 y resets con segundos
-11. **Home Nodes**: Navegar a **Actividades** → sección "Home nodes"
-12. **Personajes**: Navegar a **Personajes** → ver lista, filtros, asignación de POIs
-13. **Íconos de profesión**: Verificar que se cargan desde `assets/icons/professions/`
-14. **Íconos de fractales**: Verificar que todas las tarjetas de fractales usan `2591.png`
-15. **Títulos de paneles**: Verificar que cada panel tiene su ícono correspondiente
-16. **Horarios en Meta**: Abrir horarios de una tarjeta → verificar hora local, color del botón y próximo horario resaltado
-17. **Purchase Detail**: Navegar a **Cámara del Brujo** → botón de detalle de compras → verificar íconos de countdowns locales
-18. **Wallet**: Verificar que las categorías son badges y los glows especiales se mantienen
-19. **Conversor**: Verificar que los íconos de gemas y oro son locales
+1. **Sistema de Backup/Restaurar**: Hacer clic en "Backup" → descargar JSON → cambiar algo → "Restaurar" → confirmar → recarga → verificar que se restauró
+2. **Pantalla de Bienvenida**: Recargar sin API key o limpiar localStorage (`gn_welcome_seen`) → ver bienvenida
+3. **Botón home**: Clic en icono home en utilbar → ir a `#/welcome`
+4. **Header compacto**: Verificar que el header ocupa menos espacio, logo + nombre en una línea, botones visibles
+5. **Redes sociales**: Verificar que los iconos de Discord, Instagram, YouTube, Twitch y GitHub cargan como imágenes locales
+6. **Tooltip WV**: En Cámara del Brujo, pasar mouse sobre el ícono `ⓘ` junto al título → ver mensaje informativo
+7. **Panel de Cuentas**: Navegar a `#/account/accounts` → usar asistente para crear archivo .enc
+8. **Asistente de Cuentas**: Abrir modal → seguir 4 pasos con iconos (plantilla Excel incluye columnas twitch_user, twitch_email, twitch_password)
+9. **Twitch en Cuentas**: Cargar archivo .enc con datos Twitch → expandir "Servicios y API" → expandir "Servicios" → ver username (copiable), email (copiable si existe), password (toggle independiente + copiable si existe)
+10. **GeForce Now en Cuentas**: Verificar que el texto "Vinculado" usa imagen local en lugar de emoji ✅
+11. **Iconos de secciones en Cuentas**: Verificar que Credenciales y GW2 Avanzado tienen nuevos iconos, mientras que Contraseña y Chars mantienen los originales
+12. **Barra de estadísticas en Cuentas**: Verificar que los separadores están optimizados y no rompen en zoom 100%
+13. **Detección de llave semanal**: Ver panel de actividades → UI de llave con leyenda "misma semana"
+14. **Barra de horarios**: Navegar a **Actividades** o **Meta & Eventos** → ver barra con iconos GW2 y resets con segundos
+15. **Home Nodes**: Navegar a **Actividades** → sección "Home nodes"
+16. **Personajes**: Navegar a **Personajes** → ver lista, filtros, asignación de POIs
+17. **Íconos de profesión**: Verificar que se cargan desde `assets/icons/professions/`
+18. **Íconos de fractales**: Verificar que todas las tarjetas de fractales usan `2591.png`
+19. **Títulos de paneles**: Verificar que cada panel tiene su ícono correspondiente
+20. **Horarios en Meta**: Abrir horarios de una tarjeta → verificar hora local, color del botón y próximo horario resaltado
+21. **Purchase Detail**: Navegar a **Cámara del Brujo** → botón de detalle de compras → verificar íconos de countdowns locales
+22. **Wallet**: Verificar que las categorías son badges y los glows especiales se mantienen
+23. **Conversor**: Verificar que los íconos de gemas y oro son locales
 
 ---
 
@@ -329,13 +354,15 @@ assets/icons/
   - Favoritos / Pins
   - Flags "Hecho hoy"
   - Marcas WV
-  - API Keys
+  - API Keys (`gw2_keys`, `gw2_selected_key_v1`)
   - Token seleccionado
   - `gn_home_nodes_marked` (persistencia diaria de recolección)
   - `characters:assignments` (POIs por personaje)
   - `wvpd_icon_url` (ícono de Purchase Detail)
   - `accounts:lastFile` (último archivo cifrado)
   - `gn_welcome_seen` (flag de primera visita)
+  - `walletPins:*`, `walletSnapshot:*`, `walletCompact`
+  - `gn_meta_hecho_hoy:*`, `gn_meta_favs:*`
 
 ---
 
@@ -343,6 +370,7 @@ assets/icons/
 
 Este proyecto sigue **Semantic Versioning** (SemVer).
 
+- `v5.7.0`: **Sistema de Backup/Restaurar + Header compacto + Mejoras WV** — Exportación/importación completa de configuración, header compacto (~60px), iconos de redes sociales locales, tooltip informativo en WV, mejoras visuales generales
 - `v5.6.0`: **Rediseño completo Panel de Cuentas v1.9.0** — Iconos locales (ojo y check GeForce Now como imágenes), Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada, separadores compactos, iconos separados para títulos de secciones vs campos internos
 - `v5.5.0`: **Pantalla de Bienvenida + Panel de Cuentas v1.3.1** — Onboarding, gestión segura de cuentas, asistente Excel → .enc, detección automática de llave semanal con validación de semana actual
 - `v5.4.0`: **Asistente de Cuentas** — Creación de archivos .enc desde Excel, enriquecimiento con API

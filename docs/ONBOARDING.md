@@ -1,7 +1,8 @@
-# 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v5.6)
+```markdown
+# 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v5.7)
 
 Fecha: 2026-03-28
-Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `accounts-panel.js`, `welcome-panel.js`, `*-theme.js`, `app.css`
+Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `accounts-panel.js`, `welcome-panel.js`, `settings-manager.js`, `*-theme.js`, `app.css`
 
 ## 📌 BAI — Bloque de Alineamiento Instantáneo
 
@@ -56,7 +57,76 @@ Bóveda del Gato Negro es una web app vanilla JS modular, sin framework, con foc
 
 Si hay riesgo → advertir antes de generar código.
 
-## 🚀 Novedades v5.6
+## 🚀 Novedades v5.7
+
+### 🆕 Sistema de Backup/Restaurar (settings-manager.js v1.0.1)
+
+Nuevo módulo que permite exportar e importar toda la configuración de la app entre navegadores/dispositivos.
+
+**Características:**
+- **Exportación completa**: API Keys, WV pins, Wallet (pins, snapshots, compact), Activities (toggles, home nodes), Characters (POIs, ubicaciones), Meta (favoritos, hecho hoy), configuración global
+- **Importación**: validación de versión, confirmación de sobrescritura, recarga automática
+- **Botones en utilbar**: Backup (`assets/icons/155034.png`) y Restaurar (`assets/icons/155033.png`)
+- **Formato JSON**: versión 3.0, incluye timestamp de exportación
+
+**Claves de localStorage correctas:**
+- API Keys: `gw2_keys` (lista) y `gw2_selected_key_v1` (seleccionada)
+- WV: `wv:season:*` y `wv:season:index`
+- Wallet: `walletPins:*`, `walletSnapshot:*`, `walletCompact`
+- Activities: `gn_activities_toggles`, `gn_home_nodes_marked`
+- Characters: `characters:assignments:*`, `characters:location_history:*`
+- Meta: `gn_meta_hecho_hoy:*`, `gn_meta_favs:*`
+- Global: `gn_welcome_seen`
+
+### 🆕 Header Compacto (index.html)
+
+Rediseño del header para optimizar el espacio vertical:
+
+- **Altura reducida**: ~60px (vs ~140px anterior)
+- **Logo + nombre**: en una sola línea con tipografía Cinzel Decorative
+- **Eliminación de hero**: las tabs del hero ya no son necesarias (la navegación está en sidebar)
+- **Responsive**: en móvil se apila verticalmente
+
+**Estructura:**
+```html
+<header class="an-header an-header--compact">
+  <div class="an-utilbar">
+    <div class="an-util-left">
+      <div class="brand-compact">
+        <img class="brand-logo-compact" src="assets/logo-gato-negro.png">
+        <span class="brand-name">Bóveda del Gato Negro</span>
+      </div>
+      <!-- enlaces y selector de API Key -->
+    </div>
+    <div class="an-util-right">
+      <!-- botones Backup/Restaurar + redes sociales -->
+    </div>
+  </div>
+</header>
+```
+
+### 🆕 Mejoras en Cámara del Brujo (WV)
+
+- **Tooltip informativo**: Reemplazo del texto largo por ícono `assets/icons/155018.png` con tooltip, ubicado junto al título "Cámara del Brujo"
+- **CSS de contención**: Estilos para evitar desbordes del panel
+
+```html
+<span id="wvSyncNote" class="wv-sync-tip" title="Los endpoints de objetivos de Wizard's Vault solo se actualizan después de que el jugador ha iniciado sesión en el juego.">
+  <img src="assets/icons/155018.png" width="20" height="20" alt="Info">
+</span>
+```
+
+### 🆕 Iconos de redes sociales en utilbar
+
+Reemplazo de SVGs por imágenes locales para consistencia visual:
+
+| Red | Imagen |
+|-----|--------|
+| Discord | `assets/icons/Welcome/discord.png` |
+| Instagram | `assets/icons/Welcome/instagram.png` |
+| YouTube | `assets/icons/Welcome/youtube.png` |
+| Twitch | `assets/icons/Welcome/twitchlogo.png` |
+| GitHub | `assets/icons/Welcome/github.png` (nuevo) |
 
 ### 🆕 Pantalla de Bienvenida (welcome-panel.js v1.2.0)
 
@@ -79,8 +149,8 @@ Nueva pantalla de inicio que se muestra en primera visita o cuando no hay API ke
 - Usuario puede navegar manualmente a `#/welcome` desde el botón home
 
 **Botón home en utilbar:**
-- Icono `assets/icons/ui/home.png`
-- Ubicado al inicio del utilbar (antes de "Wiki GW2")
+- Icono `assets/icons/Welcome/3380755.png`
+- Ubicado al inicio del utilbar
 - Lleva a `#/welcome`
 
 ### 🆕 Asistente de Cuentas (accounts-panel.js v1.3.1)
@@ -321,7 +391,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 - `#/account/accounts` — Cuentas
 - `#/welcome` — Pantalla de Bienvenida
 
-## 🧩 Responsabilidades por archivo (Consolidado v5.6)
+## 🧩 Responsabilidades por archivo (Consolidado v5.7)
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
@@ -335,6 +405,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/activities-theme.js` | v2.5.0 | Home Nodes + barra de horarios unificada con iconos GW2 |
 | `js/characters.js` | v2.3.0 | Personajes: lista, ubicación, POIs, rangos PvP/WvW. **Íconos profesión locales** |
 | `js/accounts-panel.js` | **v1.9.0** | **Panel de Cuentas**: gestión segura + asistente para creación de archivos .enc desde Excel. **Rediseño completo con iconos locales, Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada** |
+| `js/settings-manager.js` | **v1.0.1** | **Sistema de Backup/Restaurar**: exportación/importación completa de configuración (API Keys, WV pins, Wallet, Activities, Characters, Meta, global) |
 | `js/welcome-panel.js` | v1.2.0 | **Pantalla de Bienvenida**: onboarding, accesos rápidos, enlaces comunitarios y apoyo |
 | `js/router.js` | v2.10.6 | Router con prefetch, guardas, navegación por hash, mapeo de vistas. **Incluye rutas #/account/accounts y #/welcome, redirección inicial** |
 | `js/wv-purchase-detail.js` | v1.8.6 | Detalle de compras, dashboard AA, top pendientes, **íconos countdowns locales** |
@@ -343,7 +414,62 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/*-theme.js` | varios | Glows, colores, estilos temáticos por módulo |
 | `js/meta-theme.js` | v1.3.1 | Barra de horarios unificada + mejora de horarios en tarjetas |
 
-## ✅ NUEVO js/welcome-panel.js — Pantalla de Bienvenida (v1.2.0)
+## ✅ NUEVO js/settings-manager.js — Sistema de Backup/Restaurar (v1.0.1)
+
+### Resumen
+
+Módulo que permite exportar e importar toda la configuración de la app entre navegadores/dispositivos.
+
+### ¿Qué hace?
+
+**Exportación (`exportAll`)**:
+- Recopila todos los datos de localStorage organizados por módulo
+- Genera archivo JSON con versión, timestamp y estructura validada
+- Descarga automática con nombre `gw2-backup-YYYY-MM-DD.json`
+
+**Importación (`importAll`)**:
+- Solicita archivo JSON al usuario
+- Valida versión y estructura
+- Muestra resumen de datos a restaurar
+- Confirma sobrescritura
+- Aplica importación y recarga la página
+
+**Datos exportados/importados:**
+
+| Módulo | Claves localStorage |
+|--------|---------------------|
+| API Keys | `gw2_keys`, `gw2_selected_key_v1` |
+| Wizard's Vault | `wv:season:*`, `wv:season:index` |
+| Wallet | `walletPins:*`, `walletSnapshot:*`, `walletCompact` |
+| Activities | `gn_activities_toggles`, `gn_home_nodes_marked` |
+| Characters | `characters:assignments:*`, `characters:location_history:*` |
+| Meta | `gn_meta_hecho_hoy:*`, `gn_meta_favs:*` |
+| Global | `gn_welcome_seen` |
+
+**Botones en utilbar:**
+- Backup: `assets/icons/155034.png`
+- Restaurar: `assets/icons/155033.png`
+
+### Formato JSON exportado
+
+```json
+{
+  "version": "3.0",
+  "exportedAt": "2026-03-28T20:40:53.217Z",
+  "app": "gw2-wallet-ligero",
+  "data": {
+    "apiKeys": { "list": [...], "selected": "..." },
+    "wv": { "seasonIndex": [...], "seasons": {...} },
+    "wallet": { "compact": false, "pins": {...}, "snapshots": {...} },
+    "activities": { "toggles": "...", "homeNodesMarked": {...} },
+    "characters": { "assignments": {...}, "locationHistory": {...} },
+    "meta": { "hechoHoy": {...}, "favoritos": {...} },
+    "global": { "welcomeSeen": true }
+  }
+}
+```
+
+## ✅ js/welcome-panel.js — Pantalla de Bienvenida (v1.2.0)
 
 ### Resumen
 
@@ -369,7 +495,7 @@ Pantalla de inicio que se muestra en primera visita o cuando no hay API key sele
 
 **Botón home:**
 - Ubicado en el utilbar al inicio
-- Icono `assets/icons/ui/home.png`
+- Icono `assets/icons/Welcome/3380755.png`
 - Lleva a `#/welcome`
 
 **Iconos exclusivos de funcionalidades:**
@@ -387,8 +513,8 @@ Pantalla de inicio que se muestra en primera visita o cuando no hay API key sele
 
 | Elemento | Ruta |
 |----------|------|
-| Home (utilbar) | `assets/icons/ui/home.png` |
-| Título bienvenida | `assets/icons/ui/home.png` |
+| Home (utilbar) | `assets/icons/Welcome/3380755.png` |
+| Título bienvenida | `assets/icons/Welcome/3380755.png` |
 | Seguridad | `assets/icons/welcome/shield-icon.png` |
 | Paso 1 (descarga) | `assets/icons/welcome/download-icon.png` |
 | Paso 2 (subida) | `assets/icons/welcome/upload-icon.png` |
@@ -732,6 +858,9 @@ assets/icons/
 ├── 502065.png                  # Gemas (conversor)
 ├── 619316.png                  # Oro (conversor)
 ├── 784280.png                  # Flecha (conversor)
+├── 155033.png                  # Importar (Restaurar)
+├── 155034.png                  # Exportar (Backup)
+├── 155018.png                  # Info (tooltip WV)
 ├── ui/
 │   ├── home.png                # Home (utilbar y bienvenida)
 │   ├── utc-icon.png
@@ -765,7 +894,8 @@ assets/icons/
 │   ├── characters-icon.png
 │   ├── accounts-icon.png
 │   ├── 528726.png               # Ícono ojo (toggle contraseñas)
-│   └── 156108.png               # Check GeForce Now
+│   ├── 156108.png               # Check GeForce Now
+│   └── 3380755.png              # Home (nuevo)
 ├── Fractal/
 │   └── 2591.png                # Ícono genérico fractales
 ├── professions/
@@ -814,8 +944,9 @@ assets/icons/
 - Characters: escucha `gn:tokenchange` → recarga datos con caché
 - Accounts: escucha `gn:tokenchange` → limpia estado (opcional)
 - WVSeasonStore: migración legacy en background
+- SettingsManager: botones en utilbar, export/import independiente
 
-## 🧪 Checklists de Salud (v5.6)
+## 🧪 Checklists de Salud (v5.7)
 
 ### Orden de scripts (obligatorio)
 
@@ -828,6 +959,7 @@ assets/icons/
 - `activities.js` (defer)
 - `characters.js` (defer)
 - `accounts-panel.js` (defer)
+- `settings-manager.js` (defer)
 - `welcome-panel.js` (defer)
 - `router.js` (defer)
 - `wv-purchase-detail.js` (defer)
@@ -848,6 +980,13 @@ assets/icons/
 - `wvpd_icon_url` → ✔ (ahora local)
 - `accounts:lastFile` → ✔
 - `gn_welcome_seen` → ✔
+- `gw2_keys` → ✔ (API Keys)
+- `gw2_selected_key_v1` → ✔ (API Key seleccionada)
+- `walletPins:*` → ✔
+- `walletSnapshot:*` → ✔
+- `walletCompact` → ✔
+- `gn_meta_hecho_hoy:*` → ✔
+- `gn_meta_favs:*` → ✔
 
 ### Purchase Detail
 
@@ -927,6 +1066,32 @@ assets/icons/
 - ✅ **Plantilla Excel descargable** con columnas: id, nombre, email, password, gmailPassword, apiKey, twitch_user, twitch_email, twitch_password, geforce_linked, notas, tags
 - ✅ **Enriquecimiento automático** con GW2 API usando keys de la Bóveda
 
+### Settings Manager (v1.0.1)
+
+- ✅ Botón Backup en utilbar (`155034.png`)
+- ✅ Botón Restaurar en utilbar (`155033.png`)
+- ✅ Exportación completa: API Keys, WV, Wallet, Activities, Characters, Meta, global
+- ✅ Importación con validación de versión
+- ✅ Confirmación de sobrescritura
+- ✅ Recarga automática después de importar
+- ✅ Claves correctas de localStorage (`gw2_keys`, `gw2_selected_key_v1`)
+
+### Header Compacto
+
+- ✅ Altura reducida (~60px)
+- ✅ Logo + nombre en una sola línea
+- ✅ Eliminación del hero y tabs
+- ✅ Responsive (apilado en móvil)
+- ✅ Botones Backup/Restaurar visibles
+- ✅ Redes sociales con imágenes locales (discord.png, instagram.png, youtube.png, twitchlogo.png, github.png)
+
+### Cámara del Brujo (WV)
+
+- ✅ Tooltip informativo con ícono `155018.png`
+- ✅ Ícono junto al título "Cámara del Brujo"
+- ✅ Estilos de contención para evitar desbordes
+- ✅ Panel correctamente envuelto en `<section id="wvPanel">`
+
 ### Welcome
 
 - ✅ Panel accesible vía `#/welcome`
@@ -981,6 +1146,14 @@ assets/icons/
 - **Toggles**: ícono de ojo unificado (`528726.png`) para todas las contraseñas
 - **Twitch**: información detallada en subsección colapsable con toggles independientes
 
+### Settings Manager (específico)
+
+- Exportación completa de todos los datos de usuario
+- Validación de versión para compatibilidad futura
+- Confirmación antes de sobrescribir
+- Recarga automática para aplicar cambios
+- Uso de claves correctas de localStorage (`gw2_keys`, `gw2_selected_key_v1`)
+
 ### Welcome (específico)
 
 - Redirección solo en primera visita o sin key
@@ -995,7 +1168,7 @@ assets/icons/
 - Banner y botón con ícono local
 - Timers con formato unificado
 
-## 🧾 Historial de decisiones (v5.6)
+## 🧾 Historial de decisiones (v5.7)
 
 - **Q4 2025:** eliminación listener Ach → router controla todo
 - **Q1 2026:** watchdog Achievements (5s) + pipeline conservador
@@ -1019,8 +1192,12 @@ assets/icons/
 - **Mar 2026:** Botón home en utilbar con icono
 - **Mar 2026:** Redirección inicial a bienvenida en primera visita o sin API key
 - **Mar 2026:** **Rediseño completo Panel de Cuentas v1.9.0** — iconos locales, Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada, separadores compactos
+- **Mar 2026:** **Sistema de Backup/Restaurar (settings-manager.js v1.0.1)** — exportación/importación completa de configuración
+- **Mar 2026:** **Header compacto** — reducción de altura, eliminación de hero, logo + nombre en una línea
+- **Mar 2026:** **Iconos de redes sociales** — reemplazo de SVGs por imágenes locales (discord.png, instagram.png, youtube.png, twitchlogo.png, github.png)
+- **Mar 2026:** **Mejora WV** — tooltip informativo con ícono `155018.png`
 
-## 🎉 Estado actual del proyecto (v5.6)
+## 🎉 Estado actual del proyecto (v5.7)
 
 - ✅ Navegación estable y desacoplada
 - ✅ Achievements sin doble pipeline (watchdog ok)
@@ -1034,9 +1211,10 @@ assets/icons/
 - ✅ Todos los assets migrados a rutas relativas (compatibles con GitHub Pages)
 - ✅ Íconos countdowns WV locales
 - ✅ **Panel de Cuentas v1.9.0 productivo**: gestión segura de múltiples cuentas, cifrado local, persistencia inteligente, asistente integrado, rediseño completo con iconos locales, Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada
+- ✅ **Sistema de Backup/Restaurar (settings-manager.js v1.0.1) productivo**: exportación/importación completa de configuración entre navegadores/dispositivos
+- ✅ **Header compacto productivo**: altura reducida, logo + nombre en una línea, responsive
 - ✅ **Pantalla de Bienvenida v1.2.0 productiva**: onboarding, accesos rápidos, enlaces comunitarios y apoyo
 - ✅ **Botón home en utilbar**: accesible desde cualquier lugar
 - ✅ **Redirección inteligente**: primera visita o sin key → bienvenida
 - ✅ **Botones de Leivas funcionando correctamente** (sin regresiones)
-
----
+```
