@@ -17,7 +17,7 @@
  * - Plantilla Excel actualizada con columna twitch_user
  *
  * MEJORAS v1.7.0:
- * - Reemplazo de emoji 👁️ por imagen local (assets/icons/welcome/528726.png)
+ * - Reemplazo de emoji 👁️ por imagen local (assets/icons/Welcome/528726.png)
  * - Información detallada de Twitch en Servicios y API
  *
  * MEJORAS v1.6.0:
@@ -89,12 +89,12 @@
       material: 'assets/icons/Cuentas/255373.png',
       medal: 'assets/icons/Cuentas/157085.png',
       sword: 'assets/icons/Cuentas/1424243.png',
-      services: 'assets/icons/welcome/102609.png',
+      services: 'assets/icons/Welcome/102609.png',
       apiKey: 'assets/icons/Cuentas/155048.png',
       note: 'assets/icons/Cuentas/1228929.png',
       chevronRight: 'assets/icons/Cuentas/528716.png',
       chevronDown: 'assets/icons/Cuentas/528717.png',
-      eye: 'assets/icons/welcome/528726.png'
+      eye: 'assets/icons/Welcome/528726.png'
     },
     
     ICONS: {
@@ -1165,7 +1165,7 @@
           
           <div style="background: #0a0c10; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
             <div style="display: flex; gap: 12px; align-items: flex-start;">
-              <img src="assets/icons/welcome/733266.png" width="28" height="28" alt="" style="filter: brightness(0.9); object-fit: contain;">
+              <img src="assets/icons/Welcome/733266.png" width="28" height="28" alt="" style="filter: brightness(0.9); object-fit: contain;">
               <div>
                 <strong style="color: #a7f3d0;">Tus datos están seguros</strong>
                 <p class="muted" style="margin: 4px 0 0;">Todo el proceso ocurre en tu navegador y tu PC. No hay servidores, no hay bases de datos externas. <strong>Ningún dato sale de tu computadora.</strong></p>
@@ -1175,26 +1175,26 @@
           
           <div style="margin-bottom: 24px;">
             <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
-              <img src="assets/icons/welcome/102619.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
+              <img src="assets/icons/Welcome/102619.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
               PASO 1: Descargar plantilla
             </h4>
             <p class="muted" style="margin-bottom: 12px;">Completá solo lo que quieras. Todos los campos son opcionales excepto el ID. Si no te sentís seguro, no cargues contraseñas.</p>
             <button id="wizardDownloadTemplate" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">
-              <img src="assets/icons/welcome/563464.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
+              <img src="assets/icons/Welcome/563464.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
               Descargar plantilla Excel
             </button>
           </div>
 
           <div style="margin-bottom: 24px;">
             <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
-              <img src="assets/icons/welcome/102620.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
+              <img src="assets/icons/Welcome/102620.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
               PASO 2: Subir Excel → Generar JSON
             </h4>
             <p class="muted" style="margin-bottom: 12px;">Convertí tu Excel a JSON. Se guardará en tu PC.</p>
             <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
               <input type="file" id="wizardExcelFile" accept=".xlsx,.xls" style="flex: 2;">
               <button id="wizardExcelToJson" class="btn" style="display: flex; align-items: center; gap: 6px;">
-                <img src="assets/icons/welcome/102609.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
+                <img src="assets/icons/Welcome/102609.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
                 Generar JSON
               </button>
             </div>
@@ -1203,14 +1203,14 @@
 
           <div style="margin-bottom: 24px;">
             <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
-              <img src="assets/icons/welcome/1770705.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
+              <img src="assets/icons/Welcome/1770705.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
               PASO 3: Enriquecer con API (opcional)
             </h4>
             <p class="muted" style="margin-bottom: 12px;">Usa las API Keys que ya tenés guardadas en la Bóveda. Consulta automáticamente: nombre de cuenta, AP, fecha creación, expansiones.</p>
             <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
               <input type="file" id="wizardJsonFile" accept=".json" style="flex: 2;">
               <button id="wizardEnrich" class="btn" style="display: flex; align-items: center; gap: 6px;">
-                <img src="assets/icons/welcome/102449.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
+                <img src="assets/icons/Welcome/102449.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
                 Enriquecer con GW2 API
               </button>
             </div>
@@ -1219,7 +1219,7 @@
 
           <div style="margin-bottom: 24px;">
             <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
-              <img src="assets/icons/welcome/544515.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
+              <img src="assets/icons/Welcome/544515.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
               PASO 4: Cifrar para usar en el panel
             </h4>
             <p class="muted" style="margin-bottom: 12px;">Creá el archivo .enc que podés cargar en el panel. <strong>Recordá la contraseña, la vas a necesitar.</strong></p>
@@ -1227,7 +1227,7 @@
               <input type="file" id="wizardEncryptFile" accept=".json" style="flex: 2;">
               <input type="password" id="wizardPassword" placeholder="Contraseña" style="flex: 1;">
               <button id="wizardEncrypt" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">
-                <img src="assets/icons/welcome/733266.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
+                <img src="assets/icons/Welcome/733266.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
                 Crear archivo .enc
               </button>
             </div>
@@ -1238,16 +1238,16 @@
 
           <div>
             <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
-              <img src="assets/icons/welcome/102353.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
+              <img src="assets/icons/Welcome/102353.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
               ¿Ya tenés tu archivo .enc?
             </h4>
             <div style="display: flex; flex-wrap: wrap; gap: 12px;">
               <button id="wizardCloseAndLoad" class="btn" style="display: flex; align-items: center; gap: 6px;">
-                <img src="assets/icons/welcome/528726.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
+                <img src="assets/icons/Welcome/528726.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
                 Ir al panel para cargarlo
               </button>
               <button id="wizardClose" class="btn btn--ghost" style="display: flex; align-items: center; gap: 6px;">
-                <img src="assets/icons/welcome/156107.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
+                <img src="assets/icons/Welcome/156107.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
                 Cerrar
               </button>
             </div>
