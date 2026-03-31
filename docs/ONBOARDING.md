@@ -1,7 +1,7 @@
 ```markdown
-# 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v5.7)
+# 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v5.8)
 
-Fecha: 2026-03-28
+Fecha: 2026-03-30
 Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `accounts-panel.js`, `welcome-panel.js`, `settings-manager.js`, `*-theme.js`, `app.css`
 
 ## 📌 BAI — Bloque de Alineamiento Instantáneo
@@ -57,7 +57,24 @@ Bóveda del Gato Negro es una web app vanilla JS modular, sin framework, con foc
 
 Si hay riesgo → advertir antes de generar código.
 
-## 🚀 Novedades v5.7
+## 🚀 Novedades v5.8
+
+### 🆕 Automatización de compras en Wizard's Vault (v1.11.0 / v2.12.0)
+
+**Dashboard de compras (wv-purchase-detail.js v1.11.0):**
+
+- **Barra de progreso compacta** en cada celda de ítem fijado, mostrando estado visual (✅ Completado / ⚠️ Pendiente)
+- **Input numérico + botón MAX** para marcas manuales, con auto-guardado (debounce 500ms)
+- **Regla dual:** `Math.max(apiPurchased, manualMarks)` — muestra el valor más alto entre la API y las marcas manuales
+- La API reporta correctamente las compras de temporadas anteriores (verificado con `/v2/account/wizardsvault/listings`)
+
+**Tienda unificada (router.js v2.12.0):**
+
+- **Barra de progreso e input manual integrados como parte nativa del HTML** de cada tarjeta (no dependen de `enhanceShopCards`)
+- **Eliminado event listener conflictivo** de `wv:season-store:mutate` que recreaba la tienda innecesariamente
+- **Persistencia de marcas directamente en WVSeasonStore** sin recargar toda la tienda
+- **Las barras no desaparecen** al modificar valores ni al cambiar de pestaña
+- Funciones internas: `saveManualMark()`, `updateCardUI()`, `setupManualInputEvents()`
 
 ### 🆕 Sistema de Backup/Restaurar (settings-manager.js v1.0.1)
 
@@ -109,6 +126,7 @@ Rediseño del header para optimizar el espacio vertical:
 
 - **Tooltip informativo**: Reemplazo del texto largo por ícono `assets/icons/155018.png` con tooltip, ubicado junto al título "Cámara del Brujo"
 - **CSS de contención**: Estilos para evitar desbordes del panel
+- **🆕 Ícono de recarga forzada de temporada**: Ícono `assets/icons/Welcome/834002.png` ubicado junto al tooltip, que permite al usuario forzar manualmente la recarga de la información de temporada cuando no se visualice correctamente. Al hacer clic, ejecuta `forceReloadSeason()` que actualiza título, fechas y persistencia en `WVSeasonStore`.
 
 ```html
 <span id="wvSyncNote" class="wv-sync-tip" title="Los endpoints de objetivos de Wizard's Vault solo se actualizan después de que el jugador ha iniciado sesión en el juego.">
@@ -391,7 +409,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 - `#/account/accounts` — Cuentas
 - `#/welcome` — Pantalla de Bienvenida
 
-## 🧩 Responsabilidades por archivo (Consolidado v5.7)
+## 🧩 Responsabilidades por archivo (Consolidado v5.8)
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
@@ -407,14 +425,14 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/accounts-panel.js` | **v1.9.0** | **Panel de Cuentas**: gestión segura + asistente para creación de archivos .enc desde Excel. **Rediseño completo con iconos locales, Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada** |
 | `js/settings-manager.js` | **v1.0.1** | **Sistema de Backup/Restaurar**: exportación/importación completa de configuración (API Keys, WV pins, Wallet, Activities, Characters, Meta, global) |
 | `js/welcome-panel.js` | v1.2.0 | **Pantalla de Bienvenida**: onboarding, accesos rápidos, enlaces comunitarios y apoyo |
-| `js/router.js` | v2.10.6 | Router con prefetch, guardas, navegación por hash, mapeo de vistas. **Incluye rutas #/account/accounts y #/welcome, redirección inicial** |
-| `js/wv-purchase-detail.js` | v1.8.6 | Detalle de compras, dashboard AA, top pendientes, **íconos countdowns locales** |
+| `js/router.js` | **v2.12.0** | Router con prefetch, guardas, navegación por hash, mapeo de vistas. **Barra de progreso + input manual integrados en todas las tarjetas de tienda. Persistencia de marcas sin recargar UI. Eliminado event listener conflictivo de wv:season-store:mutate.** |
+| `js/wv-purchase-detail.js` | **v1.11.0** | Detalle de compras, dashboard AA, top pendientes. **Barra de progreso compacta + input numérico + botón MAX + auto-guardado + regla dual (Math.max(apiPurchased, manualMarks)).** |
 | `js/wv-tabs-skin.js` | v1.0.0 | Re-skin de tabs WV, consistente con rerenders |
 | `js/app.js` | v2.6.3 | Keys, wallet, eventos globales, emisor `gn:tokenchange` |
 | `js/*-theme.js` | varios | Glows, colores, estilos temáticos por módulo |
 | `js/meta-theme.js` | v1.3.1 | Barra de horarios unificada + mejora de horarios en tarjetas |
 
-## ✅ NUEVO js/settings-manager.js — Sistema de Backup/Restaurar (v1.0.1)
+## ✅ js/settings-manager.js — Sistema de Backup/Restaurar (v1.0.1)
 
 ### Resumen
 
@@ -803,13 +821,21 @@ Panel completo que muestra la lista de personajes de la cuenta con su profesión
 | `/v2/maps?ids=all` | Nombres de mapas |
 | `/v2/specializations/:id` | Iconos de especialidad |
 
-## ✅ js/wv-purchase-detail.js — Detalle de Compras (v1.8.6)
+## ✅ js/wv-purchase-detail.js — Detalle de Compras (v1.11.0)
 
 ### Resumen
 
 Dashboard de seguimiento de compras de Wizard's Vault con KPIs de Aclamación Astral, listado de ítems fijados por cuenta, y top pendientes.
 
-### Novedades visuales
+### Novedades visuales (v1.11.0)
+
+- **Barra de progreso compacta** en cada celda de ítem fijado, mostrando estado visual (✅ Completado / ⚠️ Pendiente)
+- **Input numérico + botón MAX** para marcas manuales
+- **Auto-guardado con debounce (500ms)**
+- **Regla dual:** `Math.max(apiPurchased, manualMarks)` — muestra el valor más alto entre la API y las marcas manuales
+- La API reporta correctamente las compras de temporadas anteriores (verificado con `/v2/account/wizardsvault/listings`)
+
+### Novedades visuales (v1.8.6 - base)
 
 - **Sistema de colores unificado**:
   - 🟢 Verde: Total disponible / DISP (recurso disponible)
@@ -839,6 +865,26 @@ Dashboard de seguimiento de compras de Wizard's Vault con KPIs de Aclamación As
 - `GW2Api.getWVShopMerged()` (vía api-gw2.js)
 - `GW2Api.getWVWeekly()` (para meta steps)
 - `WVSeasonStore.getCurrentSeasonInfo()` (temporada)
+
+## ✅ js/router.js — Router y Tienda Unificada (v2.12.0)
+
+### Resumen
+
+Orquestador principal de navegación y renderizado de la tienda de Wizard's Vault con barra de progreso e input manual integrados.
+
+### Novedades v2.12.0
+
+- **Barra de progreso e input manual integrados como parte nativa del HTML** de cada tarjeta (no dependen de `enhanceShopCards`)
+- **Eliminado event listener conflictivo** de `wv:season-store:mutate` que recreaba la tienda innecesariamente
+- **Persistencia de marcas directamente en WVSeasonStore** sin recargar toda la tienda
+- **Las barras no desaparecen** al modificar valores ni al cambiar de pestaña
+- Funciones internas: `saveManualMark()`, `updateCardUI()`, `setupManualInputEvents()`
+
+### Características base
+
+- Router con prefetch, guardas, navegación por hash, mapeo de vistas
+- Incluye rutas `#/account/accounts` y `#/welcome`, redirección inicial
+- Tienda unificada con input numérico + barra de progreso
 
 ## 🖼️ Assets locales (estructura final)
 
@@ -946,7 +992,7 @@ assets/icons/
 - WVSeasonStore: migración legacy en background
 - SettingsManager: botones en utilbar, export/import independiente
 
-## 🧪 Checklists de Salud (v5.7)
+## 🧪 Checklists de Salud (v5.8)
 
 ### Orden de scripts (obligatorio)
 
@@ -988,17 +1034,29 @@ assets/icons/
 - `gn_meta_hecho_hoy:*` → ✔
 - `gn_meta_favs:*` → ✔
 
-### Purchase Detail
+### Purchase Detail (v1.11.0)
 
-- Temporada actual correcta (selector)
-- Timers cargando
-- Íconos visibles (todos locales)
-- AA necesaria ≠ 0 (si hay pins vivos)
+- ✅ Barra de progreso compacta en cada celda de ítem fijado
+- ✅ Input numérico + botón MAX con auto-guardado
+- ✅ Regla dual: `Math.max(apiPurchased, manualMarks)`
+- ✅ API reporta compras de temporadas anteriores
+- ✅ Temporada actual correcta (selector)
+- ✅ Timers cargando
+- ✅ Íconos visibles (todos locales)
 - ✅ Sistema de colores unificado (verde/amarillo/rojo)
 - ✅ Badges con efecto hover
 - ✅ Skeleton loader animado
 - ✅ Timestamp de última actualización
 - ✅ Íconos countdowns locales (523379-523381)
+
+### Router / Tienda (v2.12.0)
+
+- ✅ Barra de progreso e input manual integrados en todas las tarjetas
+- ✅ Las barras NO desaparecen al modificar valores ni al cambiar de pestaña
+- ✅ Persistencia de marcas en WVSeasonStore
+- ✅ Eliminado event listener conflictivo de `wv:season-store:mutate`
+- ✅ Vista tarjetas / tabla funcional
+- ✅ Filtros y ordenamiento funcionan
 
 ### Activities
 
@@ -1054,11 +1112,7 @@ assets/icons/
 - ✅ Subsección "Servicios" colapsable dentro de Servicios y API
 - ✅ Twitch: username (copiable), email (copiable si existe), password (toggle independiente + copiable si existe)
 - ✅ GeForce Now: imagen local `156108.png` en lugar de emoji ✅
-- ✅ Iconos separados para títulos de secciones vs campos internos:
-  - Credenciales (título): `733266.png`
-  - Contraseña (campo): `733265.png`
-  - GW2 Avanzado (título): `358409.png`
-  - Chars (campo): `156409.png`
+- ✅ Iconos separados para títulos de secciones vs campos internos
 - ✅ Barra de estadísticas con separadores optimizados (`margin: 0 -6px`)
 - ✅ Filtros funcionales (búsqueda, tipo, tags)
 - ✅ Botón "Cambiar archivo" para resetear estado
@@ -1167,8 +1221,17 @@ assets/icons/
 - Íconos countdowns locales (no wiki, no render.guildwars2.com)
 - Banner y botón con ícono local
 - Timers con formato unificado
+- **Regla dual**: `Math.max(apiPurchased, manualMarks)` para mostrar siempre el valor más alto
+- **Auto-guardado** con debounce 500ms para evitar escrituras excesivas
 
-## 🧾 Historial de decisiones (v5.7)
+### Router / Tienda (específico)
+
+- **No recargar toda la tienda** en `wv:season-store:mutate`
+- Barra de progreso e input manual como **parte nativa del HTML**, no como mejora posterior
+- Persistencia de marcas directamente en WVSeasonStore
+- Actualización selectiva de UI con `updateCardUI()` sin recargar todo
+
+## 🧾 Historial de decisiones (v5.8)
 
 - **Q4 2025:** eliminación listener Ach → router controla todo
 - **Q1 2026:** watchdog Achievements (5s) + pipeline conservador
@@ -1191,18 +1254,22 @@ assets/icons/
 - **Mar 2026:** Creación Pantalla de Bienvenida (welcome-panel.js v1.2.0)
 - **Mar 2026:** Botón home en utilbar con icono
 - **Mar 2026:** Redirección inicial a bienvenida en primera visita o sin API key
-- **Mar 2026:** **Rediseño completo Panel de Cuentas v1.9.0** — iconos locales, Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada, separadores compactos
-- **Mar 2026:** **Sistema de Backup/Restaurar (settings-manager.js v1.0.1)** — exportación/importación completa de configuración
-- **Mar 2026:** **Header compacto** — reducción de altura, eliminación de hero, logo + nombre en una línea
-- **Mar 2026:** **Iconos de redes sociales** — reemplazo de SVGs por imágenes locales (discord.png, instagram.png, youtube.png, twitchlogo.png, github.png)
-- **Mar 2026:** **Mejora WV** — tooltip informativo con ícono `155018.png`
+- **Mar 2026:** Rediseño completo Panel de Cuentas v1.9.0 — iconos locales, Twitch detallado, toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada
+- **Mar 2026:** Sistema de Backup/Restaurar (settings-manager.js v1.0.1) — exportación/importación completa de configuración
+- **Mar 2026:** Header compacto — reducción de altura, eliminación de hero, logo + nombre en una línea
+- **Mar 2026:** Iconos de redes sociales — reemplazo de SVGs por imágenes locales
+- **Mar 2026:** Mejora WV — tooltip informativo con ícono `155018.png`
+- **Mar 2026:** **Automatización de compras Wizard's Vault**:
+  - Dashboard: barra de progreso + input numérico + botón MAX + auto-guardado + regla dual (wv-purchase-detail.js v1.11.0)
+  - Tienda: barra de progreso e input integrados en HTML nativo, persistencia sin recargar UI, eliminado event listener conflictivo (router.js v2.12.0)
 
-## 🎉 Estado actual del proyecto (v5.7)
+## 🎉 Estado actual del proyecto (v5.8)
 
 - ✅ Navegación estable y desacoplada
 - ✅ Achievements sin doble pipeline (watchdog ok)
 - ✅ WV robusta con datos unificados
-- ✅ Purchase Detail v1.8.6 productivo: countdowns con íconos locales
+- ✅ Purchase Detail v1.11.0 productivo: barra de progreso, input numérico, botón MAX, auto-guardado, regla dual
+- ✅ Tienda (router.js v2.12.0) productiva: barra de progreso e input manual integrados, persistente, no desaparece
 - ✅ SeasonStore funcionando bien incluso con cuota mínima
 - ✅ Activities v3.19.3 productivo: fractales con ícono local, detección automática de llave semanal con validación de semana actual
 - ✅ Home Nodes v2.3.0 productivo: lista completa (74), filtros, estado ✅/❌, persistencia
@@ -1210,11 +1277,11 @@ assets/icons/
 - ✅ Characters v2.3.0 productivo: íconos profesión locales
 - ✅ Todos los assets migrados a rutas relativas (compatibles con GitHub Pages)
 - ✅ Íconos countdowns WV locales
-- ✅ **Panel de Cuentas v1.9.0 productivo**: gestión segura de múltiples cuentas, cifrado local, persistencia inteligente, asistente integrado, rediseño completo con iconos locales, Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada
-- ✅ **Sistema de Backup/Restaurar (settings-manager.js v1.0.1) productivo**: exportación/importación completa de configuración entre navegadores/dispositivos
-- ✅ **Header compacto productivo**: altura reducida, logo + nombre en una línea, responsive
-- ✅ **Pantalla de Bienvenida v1.2.0 productiva**: onboarding, accesos rápidos, enlaces comunitarios y apoyo
-- ✅ **Botón home en utilbar**: accesible desde cualquier lugar
-- ✅ **Redirección inteligente**: primera visita o sin key → bienvenida
-- ✅ **Botones de Leivas funcionando correctamente** (sin regresiones)
+- ✅ Panel de Cuentas v1.9.0 productivo: gestión segura de múltiples cuentas, cifrado local, persistencia inteligente, asistente integrado, rediseño completo con iconos locales, Twitch detallado
+- ✅ Sistema de Backup/Restaurar (settings-manager.js v1.0.1) productivo
+- ✅ Header compacto productivo
+- ✅ Pantalla de Bienvenida v1.2.0 productiva
+- ✅ Botón home en utilbar accesible desde cualquier lugar
+- ✅ Redirección inteligente: primera visita o sin key → bienvenida
+- ✅ Botones de Leivas funcionando correctamente (sin regresiones)
 ```

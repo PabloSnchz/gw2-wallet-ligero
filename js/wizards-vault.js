@@ -1,13 +1,16 @@
 /*!
  * js/wizards-vault.js — Módulo Wizard's Vault (season, objetivos, cuenta, listados, shop)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.2.1 (2026-03-04) — hotfix getWVSeason + compat v1.1.0 + hook opcional a WVSeasonStore
+ * Versión: 1.3.0 (2026-03-30) — Botón de recarga forzada de temporada
  *
- * Cambios:
- *  - getWVSeason() robusto: acepta respuesta plana o anidada (p.ej. {season:{id,start,end}, title}).
- *  - Nunca retorna null/undefined; si el endpoint falla -> objeto seguro {title:'—',start:null,end:null}.
- *  - Mantiene 1:1 la API pública que expone en GW2Api (retrocompat v1.1.0).
- *  - Si WVSeasonStore está presente, lanza migración legacy->archivo por temporada en background (no bloquea).
+ * Cambios v1.3.0:
+ *  - Agregado botón de recarga forzada de temporada (junto al tooltip de info)
+ *  - Función forceReloadSeason() para actualizar temporada manualmente
+ *  - Exposición global de forceReloadWVSeason para debug
+ *
+ * Cambios v1.2.1:
+ *  - getWVSeason() robusto: acepta respuesta plana o anidada
+ *  - Nunca retorna null/undefined
  */
 
 (function (root) {
@@ -177,6 +180,75 @@
       });
     });
   }
+
+  // ====== FUNCIÓN PARA FORZAR RECARGA DE TEMPORADA ======
+  function forceReloadSeason() {
+    console.log(LOGW, 'Forzando recarga de temporada...');
+    
+    var token = (function() {
+      var sel = document.getElementById('keySelectGlobal');
+      return sel ? (sel.value || '').trim() : null;
+    })();
+    
+    if (!token) {
+      console.warn(LOGW, 'No hay token para recargar temporada');
+      if (window.toast) window.toast('warning', 'No hay API key seleccionada', { ttl: 2000 });
+      return;
+    }
+    
+    // Mostrar feedback visual
+    if (window.toast) window.toast('info', 'Recargando información de temporada...', { ttl: 1500 });
+    
+    getWVSeason({ nocache: true })
+      .then(function(season) {
+        console.log(LOGW, 'Temporada recargada:', season);
+        
+        // Actualizar UI de temporada en el header de WV
+        var seasonTitleEl = document.getElementById('wvSeasonTitle');
+        var seasonDatesEl = document.getElementById('wvSeasonDates');
+        
+        if (seasonTitleEl && season.title) {
+          seasonTitleEl.textContent = season.title;
+        }
+        
+        if (seasonDatesEl && season.start && season.end) {
+          var start = new Date(season.start);
+          var end = new Date(season.end);
+          seasonDatesEl.textContent = start.toLocaleDateString() + ' → ' + end.toLocaleDateString();
+        } else if (seasonDatesEl) {
+          seasonDatesEl.textContent = '—';
+        }
+        
+        // Actualizar WVSeasonStore si está disponible
+        if (window.WVSeasonStore && season.start) {
+          var startDate = new Date(season.start);
+          var year = startDate.getUTCFullYear() % 100;
+          var seq = 1;
+          WVSeasonStore.saveSeasonInfo(year, seq, {
+            season_id: season.id || null,
+            title: season.title,
+            start: season.start,
+            end: season.end
+          }).catch(function(e) { console.warn(LOGW, 'Error guardando en store:', e); });
+        }
+        
+        // Disparar evento para que otros módulos se actualicen
+        window.dispatchEvent(new CustomEvent('wv:season:reloaded', { detail: { season: season } }));
+        
+        if (window.toast) window.toast('success', 'Temporada actualizada: ' + (season.title || '—'), { ttl: 3000 });
+        
+        // Si la tienda está visible, sugerir recarga (el router la recargará automáticamente)
+        var shopTab = document.getElementById('wvTabShop');
+        if (shopTab && !shopTab.hidden) {
+          console.log(LOGW, 'Tienda visible, se actualizará automáticamente');
+        }
+      })
+      .catch(function(e) {
+        console.error(LOGW, 'Error recargando temporada:', e);
+        if (window.toast) window.toast('error', 'No se pudo recargar la temporada', { ttl: 2000 });
+      });
+  }
+
   // -------------------- WV: Objetivos (daily/weekly/special) --------------------
   function _getWVObjectives(kind, token, opts){
     opts = opts || {};
@@ -459,6 +531,58 @@
     });
   }
 
+  // ----------------------------- Inyectar ícono de recarga en UI -----------------------------
+  function injectReloadSeasonButton() {
+    // Esperar a que el DOM esté listo
+    var checkInterval = setInterval(function() {
+      var wvSyncNote = document.getElementById('wvSyncNote');
+      var existingBtn = document.getElementById('wvReloadSeasonBtn');
+      
+      if (existingBtn) {
+        clearInterval(checkInterval);
+        return;
+      }
+      
+      if (wvSyncNote && wvSyncNote.parentNode) {
+        clearInterval(checkInterval);
+        
+        // Crear ícono clickeable (sin apariencia de botón)
+        var reloadIcon = document.createElement('span');
+        reloadIcon.id = 'wvReloadSeasonBtn';
+        reloadIcon.title = 'Forzar recarga de información de temporada';
+        reloadIcon.setAttribute('aria-label', 'Recargar temporada');
+        reloadIcon.style.cursor = 'pointer';
+        reloadIcon.style.display = 'inline-flex';
+        reloadIcon.style.alignItems = 'center';
+        reloadIcon.style.marginLeft = '8px';
+        reloadIcon.style.opacity = '0.7';
+        reloadIcon.style.transition = 'opacity 0.2s ease';
+        reloadIcon.innerHTML = '<img src="assets/icons/Welcome/834002.png" width="16" height="16" alt="Recargar" style="vertical-align: middle;">';
+        
+        // Efecto hover
+        reloadIcon.addEventListener('mouseenter', function() {
+          reloadIcon.style.opacity = '1';
+        });
+        reloadIcon.addEventListener('mouseleave', function() {
+          reloadIcon.style.opacity = '0.7';
+        });
+        
+        // Evento click
+        reloadIcon.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          forceReloadSeason();
+        });
+        
+        // Insertar después del tooltip
+        wvSyncNote.insertAdjacentElement('afterend', reloadIcon);
+        console.log(LOGW, 'Ícono de recarga de temporada injectado');
+      }
+    }, 500);
+    
+    // Timeout para no seguir buscando indefinidamente
+    setTimeout(function() { clearInterval(checkInterval); }, 10000);
+  }
   // ----------------------------- Export base (compat 1.1.0) -----------------------------
   var WizardsVault = {
     // Season / Objetivos / Cuenta
@@ -480,9 +604,15 @@
     // Targets helpers
     wvInvalidateTargets: wvInvalidateTargets,
     wvPreloadTargets: wvPreloadTargets,
+    // Recarga forzada de temporada
+    forceReloadSeason: forceReloadSeason,
+    injectReloadSeasonButton: injectReloadSeasonButton,
     // Debug
     __cfg: { API_BASE: API_BASE, TTL: TTL, LANG: LANG }
   };
+
+  // Exponer globalmente para debug en consola
+  root.forceReloadWVSeason = forceReloadSeason;
 
   // ----------------------------- Hook opcional a WVSeasonStore -----------------------------
   (function hookSeasonStore(){
@@ -509,6 +639,23 @@
       console.warn(LOGW, 'season-store hook failed', e);
     }
   })();
+
+  // Inyectar botón cuando el DOM esté listo
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectReloadSeasonButton);
+  } else {
+    injectReloadSeasonButton();
+  }
+
+  // También intentar inyectar cuando se navega a WV
+  document.addEventListener('gn:nav-active', function(ev) {
+    try {
+      var h = String(ev && ev.detail && ev.detail.hash || '').toLowerCase();
+      if (h === '#/account/wizards-vault') {
+        setTimeout(injectReloadSeasonButton, 500);
+      }
+    } catch(_) {}
+  });
 
   // ----------------------------- Integración con GW2Api (contrato v1.1.0) -----------------------------
   root.WizardsVault = WizardsVault;
