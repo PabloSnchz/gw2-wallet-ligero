@@ -17,13 +17,24 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 - 🔐 **Panel de Cuentas** — Gestión segura de múltiples cuentas con cifrado local
 - 🧙 **Pantalla de Bienvenida** — Onboarding y accesos rápidos
 - 💾 **Sistema de Backup/Restaurar** — Exporta/importa toda la configuración entre dispositivos
+- 🔄 **Recarga forzada de temporada WV** — Ícono para restaurar información de temporada manualmente
 
 👉 **Página oficial (Deploy GitHub Pages):**  
 https://pablosnchz.github.io/gw2-wallet-ligero/
 
 ---
 
-## ✨ Novedades principales — v5.7.0
+## ✨ Novedades principales — v5.8.0
+
+### 🔄 Recarga forzada de temporada en Wizard's Vault (NUEVO)
+- **Ícono clickeable** (sin apariencia de botón) ubicado junto al tooltip de información, a la derecha del título "Cámara del Brujo"
+- **Ícono:** `assets/icons/Welcome/834002.png`
+- Al hacer clic, fuerza la recarga de la temporada actual desde la API (`/v2/wizardsvault` con `nocache: true`)
+- Actualiza automáticamente la UI (`wvSeasonTitle`, `wvSeasonDates`)
+- Guarda los datos en `WVSeasonStore` para persistencia
+- Feedback visual con toast (info → éxito/error)
+- Función global `window.forceReloadWVSeason` disponible para debug en consola
+- **Archivo modificado:** `js/wizards-vault.js` → versión v1.3.0
 
 ### 💾 Sistema de Backup/Restaurar (NUEVO)
 - **Exportación completa**: API Keys, Wizard's Vault (pins y marcas), Wallet (pins, snapshots, vista compacta), Activities (toggles, home nodes), Characters (POIs, ubicaciones), Meta (favoritos, hecho hoy), configuración global
@@ -155,6 +166,7 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 - Manejo defensivo con try/finally: aunque falle WV internamente, la pastilla y el sidebar se actualizan igual
 - Estructura de WV (objetivos + shop) consolidada, con auto-refresh de tienda, toolbar y persistencias por cuenta
 - **Mejora visual**: reemplazo de texto largo por ícono `155018.png` con tooltip junto al título
+- **🆕 Recarga forzada de temporada**: ícono `assets/icons/Welcome/834002.png` junto al tooltip para restaurar información de temporada manualmente
 
 ### 💰 Wallet — Rework de tarjetas
 - Reemplazo de estrella por 📌 pin con persistencia por cuenta y migración automática
@@ -201,10 +213,11 @@ Definí en `index.html` (antes de router.js):
 
 ---
 
-## 📦 Archivos clave (v5.7.0)
+## 📦 Archivos clave (v5.8.0)
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
+| `js/wizards-vault.js` | **v1.3.0** | Módulo Wizard's Vault. **Ícono de recarga forzada de temporada** (`834002.png`) junto al tooltip |
 | `js/accounts-panel.js` | **v1.9.0** | Panel de Cuentas + asistente para crear archivos .enc desde Excel. **Rediseño completo: iconos locales, Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada** |
 | `js/settings-manager.js` | **v1.0.1** | **Sistema de Backup/Restaurar**: exportación/importación completa de configuración (API Keys, WV pins, Wallet, Activities, Characters, Meta, global) |
 | `js/welcome-panel.js` | v1.2.0 | Pantalla de Bienvenida con onboarding, accesos rápidos, comunidad y apoyo |
@@ -219,7 +232,7 @@ Definí en `index.html` (antes de router.js):
 
 ---
 
-## 🖼️ Assets locales (estructura v5.7.0)
+## 🖼️ Assets locales (estructura v5.8.0)
 
 ```
 assets/icons/
@@ -243,6 +256,9 @@ assets/icons/
 ├── 155033.png                  # Importar (Restaurar)
 ├── 155034.png                  # Exportar (Backup)
 ├── 155018.png                  # Info (tooltip WV)
+├── Welcome/
+│   ├── 834002.png              # Recarga forzada de temporada WV (NUEVO)
+│   └── ...                     # resto de iconos de bienvenida
 ├── ui/
 │   ├── home.png                # Home (utilbar y bienvenida)
 │   ├── utc-icon.png
@@ -320,29 +336,30 @@ assets/icons/
 
 ## 🧪 Cómo probar las novedades
 
-1. **Sistema de Backup/Restaurar**: Hacer clic en "Backup" → descargar JSON → cambiar algo → "Restaurar" → confirmar → recarga → verificar que se restauró
-2. **Pantalla de Bienvenida**: Recargar sin API key o limpiar localStorage (`gn_welcome_seen`) → ver bienvenida
-3. **Botón home**: Clic en icono home en utilbar → ir a `#/welcome`
-4. **Header compacto**: Verificar que el header ocupa menos espacio, logo + nombre en una línea, botones visibles
-5. **Redes sociales**: Verificar que los iconos de Discord, Instagram, YouTube, Twitch y GitHub cargan como imágenes locales
-6. **Tooltip WV**: En Cámara del Brujo, pasar mouse sobre el ícono `ⓘ` junto al título → ver mensaje informativo
-7. **Panel de Cuentas**: Navegar a `#/account/accounts` → usar asistente para crear archivo .enc
-8. **Asistente de Cuentas**: Abrir modal → seguir 4 pasos con iconos (plantilla Excel incluye columnas twitch_user, twitch_email, twitch_password)
-9. **Twitch en Cuentas**: Cargar archivo .enc con datos Twitch → expandir "Servicios y API" → expandir "Servicios" → ver username (copiable), email (copiable si existe), password (toggle independiente + copiable si existe)
-10. **GeForce Now en Cuentas**: Verificar que el texto "Vinculado" usa imagen local en lugar de emoji ✅
-11. **Iconos de secciones en Cuentas**: Verificar que Credenciales y GW2 Avanzado tienen nuevos iconos, mientras que Contraseña y Chars mantienen los originales
-12. **Barra de estadísticas en Cuentas**: Verificar que los separadores están optimizados y no rompen en zoom 100%
-13. **Detección de llave semanal**: Ver panel de actividades → UI de llave con leyenda "misma semana"
-14. **Barra de horarios**: Navegar a **Actividades** o **Meta & Eventos** → ver barra con iconos GW2 y resets con segundos
-15. **Home Nodes**: Navegar a **Actividades** → sección "Home nodes"
-16. **Personajes**: Navegar a **Personajes** → ver lista, filtros, asignación de POIs
-17. **Íconos de profesión**: Verificar que se cargan desde `assets/icons/professions/`
-18. **Íconos de fractales**: Verificar que todas las tarjetas de fractales usan `2591.png`
-19. **Títulos de paneles**: Verificar que cada panel tiene su ícono correspondiente
-20. **Horarios en Meta**: Abrir horarios de una tarjeta → verificar hora local, color del botón y próximo horario resaltado
-21. **Purchase Detail**: Navegar a **Cámara del Brujo** → botón de detalle de compras → verificar íconos de countdowns locales
-22. **Wallet**: Verificar que las categorías son badges y los glows especiales se mantienen
-23. **Conversor**: Verificar que los íconos de gemas y oro son locales
+1. **Recarga forzada de temporada WV**: Navegar a Cámara del Brujo → hacer clic en el ícono 🔄 junto al tooltip → verificar que se actualiza la información de temporada
+2. **Sistema de Backup/Restaurar**: Hacer clic en "Backup" → descargar JSON → cambiar algo → "Restaurar" → confirmar → recarga → verificar que se restauró
+3. **Pantalla de Bienvenida**: Recargar sin API key o limpiar localStorage (`gn_welcome_seen`) → ver bienvenida
+4. **Botón home**: Clic en icono home en utilbar → ir a `#/welcome`
+5. **Header compacto**: Verificar que el header ocupa menos espacio, logo + nombre en una línea, botones visibles
+6. **Redes sociales**: Verificar que los iconos de Discord, Instagram, YouTube, Twitch y GitHub cargan como imágenes locales
+7. **Tooltip WV**: En Cámara del Brujo, pasar mouse sobre el ícono `ⓘ` junto al título → ver mensaje informativo
+8. **Panel de Cuentas**: Navegar a `#/account/accounts` → usar asistente para crear archivo .enc
+9. **Asistente de Cuentas**: Abrir modal → seguir 4 pasos con iconos (plantilla Excel incluye columnas twitch_user, twitch_email, twitch_password)
+10. **Twitch en Cuentas**: Cargar archivo .enc con datos Twitch → expandir "Servicios y API" → expandir "Servicios" → ver username (copiable), email (copiable si existe), password (toggle independiente + copiable si existe)
+11. **GeForce Now en Cuentas**: Verificar que el texto "Vinculado" usa imagen local en lugar de emoji ✅
+12. **Iconos de secciones en Cuentas**: Verificar que Credenciales y GW2 Avanzado tienen nuevos iconos, mientras que Contraseña y Chars mantienen los originales
+13. **Barra de estadísticas en Cuentas**: Verificar que los separadores están optimizados y no rompen en zoom 100%
+14. **Detección de llave semanal**: Ver panel de actividades → UI de llave con leyenda "misma semana"
+15. **Barra de horarios**: Navegar a **Actividades** o **Meta & Eventos** → ver barra con iconos GW2 y resets con segundos
+16. **Home Nodes**: Navegar a **Actividades** → sección "Home nodes"
+17. **Personajes**: Navegar a **Personajes** → ver lista, filtros, asignación de POIs
+18. **Íconos de profesión**: Verificar que se cargan desde `assets/icons/professions/`
+19. **Íconos de fractales**: Verificar que todas las tarjetas de fractales usan `2591.png`
+20. **Títulos de paneles**: Verificar que cada panel tiene su ícono correspondiente
+21. **Horarios en Meta**: Abrir horarios de una tarjeta → verificar hora local, color del botón y próximo horario resaltado
+22. **Purchase Detail**: Navegar a **Cámara del Brujo** → botón de detalle de compras → verificar íconos de countdowns locales
+23. **Wallet**: Verificar que las categorías son badges y los glows especiales se mantienen
+24. **Conversor**: Verificar que los íconos de gemas y oro son locales
 
 ---
 
@@ -370,6 +387,7 @@ assets/icons/
 
 Este proyecto sigue **Semantic Versioning** (SemVer).
 
+- `v5.8.0`: **Recarga forzada de temporada WV** — Ícono junto al tooltip para restaurar información de temporada manualmente (`wizards-vault.js` v1.3.0)
 - `v5.7.0`: **Sistema de Backup/Restaurar + Header compacto + Mejoras WV** — Exportación/importación completa de configuración, header compacto (~60px), iconos de redes sociales locales, tooltip informativo en WV, mejoras visuales generales
 - `v5.6.0`: **Rediseño completo Panel de Cuentas v1.9.0** — Iconos locales (ojo y check GeForce Now como imágenes), Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada, separadores compactos, iconos separados para títulos de secciones vs campos internos
 - `v5.5.0`: **Pantalla de Bienvenida + Panel de Cuentas v1.3.1** — Onboarding, gestión segura de cuentas, asistente Excel → .enc, detección automática de llave semanal con validación de semana actual

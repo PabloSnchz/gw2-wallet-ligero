@@ -1,41 +1,24 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.10.6 (2026‑03‑27) — Añadida ruta para Pantalla de Bienvenida (#/welcome)
+ * v2.12.0 (2026-03-30) — Barra de progreso + input manual integrados en todas las tarjetas
+ *
+ * Cambios v2.12.0:
+ *  - Eliminado event listener conflictivo de wv:season-store:mutate
+ *  - Barra de progreso y input manual ahora son parte nativa del HTML de la tarjeta
+ *  - Persistencia y actualización de marcas manejada internamente sin recargar toda la tienda
+ *  - Eliminada dependencia de placeholders y enhanceShopCards externo
+ *
+ * Cambios v2.11.0:
+ *  - Eliminados botones +/- y MAX del renderizado nativo
  *
  * Cambios v2.10.6:
  *  - Añadida ruta '#/welcome' para la pantalla de bienvenida
- *  - Añadido Welcome.activate() en route()
- *  - Añadido lógica de redirección inicial: si es primera visita o no hay key, mostrar bienvenida
- *  - Actualizado setActiveNav y showPanel para soportar welcome
- *
- * Cambios v2.10.5:
- *  - Añadida ruta '#/account/accounts' para el nuevo panel de cuentas
- *  - Añadido Accounts.activate() en route()
- *  - Actualizado setActiveNav y updateSidebarFor para soportar cuentas
- *
- * Cambios v2.10.4:
- *  - Eliminada llamada recursiva a scheduleSeasonReset dentro del timeout
- *  - El reset de temporada solo se programa UNA VEZ y se ejecuta en la fecha de fin
- *  - Verificación de timer existente antes de programar
- *  - Limpieza de state.resetTimers.special después de ejecutar
- *
- * Cambios v2.10.3:
- *  - Fix actualización automática de temporada
- *
- * Cambios v2.10.2:
- *  - Agregada variable lastScheduledResetMs para evitar reprogramar el mismo reset múltiples veces
- *
- * Cambios v2.10.1:
- *  - Corrección en nextSeasonResetUTC(): retorna null si la fecha ya pasó o es inválida
- *
- * Cambios v2.10.0:
- *  - [Characters] Nueva ruta '#/account/characters' y activación del módulo Characters.
  */
 
 (function () {
   'use strict';
 
-  console.info('[WV] router-wv.js v2.10.6 — Añadida ruta para Pantalla de Bienvenida');
+  console.info('[WV] router-wv.js v2.12.0 — Barra de progreso + input manual integrados');
 
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -72,8 +55,11 @@
   }
   function escapeHtml(str) {
     return String(str || '')
-      .replace(/&amp;amp;amp;amp;amp;amp;/g,'&amp;amp;amp;amp;amp;amp;amp;').replace(/&amp;amp;amp;amp;amp;lt;/g,'&amp;amp;amp;amp;amp;amp;lt;').replace(/&amp;amp;amp;amp;amp;gt;/g,'&amp;amp;amp;amp;amp;amp;gt;')
-      .replace(/"/g,'&amp;amp;amp;amp;amp;amp;quot;').replace(/'/g,'&amp;amp;amp;amp;amp;amp;#039;');
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
   function fmtNumber(n) { n = Number(n || 0); return n.toLocaleString('es-AR'); }
   function now() { return Date.now(); }
@@ -571,153 +557,322 @@
       return sorted;
     }
 
-    function renderShopArea(){
-      var host=els.tabShop; if (!host) return;
+    // ====== FUNCIONES PARA MANEJAR MARCAS MANUALES ======
+    function saveManualMark(listingId, value) {
+      var token = getSelectedToken();
+      if (!token || !window.WVSeasonStore || !state.shop.season) return Promise.resolve();
+      
+      var fp = token.slice(0,4) + '…' + token.slice(-4);
+      var season = state.shop.season;
+      
+      return (async function() {
+        try {
+          var currentMarks = await WVSeasonStore.getMarks(season.year, season.seq, fp) || {};
+          currentMarks[listingId] = value;
+          await WVSeasonStore.setMarks(season.year, season.seq, fp, currentMarks);
+          
+          // Actualizar state.shop.marks
+          state.shop.marks = currentMarks;
+          
+          // Actualizar el header de AA
+          var sums = computeShopNumbers(state.shop.merged);
+          setShopHeader(state.shop.aa, sums.spentApi, sums.reservedMarks, state.shop.aaIconUrl);
+        } catch(e) {
+          console.warn('[WV] Error saving manual mark:', e);
+        }
+      })();
+    }
 
-      ensureShopToolbar(); syncShopToggleLabel();
-
-      var toolbarHost=ensureShopHost(), toolbar = toolbarHost.querySelector('.wv-shop-toolbar');
-      if (toolbar){ var line=toolbar.querySelector('.wv-syncline'); if (line) line.outerHTML = shopSyncLine(); }
-
-      var st=state.shop, sums=computeShopNumbers(st.merged);
-      setShopHeader(st.aa, sums.spentApi, sums.reservedMarks, st.aaIconUrl);
-
-      var areaId='wvShopList', area=host.querySelector('#'+areaId);
-      if (!area){ area=document.createElement('div'); area.id=areaId; host.appendChild(area); }
-
-      var itemsById=st.itemsById||new Map(), rows=passSearchAndSort(st.merged).slice(0,1200);
-      try { if (typeof window!=='undefined' && window.WV) window.WV.__debugRows=rows; } catch {}
-
-      setShopLoading(false);
-
-      if (st.view==='table'){
-        var trs=rows.map(function(x){
-          var it=(x.item_id!=null)?itemsById.get(x.item_id):null;
-          var icon=it&&it.icon?('<img class="wv-item-icon" src="'+escapeHtml(it.icon)+'" alt="" loading="lazy"/> '):'';
-          var name=it&&it.name?it.name:(x.item_id!=null?('Item #'+x.item_id):(x.type||'—'));
-          var rarity=it&&it.rarity?String(it.rarity):null, color=rarityColor(rarity);
-          var qty=(x.item_count && x.item_count>1)?(' <span class="muted">×'+x.item_count+'</span>'):'';
-          var limit=(typeof x.purchase_limit==='number')?x.purchase_limit:null;
-          var purchasedApi=(typeof x.purchased==='number')?x.purchased:0;
-
-          var marks=st.marks||{}, marked=Number(marks[x.id]||0), purchasedEff=purchasedApi+marked;
-          var leftVal=(limit==null)?'∞':GW2Api.wvComputeRemaining(limit, purchasedApi, marked);
-
-          var nameHtml='<span'+(color?' style="color:'+color+'"':'')+'>'+escapeHtml(name)+'</span>';
-
-          var pinActive=!!(st.pinned && st.pinned[x.id]);
-          var pinCls='wv-pin'+(pinActive?' wv-pin--active':''), pinBtn='<button class="'+pinCls+'" data-pin="'+x.id+'" title="'+(pinActive?'Desfijar':'Fijar')+'">📌</button>';
-
-          var ctr=(limit==null)
-            ? '<span class="wv-counter"><span class="muted" style="min-width:24px; display:inline-block; text-align:center;">—</span></span>'
-            : '<span class="wv-counter" data-id="'+x.id+'"><button class="btn btn--ghost wv-dec" title="-">−</button><span class="muted" style="min-width:24px; display:inline-block; text-align:center;">'+marked+'</span><button class="btn btn--ghost wv-inc" title="+">+</button></span>';
-
-          var maxBtn=(limit!=null && purchasedEff<limit)?'<button class="btn btn--ghost wv-markall" data-id="'+x.id+'" title="Marcar todo (llenar hasta el máximo)">Max</button>':'';
-
-          return '<tr data-id="'+x.id+'"><td class="nowrap">'+icon+nameHtml+qty+'</td><td>'+escapeHtml(x.type||'')+'</td><td class="right">'+(x.cost||0)+'</td><td class="right">'+purchasedEff+' / '+(limit==null?'∞':limit)+'</td><td class="right">'+leftVal+'</td><td class="right">'+ctr+(maxBtn?' '+maxBtn:'')+'</td><td class="right">'+pinBtn+'</td></tr>';
-        }).join('');
-
-        area.innerHTML='<div class="table-wrap"><table class="simple"><thead><tr><th>Ítem</th><th>Tipo</th><th class="right">Costo (AA)</th><th class="right">Comprado</th><th class="right">Restante</th><th class="right">Marcar</th><th class="right">Fijar</th></tr></thead><tbody>'+trs+'</tbody></table></div>';
-
-      } else {
-        var cards=rows.map(function(x){
-          var it=(x.item_id!=null)?itemsById.get(x.item_id):null;
-          var icon=it&&it.icon?it.icon:'';
-          var name=it&&it.name?it.name:(x.item_id!=null?('Item #'+x.item_id):(x.type||'—'));
-          var rarity=it&&it.rarity?String(it.rarity):null, color=rarityColor(rarity);
-
-          var cost=(x.cost||0), limit=(typeof x.purchase_limit==='number')?x.purchase_limit:null, purchasedApi=(typeof x.purchased==='number')?x.purchased:0;
-          var marks=st.marks||{}, marked=Number(marks[x.id]||0), purchasedEff=purchasedApi+marked;
-          var leftVal=(limit==null)?'∞':GW2Api.wvComputeRemaining(limit, purchasedApi, marked);
-
-          var b1=color?hexToRGBA(color,0.32):null, g1=color?hexToRGBA(color,0.36):null;
-          var cardDeco=(b1&&g1)?' style="border:1px solid '+b1+'; box-shadow: 0 0 0 1px '+b1+' inset, 0 0 14px '+g1+';"':'';
-          var iconDeco=(b1&&g1)?' style="box-shadow: 0 0 0 2px '+b1+', 0 0 10px '+g1+'; border-radius:6px;"':'';
-
-          var ctr=(limit==null)
-            ? '<span class="wv-counter wv-counter--card wv-counter--disabled"><span class="muted">—</span></span>'
-            : '<span class="wv-counter wv-counter--card" data-id="'+x.id+'"><button class="btn btn--ghost wv-dec" title="-">−</button><span class="muted" style="min-width:26px; display:inline-block; text-align:center;">'+marked+'</span><button class="btn btn--ghost wv-inc" title="+">+</button></span>';
-
-          var maxBtn=(limit!=null && purchasedEff<limit)?'<button class="btn btn--ghost wv-markall" data-id="'+x.id+'" title="Marcar todo (llenar hasta el máximo)">Max</button>':'';
-          var pinActive=!!(st.pinned && st.pinned[x.id]), pinCls='wv-pin'+(pinActive?' wv-pin--active':''), pinBtn='<button class="'+pinCls+'" data-pin="'+x.id+'" title="'+(pinActive?'Desfijar':'Fijar')+'">📌</button>';
-          var rowStyle='display:flex;justify-content:space-between;align-items:center;gap:8px;';
-
-          return '<div class="wv-card" data-id="'+x.id+'"'+cardDeco+'><div class="wv-card__top"><div class="wv-card__iconWrap"'+iconDeco+'>'+ (icon?('<img class="wv-card__icon" src="'+escapeHtml(icon)+'" alt="" loading="lazy"/>'):'') +'</div><div class="wv-card__name" title="'+escapeHtml(name)+'"'+(color?' style="color:'+color+'"':'')+'>'+escapeHtml(name)+'</div>'+pinBtn+'</div><div class="wv-card__meta"><span class="wv-badge">Costo: <strong>'+cost+'</strong> AA</span><span class="wv-type">'+escapeHtml(x.type||'—')+'</span></div><div class="wv-card__body"><div class="sep"></div><div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Comprado:</span><span class="pill">'+purchasedEff+' / '+(limit==null?'∞':limit)+'</span></div><div class="wv-card__row" style="'+rowStyle+'"><span class="muted">Restante:</span><span class="pill">'+leftVal+'</span></div></div><div class="wv-card__bottom" style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span class="wv-id">ID '+x.id+'</span><span>'+ctr+(maxBtn?' '+maxBtn:'')+'</span></div></div>';
-        }).join('');
-
-        area.innerHTML = '<div class="wv-card-grid">'+cards+'</div>';
+    function updateCardUI(card, listingId, newMarked) {
+      if (!card) return;
+      
+      var row = state.shop.merged.find(function(r) { return String(r.id) === String(listingId); });
+      if (!row) return;
+      
+      var limit = row.purchase_limit;
+      var purchasedApi = row.purchased || 0;
+      var purchasedEff = purchasedApi + newMarked;
+      var leftVal = limit !== null ? Math.max(0, limit - purchasedEff) : null;
+      var leftDisplay = leftVal === null ? '∞' : leftVal;
+      var totalRemainingAA = leftVal !== null ? leftVal * (row.cost || 0) : 0;
+      var progressPercent = limit !== null ? (purchasedEff / limit) * 100 : 0;
+      var isCompleted = leftVal !== null && leftVal === 0;
+      var statusIcon = isCompleted ? '✅' : (limit === null ? '∞' : '⚠️');
+      var statusText = isCompleted ? 'Completado' : (limit === null ? 'Ilimitado' : 'Pendiente');
+      var statusColor = isCompleted ? '#a0ffc8' : (limit === null ? '#7bc2ff' : '#ffd36b');
+      
+      // Actualizar pill de Comprado y Restante
+      var rows = card.querySelectorAll('.wv-card__row');
+      if (rows.length >= 2) {
+        var purchasedPill = rows[0].querySelector('.pill');
+        if (purchasedPill) purchasedPill.textContent = purchasedEff + ' / ' + (limit === null ? '∞' : limit);
+        var restantePill = rows[1].querySelector('.pill');
+        if (restantePill) restantePill.textContent = leftDisplay;
       }
+      
+      // Actualizar barra de progreso
+      var progressDiv = card.querySelector('.wvpd-item-progress');
+      if (progressDiv) {
+        var statusDiv = progressDiv.querySelector('.wvpd-item-progress__status');
+        if (statusDiv) {
+          statusDiv.style.color = statusColor;
+          statusDiv.setAttribute('title', isCompleted ? 'Completado' : (limit === null ? 'Sin límite' : 'Faltan ' + leftVal + ' unidades (' + totalRemainingAA + ' AA)'));
+          statusDiv.innerHTML = statusIcon + ' ' + statusText + ': ' + (leftDisplay === '∞' ? '∞' : leftDisplay + ' (' + totalRemainingAA + ' AA)');
+        }
+        var fillDiv = progressDiv.querySelector('.wvpd-item-progress__fill');
+        if (fillDiv) {
+          fillDiv.style.width = Math.min(100, progressPercent) + '%';
+        }
+      }
+      
+      // Actualizar input manual
+      var manualInput = card.querySelector('.wvpd-manual-input-field');
+      if (manualInput && manualInput.value != newMarked) {
+        manualInput.value = newMarked;
+      }
+    }
 
-      $$('.wv-counter', area).forEach(function(host){
-        var id=host.getAttribute('data-id'), btnDec=$('.wv-dec',host), btnInc=$('.wv-inc',host), spanVal=$('span.muted',host);
-        var findRow=function(){ return state.shop.merged.find(function(x){ return String(x.id)===String(id); }); };
-        var limitOf=function(row){ return (typeof row.purchase_limit==='number')?row.purchase_limit:null; };
-        var purchasedApiOf=function(row){ return (typeof row.purchased==='number')?row.purchased:0; };
-        function refresh(val){ if (spanVal) spanVal.textContent=String(val); renderShopArea(); }
-
-        if (btnDec && !btnDec.__wired){ btnDec.__wired=true; btnDec.addEventListener('click', async function(){
-          var row=findRow(); if(!row) return;
-          var marks=state.shop.marks||{}; var cur=+marks[id]||0; if(cur<=0) return;
-          cur-=1; marks[id]=cur; state.shop.marks=marks;
-          var ns=marksNamespace(); var fp=parseNs(ns);
-          saveMarksBatched(fp, ({[id]:cur}), function(){});
-          refresh(cur);
-        }); }
-        if (btnInc && !btnInc.__wired){ btnInc.__wired=true; btnInc.addEventListener('click', async function(){
-          var row=findRow(); if(!row) return;
-          var marks=state.shop.marks||{}; var cur=+marks[id]||0;
-          var lim=limitOf(row); var cap=(lim==null)?Infinity:Math.max(0, lim - purchasedApiOf(row));
-          if(cur>=cap) return;
-          cur+=1; marks[id]=cur; state.shop.marks=marks;
-          var ns=marksNamespace(); var fp=parseNs(ns);
-          saveMarksBatched(fp, ({[id]:cur}), function(){});
-          refresh(cur);
-        }); }
+    function setupManualInputEvents(container) {
+      // Inputs numéricos
+      var inputs = container.querySelectorAll('.wvpd-manual-input-field');
+      inputs.forEach(function(input) {
+        if (input.__wired) return;
+        input.__wired = true;
+        
+        var listingId = input.getAttribute('data-id');
+        var maxVal = parseInt(input.getAttribute('max'), 10);
+        var card = input.closest('.wv-card');
+        
+        input.addEventListener('change', function(e) {
+          var newValue = parseInt(e.target.value, 10);
+          if (isNaN(newValue)) newValue = 0;
+          if (!isNaN(maxVal) && newValue > maxVal) newValue = maxVal;
+          if (newValue < 0) newValue = 0;
+          if (input.value != newValue) input.value = newValue;
+          
+          // Actualizar marca en el estado
+          state.shop.marks[listingId] = newValue;
+          
+          // Guardar en almacenamiento persistente
+          saveManualMark(listingId, newValue).then(function() {
+            // Actualizar la UI de esta tarjeta
+            if (card) updateCardUI(card, listingId, newValue);
+          });
+        });
       });
-
-      $$('.wv-markall', area).forEach(function(btn){
-        if (btn.__wired) return; btn.__wired=true;
-        btn.addEventListener('click', async function(){
-          var id=btn.getAttribute('data-id'); var row=state.shop.merged.find(function(x){ return String(x.id)===String(id); }); if(!row) return;
-          var limit=(typeof row.purchase_limit==='number')?row.purchase_limit:null; var purchasedApi=(typeof row.purchased==='number')?row.purchased:0;
-          if (limit==null) return; var cap=Math.max(0, limit - purchasedApi);
-          var marks=state.shop.marks||{}; var prev=+marks[id]||0; marks[id]=cap; state.shop.marks=marks;
-          var ns=marksNamespace(); var fp=parseNs(ns);
-          try {
-            await saveMarks(ns, ({[id]:cap}));
-            renderShopArea();
-          } catch(e){
-            marks[id]=prev; state.shop.marks=marks;
-            renderShopArea();
-            window.toast?.('error','No se pudo guardar marcas (espacio de almacenamiento)',{ttl:1800});
+      
+      // Botones MAX
+      var maxBtns = container.querySelectorAll('.btn-max');
+      maxBtns.forEach(function(btn) {
+        if (btn.__wired) return;
+        btn.__wired = true;
+        
+        var listingId = btn.getAttribute('data-id');
+        var maxLimit = parseInt(btn.getAttribute('data-limit'), 10);
+        var card = btn.closest('.wv-card');
+        
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (!isNaN(maxLimit) && maxLimit > 0) {
+            var input = card.querySelector('.wvpd-manual-input-field');
+            if (input) {
+              input.value = maxLimit;
+              // Actualizar marca en el estado
+              state.shop.marks[listingId] = maxLimit;
+              // Guardar en almacenamiento persistente
+              saveManualMark(listingId, maxLimit).then(function() {
+                if (card) updateCardUI(card, listingId, maxLimit);
+              });
+            }
           }
         });
       });
+    }
 
-      $$('[data-pin]', area).forEach(function(btn){
-        if (btn.__wired) return; btn.__wired=true;
-        btn.addEventListener('click', async function(){
-          var id=btn.getAttribute('data-pin'); var pinned=state.shop.pinned||{};
-          var ns=marksNamespace(); var fp=parseNs(ns);
+    // ====== RENDERIZADO DE LA TIENDA ======
+    function renderShopArea() {
+      var host = els.tabShop;
+      if (!host) return;
+
+      ensureShopToolbar();
+      syncShopToggleLabel();
+
+      var toolbarHost = ensureShopHost();
+      var toolbar = toolbarHost.querySelector('.wv-shop-toolbar');
+      if (toolbar) {
+        var line = toolbar.querySelector('.wv-syncline');
+        if (line) line.outerHTML = shopSyncLine();
+      }
+
+      var st = state.shop;
+      var sums = computeShopNumbers(st.merged);
+      setShopHeader(st.aa, sums.spentApi, sums.reservedMarks, st.aaIconUrl);
+
+      var areaId = 'wvShopList';
+      var area = host.querySelector('#' + areaId);
+      if (!area) {
+        area = document.createElement('div');
+        area.id = areaId;
+        host.appendChild(area);
+      }
+
+      var itemsById = st.itemsById || new Map();
+      var rows = passSearchAndSort(st.merged).slice(0, 1200);
+
+      setShopLoading(false);
+
+      if (st.view === 'table') {
+        // Vista Tabla (simplificada, sin barra de progreso)
+        var trs = rows.map(function(x) {
+          var it = (x.item_id != null) ? itemsById.get(x.item_id) : null;
+          var icon = it && it.icon ? ('<img class="wv-item-icon" src="' + escapeHtml(it.icon) + '" alt="" loading="lazy"/> ') : '';
+          var name = it && it.name ? it.name : (x.item_id != null ? ('Item #' + x.item_id) : (x.type || '—'));
+          var rarity = it && it.rarity ? String(it.rarity) : null;
+          var color = rarityColor(rarity);
+          var qty = (x.item_count && x.item_count > 1) ? (' <span class="muted">×' + x.item_count + '</span>') : '';
+          var limit = (typeof x.purchase_limit === 'number') ? x.purchase_limit : null;
+          var purchasedApi = (typeof x.purchased === 'number') ? x.purchased : 0;
+          var marks = st.marks || {};
+          var marked = Number(marks[x.id] || 0);
+          var purchasedEff = purchasedApi + marked;
+          var leftVal = (limit == null) ? '∞' : GW2Api.wvComputeRemaining(limit, purchasedApi, marked);
+
+          var nameHtml = '<span' + (color ? ' style="color:' + color + '"' : '') + '>' + escapeHtml(name) + '</span>';
+          var pinActive = !!(st.pinned && st.pinned[x.id]);
+          var pinCls = 'wv-pin' + (pinActive ? ' wv-pin--active' : '');
+          var pinBtn = '<button class="' + pinCls + '" data-pin="' + x.id + '" title="' + (pinActive ? 'Desfijar' : 'Fijar') + '">📌</button>';
+
+          return '<tr data-id="' + x.id + '">' +
+            '<td class="nowrap">' + icon + nameHtml + qty + '</td>' +
+            '<td>' + escapeHtml(x.type || '') + '</td>' +
+            '<td class="right">' + (x.cost || 0) + '</td>' +
+            '<td class="right">' + purchasedEff + ' / ' + (limit == null ? '∞' : limit) + '</td>' +
+            '<td class="right">' + leftVal + '</td>' +
+            '<td class="right"><div class="wvpd-manual-input" style="display:flex;gap:4px;"><input type="number" class="wvpd-manual-input-field" data-id="' + x.id + '" value="' + marked + '" min="0" max="' + (limit || 999) + '" step="1" style="width:60px;"><button class="btn-max" data-id="' + x.id + '" data-limit="' + (limit || 0) + '" style="padding:2px 6px;">MAX</button></div></td>' +
+            '<td class="right">' + pinBtn + '</td>' +
+            '</tr>';
+        }).join('');
+
+        area.innerHTML = '<div class="table-wrap"><table class="simple"><thead>' +
+          '<tr><th>Ítem</th><th>Tipo</th><th class="right">Costo (AA)</th><th class="right">Comprado</th><th class="right">Restante</th><th class="right">Marcar</th><th class="right">Fijar</th></tr>' +
+          '</thead><tbody>' + trs + '</tbody></table></div>';
+        
+        // Configurar eventos para los inputs de la tabla
+        setupManualInputEvents(area);
+        
+      } else {
+        // Vista Tarjetas (con barra de progreso integrada)
+        var cards = rows.map(function(x) {
+          var it = (x.item_id != null) ? itemsById.get(x.item_id) : null;
+          var icon = it && it.icon ? it.icon : '';
+          var name = it && it.name ? it.name : (x.item_id != null ? ('Item #' + x.item_id) : (x.type || '—'));
+          var rarity = it && it.rarity ? String(it.rarity) : null;
+          var color = rarityColor(rarity);
+
+          var cost = (x.cost || 0);
+          var limit = (typeof x.purchase_limit === 'number') ? x.purchase_limit : null;
+          var purchasedApi = (typeof x.purchased === 'number') ? x.purchased : 0;
+          var marks = st.marks || {};
+          var marked = Number(marks[x.id] || 0);
+          var purchasedEff = purchasedApi + marked;
+          var leftVal = (limit == null) ? null : Math.max(0, limit - purchasedEff);
+          var leftDisplay = (limit == null) ? '∞' : leftVal;
+          var totalRemainingAA = leftVal !== null ? leftVal * cost : 0;
+          var progressPercent = limit ? (purchasedEff / limit) * 100 : 0;
+          var isCompleted = leftVal !== null && leftVal === 0;
+          var statusIcon = isCompleted ? '✅' : (limit === null ? '∞' : '⚠️');
+          var statusText = isCompleted ? 'Completado' : (limit === null ? 'Ilimitado' : 'Pendiente');
+          var statusColor = isCompleted ? '#a0ffc8' : (limit === null ? '#7bc2ff' : '#ffd36b');
+
+          var b1 = color ? hexToRGBA(color, 0.32) : null;
+          var g1 = color ? hexToRGBA(color, 0.36) : null;
+          var cardDeco = (b1 && g1) ? ' style="border:1px solid ' + b1 + '; box-shadow: 0 0 0 1px ' + b1 + ' inset, 0 0 14px ' + g1 + ';"' : '';
+          var iconDeco = (b1 && g1) ? ' style="box-shadow: 0 0 0 2px ' + b1 + ', 0 0 10px ' + g1 + '; border-radius:6px;"' : '';
+
+          var pinActive = !!(st.pinned && st.pinned[x.id]);
+          var pinCls = 'wv-pin' + (pinActive ? ' wv-pin--active' : '');
+          var pinBtn = '<button class="' + pinCls + '" data-pin="' + x.id + '" title="' + (pinActive ? 'Desfijar' : 'Fijar') + '">📌</button>';
+
+          var rowStyle = 'display:flex;justify-content:space-between;align-items:center;gap:8px;';
+
+          // Barra de progreso (siempre visible)
+          var progressHtml = '<div class="wvpd-item-progress wvpd-item-progress--compact">' +
+            '<div class="wvpd-item-progress__status" style="color: ' + statusColor + '" title="' + (isCompleted ? 'Completado' : (limit === null ? 'Sin límite' : 'Faltan ' + leftVal + ' unidades (' + totalRemainingAA + ' AA)')) + '">' +
+            statusIcon + ' ' + statusText + ': ' + (leftDisplay === '∞' ? '∞' : leftDisplay + ' (' + totalRemainingAA + ' AA)') +
+            '</div>' +
+            '<div class="wvpd-item-progress__bar">' +
+            '<div class="wvpd-item-progress__fill" style="width:' + Math.min(100, progressPercent) + '%"></div>' +
+            '</div>' +
+            '</div>';
+
+          // Input manual + botón MAX (siempre visible)
+          var manualInputHtml = '<div class="wvpd-manual-input" data-id="' + x.id + '">' +
+            '<label>Compras manuales:</label>' +
+            '<input type="number" class="wvpd-manual-input-field" data-id="' + x.id + '" value="' + marked + '" min="0" max="' + (limit || 999) + '" step="1">' +
+            '<button class="btn-max" data-id="' + x.id + '" data-limit="' + (limit || 0) + '">MAX</button>' +
+            '</div>';
+
+          return '<div class="wv-card" data-id="' + x.id + '"' + cardDeco + '>' +
+            '<div class="wv-card__top">' +
+              '<div class="wv-card__iconWrap"' + iconDeco + '>' + (icon ? ('<img class="wv-card__icon" src="' + escapeHtml(icon) + '" alt="" loading="lazy"/>') : '') + '</div>' +
+              '<div class="wv-card__name" title="' + escapeHtml(name) + '"' + (color ? ' style="color:' + color + '"' : '') + '>' + escapeHtml(name) + '</div>' +
+              pinBtn +
+            '</div>' +
+            '<div class="wv-card__meta">' +
+              '<span class="wv-badge">Costo: <strong>' + cost + '</strong> AA</span>' +
+              '<span class="wv-type">' + escapeHtml(x.type || '—') + '</span>' +
+            '</div>' +
+            '<div class="wv-card__body">' +
+              '<div class="sep"></div>' +
+              '<div class="wv-card__row" style="' + rowStyle + '"><span class="muted">Comprado (API):</span><span class="pill">' + purchasedApi + ' / ' + (limit == null ? '∞' : limit) + '</span></div>' +
+              '<div class="wv-card__row" style="' + rowStyle + '"><span class="muted">Restante:</span><span class="pill">' + leftDisplay + '</span></div>' +
+              progressHtml +
+              manualInputHtml +
+            '</div>' +
+            '<div class="wv-card__bottom" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
+              '<span class="wv-id">ID ' + x.id + '</span>' +
+            '</div>' +
+            '</div>';
+        }).join('');
+
+        area.innerHTML = '<div class="wv-card-grid">' + cards + '</div>';
+        
+        // Configurar eventos para los inputs de las tarjetas
+        setupManualInputEvents(area);
+      }
+
+      // Event listeners para los botones de fijar/desfijar
+      $$('[data-pin]', area).forEach(function(btn) {
+        if (btn.__wired) return;
+        btn.__wired = true;
+        btn.addEventListener('click', async function() {
+          var id = btn.getAttribute('data-pin');
+          var pinned = state.shop.pinned || {};
+          var ns = marksNamespace();
+          var fp = parseNs(ns);
           if (pinned[id]) {
             delete pinned[id];
             try {
               await delPinnedIds(fp, [id]);
-              state.shop.pinned=pinned;
+              state.shop.pinned = pinned;
               renderShopArea();
-            } catch(e){
-              pinned[id]=true; state.shop.pinned=pinned; renderShopArea();
-              window.toast?.('error','No se pudo desfijar (espacio de almacenamiento)',{ttl:1800});
+            } catch (e) {
+              pinned[id] = true;
+              state.shop.pinned = pinned;
+              renderShopArea();
+              window.toast?.('error', 'No se pudo desfijar (espacio de almacenamiento)', { ttl: 1800 });
             }
           } else {
-            pinned[id]=true;
+            pinned[id] = true;
             try {
-              await setPinnedPatch(fp, ({[id]:true}));
-              state.shop.pinned=pinned;
+              await setPinnedPatch(fp, ({ [id]: true }));
+              state.shop.pinned = pinned;
               renderShopArea();
-            } catch(e){
-              delete pinned[id]; state.shop.pinned=pinned; renderShopArea();
-              window.toast?.('error','No se pudo fijar (espacio de almacenamiento)',{ttl:1800});
+            } catch (e) {
+              delete pinned[id];
+              state.shop.pinned = pinned;
+              renderShopArea();
+              window.toast?.('error', 'No se pudo fijar (espacio de almacenamiento)', { ttl: 1800 });
             }
           }
         });
@@ -1095,15 +1250,6 @@
       scheduleAllResets();
     }
 
-    try {
-      window.addEventListener('wv:season-store:mutate', function(){
-        var onWV = normHash(location.hash||'#/cards') === '#/account/wizards-vault';
-        if (onWV && state.lastTab==='shop') {
-          renderShopArea();
-        }
-      });
-    } catch(_){}
-
     var api={
       activate:activate, setActiveTab:setActiveTab, ensureLoadTab:ensureLoadTab,
       deactivate:deactivate, onVisibilityChange:onVisibilityChange, onTokenChanged:onTokenChanged,
@@ -1122,7 +1268,7 @@
 
     return api;
   })();
-
+  
   // ----------------------------- ROUTER ------------------------------------
   var _routeT = null;
 
@@ -1244,7 +1390,6 @@
         return;
       }
 
-      // NUEVA RUTA: Pantalla de Bienvenida
       if (h === '#/welcome') {
         try {
           showPanel('welcomePanel');

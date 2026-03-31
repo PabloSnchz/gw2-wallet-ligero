@@ -9,6 +9,31 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [5.8.0] - 2026-03-30
+
+### Added
+- **Recarga forzada de temporada en Wizard's Vault (wizards-vault.js v1.3.0)**:
+  - Ícono clickeable (sin apariencia de botón) ubicado junto al tooltip de información (`wvSyncNote`), a la derecha del título "Cámara del Brujo"
+  - Ícono: `assets/icons/Welcome/834002.png`
+  - Función `forceReloadSeason()`: obtiene temporada fresca de la API (`/v2/wizardsvault` con `nocache: true`)
+  - Actualiza automáticamente la UI (`wvSeasonTitle`, `wvSeasonDates`)
+  - Guarda los datos en `WVSeasonStore` para persistencia
+  - Feedback visual con toast (info → éxito/error)
+  - Función global `window.forceReloadWVSeason` expuesta para debug en consola
+  - Inyección automática del ícono al cargar el DOM y al navegar a `#/account/wizards-vault`
+
+### Changed
+- **wizards-vault.js v1.3.0**:
+  - Nueva función `forceReloadSeason()` con lógica completa de recarga
+  - Nueva función `injectReloadSeasonButton()` para inyectar el ícono en la UI
+  - El ícono se inserta después del tooltip existente (`wvSyncNote`)
+  - Estilos del ícono: opacidad 0.7 → 1 al hover, cursor pointer, transición suave
+
+### Fixed
+- **Información de temporada no visible**: ahora el usuario puede restaurarla manualmente con un clic, sin necesidad de recargar toda la página ni usar la consola
+
+---
+
 ## [5.7.0] - 2026-03-28
 
 ### Added
