@@ -1289,125 +1289,138 @@
   }
 
   function route() {
-    clearTimeout(_routeT);
-    _routeT = setTimeout(function () {
-      var h = normHash(location.hash || '#/cards');
+      clearTimeout(_routeT);
+      _routeT = setTimeout(function () {
+        var h = normHash(location.hash || '#/cards');
 
-      if (h !== '#/account/wizards-vault' && WV && typeof WV.deactivate === 'function') {
-        try { WV.deactivate(); } catch (_) {}
-      }
-      try { if (h !== '#/activities' && _actAbort) { _actAbort.abort(); } } catch(_) {}
-      if (h !== '#/activities' && window.Activities && typeof window.Activities.deactivate === 'function') {
-        try { window.Activities.deactivate(); } catch (_) {}
-      }
-
-      if (h === '#/cards') {
-        try { showPanel('walletPanel'); }
-        catch (e) { console.warn('[router] show wallet error', e); }
-        finally { updateSidebarFor('cards'); setActiveNav(h); }
-        return;
-      }
-
-      if (h === '#/meta') {
-        try {
-          showPanel('metaPanel');
-          document.dispatchEvent(new CustomEvent('gn:tabchange', { detail: { view: 'meta' } }));
-        } catch (e) {
-          console.warn('[router] show meta error', e);
-        } finally {
-          updateSidebarFor('meta');
-          setActiveNav(h);
+        if (h !== '#/account/wizards-vault' && WV && typeof WV.deactivate === 'function') {
+          try { WV.deactivate(); } catch (_) {}
         }
-        return;
-      }
+        try { if (h !== '#/activities' && _actAbort) { _actAbort.abort(); } } catch(_) {}
+        if (h !== '#/activities' && window.Activities && typeof window.Activities.deactivate === 'function') {
+          try { window.Activities.deactivate(); } catch (_) {}
+        }
 
-      if (h === '#/account/achievements') {
-        try {
-          showPanel('achievementsPanel');
-          if (window.Achievements && typeof window.Achievements.render === 'function') {
-            window.Achievements.render();
+        if (h === '#/cards') {
+          try { 
+            showPanel('walletPanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('wallet');
           }
-        } catch (e) {
-          console.warn('[router] show achievements error', e);
-        } finally {
-          updateSidebarFor('achievements');
-          setActiveNav(h);
+          catch (e) { console.warn('[router] show wallet error', e); }
+          finally { updateSidebarFor('cards'); setActiveNav(h); }
+          return;
         }
-        return;
-      }
 
-      if (h === '#/account/wizards-vault') {
-        try {
-          showPanel('wvPanel');
-          if (WV && typeof WV.activate === 'function') WV.activate();
-          hydrateWVModePills(el('wvPanel'));
-        } catch (e) {
-          console.error('[router] WV.activate error', e);
-        } finally {
-          updateSidebarFor('wv');
-          setActiveNav(h);
+        if (h === '#/meta') {
+          try {
+            showPanel('metaPanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('meta_events');
+            document.dispatchEvent(new CustomEvent('gn:tabchange', { detail: { view: 'meta' } }));
+          } catch (e) {
+            console.warn('[router] show meta error', e);
+          } finally {
+            updateSidebarFor('meta');
+            setActiveNav(h);
+          }
+          return;
         }
-        return;
-      }
 
-      if (h === '#/activities') {
-        try {
-          prefetchActivitiesOnce(getSelectedToken());
-          showPanel('activitiesPanel');
-          window.Activities?.activate?.();
-        } catch (e) {
-          console.warn('[router] Activities.activate error', e);
-        } finally {
-          updateSidebarFor('activities');
-          setActiveNav(h);
+        if (h === '#/account/achievements') {
+          try {
+            showPanel('achievementsPanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('achievements');
+            if (window.Achievements && typeof window.Achievements.render === 'function') {
+              window.Achievements.render();
+            }
+          } catch (e) {
+            console.warn('[router] show achievements error', e);
+          } finally {
+            updateSidebarFor('achievements');
+            setActiveNav(h);
+          }
+          return;
         }
-        return;
-      }
 
-      if (h === '#/account/characters') {
-        try {
-          showPanel('charactersPanel');
-          window.Characters?.activate?.();
-        } catch (e) {
-          console.warn('[router] Characters.activate error', e);
-        } finally {
-          updateSidebarFor('characters');
-          setActiveNav(h);
+        if (h === '#/account/wizards-vault') {
+          try {
+            showPanel('wvPanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('wizards_vault');
+            if (WV && typeof WV.activate === 'function') WV.activate();
+            hydrateWVModePills(el('wvPanel'));
+          } catch (e) {
+            console.error('[router] WV.activate error', e);
+          } finally {
+            updateSidebarFor('wv');
+            setActiveNav(h);
+          }
+          return;
         }
-        return;
-      }
 
-      if (h === '#/account/accounts') {
-        try {
-          showPanel('accountsPanel');
-          window.Accounts?.activate?.();
-        } catch (e) {
-          console.warn('[router] Accounts.activate error', e);
-        } finally {
-          updateSidebarFor('accounts');
-          setActiveNav(h);
+        if (h === '#/activities') {
+          try {
+            prefetchActivitiesOnce(getSelectedToken());
+            showPanel('activitiesPanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('activities');
+            window.Activities?.activate?.();
+          } catch (e) {
+            console.warn('[router] Activities.activate error', e);
+          } finally {
+            updateSidebarFor('activities');
+            setActiveNav(h);
+          }
+          return;
         }
-        return;
-      }
 
-      if (h === '#/welcome') {
-        try {
-          showPanel('welcomePanel');
-          window.Welcome?.activate?.();
-        } catch (e) {
-          console.warn('[router] Welcome.activate error', e);
-        } finally {
-          updateSidebarFor('welcome');
-          setActiveNav(h);
+        if (h === '#/account/characters') {
+          try {
+            showPanel('charactersPanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('characters');
+            window.Characters?.activate?.();
+          } catch (e) {
+            console.warn('[router] Characters.activate error', e);
+          } finally {
+            updateSidebarFor('characters');
+            setActiveNav(h);
+          }
+          return;
         }
-        return;
-      }
 
-      try { showPanel('walletPanel'); }
-      catch (e) { console.warn('[router] fallback show wallet error', e); }
-      finally { updateSidebarFor('cards'); setActiveNav('#/cards'); }
-    }, 35);
-  }
+        if (h === '#/account/accounts') {
+          try {
+            showPanel('accountsPanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('accounts');
+            window.Accounts?.activate?.();
+          } catch (e) {
+            console.warn('[router] Accounts.activate error', e);
+          } finally {
+            updateSidebarFor('accounts');
+            setActiveNav(h);
+          }
+          return;
+        }
+
+        if (h === '#/welcome') {
+          try {
+            showPanel('welcomePanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('welcome');
+            window.Welcome?.activate?.();
+          } catch (e) {
+            console.warn('[router] Welcome.activate error', e);
+          } finally {
+            updateSidebarFor('welcome');
+            setActiveNav(h);
+          }
+          return;
+        }
+
+        try { 
+          showPanel('walletPanel');
+          if (typeof Analytics !== 'undefined') Analytics.viewModule('wallet');
+        }
+        catch (e) { console.warn('[router] fallback show wallet error', e); }
+        finally { updateSidebarFor('cards'); setActiveNav('#/cards'); }
+      }, 35);
+    }
 
   function onKeySelectChange() {
     var h = normHash(location.hash || '#/cards');

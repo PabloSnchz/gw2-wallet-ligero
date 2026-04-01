@@ -715,6 +715,8 @@
   }
 
   function openKeysModal() {
+    if (typeof Analytics !== 'undefined') Analytics.openApiKeysModal();
+
     if (!el.keysModal) return;
     renderKeysList();
 
@@ -789,6 +791,10 @@
     el.keysList.querySelectorAll('.k-del').forEach(b => b.addEventListener('click', ev => {
       const row = ev.target.closest('.keys-row'); const val = row?.dataset?.val; if (!val) return;
       if (!confirm('¿Eliminar esta API Key de tu navegador?')) return;
+
+      // Evento Analytics
+      if (typeof Analytics !== 'undefined') Analytics.deleteApiKey();
+
       KeyManager.remove(val);
       renderKeysList();
       setStatus('Key eliminada.', 'ok');
@@ -803,6 +809,9 @@
       const value = el.kfValue?.value.trim() || '';
       if (!value) return setStatus('Ingresá una API key.', 'error');
       try {
+        // Evento Analytics
+        if (typeof Analytics !== 'undefined') Analytics.addApiKey();
+
         await KeyManager.addOrUpdate({ label, value });
         if (el.kfLabel) el.kfLabel.value = '';
         if (el.kfValue) el.kfValue.value = '';

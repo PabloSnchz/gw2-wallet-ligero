@@ -1137,6 +1137,8 @@
   // 8. MODAL DEL ASISTENTE
   // =======================================================================
   function openWizardModal() {
+    if (typeof Analytics !== 'undefined') Analytics.openAccountWizard();
+    
     var existingModal = document.getElementById('accountsWizardModal');
     if (existingModal) {
       existingModal.hidden = false;
@@ -1347,6 +1349,10 @@
           var jsonString = e.target.result;
           var encrypted = CryptoJS.AES.encrypt(jsonString, password).toString();
           downloadFile(encrypted, 'gw2-cuentas.enc', 'text/plain');
+
+          // Evento Analytics
+          if (typeof Analytics !== 'undefined') Analytics.encryptAccountsFile();
+
           statusDiv.textContent = '✅ Archivo cifrado: gw2-cuentas.enc';
           statusDiv.style.color = '#a7f3d0';
           document.getElementById('wizardPassword').value = '';
@@ -1381,6 +1387,7 @@
   }
 
   function generateExcelTemplate() {
+    if (typeof Analytics !== 'undefined') Analytics.downloadExcelTemplate();
     var columns = [
       'id', 'nombre', 'email', 'password', 'gmailPassword', 'apiKey',
       'twitch_user', 'twitch_email', 'twitch_password', 'geforce_linked', 'notas', 'tags'
@@ -1491,6 +1498,10 @@
     }
     
     data.lastUpdated = new Date().toISOString().split('T')[0];
+    
+    // Evento Analytics
+    if (typeof Analytics !== 'undefined') Analytics.enrichWithAPI();
+    
     return data;
   }
 

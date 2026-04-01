@@ -9,9 +9,52 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [5.9.0] - 2026-03-31
+
+### Added
+- **Google Analytics y Eventos Personalizados**:
+  - Script de seguimiento GA4 agregado en `<head>` con ID `G-LB782QT9TR`
+  - Nuevo archivo `js/analytics.js` v1.0.0 con API pública `window.Analytics`
+  - Cola de eventos segura: si gtag no está cargado, los eventos se guardan y se envían cuando esté disponible
+  - Eventos personalizados medidos:
+    - `view_module` — Navegación a cada módulo (8 módulos: wallet, meta_events, achievements, wizards_vault, activities, characters, accounts, welcome)
+    - `export_backup` / `import_backup` — Uso de backup/restaurar
+    - `open_account_wizard` — Apertura del asistente de cuentas
+    - `download_excel_template` — Descarga de plantilla Excel
+    - `enrich_with_api` — Enriquecimiento con GW2 API
+    - `encrypt_accounts_file` — Creación de archivo .enc cifrado
+    - `force_reload_season` — Recarga forzada de temporada WV
+    - `open_api_keys_modal` — Apertura del modal de API Keys
+    - `add_api_key` — Agregar nueva API Key
+    - `delete_api_key` — Eliminar API Key
+  - Debug en consola: cada evento se loguea con `[Analytics]` prefix
+
+### Changed
+- **router.js v2.12.0**: Agregados eventos `view_module` en todos los módulos (wallet, meta_events, achievements, wizards_vault, activities, characters, accounts, welcome)
+- **settings-manager.js v1.0.1**: Agregados eventos `export_backup` e `import_backup`
+- **accounts-panel.js v1.9.0**: Agregados eventos `open_account_wizard`, `download_excel_template`, `enrich_with_api`, `encrypt_accounts_file`
+- **wizards-vault.js v1.3.0**: Agregado evento `force_reload_season`
+- **app.js v2.6.3**: Agregados eventos `open_api_keys_modal`, `add_api_key`, `delete_api_key`
+- **index.html**: Agregado script `js/analytics.js` después del script de GA4
+- **Documentación**: README.md, ONBOARDING.md actualizados a v5.9.0
+
+---
+
 ## [5.8.0] - 2026-03-30
 
 ### Added
+- **Automatización de compras en Wizard's Vault**:
+  - **Dashboard de compras (wv-purchase-detail.js v1.11.0)**:
+    - Barra de progreso compacta en cada celda de ítem fijado
+    - Input numérico + botón MAX para marcas manuales
+    - Auto-guardado con debounce (500ms)
+    - Regla dual: `Math.max(apiPurchased, manualMarks)` — muestra el valor más alto entre API y marcas manuales
+  - **Tienda unificada (router.js v2.12.0)**:
+    - Barra de progreso e input manual integrados como parte nativa del HTML de cada tarjeta
+    - Eliminado event listener conflictivo de `wv:season-store:mutate` que recreaba la tienda innecesariamente
+    - Persistencia de marcas directamente en WVSeasonStore sin recargar toda la tienda
+    - Las barras no desaparecen al modificar valores ni al cambiar de pestaña
+    - Funciones internas: `saveManualMark()`, `updateCardUI()`, `setupManualInputEvents()`
 - **Recarga forzada de temporada en Wizard's Vault (wizards-vault.js v1.3.0)**:
   - Ícono clickeable (sin apariencia de botón) ubicado junto al tooltip de información (`wvSyncNote`), a la derecha del título "Cámara del Brujo"
   - Ícono: `assets/icons/Welcome/834002.png`
@@ -28,9 +71,16 @@ y el versionado **SemVer** (https://semver.org/).
   - Nueva función `injectReloadSeasonButton()` para inyectar el ícono en la UI
   - El ícono se inserta después del tooltip existente (`wvSyncNote`)
   - Estilos del ícono: opacidad 0.7 → 1 al hover, cursor pointer, transición suave
+- **wv-purchase-detail.js v1.8.6 → v1.11.0**:
+  - Nueva regla dual para mostrar valor más alto entre API y marcas manuales
+  - Auto-guardado con debounce 500ms
+- **router.js v2.10.6 → v2.12.0**:
+  - Barra de progreso e input manual integrados en HTML nativo
+  - Eliminado event listener conflictivo
 
 ### Fixed
 - **Información de temporada no visible**: ahora el usuario puede restaurarla manualmente con un clic, sin necesidad de recargar toda la página ni usar la consola
+- **Barras de progreso en tienda**: ya no desaparecen al modificar valores ni al cambiar de pestaña
 
 ---
 

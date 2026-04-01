@@ -202,6 +202,7 @@
    * Exporta TODA la configuración (para descarga manual)
    */
   function exportAll() {
+    if (typeof Analytics !== 'undefined') Analytics.exportBackup();
     var exportData = {
       version: EXPORT_VERSION,
       exportedAt: new Date().toISOString(),
@@ -469,19 +470,21 @@
   }
   
   /**
-   * Importa con confirmación visual (desde archivo)
-   */
-  async function importAll() {
-    return new Promise(function(resolve, reject) {
-      var input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.json';
-      input.onchange = async function(e) {
-        var file = e.target.files[0];
-        if (!file) {
-          reject(new Error('No se seleccionó ningún archivo'));
-          return;
-        }
+     * Importa con confirmación visual (desde archivo)
+     */
+    async function importAll() {
+      if (typeof Analytics !== 'undefined') Analytics.importBackup();
+      
+      return new Promise(function(resolve, reject) {
+        var input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = async function(e) {
+          var file = e.target.files[0];
+          if (!file) {
+            reject(new Error('No se seleccionó ningún archivo'));
+            return;
+          }
         
         try {
           var importData = await importFromFile(file);
