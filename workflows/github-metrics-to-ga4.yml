@@ -1,0 +1,100 @@
+name: Send GitHub Metrics to GA4
+
+on:
+  schedule:
+    # Se ejecuta todos los días a las 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:  # Permite ejecución manual desde GitHub
+
+jobs:
+  send-metrics:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Get GitHub Traffic Metrics
+        id: traffic
+        run: |
+          # Obtener clones (últimos 14 días)
+          CLONES_RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/traffic/clones)
+          
+          CLONES_TOTAL=$(echo $CLONES_RESPONSE | jq '.count')
+          CLONES_UNIQUE=$(echo $CLONES_RESPONSE | jq '.uniques')
+          
+          # Obtener vistas (últimos 14 días)
+          VIEWS_RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/traffic/views)
+          
+          VIEWS_TOTAL=$(echo $VIEWS_RESPONSE | jq '.count')
+          VIEWS_UNIQUE=$(echo $VIEWS_RESPONSE | jq '.uniques')
+          
+          # Obtener estrellas
+          REPO_RESPONSE=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }})
+          
+          STARS=$(echo $REPO_RESPONSE | jq '.stargazers_count')
+          FORKS=$(echo $REPO_RESPONSE | jq '.forks_count')
+          
+          # Guardar como outputs
+          echo "clones_total=$CLONES_TOTAL" >> $GITHUB_OUTPUT
+          echo "clones_unique=$CLONES_UNIQUE" >> $GITHUB_OUTPUT
+          echo "views_total=$VIEWS_TOTAL" >> $GITHUB_OUTPUT
+          echo "views_unique=$VIEWS_UNIQUE" >> $GITHUB_OUTPUT
+          echo "stars=$STARS" >> $GITHUB_OUTPUT
+          echo "forks=$FORKS" >> $GITHUB_OUTPUT
+          
+          echo "📊 Métricas obtenidas:"
+          echo "   Clones totales (14d): $CLONES_TOTAL"
+          echo "   Clonadores únicos (14d): $CLONES_UNIQUE"
+          echo "   Vistas totales (14d): $VIEWS_TOTAL"
+          echo "   Visitantes únicos (14d): $VIEWS_UNIQUE"
+          echo "   Stars: $STARS"
+          echo "   Forks: $FORKS"
+      
+      - name: Send to Google Analytics
+        env:
+          GA4_MEASUREMENT_ID: ${{ secrets.GA4_MEASUREMENT_ID }}
+          GA4_API_SECRET: ${{ secrets.GA4_API_SECRET }}
+        run: |
+          # Construir payload
+          PAYLOAD=$(cat <<EOF
+          {
+            "client_id": "github_repo_metrics",
+            "events": [
+              {
+                "name": "github_clones",
+                "params": {
+                  "total_14d": ${{ steps.traffic.outputs.clones_total }},
+                  "unique_14d": ${{ steps.traffic.outputs.clones_unique }}
+                }
+              },
+              {
+                "name": "github_views",
+                "params": {
+                  "total_14d": ${{ steps.traffic.outputs.views_total }},
+                  "unique_14d": ${{ steps.traffic.outputs.views_unique }}
+                }
+              },
+              {
+                "name": "github_repo_stats",
+                "params": {
+                  "stars": ${{ steps.traffic.outputs.stars }},
+                  "forks": ${{ steps.traffic.outputs.forks }}
+                }
+              }
+            ]
+          }
+          EOF
+          )
+          
+          # Enviar a GA4 Measurement Protocol
+          curl -X POST "https://www.google-analytics.com/mp/collect?measurement_id=$GA4_MEASUREMENT_ID&api_secret=$GA4_API_SECRET" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD"
+          
+          echo "✅ Datos enviados a Google Analytics"
