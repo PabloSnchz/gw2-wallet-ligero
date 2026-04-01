@@ -184,6 +184,9 @@
   // ====== FUNCIÓN PARA FORZAR RECARGA DE TEMPORADA ======
   function forceReloadSeason() {
     console.log(LOGW, 'Forzando recarga de temporada...');
+
+  // Evento Analytics
+  if (typeof Analytics !== 'undefined') Analytics.forceReloadSeason();
     
     var token = (function() {
       var sel = document.getElementById('keySelectGlobal');

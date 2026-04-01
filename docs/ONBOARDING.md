@@ -1,8 +1,8 @@
 ```markdown
-# 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v5.8)
+# 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v5.9)
 
-Fecha: 2026-03-30
-Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `accounts-panel.js`, `welcome-panel.js`, `settings-manager.js`, `*-theme.js`, `app.css`
+Fecha: 2026-03-31
+Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `accounts-panel.js`, `welcome-panel.js`, `settings-manager.js`, `analytics.js`, `*-theme.js`, `app.css`
 
 ## 📌 BAI — Bloque de Alineamiento Instantáneo
 
@@ -57,7 +57,49 @@ Bóveda del Gato Negro es una web app vanilla JS modular, sin framework, con foc
 
 Si hay riesgo → advertir antes de generar código.
 
-## 🚀 Novedades v5.8
+## 🚀 Novedades v5.9
+
+### 🆕 Google Analytics y Eventos Personalizados (NUEVO)
+
+**Integración con Google Analytics (GA4):**
+- Script de seguimiento agregado en `<head>` de `index.html` con ID `G-LB782QT9TR`
+- Mide visitas, usuarios activos, ubicación geográfica, dispositivo, navegador, fuente de tráfico y duración de sesión
+
+**Eventos personalizados (analytics.js v1.0.0):**
+- Archivo centralizado `js/analytics.js` con API pública `window.Analytics`
+- Cola de eventos segura: si gtag no está cargado, los eventos se guardan y se envían cuando esté disponible
+- Función `sendEvent(eventName, eventParams)` con fallback y debug en consola
+
+**Eventos medidos en la app:**
+
+| Evento | Disparo | Archivo |
+|--------|---------|---------|
+| `view_module` | Navegación a cada módulo (wallet, meta_events, achievements, wizards_vault, activities, characters, accounts, welcome) | `router.js` |
+| `export_backup` | Exportación de backup | `settings-manager.js` |
+| `import_backup` | Importación de backup | `settings-manager.js` |
+| `open_account_wizard` | Apertura del asistente de cuentas | `accounts-panel.js` |
+| `download_excel_template` | Descarga de plantilla Excel | `accounts-panel.js` |
+| `enrich_with_api` | Enriquecimiento con GW2 API | `accounts-panel.js` |
+| `encrypt_accounts_file` | Creación de archivo .enc cifrado | `accounts-panel.js` |
+| `force_reload_season` | Recarga forzada de temporada WV | `wizards-vault.js` |
+| `open_api_keys_modal` | Apertura del modal de API Keys | `app.js` |
+| `add_api_key` | Agregar nueva API Key | `app.js` |
+| `delete_api_key` | Eliminar API Key | `app.js` |
+
+**Código agregado en `<head>`:**
+```html
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LB782QT9TR"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-LB782QT9TR');
+</script>
+
+<!-- Eventos personalizados -->
+<script src="js/analytics.js"></script>
+```
 
 ### 🆕 Automatización de compras en Wizard's Vault (v1.11.0 / v2.12.0)
 
@@ -409,7 +451,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 - `#/account/accounts` — Cuentas
 - `#/welcome` — Pantalla de Bienvenida
 
-## 🧩 Responsabilidades por archivo (Consolidado v5.8)
+## 🧩 Responsabilidades por archivo (Consolidado v5.9)
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
@@ -428,9 +470,114 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/router.js` | **v2.12.0** | Router con prefetch, guardas, navegación por hash, mapeo de vistas. **Barra de progreso + input manual integrados en todas las tarjetas de tienda. Persistencia de marcas sin recargar UI. Eliminado event listener conflictivo de wv:season-store:mutate.** |
 | `js/wv-purchase-detail.js` | **v1.11.0** | Detalle de compras, dashboard AA, top pendientes. **Barra de progreso compacta + input numérico + botón MAX + auto-guardado + regla dual (Math.max(apiPurchased, manualMarks)).** |
 | `js/wv-tabs-skin.js` | v1.0.0 | Re-skin de tabs WV, consistente con rerenders |
+| `js/analytics.js` | **v1.0.0** | **Eventos personalizados para Google Analytics. API pública `window.Analytics`. Cola de eventos segura.** |
 | `js/app.js` | v2.6.3 | Keys, wallet, eventos globales, emisor `gn:tokenchange` |
 | `js/*-theme.js` | varios | Glows, colores, estilos temáticos por módulo |
 | `js/meta-theme.js` | v1.3.1 | Barra de horarios unificada + mejora de horarios en tarjetas |
+
+## ✅ js/analytics.js — Eventos personalizados para Google Analytics (v1.0.0)
+
+### Resumen
+
+Módulo centralizado que maneja el envío de eventos personalizados a Google Analytics (GA4). Incluye cola de eventos segura para cuando gtag aún no ha cargado.
+
+### ¿Qué hace?
+
+- **API pública `window.Analytics`**: métodos para cada evento medido
+- **Cola de eventos**: si gtag no está disponible, guarda eventos en `__gaQueue` y los envía cuando gtag carga
+- **Debug**: cada evento se loguea en consola con `[Analytics]` prefix
+
+### Métodos disponibles
+
+| Método | Evento GA4 | Uso |
+|--------|------------|-----|
+| `Analytics.viewModule(moduleName)` | `view_module` | Navegación entre módulos |
+| `Analytics.exportBackup()` | `export_backup` | Exportación de backup |
+| `Analytics.importBackup()` | `import_backup` | Importación de backup |
+| `Analytics.openAccountWizard()` | `open_account_wizard` | Apertura del asistente de cuentas |
+| `Analytics.downloadExcelTemplate()` | `download_excel_template` | Descarga de plantilla Excel |
+| `Analytics.enrichWithAPI()` | `enrich_with_api` | Enriquecimiento con GW2 API |
+| `Analytics.encryptAccountsFile()` | `encrypt_accounts_file` | Creación de archivo .enc |
+| `Analytics.forceReloadSeason()` | `force_reload_season` | Recarga forzada de temporada WV |
+| `Analytics.openApiKeysModal()` | `open_api_keys_modal` | Apertura del modal de API Keys |
+| `Analytics.addApiKey()` | `add_api_key` | Agregar API Key |
+| `Analytics.deleteApiKey()` | `delete_api_key` | Eliminar API Key |
+
+### Código
+
+```javascript
+/*!
+ * js/analytics.js — Eventos personalizados para Google Analytics
+ * Versión: 1.0.0
+ */
+
+(function() {
+  'use strict';
+
+  function sendEvent(eventName, eventParams) {
+    if (typeof gtag === 'function') {
+      gtag('event', eventName, eventParams || {});
+      console.debug('[Analytics]', eventName, eventParams);
+    } else {
+      if (!window.__gaQueue) window.__gaQueue = [];
+      window.__gaQueue.push({ event: eventName, params: eventParams });
+    }
+  }
+
+  function processQueue() {
+    if (typeof gtag === 'function' && window.__gaQueue && window.__gaQueue.length) {
+      window.__gaQueue.forEach(function(item) {
+        gtag('event', item.event, item.params || {});
+      });
+      window.__gaQueue = [];
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', processQueue);
+  } else {
+    processQueue();
+  }
+
+  window.Analytics = {
+    viewModule: function(moduleName) {
+      sendEvent('view_module', { module_name: moduleName });
+    },
+    exportBackup: function() {
+      sendEvent('export_backup');
+    },
+    importBackup: function() {
+      sendEvent('import_backup');
+    },
+    openAccountWizard: function() {
+      sendEvent('open_account_wizard');
+    },
+    downloadExcelTemplate: function() {
+      sendEvent('download_excel_template');
+    },
+    enrichWithAPI: function() {
+      sendEvent('enrich_with_api');
+    },
+    encryptAccountsFile: function() {
+      sendEvent('encrypt_accounts_file');
+    },
+    forceReloadSeason: function() {
+      sendEvent('force_reload_season');
+    },
+    openApiKeysModal: function() {
+      sendEvent('open_api_keys_modal');
+    },
+    addApiKey: function() {
+      sendEvent('add_api_key');
+    },
+    deleteApiKey: function() {
+      sendEvent('delete_api_key');
+    }
+  };
+
+  console.log('[Analytics] Módulo cargado');
+})();
+```
 
 ## ✅ js/settings-manager.js — Sistema de Backup/Restaurar (v1.0.1)
 
@@ -992,7 +1139,7 @@ assets/icons/
 - WVSeasonStore: migración legacy en background
 - SettingsManager: botones en utilbar, export/import independiente
 
-## 🧪 Checklists de Salud (v5.8)
+## 🧪 Checklists de Salud (v5.9)
 
 ### Orden de scripts (obligatorio)
 
@@ -1010,7 +1157,20 @@ assets/icons/
 - `router.js` (defer)
 - `wv-purchase-detail.js` (defer)
 - `wv-tabs-skin.js` (defer)
+- `analytics.js` (sin defer, antes de router.js)
 - `app.js` (defer)
+
+### Google Analytics (NUEVO)
+
+- ✅ Script de GA4 agregado en `<head>` con ID `G-LB782QT9TR`
+- ✅ `analytics.js` creado y referenciado
+- ✅ Eventos en `router.js` para todos los módulos (wallet, meta_events, achievements, wizards_vault, activities, characters, accounts, welcome)
+- ✅ Eventos en `settings-manager.js` (exportBackup, importBackup)
+- ✅ Eventos en `accounts-panel.js` (openAccountWizard, downloadExcelTemplate, enrichWithAPI, encryptAccountsFile)
+- ✅ Eventos en `wizards-vault.js` (forceReloadSeason)
+- ✅ Eventos en `app.js` (openApiKeysModal, addApiKey, deleteApiKey)
+- ✅ Cola de eventos segura para cuando gtag no está disponible
+- ✅ Debug en consola con `[Analytics]` prefix
 
 ### LocalStorage
 
@@ -1130,6 +1290,20 @@ assets/icons/
 - ✅ Recarga automática después de importar
 - ✅ Claves correctas de localStorage (`gw2_keys`, `gw2_selected_key_v1`)
 
+### Analytics (v1.0.0)
+
+- ✅ Evento `view_module` en los 8 módulos principales
+- ✅ Evento `export_backup` en exportAll()
+- ✅ Evento `import_backup` en importAll()
+- ✅ Evento `open_account_wizard` en openWizardModal()
+- ✅ Evento `download_excel_template` en generateExcelTemplate()
+- ✅ Evento `enrich_with_api` en enrichWithGW2API()
+- ✅ Evento `encrypt_accounts_file` en evento click de wizardEncrypt
+- ✅ Evento `force_reload_season` en forceReloadSeason()
+- ✅ Evento `open_api_keys_modal` en openKeysModal()
+- ✅ Evento `add_api_key` en submit del formulario de keys
+- ✅ Evento `delete_api_key` en click del botón eliminar
+
 ### Header Compacto
 
 - ✅ Altura reducida (~60px)
@@ -1145,6 +1319,7 @@ assets/icons/
 - ✅ Ícono junto al título "Cámara del Brujo"
 - ✅ Estilos de contención para evitar desbordes
 - ✅ Panel correctamente envuelto en `<section id="wvPanel">`
+- ✅ Ícono de recarga forzada de temporada con `834002.png`
 
 ### Welcome
 
@@ -1159,6 +1334,14 @@ assets/icons/
 - ✅ Modal de API Keys cierra correctamente (backdrop, X, ESC)
 
 ## 📌 Buenas prácticas actualizadas
+
+### Analytics (NUEVO)
+
+- **Centralización**: todos los eventos definidos en `analytics.js`
+- **Cola segura**: si gtag no está disponible, los eventos se encolan
+- **Debug**: cada evento se loguea en consola para facilitar testing
+- **No bloqueante**: el script de GA4 es `async`, no afecta rendimiento
+- **Fallback silencioso**: si gtag falla, no rompe la app
 
 ### Globales
 
@@ -1231,7 +1414,7 @@ assets/icons/
 - Persistencia de marcas directamente en WVSeasonStore
 - Actualización selectiva de UI con `updateCardUI()` sin recargar todo
 
-## 🧾 Historial de decisiones (v5.8)
+## 🧾 Historial de decisiones (v5.9)
 
 - **Q4 2025:** eliminación listener Ach → router controla todo
 - **Q1 2026:** watchdog Achievements (5s) + pipeline conservador
@@ -1259,11 +1442,15 @@ assets/icons/
 - **Mar 2026:** Header compacto — reducción de altura, eliminación de hero, logo + nombre en una línea
 - **Mar 2026:** Iconos de redes sociales — reemplazo de SVGs por imágenes locales
 - **Mar 2026:** Mejora WV — tooltip informativo con ícono `155018.png`
-- **Mar 2026:** **Automatización de compras Wizard's Vault**:
+- **Mar 2026:** Automatización de compras Wizard's Vault:
   - Dashboard: barra de progreso + input numérico + botón MAX + auto-guardado + regla dual (wv-purchase-detail.js v1.11.0)
   - Tienda: barra de progreso e input integrados en HTML nativo, persistencia sin recargar UI, eliminado event listener conflictivo (router.js v2.12.0)
+- **Mar 2026:** **Google Analytics y eventos personalizados**:
+  - Script GA4 en `<head>` con ID `G-LB782QT9TR`
+  - Archivo `analytics.js` v1.0.0 con API pública y cola de eventos
+  - Eventos en todos los módulos: navegación, backup, asistente, recarga temporada, gestión de keys
 
-## 🎉 Estado actual del proyecto (v5.8)
+## 🎉 Estado actual del proyecto (v5.9)
 
 - ✅ Navegación estable y desacoplada
 - ✅ Achievements sin doble pipeline (watchdog ok)
@@ -1284,4 +1471,6 @@ assets/icons/
 - ✅ Botón home en utilbar accesible desde cualquier lugar
 - ✅ Redirección inteligente: primera visita o sin key → bienvenida
 - ✅ Botones de Leivas funcionando correctamente (sin regresiones)
+- ✅ **Google Analytics integrado**: script en `<head>` con ID `G-LB782QT9TR`
+- ✅ **Eventos personalizados**: 11 eventos en 6 archivos, centralizados en `analytics.js`
 ```
