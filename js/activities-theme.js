@@ -749,42 +749,42 @@
     filterBar.style.borderRadius = '40px';
     filterBar.innerHTML = `
       <div style="flex: 1; min-width: 180px;">
-        <input type="text" id="homeNodesSearch" placeholder="🔍 Buscar..." style="width: 100%; background: #1a1c24; border: 1px solid #2a2c35; border-radius: 20px; padding: 6px 12px; color: #e0e4ed;">
+        <input type="text" id="homeNodesSearch" placeholder="Buscar..." style="width: 100%; background: #1a1c24; border: 1px solid #2a2c35; border-radius: 20px; padding: 6px 12px 6px 32px; color: #e0e4ed; background-image: url('assets/icons/Welcome/3124974.png'); background-repeat: no-repeat; background-position: 8px center; background-size: 14px;">
       </div>
       <div class="chip" style="padding: 0;">
-        <button data-category="all" class="btn btn--ghost filter-category-btn active" style="border-radius: 20px;">📦 Todos</button>
+        <button data-category="all" class="btn btn--ghost filter-category-btn active" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/156108.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Todos</button>
       </div>
       <div class="chip" style="padding: 0;">
-        <button data-category="api" class="btn btn--ghost filter-category-btn" style="border-radius: 20px;">🟢 Nodos API (53)</button>
+        <button data-category="api" class="btn btn--ghost filter-category-btn" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/1770705.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Nodos API (53)</button>
       </div>
       <div class="chip" style="padding: 0;">
-        <button data-category="janthir" class="btn btn--ghost filter-category-btn" style="border-radius: 20px;">🌿 Janthir (6)</button>
+        <button data-category="janthir" class="btn btn--ghost filter-category-btn" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/157084.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Janthir (6)</button>
       </div>
       <div class="chip" style="padding: 0;">
-        <button data-category="non-api" class="btn btn--ghost filter-category-btn" style="border-radius: 20px;">📜 Contratos (15)</button>
-      </div>
-      <div style="width: 1px; height: 28px; background: #2a2c35; margin: 0 4px;"></div>
-      <div class="chip" style="padding: 0;">
-        <button data-type="all" class="btn btn--ghost filter-type-btn active" style="border-radius: 20px;">📋 Todos</button>
-      </div>
-      <div class="chip" style="padding: 0;">
-        <button data-type="mining" class="btn btn--ghost filter-type-btn" style="border-radius: 20px;">⛏ Minería</button>
-      </div>
-      <div class="chip" style="padding: 0;">
-        <button data-type="logging" class="btn btn--ghost filter-type-btn" style="border-radius: 20px;">🪓 Madera</button>
-      </div>
-      <div class="chip" style="padding: 0;">
-        <button data-type="harvest" class="btn btn--ghost filter-type-btn" style="border-radius: 20px;">✂ Cosecha</button>
+        <button data-category="non-api" class="btn btn--ghost filter-category-btn" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/1716669.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Contratos (15)</button>
       </div>
       <div style="width: 1px; height: 28px; background: #2a2c35; margin: 0 4px;"></div>
       <div class="chip" style="padding: 0;">
-        <button data-status="all" class="btn btn--ghost filter-status-btn active" style="border-radius: 20px;">🔓 Todos</button>
+        <button data-type="all" class="btn btn--ghost filter-type-btn active" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/156108.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Todos</button>
       </div>
       <div class="chip" style="padding: 0;">
-        <button data-status="unlocked" class="btn btn--ghost filter-status-btn" style="border-radius: 20px;">✅ Desbloqueado</button>
+        <button data-type="mining" class="btn btn--ghost filter-type-btn" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/157334.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Minería</button>
       </div>
       <div class="chip" style="padding: 0;">
-        <button data-status="locked" class="btn btn--ghost filter-status-btn" style="border-radius: 20px;">❌ Bloqueado</button>
+        <button data-type="logging" class="btn btn--ghost filter-type-btn" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/157333.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Madera</button>
+      </div>
+      <div class="chip" style="padding: 0;">
+        <button data-type="harvest" class="btn btn--ghost filter-type-btn" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/157332.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Cosecha</button>
+      </div>
+      <div style="width: 1px; height: 28px; background: #2a2c35; margin: 0 4px;"></div>
+      <div class="chip" style="padding: 0;">
+        <button data-status="all" class="btn btn--ghost filter-status-btn active" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/156108.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Todos</button>
+      </div>
+      <div class="chip" style="padding: 0;">
+        <button data-status="unlocked" class="btn btn--ghost filter-status-btn" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/156108.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Desbloqueado</button>
+      </div>
+      <div class="chip" style="padding: 0;">
+        <button data-status="locked" class="btn btn--ghost filter-status-btn" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/156107.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Bloqueado</button>
       </div>
     `;
     
