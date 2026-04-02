@@ -1060,9 +1060,9 @@
         '<div>' +
           '<p class="muted" id="actSub" style="margin: 0 0 4px 0;">Objetivos diarios y de la semana</p>' +
           '<div class="tabs" style="display: flex; gap: 8px; align-items: center;">' +
-            '<button id="actTabDaily" class="btn" role="tab">📋 Objetivos</button>' +
-            '<button id="actTabWeekly" class="btn btn--ghost" role="tab">🏡 Home Nodes</button>' +
-            '<button id="refreshActivitiesBtn" class="btn btn--ghost" style="margin-left: 8px;" title="Recargar página">🔄 Refrescar</button>' +
+            '<button id="actTabDaily" class="btn" role="tab" style="display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/222580.png" width="16" height="16" alt="" style="filter: brightness(0.9);"> Objetivos</button>' +
+            '<button id="actTabWeekly" class="btn btn--ghost" role="tab" style="display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/3380755.png" width="16" height="16" alt="" style="filter: brightness(0.9);"> Home Nodes</button>' +
+            '<button id="refreshActivitiesBtn" class="btn btn--ghost" style="margin-left: 8px; display: inline-flex; align-items: center; gap: 6px;" title="Recargar página"><img src="assets/icons/Welcome/834002.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Refrescar</button>' +
           '</div>' +
         '</div>' +
         '<div id="activitiesClockBarPlaceholder"></div>' +
