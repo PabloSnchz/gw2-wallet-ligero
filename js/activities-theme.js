@@ -57,9 +57,9 @@
 
   function getNodeIcon(type) {
     switch(type) {
-      case 'mining': return '⛏';
-      case 'logging': return '🪓';
-      default: return '✂';
+      case 'mining': return '<img src="assets/icons/Cuentas/23031.png" width="24" height="24" alt="Minería" style="vertical-align: middle;">';
+      case 'logging': return '<img src="assets/icons/Cuentas/23032.png" width="24" height="24" alt="Madera" style="vertical-align: middle;">';
+      default: return '<img src="assets/icons/Cuentas/23033.png" width="24" height="24" alt="Cosecha" style="vertical-align: middle;">';
     }
   }
 
@@ -77,6 +77,89 @@
       case 'logging': return 'Madera';
       default: return 'Cosecha';
     }
+  }
+
+  // ==========================================================================
+  // TRADUCCIONES AL ESPAÑOL
+  // ==========================================================================
+
+  var NODE_NAMES_ES = {
+    // Nodos API básicos
+    'advanced_cloth_rack': 'Perchero avanzado',
+    'advanced_leather_rack': 'Estante de cuero avanzado',
+    'airship_cargo': 'Cargamento de aeronave',
+    'ancient_wood_node': 'Nodo de madera antigua',
+    'aurilium_node': 'Nodo de aurilio',
+    'bandit_chest': 'Cofre de bandido',
+    'basic_cloth_rack': 'Perchero básico',
+    'basic_harvesting_nodes': 'Nodo de cosechas básico',
+    'basic_leather_rack': 'Estante de cuero básico',
+    'basic_lumber_nodes': 'Nodo de madera básico',
+    'basic_ore_nodes': 'Nodo de mineral básico',
+    'bauble_gathering_system': 'Sistema de cosecha de cachivaches',
+    'bloodstone_crystals': 'Cristal de hematites',
+    'bound_hatched_chili_pepper_node': 'Nodo de chiles picantes vinculado',
+    'brandstone_node': 'Piedra de la Marca',
+    'candy_corn_node': 'Nodo de caramelo',
+    'commemorative_dragon_pinata': 'Piñata del dragón conmemorativa',
+    'crystallized_supply_cache': 'Alijo de suministros cristalizados',
+    'difluorite_crystal_cluster_node': 'Cristal de difluorita',
+    'dragon_crystal': 'Cristal del dragón',
+    'elder_wood_node': 'Nodo de madera ancestral',
+    'enchanted_treasure_chest': 'Cofre del tesoro encantado',
+    'eternal_ice_shard_node': 'Esquirla de hielo eterno',
+    'exalted_chest': 'Cofre exaltado',
+    'flaxseed_node': 'Nodo de semillas de lino',
+    'garden_plot_01': 'Huerto (1)',
+    'garden_plot_02': 'Huerto (2)',
+    'garden_plot_03': 'Huerto (3)',
+    'garden_plot_04': 'Huerto de Arborstone (4)',
+    'ghost_pepper_node': 'Nodo de chiles picantes',
+    'hard_wood_node': 'Nodo de madera sólida',
+    'iron_ore_node': 'Nodo de mineral de hierro',
+    'jade_fragment': 'Fragmento de jade',
+    'king_sized_candy_corn': 'Regalo grande de caramelo',
+    'kournan_supply_cache': 'Alijo de suministros de Kourna',
+    'krait_obelisk': 'Esquirla de obelisco krait',
+    'lotus_node': 'Nodo de loto',
+    'mistborn_mote': 'Mota surgida de la Niebla',
+    'mistonium_node': 'Nieblonio',
+    'mithril_ore_node': 'Nodo de mineral de mithril',
+    'omnomberry_node': 'Nodo de bayas omnom',
+    'orichalcum_ore_node': 'Nodo de mineral de oricalco',
+    'orrian_oyster_node': 'Ostra orriana',
+    'orrian_truffle_node': 'Nodo de trufa orriana',
+    'petrified_stump': 'Tocón petrificado',
+    'platinum_ore_node': 'Nodo de mineral de platino',
+    'primordial_orchid': 'Orquídea de fuego',
+    'prismaticite_node': 'Prismaticita',
+    'quartz_node': 'Nodo de cuarzo',
+    'salvage_pile': 'Alijo de suministros',
+    'snow_truffle_node': 'Nodo de trufa de nieve',
+    'sprocket_generator': 'Generador de engranajes',
+    'winterberry_bush': 'Arbusto de bayas invernales',
+    'wintersday_tree': 'Árbol de Wintersday',
+    // Contratos (nodos API)
+    'black_lion_expedition_board_s4': 'Tablero de expediciones del León Negro (T4)',
+    'black_lion_hunters_board': 'Contrato de caza del León Negro',
+    'black_lion_industry_board': 'Contrato manufacturero del León Negro',
+    'expedition_board_s3': 'Contrato de expediciones (T3)',
+    // Janthir
+    'honey_flower_node': 'Nodo de flor de miel',
+    'rotted_titan_amber': 'Ámbar de titán podrido',
+    'mursaat_obsidian_node': 'Obsidiana mursaat',
+    'charged_titan_ore_node': 'Mineral de titán cargado',
+    'titan_heatstone_node': 'Piedra de calor de titán',
+    'lowland_pine_sapling_node': 'Brote de pino de las Tierras Bajas',
+    // Contratos (no API)
+    'expedition_board_eod': 'Contrato de expediciones (End of Dragons)',
+    'expedition_board_soto': 'Contrato de expediciones (Secrets of the Obscure)',
+    'expedition_board_janthir': 'Contrato de expediciones (Janthir Wilds)',
+    'expedition_board_visions': 'Contrato de expediciones (Visions of Eternity)'
+  };
+
+  function getNodeNameInSpanish(nodeId, defaultName) {
+    return NODE_NAMES_ES[nodeId] || defaultName;
   }
 
   function escapeHtml(str) {
@@ -299,42 +382,37 @@
   var API_NODES = [
     'advanced_cloth_rack', 'advanced_leather_rack', 'airship_cargo', 'ancient_wood_node', 'aurilium_node',
     'bandit_chest', 'basic_cloth_rack', 'basic_harvesting_nodes', 'basic_leather_rack', 'basic_lumber_nodes',
-    'basic_ore_nodes', 'bauble_gathering_system', 'black_lion_expedition_board_s4', 'bloodstone_crystals',
+    'basic_ore_nodes', 'bauble_gathering_system', 'bloodstone_crystals',
     'bound_hatched_chili_pepper_node', 'brandstone_node', 'candy_corn_node', 'commemorative_dragon_pinata',
     'crystallized_supply_cache', 'difluorite_crystal_cluster_node', 'dragon_crystal', 'elder_wood_node',
-    'eternal_ice_shard_node', 'exalted_chest', 'flaxseed_node', 'garden_plot_01', 'garden_plot_02',
-    'garden_plot_03', 'ghost_pepper_node', 'hard_wood_node', 'iron_ore_node', 'jade_fragment',
-    'king_sized_candy_corn', 'kournan_supply_cache', 'krait_obelisk', 'lotus_node', 'mistborn_mote',
-    'mistonium_node', 'mithril_ore_node', 'omnomberry_node', 'orichalcum_ore_node', 'orrian_oyster_node',
-    'orrian_truffle_node', 'petrified_stump', 'platinum_ore_node', 'primordial_orchid', 'prismaticite_node',
-    'quartz_node', 'salvage_pile', 'snow_truffle_node', 'sprocket_generator', 'winterberry_bush', 'wintersday_tree'
+    'enchanted_treasure_chest', 'eternal_ice_shard_node', 'exalted_chest', 'flaxseed_node', 'garden_plot_01',
+    'garden_plot_02', 'garden_plot_03', 'garden_plot_04', 'ghost_pepper_node',
+    'hard_wood_node', 'iron_ore_node', 'jade_fragment', 'king_sized_candy_corn', 'kournan_supply_cache',
+    'krait_obelisk', 'lotus_node', 'mistborn_mote', 'mistonium_node', 'mithril_ore_node', 'omnomberry_node',
+    'orichalcum_ore_node', 'orrian_oyster_node', 'orrian_truffle_node', 'petrified_stump', 'platinum_ore_node',
+    'primordial_orchid', 'prismaticite_node', 'quartz_node', 'salvage_pile',
+    'snow_truffle_node', 'sprocket_generator', 'winterberry_bush', 'wintersday_tree',
+    // NODOS DE CONTRATOS QUE API RECONOCE
+    'black_lion_expedition_board_s4',
+    'black_lion_hunters_board',
+    'black_lion_industry_board',
+    'expedition_board_s3'
   ];
 
   var JANTHIR_NODES = [
-    { id: 'honey_flower_node', name: 'Honey Flower Node', type: 'harvest', itemId: 103233 },
-    { id: 'rotted_titan_amber', name: 'Rotted Titan Amber Node', type: 'mining', itemId: 103321 },
-    { id: 'mursaat_obsidian_node', name: 'Mursaat Obsidian Node', type: 'mining', itemId: 103322 },
-    { id: 'charged_titan_ore_node', name: 'Charged Titan Ore Node', type: 'mining', itemId: 103323 },
-    { id: 'titan_heatstone_node', name: 'Titan Heatstone Node', type: 'mining', itemId: 103324 },
-    { id: 'lowland_pine_sapling_node', name: 'Lowland Pine Sapling Node', type: 'logging', itemId: 103325 }
+    { id: 'honey_flower_node', name: 'Honey Flower Node', type: 'harvest', itemId: 104400 },
+    { id: 'rotted_titan_amber', name: 'Rotted Titan Amber Node', type: 'mining', itemId: 104442 },
+    { id: 'mursaat_obsidian_node', name: 'Mursaat Obsidian Node', type: 'mining', itemId: 104426 },
+    { id: 'charged_titan_ore_node', name: 'Charged Titan Ore Node', type: 'mining', itemId: 104278 },
+    { id: 'titan_heatstone_node', name: 'Titan Heatstone Node', type: 'mining', itemId: 104484 },
+    { id: 'lowland_pine_sapling_node', name: 'Lowland Pine Sapling Node', type: 'logging', itemId: 104437 }
   ];
 
   var NON_API_ITEMS = [
-    { id: 'enchanted_treasure_chest', name: 'Enchanted Treasure Chest', type: 'harvest', itemId: 67234, note: 'Consumible' },
-    { id: 'gift_of_candy_corn', name: 'Gift of Candy Corn', type: 'mining', itemId: 48804, note: 'Consumible' },
-    { id: 'gift_of_magnanimity', name: 'Gift of Magnanimity', type: 'harvest', itemId: 68367, note: 'Consumible' },
-    { id: 'gift_of_quartz', name: 'Gift of Quartz', type: 'mining', itemId: 43902, note: 'Consumible' },
-    { id: 'gift_of_sprockets', name: 'Gift of Sprockets', type: 'mining', itemId: 49825, note: 'Consumible' },
-    { id: 'greater_gift_of_candy_corn', name: 'Greater Gift of Candy Corn', type: 'mining', itemId: 79646, note: 'Consumible' },
-    { id: 'garden_plot_04', name: 'Arborstone Garden Plot Deed (4)', type: 'harvest', itemId: 88215, note: 'Jardín adicional' },
-    { id: 'expedition_board_s3', name: 'Season 3 Expedition Contract', type: 'harvest', itemId: 88979, note: 'Contrato (no API)' },
-    { id: 'expedition_board_eod', name: 'End of Dragons Expedition Contract', type: 'harvest', itemId: 93749, note: 'Contrato (no API)' },
-    { id: 'expedition_board_soto', name: 'Secrets of the Obscure Expedition Contract', type: 'harvest', itemId: 101233, note: 'Contrato (no API)' },
-    { id: 'expedition_board_janthir', name: 'Janthir Wilds Expedition Contract', type: 'harvest', itemId: 103241, note: 'Contrato (no API)' },
-    { id: 'expedition_board_visions', name: 'Visions of Eternity Expedition Contract', type: 'harvest', itemId: 103242, note: 'Contrato (no API)' },
-    { id: 'black_lion_hunters_contract', name: 'Black Lion Hunters Contract', type: 'harvest', itemId: 81594, note: 'Contrato (no API)' },
-    { id: 'black_lion_industry_contract', name: 'Black Lion Industry Contract', type: 'harvest', itemId: 92427, note: 'Contrato (no API)' },
-    { id: 'reclaimed_metal_pile', name: 'Reclaimed Metal Pile', type: 'harvest', itemId: 88410, note: 'Recuperado' }
+    { id: 'expedition_board_eod', name: 'End of Dragons Expedition Contract', type: 'harvest', itemId: 96952, note: 'Contrato (no API)' },
+    { id: 'expedition_board_soto', name: 'Secrets of the Obscure Expedition Contract', type: 'harvest', itemId: 101965, note: 'Contrato (no API)' },
+    { id: 'expedition_board_janthir', name: 'Janthir Wilds Expedition Contract', type: 'harvest', itemId: 103184, note: 'Contrato (no API)' },
+    { id: 'expedition_board_visions', name: 'Visions of Eternity Expedition Contract', type: 'harvest', itemId: 105913, note: 'Contrato (no API)' },
   ];
 
   var NODE_ITEM_IDS = {};
@@ -344,20 +422,27 @@
     'ancient_wood_node': 68091, 'aurilium_node': 73798, 'bandit_chest': 68495,
     'basic_cloth_rack': 67842, 'basic_harvesting_nodes': 67290, 'basic_leather_rack': 78019,
     'basic_lumber_nodes': 66769, 'basic_ore_nodes': 44884, 'bauble_gathering_system': 87324,
-    'black_lion_expedition_board_s4': 91060, 'bloodstone_crystals': 79217,
+    'bloodstone_crystals': 79217,
     'bound_hatched_chili_pepper_node': 92035, 'brandstone_node': 86297, 'candy_corn_node': 48804,
     'commemorative_dragon_pinata': 93686, 'crystallized_supply_cache': 78549,
     'difluorite_crystal_cluster_node': 87132, 'dragon_crystal': 89786, 'elder_wood_node': 68090,
-    'eternal_ice_shard_node': 92361, 'exalted_chest': 78582, 'flaxseed_node': 79063,
-    'garden_plot_01': 86786, 'garden_plot_02': 86786, 'garden_plot_03': 91777,
-    'ghost_pepper_node': 68093, 'hard_wood_node': 79085, 'iron_ore_node': 79260,
+    'enchanted_treasure_chest': 67234, 'eternal_ice_shard_node': 92361, 'exalted_chest': 78582,
+    'flaxseed_node': 79063, 'garden_plot_01': 86786, 'garden_plot_02': 86786, 'garden_plot_03': 91777,
+    'garden_plot_04': 86786, 'ghost_pepper_node': 68093,
+    'hard_wood_node': 79085, 'iron_ore_node': 79260,
     'jade_fragment': 80450, 'king_sized_candy_corn': 79646, 'kournan_supply_cache': 87889,
     'krait_obelisk': 48875, 'lotus_node': 68096, 'mistborn_mote': 90773, 'mistonium_node': 88828,
     'mithril_ore_node': 68098, 'omnomberry_node': 68089, 'orichalcum_ore_node': 68094,
     'orrian_oyster_node': 81696, 'orrian_truffle_node': 68095, 'petrified_stump': 79898,
     'platinum_ore_node': 68097, 'primordial_orchid': 81115, 'prismaticite_node': 94286,
-    'quartz_node': 43902, 'salvage_pile': 93503, 'snow_truffle_node': 68092,
-    'sprocket_generator': 49825, 'winterberry_bush': 79903, 'wintersday_tree': 68367
+    'quartz_node': 43902, 'salvage_pile': 93503,
+    'snow_truffle_node': 68092, 'sprocket_generator': 49825, 'winterberry_bush': 79903,
+    'wintersday_tree': 68367,
+    // CONTRATOS AGREGADOS
+    'black_lion_expedition_board_s4': 91060,
+    'black_lion_hunters_board': 81594,
+    'black_lion_industry_board': 92427,
+    'expedition_board_s3': 88979
   };
 
   Object.keys(API_NODE_ITEMS).forEach(function(key) {
@@ -458,7 +543,7 @@
       itemId: NODE_ITEM_IDS[nodeId],
       isApiNode: true,
       category: 'api',
-      displayName: getDisplayName(nodeId)
+      displayName: getNodeNameInSpanish(nodeId, getDisplayName(nodeId))
     });
   });
 
@@ -470,7 +555,7 @@
       itemId: node.itemId,
       isApiNode: true,
       category: 'janthir',
-      displayName: node.name
+      displayName: getNodeNameInSpanish(node.id, node.name)
     });
   });
 
@@ -483,7 +568,7 @@
       isApiNode: false,
       category: 'non-api',
       note: item.note,
-      displayName: item.name
+      displayName: getNodeNameInSpanish(item.id, item.name)
     });
   });
 
@@ -755,13 +840,13 @@
         <button data-category="all" class="btn btn--ghost filter-category-btn active" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/156108.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Todos</button>
       </div>
       <div class="chip" style="padding: 0;">
-        <button data-category="api" class="btn btn--ghost filter-category-btn" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/1770705.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Nodos API (53)</button>
+        <button data-category="api" class="btn btn--ghost filter-category-btn" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/1770705.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Nodos API (58)</button>
       </div>
       <div class="chip" style="padding: 0;">
         <button data-category="janthir" class="btn btn--ghost filter-category-btn" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/157084.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Janthir (6)</button>
       </div>
       <div class="chip" style="padding: 0;">
-        <button data-category="non-api" class="btn btn--ghost filter-category-btn" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/1716669.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Contratos (15)</button>
+        <button data-category="non-api" class="btn btn--ghost filter-category-btn" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/1716669.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Contratos (4)</button>
       </div>
       <div style="width: 1px; height: 28px; background: #2a2c35; margin: 0 4px;"></div>
       <div class="chip" style="padding: 0;">
