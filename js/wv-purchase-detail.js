@@ -1,14 +1,23 @@
 /*!
  * js/wv-purchase-detail.js — Vista de Detalle de Compras (Wizard's Vault)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.11.0 (2026-03-30) — Input numérico + Botón MAX + Auto-guardado + Función dual
+ * Versión: 1.13.0 (2026-04-05) — Estado online basado en last_modified
+ *
+ * Cambios v1.13.0:
+ *  - REEMPLAZADA lógica de PvP por last_modified de /v2/account
+ *  - Estado online basado en CUALQUIER actividad de la cuenta (PvP, PvE, WvW, economía)
+ *  - Más preciso y con menor delay que el endpoint de partidas PvP
+ *  - Eliminada dependencia de permiso 'pvp' (usa 'account' que todas las keys tienen)
+ *
+ * Cambios v1.12.0:
+ *  - Botón "Online" en el dashboard (junto a Sincronizar)
+ *  - Colores de nombre de cuenta según progreso semanal (rojo/amarillo/verde)
  *
  * Cambios v1.11.0:
  *  - Input numérico para marcas manuales (sin botones +/-)
  *  - Botón MAX para llenar automáticamente con el límite máximo
  *  - Auto-guardado con debounce (500ms)
  *  - Función dual: Math.max(apiPurchased, manualMarks)
- *  - Preparado para cuando la API comience a reportar purchased correctamente
  */
 
 (function (root) {
@@ -199,6 +208,7 @@
         display: flex; 
         gap: 12px; 
         flex-wrap: wrap; 
+        align-items: center;
         margin: 12px 0 8px; 
         background: #0c0e14;
         padding: 8px 16px;
@@ -226,6 +236,20 @@
         font-size: 0.8rem;
         color: #b4bad0;
         cursor: pointer;
+      }
+      .wvpd-filters button {
+        background: #1a1c24;
+        border: 1px solid #2a2c35;
+        border-radius: 20px;
+        padding: 6px 12px;
+        color: #e0e4ed;
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .wvpd-filters button:hover {
+        background: #252830;
+        border-color: #3a3e4a;
       }
       
       /* ====== Status bar con timestamp ====== */
@@ -514,6 +538,28 @@
         color: #9aa2b8;
         margin-left: 12px;
       }
+      
+      /* ====== Estado online (punto verde/rojo) ====== */
+      .wvpd-online-dot {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .wvpd-online-dot--green {
+        background-color: #a0ffc8;
+        box-shadow: 0 0 4px #a0ffc8;
+      }
+      .wvpd-online-dot--red {
+        background-color: #ff9d9d;
+        box-shadow: 0 0 4px #ff9d9d;
+      }
+      .wvpd-online-info {
+        font-size: 0.65rem;
+        color: #9aa2b8;
+        margin-top: 2px;
+      }
     `;
 
     var s = document.createElement('style');
@@ -662,10 +708,13 @@
         catch(e){ console.warn('[WV-PD] show() error (new)', e); }
       });
 
-      if (insertAfter && insertAfter.parentNode === group)
+      // Botón Online ELIMINADO - ahora está en el dashboard
+
+      if (insertAfter && insertAfter.parentNode === group) {
         insertAfter.insertAdjacentElement('afterend', btn);
-      else
+      } else {
         group.appendChild(btn);
+      }
 
       console.debug('[WV-PD] Toolbar button ready');
 
@@ -736,23 +785,16 @@
     if (!panel.__wired){
       panel.__wired = true;
       panel.innerHTML = [
-              
-         
-            '<div class="wvpd-header__left">',
-              '<div class="wvpd-banner">',
-                '<div class="wvpd-banner__icon" id="wvpdBannerIcon">'+bannerIconHTML()+'</div>',
-                '<div>',
-                  '<div class="wvpd-banner__title">Seguimiento de compras</div>',
-                  '<div class="wvpd-help">Resumen estratégico y detalle por cuenta/ítem fijado.</div>',
-                  '</div>',
-              '</div>',
-              
+        '<div class="wvpd-header__left">',
+          '<div class="wvpd-banner">',
+            '<div class="wvpd-banner__icon" id="wvpdBannerIcon">'+bannerIconHTML()+'</div>',
+            '<div>',
+              '<div class="wvpd-banner__title">Seguimiento de compras</div>',
+              '<div class="wvpd-help">Resumen estratégico y detalle por cuenta/ítem fijado.</div>',
             '</div>',
-         
-
-        
+          '</div>',
+        '</div>',
         '<div class="panel__body">',
-
           '<div id="wvpdDash" class="wvpd-dash">',
             '<div class="wvpd-dash__grid">',
               '<div class="wvpd-card wvpd-kpi" id="wvpdKpiAAAvail">',
@@ -768,7 +810,6 @@
                 '<div class="wvpd-kpi__val">—</div>',
               '</div>',
             '</div>',
-
             '<div class="wvpd-rows">',
               '<div class="wvpd-card">',
                 '<div class="wvpd-rot">',
@@ -781,7 +822,6 @@
                   '<div id="wvpdUsefulContent" class="wvpd-cols"></div>',
                 '</div>',
               '</div>',
-
               '<div class="wvpd-card">',
                 '<div class="wvpd-cols">',
                   '<div class="wvpd-col">',
@@ -796,11 +836,9 @@
               '</div>',
             '</div>',
           '</div>',
-
-         
           '<div class="wvpd-filters" id="wvpdFilters">',
             '<input type="text" id="wvpdSearch" placeholder="Buscar cuenta…">',
-            '<span class="wvpd-stickyhint">Tip: “Solo pendientes” y orden por Δ priorizan lo crítico.</span>',
+            '<span class="wvpd-stickyhint">Tip: “Pendientes” y orden Δ priorizan lo crítico.</span>',
             '<label><input type="checkbox" id="wvpdOnlyPending"> Solo pendientes</label>',
             '<label><input type="checkbox" id="wvpdOnlyPendingCols"> Solo columnas con pendientes</label>',
             '<label>Orden: <select id="wvpdSort"><option value="delta">Δ (desc)</option><option value="label">Cuenta (A→Z)</option></select></label>',
@@ -809,19 +847,13 @@
               'Sincronizar',
             '</button>',
           '</div>',
-
           '<div class="wvpd-status-bar" id="wvpdStatusBar">',
             '<span id="wvpdStatusMsg" class="wvpd-status-msg">—</span>',
             '<span id="wvpdTimestamp" class="wvpd-timestamp"></span>',
           '</div>',
-
           '<div class="wvpd-tablewrap" id="wvpdTableWrap">',
-            '<table class="wvpd" id="wvpdTable">',
-              '<thead></thead>',
-              '<tbody></tbody>',
-            '^\u003c/table\u003e',
+            '<table class="wvpd" id="wvpdTable"><thead></thead><tbody></tbody>^<\/table>',
           '</div>',
-
         '</div>'
       ].join('');
 
@@ -834,6 +866,29 @@
       rootPanel.querySelector('#wvpdOnlyPendingCols')?.addEventListener('change', function(e){ state.filters.onlyPendingCols = !!e.target.checked; safeRefresh(false); });
       rootPanel.querySelector('#wvpdSort')?.addEventListener('change', function(e){ state.filters.sort = e.target.value||'delta'; renderTable(); });
       rootPanel.querySelector('#wvpdSyncBtn')?.addEventListener('click', function(){ safeRefresh(true); });
+
+      // ====== Botón Online en el dashboard (junto a Sincronizar) ======
+      var syncBtn = rootPanel.querySelector('#wvpdSyncBtn');
+      if (syncBtn && !rootPanel.querySelector('#wvpdOnlineBtn')) {
+        var onlineBtn = document.createElement('button');
+        onlineBtn.id = 'wvpdOnlineBtn';
+        onlineBtn.className = 'btn btn--ghost';
+        onlineBtn.title = 'Actualizar solo estado online (vía last_modified)';
+        onlineBtn.style.display = 'inline-flex';
+        onlineBtn.style.alignItems = 'center';
+        onlineBtn.style.gap = '6px';
+        onlineBtn.innerHTML = '<span class="wvpd-online-dot wvpd-online-dot--green" style="width:10px;height:10px;display:inline-block;border-radius:50%;background-color:#a0ffc8;box-shadow:0 0 4px #a0ffc8;"></span> Online';
+        onlineBtn.addEventListener('click', function(ev) {
+          ev.preventDefault();
+          // ✅ Usar el método público expuesto
+          if (window.WVPurchaseDetail && typeof window.WVPurchaseDetail.refreshOnlineStatus === 'function') {
+            window.WVPurchaseDetail.refreshOnlineStatus();
+          } else {
+            console.error('[WV-PD] WVPurchaseDetail.refreshOnlineStatus no está disponible');
+          }
+        });
+        syncBtn.insertAdjacentElement('afterend', onlineBtn);
+      }
 
       ['wvTabBtnDaily','wvTabBtnWeekly','wvTabBtnSpecial','wvTabBtnShop'].forEach(function(id){
         var b = document.getElementById(id);
@@ -951,24 +1006,113 @@
   }
 
   // ====== FUNCIÓN DUAL ======
-  // Regla: mostrar el número más alto entre API y manual
-  // Esto prepara la app para cuando la API comience a reportar purchased correctamente
   function getTotalPurchased(acc, listingId) {
     const row = findRowByListingId(acc.rows, listingId);
     if (!row) return 0;
-    
-    // 1. Valor de la API (si existe)
     const apiPurchased = row.purchased || 0;
-    
-    // 2. Valor manual del usuario
     const manualMarks = (acc.marks && acc.marks[listingId]) || 0;
-    
-    // 3. Regla dual: mostrar el número más alto
-    // Si la API empieza a funcionar correctamente, mostrará el valor real
-    // Mientras tanto, mostrará el valor manual
     return Math.max(apiPurchased, manualMarks);
   }
 
+  // ====== FUNCIÓN PARA ACTUALIZAR UNA SOLA FILA EN LA TABLA ======
+  function updateSingleAccountRow(rowIndex, updatedAccount) {
+    const table = document.getElementById('wvpdTable');
+    if (!table) return;
+    
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    
+    const rows = tbody.querySelectorAll('tr');
+    if (rowIndex >= rows.length) return;
+    
+    const row = rows[rowIndex];
+    if (!row) return;
+    
+    const firstCell = row.cells[0];
+    if (firstCell) {
+      const isOnline = updatedAccount.isOnline || false;
+      const statusColor = isOnline ? 'green' : 'red';
+      const statusTitle = isOnline ? 'Activo (actividad reciente)' : 'Inactivo';
+      const lastPlayedInfo = isOnline && updatedAccount.lastPlayedChar ? 
+          '<div class="wvpd-online-info">🕐 ' + esc(updatedAccount.lastPlayedChar) + '</div>' : '';
+      
+      const existingContent = firstCell.innerHTML;
+      const progressMatch = existingContent.match(/<div class="wvpd-account-progress">[\s\S]*?<\/div>/);
+      const progressHtml = progressMatch ? progressMatch[0] : '';
+      const nameMatch = existingContent.match(/<div class="wvpd-account-name[^>]*>([\s\S]*?)<\/div>/);
+      const accountName = nameMatch ? nameMatch[1] : esc(updatedAccount.label);
+      
+      // Mantener el color según progreso semanal
+      const stp = Number(updatedAccount.seasonMetaSteps || 0);
+      const nameColorClass = (stp >= 6) ? 'wvpd-acc--green' : (stp >= 4 ? 'wvpd-acc--yellow' : 'wvpd-acc--red');
+      
+      firstCell.innerHTML = `
+        <div class="wvpd-account-cell">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="wvpd-online-dot wvpd-online-dot--${statusColor}" title="${statusTitle}"></span>
+            <div class="wvpd-account-name ${nameColorClass}">${accountName}</div>
+          </div>
+          ${lastPlayedInfo}
+          ${progressHtml}
+        </div>
+      `;
+    }
+  }
+
+  // ====== FUNCIÓN PARA ACTUALIZAR TODOS LOS ESTADOS ONLINE (VÍA LAST_MODIFIED) ======
+  async function refreshAllOnlineStatus() {
+    console.log(LOG, 'Actualizando estado online de todas las cuentas (vía last_modified)...');
+    if (!state.accounts || state.accounts.length === 0) {
+      console.warn(LOG, 'No hay cuentas cargadas');
+      return;
+    }
+    
+    if (window.toast) {
+      window.toast('info', 'Actualizando estado online...', { ttl: 1500 });
+    }
+    
+    var updatedCount = 0;
+    var onlineCount = 0;
+    
+    for (var i = 0; i < state.accounts.length; i++) {
+      var acc = state.accounts[i];
+      try {
+        // Obtener account info con last_modified
+        const accountInfo = await root.GW2Api.getAccountInfo(acc.token, { nocache: true });
+        const isOnline = root.GW2Api.isRecentlyActive(accountInfo, 10); // 10 minutos de umbral
+        var lastPlayedChar = null;
+        
+        if (isOnline && accountInfo && accountInfo.last_modified) {
+          const lastModified = new Date(accountInfo.last_modified);
+          const now = new Date();
+          const minutesSince = Math.floor((now - lastModified) / (1000 * 60));
+          lastPlayedChar = `Actividad hace ${minutesSince} min`;
+        }
+        
+        if (acc.isOnline !== isOnline || acc.lastPlayedChar !== lastPlayedChar) {
+          acc.isOnline = isOnline;
+          acc.lastPlayedChar = lastPlayedChar;
+          updateSingleAccountRow(i, acc);
+          updatedCount++;
+        }
+        if (isOnline) onlineCount++;
+        
+      } catch(e) {
+        console.warn(LOG, 'Error refreshing online status for', acc.label, e);
+      }
+    }
+    
+    if (window.toast) {
+      if (onlineCount > 0) {
+        window.toast('success', onlineCount + ' cuenta(s) activa(s) en los últimos 20 min', { ttl: 2000 });
+      } else {
+        window.toast('info', 'No se encontraron cuentas con actividad reciente', { ttl: 1500 });
+      }
+    }
+    console.log(LOG, 'Actualización completada: ' + updatedCount + ' cambios, ' + onlineCount + ' activas');
+  }
+
+  // ====== LOADALL CON ESTADO ONLINE BASADO EN LAST_MODIFIED ======
   async function loadAll(forceNoCache){
     state.loading = true;
     setStatus('Cargando datos…');
@@ -1007,9 +1151,28 @@
               root.GW2Api.getWVShopMerged(token, { nocache: !!forceNoCache }),
               root.GW2Api.getWVWeekly(token, { nocache: !!forceNoCache }).catch(function(e){ return null; })
             ])
-            .then(function(results){
+            .then(async function(results){
               var pkg = results[0], weekly = results[1];
               var steps = extractSeasonMetaSteps(weekly);
+              
+              // ====== NUEVO: Estado online basado en last_modified (no bloqueante) ======
+              var isOnline = false;
+              var lastPlayedChar = null;
+              
+              try {
+                const accountInfo = await root.GW2Api.getAccountInfo(token, { nocache: !!forceNoCache });
+                isOnline = root.GW2Api.isRecentlyActive(accountInfo, 10); // 10 minutos de umbral
+                
+                if (isOnline && accountInfo && accountInfo.last_modified) {
+                  const lastModified = new Date(accountInfo.last_modified);
+                  const now = new Date();
+                  const minutesSince = Math.floor((now - lastModified) / (1000 * 60));
+                  lastPlayedChar = `Actividad hace ${minutesSince} min`;
+                }
+              } catch(e) {
+                console.warn(LOG, 'Error getting account info for', label, e);
+              }
+              // ====== FIN ONLINE ======
 
               out.push({
                 token: token,
@@ -1021,7 +1184,9 @@
                 rows: Array.isArray(pkg && pkg.rows) ? pkg.rows : [],
                 pinned: pinned || {},
                 marks: marks || {},
-                seasonMetaSteps: steps
+                seasonMetaSteps: steps,
+                isOnline: isOnline,
+                lastPlayedChar: lastPlayedChar
               });
             })
             .catch(function(e){
@@ -1029,7 +1194,9 @@
               out.push({
                 token: token, fp: fp, label: label,
                 aa:0, aaIcon:null, itemsById:new Map(), rows:[],
-                pinned: pinned||{}, marks: marks||{}, seasonMetaSteps: 0, error: e
+                pinned: pinned||{}, marks: marks||{}, seasonMetaSteps: 0, error: e,
+                isOnline: false,
+                lastPlayedChar: null
               });
             })
             .finally(function(){ ACTIVE--; next(); });
@@ -1050,6 +1217,8 @@
     state.loading = false;
     
     hideSkeletonAndRestoreTable();
+    renderTable();
+    updateDashboard();
   }
 
   function computePinnedUnion(accounts){
@@ -1312,18 +1481,13 @@
       return '<span class="badge badge--infinite" data-tip="Sin límite de compra">∞ Ilimitado</span>';
     }
     
-    // Usar el valor dual (API + manual)
     const totalPurchased = Math.max(purchased, marked);
     const totalRemainingAA = left * cost;
     const progressPercent = limit > 0 ? (totalPurchased / limit) * 100 : 0;
-    
-    // Determinar estado
     const isCompleted = left === 0;
     const statusIcon = isCompleted ? '✅' : '⚠️';
     const statusText = isCompleted ? 'Completado' : 'Pendiente';
     const statusColor = isCompleted ? '#a0ffc8' : '#ffd36b';
-    
-    // Mostrar cantidad de objetos pendientes + AA entre paréntesis
     const pendingText = `${fmtInt(left)} (${fmtInt(totalRemainingAA)} AA)`;
     
     return `
@@ -1438,12 +1602,25 @@
       // Progreso semanal con barra debajo del nombre
       var stp = Number(acc.seasonMetaSteps || 0);
       var progressPercent = (stp / 6) * 100;
-      var nameColorClass = (stp >= 6) ? 'wvpd-acc--green' : (stp >= 4 ? 'wvpd-acc--yellow' : 'wvpd-acc--red');
       var accountName = esc(acc.label || ('Key ' + esc(acc.fp || '')));
+      
+      // Color del nombre según progreso semanal
+      var nameColorClass = (stp >= 6) ? 'wvpd-acc--green' : (stp >= 4 ? 'wvpd-acc--yellow' : 'wvpd-acc--red');
+      
+      // ====== INDICADOR DE ESTADO ONLINE ======
+      var isOnline = acc.isOnline || false;
+      var statusColor = isOnline ? 'green' : 'red';
+      var statusTitle = isOnline ? 'Activo (actividad reciente)' : 'Inactivo';
+      var lastPlayedInfo = isOnline && acc.lastPlayedChar ? 
+          '<div class="wvpd-online-info">🕐 ' + esc(acc.lastPlayedChar) + '</div>' : '';
       
       var nameHtml = `
         <div class="wvpd-account-cell">
-          <div class="wvpd-account-name ${nameColorClass}">${accountName}</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="wvpd-online-dot wvpd-online-dot--${statusColor}" title="${statusTitle}"></span>
+            <div class="wvpd-account-name ${nameColorClass}">${accountName}</div>
+          </div>
+          ${lastPlayedInfo}
           <div class="wvpd-account-progress">
             <div class="wvpd-account-progress__bar">
               <div class="wvpd-account-progress__fill" style="width:${progressPercent}%"></div>
@@ -1562,7 +1739,6 @@
     
     await WVSeasonStore.setMarks(season.year, season.seq, fp, newMarks);
     
-    // Actualizar state.accounts
     for (let i = 0; i < state.accounts.length; i++) {
       if (state.accounts[i].fp === fp) {
         state.accounts[i].marks = newMarks;
@@ -1570,10 +1746,8 @@
       }
     }
     
-    // ====== NUEVO: Actualizar SOLO la tarjeta específica en la tienda ======
     updateSingleShopCard(listingId, newValue);
     
-    // Refrescar UI del dashboard (si está visible)
     const panel = document.getElementById('wvPDPanel');
     if (panel && !panel.hidden) {
       renderTable();
@@ -1581,7 +1755,6 @@
     }
   }
 
-  // ====== NUEVA FUNCIÓN: Actualizar una sola tarjeta de la tienda ======
   function updateSingleShopCard(listingId, newValue) {
     const shopContainer = document.getElementById('wvTabShop');
     if (!shopContainer) return;
@@ -1589,7 +1762,6 @@
     const card = shopContainer.querySelector(`.wv-card[data-id="${listingId}"]`);
     if (!card) return;
     
-    // Buscar los datos actualizados
     let accData = null;
     let rowData = null;
     for (let i = 0; i < state.accounts.length && !accData; i++) {
@@ -1614,7 +1786,6 @@
     const statusText = isCompleted ? 'Completado' : 'Pendiente';
     const statusColor = isCompleted ? '#a0ffc8' : '#ffd36b';
     
-    // Actualizar la barra de progreso existente
     const existingProgress = card.querySelector('.wvpd-item-progress');
     if (existingProgress) {
       const statusDiv = existingProgress.querySelector('.wvpd-item-progress__status');
@@ -1629,20 +1800,17 @@
       }
     }
     
-    // Actualizar el input manual
     const inputField = card.querySelector(`#manual-input-${listingId}`);
     if (inputField && inputField.value != purchased) {
       inputField.value = purchased;
     }
     
-    // Actualizar el badge de cantidad si existe
     const badgeSpan = card.querySelector('.wv-card__body .pill');
     if (badgeSpan && left !== null) {
       badgeSpan.textContent = `${purchased} / ${limit}`;
     }
   }
   
-  // ====== Refrescar una tarjeta específica sin recargar todo ======
   function refreshCardDisplay(cardElement, listingId, accData, newValue) {
     const limit = accData.rows.find(r => r.id == listingId)?.purchase_limit;
     const cost = accData.rows.find(r => r.id == listingId)?.cost || 0;
@@ -1672,7 +1840,6 @@
     }
   }
   
-  // ====== Configurar auto-guardado con debounce ======
   function setupAutoSaveForCard(cardElement, listingId, accData) {
     const inputField = cardElement.querySelector(`#manual-input-${listingId}`);
     if (!inputField) return;
@@ -1702,337 +1869,301 @@
     });
   }
 
-    function getSelectedToken() {
-      try {
-        var sel = document.getElementById('keySelectGlobal');
-        if (sel && sel.value) return sel.value.trim();
-        var stored = localStorage.getItem('gw2_selected_key_v1');
-        if (stored) return stored;
-      } catch(e) {}
-      return null;
-    }
+  function getSelectedToken() {
+    try {
+      var sel = document.getElementById('keySelectGlobal');
+      if (sel && sel.value) return sel.value.trim();
+      var stored = localStorage.getItem('gw2_selected_key_v1');
+      if (stored) return stored;
+    } catch(e) {}
+    return null;
+  }
 
-    // ====== Mejorar tarjetas de tienda para ítems fijados con input numérico + botón MAX ======
-    function enhanceShopCards() {
-      const shopContainer = document.getElementById('wvTabShop');
-      if (!shopContainer) return;
+  function enhanceShopCards() {
+    const shopContainer = document.getElementById('wvTabShop');
+    if (!shopContainer) return;
+    
+    const placeholders = shopContainer.querySelectorAll('.wv-counter-placeholder');
+    placeholders.forEach(placeholder => {
+      if (placeholder.__wvpdProcessed) return;
+      placeholder.__wvpdProcessed = true;
       
-      // ====== NUEVO: Procesar placeholders de router.js ======
-      const placeholders = shopContainer.querySelectorAll('.wv-counter-placeholder');
-      placeholders.forEach(placeholder => {
-        // Verificar si ya fue procesado
-        if (placeholder.__wvpdProcessed) return;
-        placeholder.__wvpdProcessed = true;
-        
-        const card = placeholder.closest('.wv-card');
-        if (!card) return;
-        
-        // Eliminar cualquier input manual existente en esta tarjeta para evitar duplicados
-        const existingManualInput = card.querySelector('.wvpd-manual-input');
-        if (existingManualInput) existingManualInput.remove();
-        
-        const listingId = placeholder.dataset.id;
-        if (!listingId) return;
-        
-        // Buscar datos de la cuenta para este listingId
-        let accData = null;
-        let rowData = null;
-        for (let i = 0; i < state.accounts.length && !accData; i++) {
-          const acc = state.accounts[i];
-          const row = findRowByListingId(acc.rows, Number(listingId));
-          if (row && acc.pinned && acc.pinned[listingId]) {
-            accData = acc;
-            rowData = row;
+      const card = placeholder.closest('.wv-card');
+      if (!card) return;
+      
+      const existingManualInput = card.querySelector('.wvpd-manual-input');
+      if (existingManualInput) existingManualInput.remove();
+      
+      const listingId = placeholder.dataset.id;
+      if (!listingId) return;
+      
+      let accData = null;
+      let rowData = null;
+      for (let i = 0; i < state.accounts.length && !accData; i++) {
+        const acc = state.accounts[i];
+        const row = findRowByListingId(acc.rows, Number(listingId));
+        if (row && acc.pinned && acc.pinned[listingId]) {
+          accData = acc;
+          rowData = row;
+        }
+      }
+      
+      if (!accData || !rowData) {
+        placeholder.remove();
+        return;
+      }
+      
+      const purchased = getTotalPurchased(accData, Number(listingId));
+      const limit = rowData.purchase_limit;
+      const cost = rowData.cost || 0;
+      const manualValue = (accData.marks && accData.marks[listingId]) || purchased;
+      const fp = accData.fp;
+      const token = accData.token;
+      
+      const container = document.createElement('div');
+      container.className = 'wvpd-manual-input';
+      container.innerHTML = `
+        <label>Compras manuales:</label>
+        <input type="number" id="manual-input-${listingId}" value="${manualValue}" min="0" max="${limit || 999}" step="1">
+        <button class="btn-max" data-listing-id="${listingId}" data-limit="${limit || 0}">MAX</button>
+      `;
+      
+      placeholder.replaceWith(container);
+      
+      const inputField = container.querySelector(`#manual-input-${listingId}`);
+      const maxBtn = container.querySelector('.btn-max');
+      
+      let debounceTimer;
+      if (inputField) {
+        inputField.addEventListener('input', function(e) {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(async () => {
+            let newValue = parseInt(e.target.value, 10);
+            if (isNaN(newValue)) newValue = 0;
+            if (limit && newValue > limit) newValue = limit;
+            if (newValue < 0) newValue = 0;
+            if (inputField.value != newValue) inputField.value = newValue;
+            await updateManualMark(listingId, newValue, fp, token);
+            
+            const left = limit ? Math.max(0, limit - newValue) : null;
+            const totalRemainingAA = left * cost;
+            const progressPercent = limit ? (newValue / limit) * 100 : 0;
+            const isCompleted = left === 0;
+            const statusIcon = isCompleted ? '✅' : '⚠️';
+            const statusText = isCompleted ? 'Completado' : 'Pendiente';
+            const statusColor = isCompleted ? '#a0ffc8' : '#ffd36b';
+            
+            const existingProgress = card.querySelector('.wvpd-item-progress');
+            if (existingProgress) {
+              const statusDiv = existingProgress.querySelector('.wvpd-item-progress__status');
+              if (statusDiv) {
+                statusDiv.style.color = statusColor;
+                statusDiv.setAttribute('title', isCompleted ? 'Completado' : `Faltan ${left} unidades (${totalRemainingAA} AA)`);
+                statusDiv.innerHTML = `${statusIcon} ${statusText}: ${left ? `${left} (${totalRemainingAA} AA)` : `${limit} (${limit * cost} AA)`}`;
+              }
+              const fillDiv = existingProgress.querySelector('.wvpd-item-progress__fill');
+              if (fillDiv) {
+                fillDiv.style.width = `${Math.min(100, progressPercent)}%`;
+              }
+            }
+            
+            const badgeSpan = card.querySelector('.wv-card__body .pill');
+            if (badgeSpan && left !== null) {
+              badgeSpan.textContent = `${newValue} / ${limit}`;
+            }
+          }, 500);
+        });
+      }
+      
+      if (maxBtn) {
+        maxBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const maxLimit = parseInt(maxBtn.dataset.limit, 10);
+          if (maxLimit > 0 && inputField) {
+            inputField.value = maxLimit;
+            await updateManualMark(listingId, maxLimit, fp, token);
+            
+            const left = limit ? Math.max(0, limit - maxLimit) : null;
+            const totalRemainingAA = left * cost;
+            const progressPercent = limit ? (maxLimit / limit) * 100 : 0;
+            const isCompleted = left === 0;
+            const statusIcon = isCompleted ? '✅' : '⚠️';
+            const statusText = isCompleted ? 'Completado' : 'Pendiente';
+            const statusColor = isCompleted ? '#a0ffc8' : '#ffd36b';
+            
+            const existingProgress = card.querySelector('.wvpd-item-progress');
+            if (existingProgress) {
+              const statusDiv = existingProgress.querySelector('.wvpd-item-progress__status');
+              if (statusDiv) {
+                statusDiv.style.color = statusColor;
+                statusDiv.setAttribute('title', isCompleted ? 'Completado' : `Faltan ${left} unidades (${totalRemainingAA} AA)`);
+                statusDiv.innerHTML = `${statusIcon} ${statusText}: ${left ? `${left} (${totalRemainingAA} AA)` : `${limit} (${limit * cost} AA)`}`;
+              }
+              const fillDiv = existingProgress.querySelector('.wvpd-item-progress__fill');
+              if (fillDiv) {
+                fillDiv.style.width = `${Math.min(100, progressPercent)}%`;
+              }
+            }
+            
+            const badgeSpan = card.querySelector('.wv-card__body .pill');
+            if (badgeSpan && left !== null) {
+              badgeSpan.textContent = `${maxLimit} / ${limit}`;
+            }
           }
+        });
+      }
+    });
+    
+    const cards = shopContainer.querySelectorAll('.wv-card');
+    cards.forEach(card => {
+      const listingId = card.dataset.id;
+      if (!listingId) return;
+      
+      let isPinned = false;
+      let rowData = null;
+      let accData = null;
+      
+      for (let i = 0; i < state.accounts.length && !isPinned; i++) {
+        const acc = state.accounts[i];
+        if (acc.pinned && acc.pinned[listingId]) {
+          isPinned = true;
+          rowData = findRowByListingId(acc.rows, Number(listingId));
+          accData = acc;
+        }
+      }
+      
+      if (!isPinned || !rowData) return;
+      if (card.querySelector('.wvpd-manual-input')) return;
+      
+      const limit = rowData.purchase_limit;
+      const purchased = getTotalPurchased(accData, Number(listingId));
+      const left = limit ? Math.max(0, limit - purchased) : null;
+      const cost = rowData.cost || 0;
+      const totalRemainingAA = left * cost;
+      const progressPercent = limit ? (purchased / limit) * 100 : 0;
+      const manualValue = (accData.marks && accData.marks[listingId]) || 0;
+      const isCompleted = left === 0;
+      const statusIcon = isCompleted ? '✅' : '⚠️';
+      const statusText = isCompleted ? 'Completado' : 'Pendiente';
+      const statusColor = isCompleted ? '#a0ffc8' : '#ffd36b';
+      
+      let bodyDiv = card.querySelector('.wv-card__body');
+      if (!bodyDiv) {
+        bodyDiv = document.createElement('div');
+        bodyDiv.className = 'wv-card__body';
+        card.appendChild(bodyDiv);
+      }
+      
+      const existingProgress = bodyDiv.querySelector('.wvpd-item-progress');
+      const existingInput = bodyDiv.querySelector(`#manual-input-${listingId}`);
+      
+      if (existingProgress && existingInput) {
+        const statusDiv = existingProgress.querySelector('.wvpd-item-progress__status');
+        if (statusDiv) {
+          statusDiv.style.color = statusColor;
+          statusDiv.setAttribute('title', isCompleted ? 'Completado' : `Faltan ${left} unidades (${totalRemainingAA} AA)`);
+          statusDiv.innerHTML = `${statusIcon} ${statusText}: ${left ? `${left} (${totalRemainingAA} AA)` : `${limit} (${limit * cost} AA)`}`;
+        }
+        const fillDiv = existingProgress.querySelector('.wvpd-item-progress__fill');
+        if (fillDiv) {
+          fillDiv.style.width = `${Math.min(100, progressPercent)}%`;
         }
         
-        // Si no está fijado, no mostrar input manual
-        if (!accData || !rowData) {
-          placeholder.remove();
-          return;
+        if (existingInput.value != manualValue) {
+          existingInput.value = manualValue;
         }
-        
-        const purchased = getTotalPurchased(accData, Number(listingId));
-        const limit = rowData.purchase_limit;
-        const cost = rowData.cost || 0;
-        const manualValue = (accData.marks && accData.marks[listingId]) || purchased;
-        const fp = accData.fp;
-        const token = accData.token;
-        
-        // Crear el contenedor con input y botón MAX
-        const container = document.createElement('div');
-        container.className = 'wvpd-manual-input';
-        container.innerHTML = `
+        return;
+      }
+      
+      const oldManualInput = bodyDiv.querySelector('.wvpd-manual-input');
+      if (oldManualInput) oldManualInput.remove();
+      
+      bodyDiv.classList.add('wv-enhanced');
+      bodyDiv.innerHTML = `
+        <div class="sep"></div>
+        <div class="wvpd-item-progress wvpd-item-progress--compact">
+          <div class="wvpd-item-progress__status" style="color: ${statusColor}" title="${isCompleted ? 'Completado' : `Faltan ${left} unidades (${totalRemainingAA} AA)`}">
+            ${statusIcon} ${statusText}: ${left ? `${left} (${totalRemainingAA} AA)` : `${limit} (${limit * cost} AA)`}
+          </div>
+          <div class="wvpd-item-progress__bar">
+            <div class="wvpd-item-progress__fill" style="width:${Math.min(100, progressPercent)}%"></div>
+          </div>
+        </div>
+        <div class="wvpd-manual-input">
           <label>Compras manuales:</label>
           <input type="number" id="manual-input-${listingId}" value="${manualValue}" min="0" max="${limit || 999}" step="1">
           <button class="btn-max" data-listing-id="${listingId}" data-limit="${limit || 0}">MAX</button>
-        `;
-        
-        // Reemplazar el placeholder
-        placeholder.replaceWith(container);
-        
-        // Configurar eventos del input y botón MAX
-        const inputField = container.querySelector(`#manual-input-${listingId}`);
-        const maxBtn = container.querySelector('.btn-max');
-        
-        let debounceTimer;
-        if (inputField) {
-          inputField.addEventListener('input', function(e) {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(async () => {
-              let newValue = parseInt(e.target.value, 10);
-              if (isNaN(newValue)) newValue = 0;
-              if (limit && newValue > limit) newValue = limit;
-              if (newValue < 0) newValue = 0;
-              if (inputField.value != newValue) inputField.value = newValue;
-              await updateManualMark(listingId, newValue, fp, token);
-              
-              // Actualizar la UI de la tarjeta
-              const left = limit ? Math.max(0, limit - newValue) : null;
-              const totalRemainingAA = left * cost;
-              const progressPercent = limit ? (newValue / limit) * 100 : 0;
-              const isCompleted = left === 0;
-              const statusIcon = isCompleted ? '✅' : '⚠️';
-              const statusText = isCompleted ? 'Completado' : 'Pendiente';
-              const statusColor = isCompleted ? '#a0ffc8' : '#ffd36b';
-              
-              // Actualizar la barra de progreso
-              const existingProgress = card.querySelector('.wvpd-item-progress');
-              if (existingProgress) {
-                const statusDiv = existingProgress.querySelector('.wvpd-item-progress__status');
-                if (statusDiv) {
-                  statusDiv.style.color = statusColor;
-                  statusDiv.setAttribute('title', isCompleted ? 'Completado' : `Faltan ${left} unidades (${totalRemainingAA} AA)`);
-                  statusDiv.innerHTML = `${statusIcon} ${statusText}: ${left ? `${left} (${totalRemainingAA} AA)` : `${limit} (${limit * cost} AA)`}`;
-                }
-                const fillDiv = existingProgress.querySelector('.wvpd-item-progress__fill');
-                if (fillDiv) {
-                  fillDiv.style.width = `${Math.min(100, progressPercent)}%`;
-                }
-              }
-              
-              // Actualizar el badge del header si existe
-              const badgeSpan = card.querySelector('.wv-card__body .pill');
-              if (badgeSpan && left !== null) {
-                badgeSpan.textContent = `${newValue} / ${limit}`;
-              }
-            }, 500);
-          });
-        }
-        
-        if (maxBtn) {
-          maxBtn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const maxLimit = parseInt(maxBtn.dataset.limit, 10);
-            if (maxLimit > 0 && inputField) {
-              inputField.value = maxLimit;
-              await updateManualMark(listingId, maxLimit, fp, token);
-              
-              // Actualizar UI
-              const left = limit ? Math.max(0, limit - maxLimit) : null;
-              const totalRemainingAA = left * cost;
-              const progressPercent = limit ? (maxLimit / limit) * 100 : 0;
-              const isCompleted = left === 0;
-              const statusIcon = isCompleted ? '✅' : '⚠️';
-              const statusText = isCompleted ? 'Completado' : 'Pendiente';
-              const statusColor = isCompleted ? '#a0ffc8' : '#ffd36b';
-              
-              const existingProgress = card.querySelector('.wvpd-item-progress');
-              if (existingProgress) {
-                const statusDiv = existingProgress.querySelector('.wvpd-item-progress__status');
-                if (statusDiv) {
-                  statusDiv.style.color = statusColor;
-                  statusDiv.setAttribute('title', isCompleted ? 'Completado' : `Faltan ${left} unidades (${totalRemainingAA} AA)`);
-                  statusDiv.innerHTML = `${statusIcon} ${statusText}: ${left ? `${left} (${totalRemainingAA} AA)` : `${limit} (${limit * cost} AA)`}`;
-                }
-                const fillDiv = existingProgress.querySelector('.wvpd-item-progress__fill');
-                if (fillDiv) {
-                  fillDiv.style.width = `${Math.min(100, progressPercent)}%`;
-                }
-              }
-              
-              const badgeSpan = card.querySelector('.wv-card__body .pill');
-              if (badgeSpan && left !== null) {
-                badgeSpan.textContent = `${maxLimit} / ${limit}`;
-              }
-            }
-          });
-        }
-      });
+        </div>
+      `;
       
-      // ====== Código existente para tarjetas ya mejoradas (evitar duplicados) ======
-      const cards = shopContainer.querySelectorAll('.wv-card');
-      cards.forEach(card => {
-        const listingId = card.dataset.id;
-        if (!listingId) return;
-        
-        // Verificar si el ítem está fijado en alguna cuenta
-        let isPinned = false;
-        let rowData = null;
-        let accData = null;
-        
-        for (let i = 0; i < state.accounts.length && !isPinned; i++) {
-          const acc = state.accounts[i];
-          if (acc.pinned && acc.pinned[listingId]) {
-            isPinned = true;
-            rowData = findRowByListingId(acc.rows, Number(listingId));
-            accData = acc;
+      setupAutoSaveForCard(card, listingId, accData);
+      
+      const maxBtn = bodyDiv.querySelector('.btn-max');
+      if (maxBtn) {
+        maxBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const inputField = bodyDiv.querySelector(`#manual-input-${listingId}`);
+          const maxLimit = parseInt(maxBtn.dataset.limit, 10);
+          if (maxLimit > 0) {
+            inputField.value = maxLimit;
+            await updateManualMark(listingId, maxLimit, accData.fp, accData.token);
+            refreshCardDisplay(card, listingId, accData, maxLimit);
           }
-        }
-        
-        if (!isPinned || !rowData) return;
-        
-        // Si la tarjeta ya tiene un campo manual, no agregar otro
-        if (card.querySelector('.wvpd-manual-input')) return;
-        
-        const limit = rowData.purchase_limit;
-        const purchased = getTotalPurchased(accData, Number(listingId));
-        const left = limit ? Math.max(0, limit - purchased) : null;
-        const cost = rowData.cost || 0;
-        const totalRemainingAA = left * cost;
-        const progressPercent = limit ? (purchased / limit) * 100 : 0;
-        const manualValue = (accData.marks && accData.marks[listingId]) || 0;
-        
-        const isCompleted = left === 0;
-        const statusIcon = isCompleted ? '✅' : '⚠️';
-        const statusText = isCompleted ? 'Completado' : 'Pendiente';
-        const statusColor = isCompleted ? '#a0ffc8' : '#ffd36b';
-        
-        // Buscar o crear el body mejorado
-        let bodyDiv = card.querySelector('.wv-card__body');
-        if (!bodyDiv) {
-          bodyDiv = document.createElement('div');
-          bodyDiv.className = 'wv-card__body';
-          card.appendChild(bodyDiv);
-        }
-        
-        // Si ya existe un elemento mejorado, solo actualizar valores
-        const existingProgress = bodyDiv.querySelector('.wvpd-item-progress');
-        const existingInput = bodyDiv.querySelector(`#manual-input-${listingId}`);
-        
-        if (existingProgress && existingInput) {
-          // Actualizar barra de progreso
-          const statusDiv = existingProgress.querySelector('.wvpd-item-progress__status');
-          if (statusDiv) {
-            statusDiv.style.color = statusColor;
-            statusDiv.setAttribute('title', isCompleted ? 'Completado' : `Faltan ${left} unidades (${totalRemainingAA} AA)`);
-            statusDiv.innerHTML = `${statusIcon} ${statusText}: ${left ? `${left} (${totalRemainingAA} AA)` : `${limit} (${limit * cost} AA)`}`;
-          }
-          const fillDiv = existingProgress.querySelector('.wvpd-item-progress__fill');
-          if (fillDiv) {
-            fillDiv.style.width = `${Math.min(100, progressPercent)}%`;
-          }
-          
-          // Actualizar input si es necesario
-          if (existingInput.value != manualValue) {
-            existingInput.value = manualValue;
-          }
-          return;
-        }
-        
-        // Eliminar cualquier input manual existente antes de crear uno nuevo
-        const oldManualInput = bodyDiv.querySelector('.wvpd-manual-input');
-        if (oldManualInput) oldManualInput.remove();
-        
-        // Crear nuevo elemento mejorado
-        bodyDiv.classList.add('wv-enhanced');
-        bodyDiv.innerHTML = `
-          <div class="sep"></div>
-          <div class="wvpd-item-progress wvpd-item-progress--compact">
-            <div class="wvpd-item-progress__status" style="color: ${statusColor}" title="${isCompleted ? 'Completado' : `Faltan ${left} unidades (${totalRemainingAA} AA)`}">
-              ${statusIcon} ${statusText}: ${left ? `${left} (${totalRemainingAA} AA)` : `${limit} (${limit * cost} AA)`}
-            </div>
-            <div class="wvpd-item-progress__bar">
-              <div class="wvpd-item-progress__fill" style="width:${Math.min(100, progressPercent)}%"></div>
-            </div>
-          </div>
-          <div class="wvpd-manual-input">
-            <label>Compras manuales:</label>
-            <input type="number" id="manual-input-${listingId}" value="${manualValue}" min="0" max="${limit || 999}" step="1">
-            <button class="btn-max" data-listing-id="${listingId}" data-limit="${limit || 0}">MAX</button>
-          </div>
-        `;
-        
-        // Configurar auto-guardado para el input
-        setupAutoSaveForCard(card, listingId, accData);
-        
-        // Configurar botón MAX
-        const maxBtn = bodyDiv.querySelector('.btn-max');
-        if (maxBtn) {
-          maxBtn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const inputField = bodyDiv.querySelector(`#manual-input-${listingId}`);
-            const maxLimit = parseInt(maxBtn.dataset.limit, 10);
-            if (maxLimit > 0) {
-              inputField.value = maxLimit;
-              await updateManualMark(listingId, maxLimit, accData.fp, accData.token);
-              refreshCardDisplay(card, listingId, accData, maxLimit);
-            }
-          });
-        }
-      });
-    }
-  
-  // Exponer globalmente para que router.js pueda llamarla
-  window.enhanceShopCards = enhanceShopCards;
-  console.log(LOG, 'enhanceShopCards expuesta globalmente');
-
-  // Observar cambios en la tienda
-  function observeShop() {
-  const shopContainer = document.getElementById('wvTabShop');
-  if (!shopContainer || shopContainer.__wvEnhancedObs) return;
-  
-  shopContainer.__wvEnhancedObs = true;
-  
-  // ====== FUNCIÓN PARA CARGAR DATOS SI ES NECESARIO ======
-  function ensureDataAndEnhance() {
-    if (state.accounts && state.accounts.length > 0) {
-      // Ya hay datos, mejorar directamente
-      setTimeout(enhanceShopCards, 50);
-    } else {
-      // No hay datos, cargarlos primero
-      console.log(LOG, 'Cargando datos antes de mejorar tarjetas...');
-      safeRefresh(false).then(() => {
-        console.log(LOG, 'Datos cargados, mejorando tarjetas...');
-        setTimeout(enhanceShopCards, 100);
-      }).catch(e => {
-        console.warn(LOG, 'Error cargando datos:', e);
-      });
-    }
-  }
-  
-  // Observar cambios en la tienda
-  const observer = new MutationObserver(() => {
-    if (!shopContainer.hidden) {
-      ensureDataAndEnhance();
-    }
-  });
-  observer.observe(shopContainer, { childList: true, subtree: true });
-  
-  // También cuando se hace clic en la pestaña Tienda
-  const shopTab = document.getElementById('wvTabBtnShop');
-  if (shopTab && !shopTab.__wvpdObsWired) {
-    shopTab.__wvpdObsWired = true;
-    shopTab.addEventListener('click', () => {
-      setTimeout(ensureDataAndEnhance, 100);
+        });
+      }
     });
   }
   
-  // Escuchar evento de router.js
-  window.addEventListener('wv:shop:rendered', () => {
-    ensureDataAndEnhance();
-  });
-  
-  // Escuchar cambios en marcas
-  window.addEventListener('wv:season-store:mutate', () => {
-    if (!shopContainer.hidden) {
-      safeRefresh(false).then(() => setTimeout(enhanceShopCards, 100));
+  window.enhanceShopCards = enhanceShopCards;
+  console.log(LOG, 'enhanceShopCards expuesta globalmente');
+
+  function observeShop() {
+    const shopContainer = document.getElementById('wvTabShop');
+    if (!shopContainer || shopContainer.__wvEnhancedObs) return;
+    
+    shopContainer.__wvEnhancedObs = true;
+    
+    function ensureDataAndEnhance() {
+      if (state.accounts && state.accounts.length > 0) {
+        setTimeout(enhanceShopCards, 50);
+      } else {
+        console.log(LOG, 'Cargando datos antes de mejorar tarjetas...');
+        safeRefresh(false).then(() => {
+          console.log(LOG, 'Datos cargados, mejorando tarjetas...');
+          setTimeout(enhanceShopCards, 100);
+        }).catch(e => {
+          console.warn(LOG, 'Error cargando datos:', e);
+        });
+      }
     }
-  });
-  
-  // Intentar mejorar inmediatamente
-  ensureDataAndEnhance();
-}
+    
+    const observer = new MutationObserver(() => {
+      if (!shopContainer.hidden) {
+        ensureDataAndEnhance();
+      }
+    });
+    observer.observe(shopContainer, { childList: true, subtree: true });
+    
+    const shopTab = document.getElementById('wvTabBtnShop');
+    if (shopTab && !shopTab.__wvpdObsWired) {
+      shopTab.__wvpdObsWired = true;
+      shopTab.addEventListener('click', () => {
+        setTimeout(ensureDataAndEnhance, 100);
+      });
+    }
+    
+    window.addEventListener('wv:shop:rendered', () => {
+      ensureDataAndEnhance();
+    });
+    
+    window.addEventListener('wv:season-store:mutate', () => {
+      if (!shopContainer.hidden) {
+        safeRefresh(false).then(() => setTimeout(enhanceShopCards, 100));
+      }
+    });
+    
+    ensureDataAndEnhance();
+  }
 
   // ------------------------------ API pública ---------------------------
   var WVPurchaseDetail = {
@@ -2130,7 +2261,10 @@
       } catch(_){}
       ensureToolbarButton();
       updateBannerIcon();
-    }
+    },
+    
+    // Exponer función pública para actualizar estado online
+    refreshOnlineStatus: refreshAllOnlineStatus
   };
 
   async function safeRefresh(forceNoCache){
@@ -2161,7 +2295,7 @@
   else
     WVPurchaseDetail.initOnce();
 
-  // Exponer funciones globalmente para que router.js pueda llamarlas
+  // Exponer funciones globalmente
   window.enhanceShopCards = enhanceShopCards;
   window.updateManualMark = updateManualMark;
   window.refreshCardDisplay = refreshCardDisplay;
@@ -2169,5 +2303,5 @@
   window.findRowByListingId = findRowByListingId;
   window.__wvpdState = state;
 
-  console.info(LOG, 'ready 1.11.0 — Input numérico + Botón MAX + Auto-guardado + Función dual');
+  console.info(LOG, 'ready 1.13.0 — Estado online basado en last_modified (actividad general)');
 })(typeof window!=='undefined' ? window : (typeof globalThis!=='undefined' ? globalThis : this));

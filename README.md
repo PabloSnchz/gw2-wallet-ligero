@@ -14,6 +14,7 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 - ⭐ Favoritas, filtros avanzados, vista tarjetas/tabla
 - 👥 Panel de Personajes — Lista de personajes, localización y POIs
 - 📊 Detalle de compras Wizard’s Vault — KPIs de Aclamación Astral
+- 🟢 **Estado online basado en actividad reciente** — Detecta cualquier actividad (PvP, PvE, WvW, economía)
 - 🔐 **Panel de Cuentas** — Gestión segura de múltiples cuentas con cifrado local
 - 🧙 **Pantalla de Bienvenida** — Onboarding y accesos rápidos
 - 💾 **Sistema de Backup/Restaurar** — Exporta/importa toda la configuración entre dispositivos
@@ -25,9 +26,41 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 
 ---
 
-## ✨ Novedades principales — v5.9.0
+## ✨ Novedades principales — v6.0.0
 
-### 📈 Google Analytics y Eventos Personalizados (NUEVO)
+### 🟢 Estado online basado en last_modified (NUEVO)
+
+**Reemplazo completo de la lógica de PvP por `last_modified` de `/v2/account`:**
+
+| Aspecto | Antes (PvP) | Ahora (last_modified) |
+|---------|-------------|------------------------|
+| **Detección** | Solo partidas PvP terminadas | CUALQUIER actividad (PvP, PvE, WvW, economía) |
+| **Permiso necesario** | `pvp` | `account` (todas las keys lo tienen) |
+| **Latencia** | Media (solo al terminar partida) | Baja (cambios inmediatos) |
+| **Endpoint** | `/v2/pvp/games?ids=all` | `/v2/account?v=latest` |
+| **Icono** | ⚔️ (PvP) | 🕐 (actividad general) |
+| **Umbral** | 10-30 minutos (variable) | **20 minutos fijos** |
+
+**Cambios en `api-gw2.js` (v2.11.0):**
+- Nueva función `getAccountInfo(token, opts)` con `?v=latest` para obtener `last_modified`
+- Nueva función `isRecentlyActive(accountInfo, minutesThreshold)`
+- Eliminadas funciones `getPvPGames` e `isRecentlyActiveInPvP`
+- TTL de 30 segundos para datos de actividad
+
+**Cambios en `wv-purchase-detail.js` (v1.13.0):**
+- `loadAll()` ahora usa `getAccountInfo()` + `isRecentlyActive(accountInfo, 20)`
+- `refreshAllOnlineStatus()` ahora usa la misma lógica
+- Ícono cambiado de ⚔️ (PvP) a 🕐 (actividad general)
+- Tooltip actualizado: "Activo (actividad reciente)"
+- Botón "Online" en el dashboard (junto a Sincronizar)
+
+**Ventajas de la nueva implementación:**
+- ✅ Detecta cualquier actividad (no solo PvP)
+- ✅ No requiere permiso especial `pvp`
+- ✅ Latencia mucho menor
+- ✅ Más cuentas detectadas como online
+
+### 📈 Google Analytics y Eventos Personalizados (v5.9 - mantenido)
 - **Script de seguimiento GA4** agregado en `<head>` con ID `G-LB782QT9TR`
 - **Mide**: visitas, usuarios activos, ubicación, dispositivo, navegador, fuente de tráfico y duración de sesión
 - **Eventos personalizados** centralizados en `js/analytics.js` v1.0.0 con API pública `window.Analytics`
@@ -40,7 +73,7 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
   - `open_api_keys_modal`, `add_api_key`, `delete_api_key` — Gestión de API Keys
 - **Debug en consola**: cada evento se loguea con `[Analytics]` prefix
 
-### 🔄 Recarga forzada de temporada en Wizard's Vault
+### 🔄 Recarga forzada de temporada en Wizard's Vault (v5.9 - mantenido)
 - **Ícono clickeable** (sin apariencia de botón) ubicado junto al tooltip de información, a la derecha del título "Cámara del Brujo"
 - **Ícono:** `assets/icons/Welcome/834002.png`
 - Al hacer clic, fuerza la recarga de la temporada actual desde la API (`/v2/wizardsvault` con `nocache: true`)
@@ -50,7 +83,7 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 - Función global `window.forceReloadWVSeason` disponible para debug en consola
 - **Archivo modificado:** `js/wizards-vault.js` → versión v1.3.0
 
-### 💾 Sistema de Backup/Restaurar
+### 💾 Sistema de Backup/Restaurar (v5.9 - mantenido)
 - **Exportación completa**: API Keys, Wizard's Vault (pins y marcas), Wallet (pins, snapshots, vista compacta), Activities (toggles, home nodes), Characters (POIs, ubicaciones), Meta (favoritos, hecho hoy), configuración global
 - **Importación**: validación de versión, confirmación de sobrescritura, recarga automática
 - **Botones en utilbar**: Backup (`assets/icons/155034.png`) y Restaurar (`assets/icons/155033.png`)
@@ -58,7 +91,7 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 - **Claves correctas**: usa `gw2_keys` y `gw2_selected_key_v1` para API Keys
 - **Ruta:** botones siempre visibles en la barra superior
 
-### 🧙 Pantalla de Bienvenida
+### 🧙 Pantalla de Bienvenida (v5.9 - mantenido)
 - Pantalla de inicio que se muestra en primera visita o cuando no hay API key seleccionada
 - **Ruta:** `#/welcome`
 - **Secciones completas**: funcionalidades, API Key, asistente de cuentas, acceso rápido, comunidad, apoyo
@@ -67,7 +100,7 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 - **Flag `gn_welcome_seen`** en localStorage para no mostrar repetidamente
 - **Iconos exclusivos** para cada funcionalidad en la lista (cartera, meta, logros, WV, actividades, personajes, cuentas)
 
-### 🔐 Panel de Cuentas — v1.9.0 (Rediseño completo)
+### 🔐 Panel de Cuentas — v1.9.0 (Rediseño completo) (v5.9 - mantenido)
 - **Cifrado local**: Archivo JSON cifrado con AES (CryptoJS) y contraseña personal
 - **Asistente integrado** con 4 pasos para crear archivos `.enc` desde Excel:
   1. Descargar plantilla Excel con columnas predefinidas (id, nombre, email, password, gmailPassword, apiKey, twitch_user, twitch_email, twitch_password, geforce_linked, notas, tags)
@@ -93,7 +126,7 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 - **Botón "Cambiar archivo"** para resetear estado
 - **Ruta:** `#/account/accounts`
 
-### 🖼️ Migración completa a íconos locales
+### 🖼️ Migración completa a íconos locales (v5.9 - mantenido)
 - **Profesiones**: Todos los íconos de profesión ahora son locales (`assets/icons/professions/2163502.png` a `2163510.png`)
 - **Fractales**: Ícono genérico local (`assets/icons/Fractal/2591.png`) para todas las tarjetas
 - **Conversor**: SVG reemplazados por imágenes locales (gemas y oro)
@@ -105,7 +138,7 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 - **Ícono información**: Reemplazo de texto largo en WV por ícono `assets/icons/155018.png` avec tooltip
 - **Redes sociales**: Reemplazo de SVGs por imágenes locales en utilbar (`discord.png`, `instagram.png`, `youtube.png`, `twitchlogo.png`, `github.png`)
 
-### 🎨 Títulos de paneles con íconos
+### 🎨 Títulos de paneles con íconos (v5.9 - mantenido)
 | Módulo | Ícono |
 |--------|-------|
 | Cartera | `assets/icons/733322.png` |
@@ -117,21 +150,21 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 | Cuentas | `assets/icons/Cuentas/GW2free.png` |
 | Bienvenida | `assets/icons/Welcome/3380755.png` |
 
-### 🧭 Header Compacto
+### 🧭 Header Compacto (v5.9 - mantenido)
 - **Altura reducida**: ~60px (vs ~140px anterior)
 - **Logo + nombre**: en una sola línea con tipografía Cinzel Decorative
 - **Eliminación de hero**: las tabs del hero ya no son necesarias (la navegación está en sidebar)
 - **Responsive**: en móvil se apila verticalmente
 - **Botones Backup/Restaurar**: siempre visibles junto a las redes sociales
 
-### 🔑 Detección automática de llave semanal — v3.19.3
+### 🔑 Detección automática de llave semanal — v3.19.3 (v5.9 - mantenido)
 - **Nueva lógica**: busca Thiefs con nivel ≥10, <7 días de antigüedad, **y creados después del último reset semanal** (lunes 07:30 UTC)
 - Previene que personajes creados el domingo (día antes del reset) bloqueen la llave de la semana siguiente
 - UI dedicada en la parte superior del panel de actividades
 - Eliminado marcado manual (checkbox deshabilitado)
 - Leyenda informativa: "nivel 10+, <7 días, **misma semana**"
 
-### 👥 Panel de Personajes — v2.3.0
+### 👥 Panel de Personajes — v2.3.0 (v5.9 - mantenido)
 - Lista completa de personajes con profesión, raza, nivel y gremio
 - **Íconos de profesión locales** (migrados desde API)
 - Rangos PvP y WvW de la cuenta
@@ -140,7 +173,7 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 - Vista tarjetas / tabla con paginación
 - Carga optimizada: batch processing, timeouts, reintentos automáticos
 
-### 🕒 Barra de horarios unificada
+### 🕒 Barra de horarios unificada (v5.9 - mantenido)
 - **Iconos oficiales de Guild Wars 2**: UTC, Local, Reset diario, Reset semanal
 - **Actualización en tiempo real**: hora UTC y local con segundos
 - **Cuenta regresiva con segundos**: `1d 02h 30m 15s` para resets diario (00:00 UTC) y semanal (lunes 07:30 UTC)
@@ -148,14 +181,17 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
   - **Actividades**: junto a los tabs "Diarias/Semanales"
   - **Meta & Eventos**: misma línea que el título "Pendientes / Hecho hoy"
 
-### 🏡 Home Nodes — Rediseño completo
+### 🏡 Home Nodes — Rediseño completo (v5.9 - mantenido)
 - **Lista completa**: 74 elementos de Heredad (53 nodos API + 6 Janthir + 15 contratos/consumibles)
 - **Estado en tiempo real**: ✅ Desbloqueado / ❌ No desbloqueado vía API `/v2/account/home/nodes`
 - **Filtros avanzados**: por categoría (API/Janthir/Contratos), tipo (minería/madera/cosecha) y estado
 - **Tarjetas rediseñadas**: icono de tipo con glow + imagen de ítem destacada (64px)
 - **Persistencia diaria**: checkbox "Recolectado hoy" con localStorage
 
-### 💎 Purchase Detail — v1.11.0 (Automatización de compras)
+### 💎 Purchase Detail — v1.13.0 (Automatización de compras + Estado online)
+- **Estado online basado en last_modified**: detecta CUALQUIER actividad (PvP, PvE, WvW, economía) en los últimos 20 minutos
+- **Ícono 🕐** en lugar de ⚔️ para indicar actividad general
+- **Tooltip actualizado**: "Activo (actividad reciente)"
 - **Barra de progreso compacta** en cada celda de ítem fijado
 - **Input numérico + botón MAX** para marcas manuales
 - **Auto-guardado con debounce (500ms)**
@@ -167,46 +203,47 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 - **KPIs con glow** y borde lateral según estado
 - **Skeleton loader** animado durante carga
 - **Animación de entrada** (fade-in + scale) y timestamp de última actualización
+- **Botón "Online" en el dashboard** (junto a Sincronizar) para actualizar solo el estado
 
-### 🎭 Meta & Eventos — Mejoras de horarios
+### 🎭 Meta & Eventos — Mejoras de horarios (v5.9 - mantenido)
 - **Horarios en tarjetas convertidos a hora local** (desde UTC)
 - **Botón "Horarios" con color dinámico**: 🟢 verde (activo), 🟡 ámbar (próximo ≤20 min), 🔵 azul (más tarde)
 - **Próximo horario resaltado** en la lista de horarios
 - **Barra de horarios unificada** con iconos GW2
 
-### 🎨 Unificación visual global
+### 🎨 Unificación visual global (v5.9 - mantenido)
 - **Badges canónicos**: `.badge--success/warning/info/infinite` con efecto hover en toda la app
 - **Pills unificados**: `.pill` con efecto hover consistente
 - **KPIs con glow**: `.kpi--ok/warn/bad` con borde lateral y sombra
 - **Tabla unificada**: Sticky headers mejorados con fondo sólido
 
-### 🪄 Cámara del Brujo (WV)
+### 🪄 Cámara del Brujo (WV) (v5.9 - mantenido)
 - Router robusto con marcado de nav confiable y sidebar contextual correcto
 - Manejo defensivo con try/finally: aunque falle WV internamente, la pastilla y el sidebar se actualizan igual
 - Estructura de WV (objetivos + shop) consolidada, con auto-refresh de tienda, toolbar y persistencias por cuenta
 - **Mejora visual**: reemplazo de texto largo por ícono `155018.png` con tooltip junto al título
-- **🆕 Recarga forzada de temporada**: ícono `assets/icons/Welcome/834002.png` junto al tooltip para restaurar información de temporada manualmente
+- **Recarga forzada de temporada**: ícono `assets/icons/Welcome/834002.png` junto al tooltip para restaurar información de temporada manualmente
 
-### 💰 Wallet — Rework de tarjetas
+### 💰 Wallet — Rework de tarjetas (v5.9 - mantenido)
 - Reemplazo de estrella por 📌 pin con persistencia por cuenta y migración automática
 - Tarjetas unificadas con estética “WV”: nuevo grid, jerarquía visual, badges, pills de categorías
 - Vista compacta (toggle) persistente por cuenta
 - Delta de cantidades (↑/↓) contra snapshot local, con pill verde/roja
 - Toolbar enriquecida: “Vista compacta” + “Actualizar base”
 
-### 🏆 Logros
+### 🏆 Logros (v5.9 - mantenido)
 - Pantalla completa con barras de progreso por categoría
 - Filtros por PvE / PvP / WvW
 - Colores de rareza y estado
 
-### 🎨 UI/Accesibilidad
+### 🎨 UI/Accesibilidad (v5.9 - mantenido)
 - Botones con aria-pressed, aria-current, roles y tooltips coherentes
 - Control de foco y focus trap en el modal de API Keys
 - Limpieza de entidades HTML escapadas donde no corresponden
 
 ---
 
-## 🔧 Conversor Gem ↔ Gold — v2.0
+## 🔧 Conversor Gem ↔ Gold — v2.0 (v5.9 - mantenido)
 
 - Quick‑chips: Gemas (100/400/800/1200) y Oro (10/100/250)
 - Micro‑animaciones (`.updated`) en badges, output y barra
@@ -216,7 +253,7 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 
 ---
 
-## 🪄 Cámara del Brujo (WV) — Pastillas PvE/PvP/WvW
+## 🪄 Cámara del Brujo (WV) — Pastillas PvE/PvP/WvW (v5.9 - mantenido)
 
 Definí en `index.html` (antes de router.js):
 
@@ -232,10 +269,12 @@ Definí en `index.html` (antes de router.js):
 
 ---
 
-## 📦 Archivos clave (v5.9.0)
+## 📦 Archivos clave (v6.0.0)
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
+| `js/api-gw2.js` | **v2.11.0** | API Layer. **Nuevas funciones `getAccountInfo` e `isRecentlyActive`. Eliminadas funciones PvP** |
+| `js/wv-purchase-detail.js` | **v1.13.0** | Detalle de compras. **Estado online basado en last_modified (🕐 Actividad hace X min)** |
 | `js/analytics.js` | **v1.0.0** | **Eventos personalizados para Google Analytics. API pública `window.Analytics`. Cola de eventos segura.** |
 | `js/wizards-vault.js` | **v1.3.0** | Módulo Wizard's Vault. **Ícono de recarga forzada de temporada** (`834002.png`) junto al tooltip |
 | `js/accounts-panel.js` | **v1.9.0** | Panel de Cuentas + asistente para crear archivos .enc desde Excel. **Rediseño completo: iconos locales, Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada** |
@@ -245,14 +284,13 @@ Definí en `index.html` (antes de router.js):
 | `js/activities-theme.js` | v2.5.0 | Home Nodes + barra de horarios unificada con iconos GW2 |
 | `js/characters.js` | v2.3.0 | Panel de Personajes. **Íconos profesión locales** |
 | `js/meta-theme.js` | v1.3.1 | Barra de horarios unificada + mejora de horarios en tarjetas |
-| `js/wv-purchase-detail.js` | **v1.11.0** | Detalle de compras. **Barra de progreso compacta + input numérico + botón MAX + auto-guardado + regla dual** |
 | `js/router.js` | **v2.12.0** | Router con prefetch, guardas, navegación por hash. **Barra de progreso e input manual integrados en todas las tarjetas de tienda. Persistencia de marcas sin recargar UI.** |
 | `js/wallet-theme.js` | v1.3.0 | Badges canónicos + glows preservados |
 | `css/theme-polish.css` | v2.0.0 | Componentes canónicos unificados |
 
 ---
 
-## 🖼️ Assets locales (estructura v5.9.0)
+## 🖼️ Assets locales (estructura v6.0.0)
 
 ```
 assets/icons/
@@ -356,81 +394,89 @@ assets/icons/
 
 ## 🧪 Cómo probar las novedades
 
-### Google Analytics
+### Estado online basado en last_modified (NUEVO en v6.0)
+1. Navegar a **Cámara del Brujo** → botón de detalle de compras (icono en toolbar)
+2. Verificar que las cuentas con actividad reciente muestran 🕐 "Actividad hace X min"
+3. Hacer clic en el botón **"Online"** (junto a Sincronizar) para actualizar solo el estado
+4. Verificar que el umbral es de 20 minutos (actividad en la última hora se detecta)
+
+### Google Analytics (v5.9 - mantenido)
 1. **Verificar script**: Abrir consola (F12) → pestaña Network → buscar peticiones a `google-analytics.com`
 2. **Ver eventos en tiempo real**: En GA4 → Informes → Tiempo real → navegar por la app y ver eventos aparecer
 3. **Debug en consola**: Cada evento personalizado se loguea con `[Analytics]` prefix
 
-### Recarga forzada de temporada WV
+### Recarga forzada de temporada WV (v5.9 - mantenido)
 1. Navegar a Cámara del Brujo → hacer clic en el ícono 🔄 junto al tooltip → verificar que se actualiza la información de temporada
 
-### Sistema de Backup/Restaurar
+### Sistema de Backup/Restaurar (v5.9 - mantenido)
 1. Hacer clic en "Backup" → descargar JSON → cambiar algo → "Restaurar" → confirmar → recarga → verificar que se restauró
 
-### Pantalla de Bienvenida
+### Pantalla de Bienvenida (v5.9 - mantenido)
 1. Recargar sin API key o limpiar localStorage (`gn_welcome_seen`) → ver bienvenida
 
-### Botón home
+### Botón home (v5.9 - mantenido)
 1. Clic en icono home en utilbar → ir a `#/welcome`
 
-### Header compacto
+### Header compacto (v5.9 - mantenido)
 1. Verificar que el header ocupa menos espacio, logo + nombre en una línea, botones visibles
 
-### Redes sociales
+### Redes sociales (v5.9 - mantenido)
 1. Verificar que los iconos de Discord, Instagram, YouTube, Twitch y GitHub cargan como imágenes locales
 
-### Tooltip WV
+### Tooltip WV (v5.9 - mantenido)
 1. En Cámara del Brujo, pasar mouse sobre el ícono `ⓘ` junto al título → ver mensaje informativo
 
-### Panel de Cuentas
+### Panel de Cuentas (v5.9 - mantenido)
 1. Navegar a `#/account/accounts` → usar asistente para crear archivo .enc
 
-### Asistente de Cuentas
+### Asistente de Cuentas (v5.9 - mantenido)
 1. Abrir modal → seguir 4 pasos con iconos (plantilla Excel incluye columnas twitch_user, twitch_email, twitch_password)
 
-### Twitch en Cuentas
+### Twitch en Cuentas (v5.9 - mantenido)
 1. Cargar archivo .enc con datos Twitch → expandir "Servicios y API" → expandir "Servicios" → ver username (copiable), email (copiable si existe), password (toggle independiente + copiable si existe)
 
-### GeForce Now en Cuentas
+### GeForce Now en Cuentas (v5.9 - mantenido)
 1. Verificar que el texto "Vinculado" usa imagen local en lugar de emoji ✅
 
-### Iconos de secciones en Cuentas
+### Iconos de secciones en Cuentas (v5.9 - mantenido)
 1. Verificar que Credenciales y GW2 Avanzado tienen nuevos iconos, mientras que Contraseña y Chars mantienen los originales
 
-### Barra de estadísticas en Cuentas
+### Barra de estadísticas en Cuentas (v5.9 - mantenido)
 1. Verificar que los separadores están optimizados y no rompen en zoom 100%
 
-### Detección de llave semanal
+### Detección de llave semanal (v5.9 - mantenido)
 1. Ver panel de actividades → UI de llave con leyenda "misma semana"
 
-### Barra de horarios
+### Barra de horarios (v5.9 - mantenido)
 1. Navegar a **Actividades** o **Meta & Eventos** → ver barra con iconos GW2 y resets con segundos
 
-### Home Nodes
+### Home Nodes (v5.9 - mantenido)
 1. Navegar a **Actividades** → sección "Home nodes"
 
-### Personajes
+### Personajes (v5.9 - mantenido)
 1. Navegar a **Personajes** → ver lista, filtros, asignación de POIs
 
-### Íconos de profesión
+### Íconos de profesión (v5.9 - mantenido)
 1. Verificar que se cargan desde `assets/icons/professions/`
 
-### Íconos de fractales
+### Íconos de fractales (v5.9 - mantenido)
 1. Verificar que todas las tarjetas de fractales usan `2591.png`
 
-### Títulos de paneles
+### Títulos de paneles (v5.9 - mantenido)
 1. Verificar que cada panel tiene su ícono correspondiente
 
-### Horarios en Meta
+### Horarios en Meta (v5.9 - mantenido)
 1. Abrir horarios de una tarjeta → verificar hora local, color del botón y próximo horario resaltado
 
-### Purchase Detail
+### Purchase Detail (v1.13.0)
 1. Navegar a **Cámara del Brujo** → botón de detalle de compras → verificar barra de progreso, input manual, botón MAX
+2. Verificar el estado online: 🕐 "Actividad hace X min" en cuentas con actividad reciente
+3. Hacer clic en botón **"Online"** (junto a Sincronizar) para actualizar solo el estado
 
-### Wallet
+### Wallet (v5.9 - mantenido)
 1. Verificar que las categorías son badges y los glows especiales se mantienen
 
-### Conversor
+### Conversor (v5.9 - mantenido)
 1. Verificar que los íconos de gemas y oro son locales
 
 ---
@@ -438,6 +484,7 @@ assets/icons/
 ## 📌 Notas técnicas
 
 - **API Key**: Requiere permisos `account` y `wallet`
+- **Estado online**: Usa `last_modified` de `/v2/account?v=latest` con umbral de 20 minutos
 - **Rutas assets**: Todas son relativas (`assets/...`) sin barra inicial para compatibilidad con GitHub Pages
 - **Google Analytics**: ID de medición `G-LB782QT9TR`. Los eventos se pueden ver en GA4 → Informes → Eventos
 - **LocalStorage** utilizado para:
@@ -460,6 +507,7 @@ assets/icons/
 
 Este proyecto sigue **Semantic Versioning** (SemVer).
 
+- `v6.0.0`: **Estado online basado en last_modified** — Reemplazo completo de lógica PvP por `last_modified` de `/v2/account`. `api-gw2.js` v2.11.0, `wv-purchase-detail.js` v1.13.0. Detecta cualquier actividad (PvP, PvE, WvW, economía). Ícono 🕐, umbral 20 minutos.
 - `v5.9.0`: **Google Analytics y Eventos Personalizados** — Script GA4 en `<head>`, archivo `analytics.js` v1.0.0 con 11 eventos personalizados en 6 archivos
 - `v5.8.0`: **Recarga forzada de temporada WV + Automatización de compras** — Ícono junto al tooltip para restaurar información de temporada manualmente (`wizards-vault.js` v1.3.0); barra de progreso e input manual en dashboard y tienda
 - `v5.7.0`: **Sistema de Backup/Restaurar + Header compacto + Mejoras WV** — Exportación/importación completa de configuración, header compacto (~60px), iconos de redes sociales locales, tooltip informativo en WV, mejoras visuales generales

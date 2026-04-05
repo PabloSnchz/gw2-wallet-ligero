@@ -1,4 +1,3 @@
-```markdown
 # 📜 Changelog
 
 Todos los cambios notables de este proyecto serán documentados en este archivo.
@@ -6,6 +5,51 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato sigue las recomendaciones de  
 **Keep a Changelog** (https://keepachangelog.com/)  
 y el versionado **SemVer** (https://semver.org/).
+
+---
+
+## [6.0.0] - 2026-04-05
+
+### Added
+- **Estado online basado en last_modified**:
+  - Nueva función `getAccountInfo(token, opts)` en `api-gw2.js` v2.11.0
+  - Nueva función `isRecentlyActive(accountInfo, minutesThreshold)` en `api-gw2.js` v2.11.0
+  - Endpoint: `/v2/account?v=latest` para obtener `last_modified`
+  - Umbral configurable: 20 minutos por defecto
+  - Detecta CUALQUIER actividad (PvP, PvE, WvW, economía)
+  - No requiere permiso especial `pvp` (usa `account` que todas las keys tienen)
+  - TTL de 30 segundos para datos de actividad
+- **Botón "Online" en el dashboard de compras**:
+  - Ubicado junto al botón "Sincronizar" en `#wvpdFilters`
+  - Actualiza solo el estado online sin recargar todos los datos
+  - Usa el método público `WVPurchaseDetail.refreshOnlineStatus()`
+
+### Changed
+- **api-gw2.js v2.7.0-modular → v2.11.0**:
+  - Eliminadas funciones `getPvPGames` e `isRecentlyActiveInPvP` (reemplazadas por `getAccountInfo` e `isRecentlyActive`)
+  - Nueva función `getAccountInfo` con `?v=latest` para obtener `last_modified`
+  - Nueva función `isRecentlyActive` para determinar actividad reciente
+  - TTL.ACCOUNT agregado (30 segundos)
+- **wv-purchase-detail.js v1.11.0 → v1.13.0**:
+  - `loadAll()` ahora usa `getAccountInfo()` + `isRecentlyActive(accountInfo, 20)`
+  - `refreshAllOnlineStatus()` ahora usa la misma lógica
+  - Ícono cambiado de ⚔️ (PvP) a 🕐 (actividad general)
+  - Tooltip actualizado: "Activo (actividad reciente)"
+  - Botón "Online" movido del toolbar de tienda al dashboard
+  - Eliminada dependencia de `getPvPGames` e `isRecentlyActiveInPvP`
+- **Documentación**: README.md, ONBOARDING.md actualizados a v6.0.0
+
+### Removed
+- **Eliminada lógica de PvP**:
+  - `getPvPGames` (reemplazada por `getAccountInfo`)
+  - `isRecentlyActiveInPvP` (reemplazada por `isRecentlyActive`)
+  - Dependencia del permiso `pvp` en API keys
+  - Ícono ⚔️ (reemplazado por 🕐)
+
+### Fixed
+- **Estado online inconsistente**: ahora detecta actividad de cualquier tipo, no solo partidas PvP terminadas
+- **Permisos de API key**: ya no requiere permiso `pvp`, todas las keys con permiso `account` funcionan
+- **Latencia de detección**: `last_modified` se actualiza inmediatamente con cualquier cambio en la cuenta
 
 ---
 
@@ -368,7 +412,7 @@ y el versionado **SemVer** (https://semver.org/).
 - “Favoritas” → “Fijadas”.
 - Encabezado de Tabla (última col) ahora es **📌**.
 
-### Nuevo módulo completo: Cámara del Brujo (Wizard’s Vault)
+### Nuevo módulo completo: Cámara del Brujo (Wizard's Vault)
 - Objetivos Diarios / Semanales / Especiales.
 - Progreso de Meta global de temporada.
 - Aclamación Astral: disponible, gastado API, reservado (marcas locales).

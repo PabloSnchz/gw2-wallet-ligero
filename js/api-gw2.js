@@ -1,23 +1,34 @@
 /* =======================================================================
  * js/api-gw2.js  —  Capa API con fallbacks + caché persistente (mejorada)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 2.7.0-modular (2026-03-03) — Backoff + de-dupe + lang configurable
+ * Versión: 2.11.0-modular (2026-04-05) — Account info con last_modified
  *
  * Cobertura de este archivo:
  *  - Token / permisos (tokeninfo)
  *  - Wallet + currencies (fallback AA)
  *  - Items batch (con caché por id)
  *  - Achievements (cuenta + metadatos)
+ *  - Account info (con last_modified para detectar actividad)
  *  - Delegados Wizard’s Vault (retrocompatibles)
  *
- * Cambios vs 2.6.2-modular:
- *  - Nuevo fetchWithRetry() con backoff exponencial + jitter para 429/503/504.
- *  - De-duplicación de concurrencia (inflight promises) por clave lógica.
- *  - Idioma configurable en __cfg.LANG + __cfg.setLang(lang).
- *  - __cfg.setRetries(n) para tunear reintentos.
- *  - getCurrenciesAll / getAchievementsMeta / getItemsMany usan LANG central.
- *  - Mensajes de error más robustos (o.text || o.error).
- *  - 100% retrocompatible: métodos y nombres conservados.
+ * Cambios v2.11.0:
+ *  - NUEVA función getAccountInfo(token) que devuelve last_modified
+ *  - ELIMINADA lógica de PvP (getPvPGames, isRecentlyActiveInPvP)
+ *  - La detección de actividad ahora se basa en last_modified de /v2/account
+ *  - last_modified se actualiza con CUALQUIER cambio en la cuenta
+ *
+ * Cambios v2.10.0:
+ *  - Eliminada función isInActivePvPGame (no servía para tiempo real)
+ *  - Nueva función isRecentlyActiveInPvP(games, minutesThreshold)
+ *
+ * Cambios v2.9.0:
+ *  - Eliminada función getCharactersAgeMap
+ *  - Nueva función getPvPGames(token) con detalles de partidas
+ *
+ * Cambios v2.7.0-modular:
+ *  - Nuevo fetchWithRetry() con backoff exponencial + jitter
+ *  - De-duplicación de concurrencia (inflight promises)
+ *  - Idioma configurable en __cfg.LANG + __cfg.setLang(lang)
  * ======================================================================= */
 
 (function (root) {
@@ -29,6 +40,7 @@
   // TTLs (ms) — mantenemos los existentes
   var TTL = {
     TOKENINFO:   10 * 60 * 1000,            // 10 min
+    ACCOUNT:     30 * 1000,                 // 30 segundos (para detectar actividad reciente)
     WV_SEASON:    6 * 60 * 60 * 1000,       // 6 h  (delegado)
     WV_LISTINGS: 30 * 60 * 1000,            // 30 min (delegado)
     WV_ACCOUNT:   5 * 60 * 1000,            // 5 min (delegado)
@@ -189,6 +201,52 @@
       // Con 'wizardsvault' o 'progression' alcanza para WV
       return p.has('wizardsvault') || p.has('progression');
     } catch (_){ return false; }
+  }
+
+  // ========================================================================
+  // Account info (con last_modified para detectar actividad)
+  // ========================================================================
+  /**
+   * Obtiene información básica de la cuenta, incluyendo last_modified
+   * @param {string} token - API Key de la cuenta
+   * @param {Object} opts - Opciones (nocache, etc.)
+   * @returns {Promise<Object>} - Datos de la cuenta { id, name, age, last_modified, ... }
+   */
+  function getAccountInfo(token, opts) {
+    opts = opts || {};
+    if (!token) return Promise.reject(new Error('Falta access_token'));
+    
+    var key = 'account_info';
+    var cached = getCache(key, TTL.ACCOUNT, token, opts.nocache);
+    if (cached) return Promise.resolve(cached);
+    
+    var url = withToken(CFG.API_BASE + '/v2/account?v=latest', token);
+    var ikey = 'if:account_info:' + fpToken(token);
+    
+    return inflightOnce(ikey, function () {
+      return fetchWithRetry(url, opts).then(function (data) {
+        putCache(key, data, token, TTL.ACCOUNT);
+        return data;
+      });
+    });
+  }
+
+  /**
+   * Determina si una cuenta ha tenido actividad reciente basado en last_modified
+   * @param {Object} accountInfo - Datos de getAccountInfo()
+   * @param {number} minutesThreshold - Umbral en minutos (default 10)
+   * @returns {boolean} - true si hubo actividad en el período
+   */
+  function isRecentlyActive(accountInfo, minutesThreshold) {
+    if (!accountInfo || !accountInfo.last_modified) return false;
+    
+    var threshold = (minutesThreshold || 10) * 60 * 1000;
+    var now = Date.now();
+    var lastModified = new Date(accountInfo.last_modified).getTime();
+    
+    if (isNaN(lastModified)) return false;
+    
+    return (now - lastModified) <= threshold;
   }
 
   // ========================================================================
@@ -392,6 +450,10 @@
     // Token / Permisos
     getTokenInfo: getTokenInfo,
     tokenHasWVPermissions: tokenHasWVPermissions,
+
+    // Account info (con last_modified para detectar actividad)
+    getAccountInfo: getAccountInfo,
+    isRecentlyActive: isRecentlyActive,
 
     // Wallet / Currencies (fallback AA)
     getAccountWallet: getAccountWallet,
