@@ -1,7 +1,7 @@
 ```markdown
-# 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v5.9)
+# 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v6.0)
 
-Fecha: 2026-03-31
+Fecha: 2026-04-05
 Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `accounts-panel.js`, `welcome-panel.js`, `settings-manager.js`, `analytics.js`, `*-theme.js`, `app.css`
 
 ## 📌 BAI — Bloque de Alineamiento Instantáneo
@@ -57,9 +57,9 @@ Bóveda del Gato Negro es una web app vanilla JS modular, sin framework, con foc
 
 Si hay riesgo → advertir antes de generar código.
 
-## 🚀 Novedades v5.9
+## 🚀 Novedades v5.9 (mantenido)
 
-### 🆕 Google Analytics y Eventos Personalizados (NUEVO)
+### 🆕 Google Analytics y Eventos Personalizados
 
 **Integración con Google Analytics (GA4):**
 - Script de seguimiento agregado en `<head>` de `index.html` con ID `G-LB782QT9TR`
@@ -436,6 +436,100 @@ Panel completo que gestiona:
 - Integrado con SeasonStore (migración background)
 - Normalización segura para dashboard
 
+## 🚀 Novedades v6.0 (ABRIL 2026)
+
+### 🆕 Estado online basado en last_modified
+
+**Reemplazo completo de la lógica de PvP por `last_modified` de `/v2/account`:**
+
+| Aspecto | Antes (PvP) | Ahora (last_modified) |
+|---------|-------------|------------------------|
+| **Detección** | Solo partidas PvP terminadas | CUALQUIER actividad (PvP, PvE, WvW, economía) |
+| **Permiso necesario** | `pvp` | `account` (todas las keys lo tienen) |
+| **Latencia** | Media (solo al terminar partida) | Baja (cambios inmediatos) |
+| **Endpoint** | `/v2/pvp/games?ids=all` | `/v2/account?v=latest` |
+| **Icono** | ⚔️ (PvP) | 🕐 (actividad general) |
+
+**Cambios en `api-gw2.js` (v2.11.0):**
+- Nueva función `getAccountInfo(token, opts)` con `?v=latest` para obtener `last_modified`
+- Nueva función `isRecentlyActive(accountInfo, minutesThreshold)`
+- Eliminadas funciones `getPvPGames` e `isRecentlyActiveInPvP`
+- TTL de 30 segundos para datos de actividad
+
+**Código de `getAccountInfo`:**
+```javascript
+function getAccountInfo(token, opts) {
+  opts = opts || {};
+  if (!token) return Promise.reject(new Error('Falta access_token'));
+  
+  var key = 'account_info';
+  var ttl = 30 * 1000; // 30 segundos de caché para tiempo real
+  
+  var cached = getCache(key, ttl, token, opts.nocache);
+  if (cached) return Promise.resolve(cached);
+  
+  // IMPORTANTE: ?v=latest para obtener last_modified
+  var url = withToken(CFG.API_BASE + '/v2/account?v=latest', token);
+  var ikey = 'if:account_info:' + fpToken(token);
+  
+  return inflightOnce(ikey, function() {
+    return fetchWithRetry(url, opts).then(function(data) {
+      putCache(key, data, token, ttl);
+      return data;
+    });
+  });
+}
+```
+
+**Código de `isRecentlyActive`:**
+```javascript
+function isRecentlyActive(accountInfo, minutesThreshold) {
+  if (!accountInfo || !accountInfo.last_modified) return false;
+  
+  var threshold = (minutesThreshold || 20) * 60 * 1000;
+  var now = Date.now();
+  var lastModified = new Date(accountInfo.last_modified).getTime();
+  
+  if (isNaN(lastModified)) return false;
+  
+  return (now - lastModified) <= threshold;
+}
+```
+
+**Cambios en `wv-purchase-detail.js` (v1.13.0):**
+- `loadAll()` ahora usa `getAccountInfo()` + `isRecentlyActive(accountInfo, 20)`
+- `refreshAllOnlineStatus()` ahora usa la misma lógica
+- Ícono cambiado de ⚔️ (PvP) a 🕐 (actividad general)
+- Tooltip actualizado: "Activo (actividad reciente)"
+- Umbral: 20 minutos (configurable)
+
+**Lógica de estado online en `loadAll()`:**
+```javascript
+// Obtener account info (incluye last_modified)
+const accountInfo = await root.GW2Api.getAccountInfo(token, { nocache: !!forceNoCache });
+const isOnline = root.GW2Api.isRecentlyActive(accountInfo, 20); // 20 minutos de umbral
+
+let lastPlayedChar = null;
+if (isOnline && accountInfo && accountInfo.last_modified) {
+  const lastModified = new Date(accountInfo.last_modified);
+  const now = new Date();
+  const minutesSince = Math.floor((now - lastModified) / (1000 * 60));
+  lastPlayedChar = `Actividad hace ${minutesSince} min`;
+}
+```
+
+**Lógica de estado online en `refreshAllOnlineStatus()`:**
+```javascript
+const accountInfo = await root.GW2Api.getAccountInfo(acc.token, { nocache: true });
+const isOnline = root.GW2Api.isRecentlyActive(accountInfo, 20);
+
+if (isOnline && accountInfo && accountInfo.last_modified) {
+  const lastModified = new Date(accountInfo.last_modified);
+  const minutesSince = Math.floor((now - lastModified) / (1000 * 60));
+  lastPlayedChar = `Actividad hace ${minutesSince} min`;
+}
+```
+
 ## 🗺️ Visión general del proyecto
 
 Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navegación coordinados por router + eventos globales.
@@ -451,11 +545,11 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 - `#/account/accounts` — Cuentas
 - `#/welcome` — Pantalla de Bienvenida
 
-## 🧩 Responsabilidades por archivo (Consolidado v5.9)
+## 🧩 Responsabilidades por archivo (Consolidado v6.0)
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
-| `js/api-gw2.js` | v2.7.0-modular | API Layer con fetchWithRetry, cachés, WV, achievements, items |
+| `js/api-gw2.js` | **v2.11.0** | API Layer con fetchWithRetry, cachés, WV, achievements, items, **account info con last_modified** |
 | `js/wv-season-storage.js` | v1.1.1 | Almacenamiento por temporada (JSON por temporada en localStorage) |
 | `js/wizards-vault.js` | v1.2.1 | WV: objetivos, tienda, integración con SeasonStore |
 | `js/achievements.js` | v2.10.0 | Logros: aside, summary, nearly, categories, KPIs |
@@ -468,7 +562,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/settings-manager.js` | **v1.0.1** | **Sistema de Backup/Restaurar**: exportación/importación completa de configuración (API Keys, WV pins, Wallet, Activities, Characters, Meta, global) |
 | `js/welcome-panel.js` | v1.2.0 | **Pantalla de Bienvenida**: onboarding, accesos rápidos, enlaces comunitarios y apoyo |
 | `js/router.js` | **v2.12.0** | Router con prefetch, guardas, navegación por hash, mapeo de vistas. **Barra de progreso + input manual integrados en todas las tarjetas de tienda. Persistencia de marcas sin recargar UI. Eliminado event listener conflictivo de wv:season-store:mutate.** |
-| `js/wv-purchase-detail.js` | **v1.11.0** | Detalle de compras, dashboard AA, top pendientes. **Barra de progreso compacta + input numérico + botón MAX + auto-guardado + regla dual (Math.max(apiPurchased, manualMarks)).** |
+| `js/wv-purchase-detail.js` | **v1.13.0** | Detalle de compras, dashboard AA, top pendientes. **Estado online basado en last_modified (🕐 Actividad hace X min)**. Barra de progreso compacta + input numérico + botón MAX + auto-guardado + regla dual |
 | `js/wv-tabs-skin.js` | v1.0.0 | Re-skin de tabs WV, consistente con rerenders |
 | `js/analytics.js` | **v1.0.0** | **Eventos personalizados para Google Analytics. API pública `window.Analytics`. Cola de eventos segura.** |
 | `js/app.js` | v2.6.3 | Keys, wallet, eventos globales, emisor `gn:tokenchange` |
@@ -968,14 +1062,17 @@ Panel completo que muestra la lista de personajes de la cuenta con su profesión
 | `/v2/maps?ids=all` | Nombres de mapas |
 | `/v2/specializations/:id` | Iconos de especialidad |
 
-## ✅ js/wv-purchase-detail.js — Detalle de Compras (v1.11.0)
+## ✅ js/wv-purchase-detail.js — Detalle de Compras (v1.13.0)
 
 ### Resumen
 
-Dashboard de seguimiento de compras de Wizard's Vault con KPIs de Aclamación Astral, listado de ítems fijados por cuenta, y top pendientes.
+Dashboard de seguimiento de compras de Wizard's Vault con KPIs de Aclamación Astral, listado de ítems fijados por cuenta, top pendientes y **estado online basado en last_modified**.
 
-### Novedades visuales (v1.11.0)
+### Novedades visuales (v1.13.0)
 
+- **Estado online basado en last_modified**: detecta CUALQUIER actividad (PvP, PvE, WvW, economía) en los últimos 20 minutos
+- **Ícono 🕐** en lugar de ⚔️ para indicar actividad general
+- **Tooltip actualizado**: "Activo (actividad reciente)"
 - **Barra de progreso compacta** en cada celda de ítem fijado, mostrando estado visual (✅ Completado / ⚠️ Pendiente)
 - **Input numérico + botón MAX** para marcas manuales
 - **Auto-guardado con debounce (500ms)**
@@ -1009,6 +1106,8 @@ Dashboard de seguimiento de compras de Wizard's Vault con KPIs de Aclamación As
 
 ### APIs consumidas
 
+- `GW2Api.getAccountInfo()` (para last_modified)
+- `GW2Api.isRecentlyActive()` (para determinar actividad)
 - `GW2Api.getWVShopMerged()` (vía api-gw2.js)
 - `GW2Api.getWVWeekly()` (para meta steps)
 - `WVSeasonStore.getCurrentSeasonInfo()` (temporada)
@@ -1139,7 +1238,7 @@ assets/icons/
 - WVSeasonStore: migración legacy en background
 - SettingsManager: botones en utilbar, export/import independiente
 
-## 🧪 Checklists de Salud (v5.9)
+## 🧪 Checklists de Salud (v6.0)
 
 ### Orden de scripts (obligatorio)
 
@@ -1194,8 +1293,11 @@ assets/icons/
 - `gn_meta_hecho_hoy:*` → ✔
 - `gn_meta_favs:*` → ✔
 
-### Purchase Detail (v1.11.0)
+### Purchase Detail (v1.13.0)
 
+- ✅ **Estado online basado en last_modified** (actividad general, no solo PvP)
+- ✅ **Ícono 🕐** en lugar de ⚔️
+- ✅ **Umbral de 20 minutos** configurado
 - ✅ Barra de progreso compacta en cada celda de ítem fijado
 - ✅ Input numérico + botón MAX con auto-guardado
 - ✅ Regla dual: `Math.max(apiPurchased, manualMarks)`
@@ -1343,6 +1445,15 @@ assets/icons/
 - **No bloqueante**: el script de GA4 es `async`, no afecta rendimiento
 - **Fallback silencioso**: si gtag falla, no rompe la app
 
+### Estado online (NUEVO en v6.0)
+
+- **Endpoint correcto**: `/v2/account?v=latest` para obtener `last_modified`
+- **Umbral configurable**: 20 minutos por defecto
+- **Detección general**: cualquier actividad (no solo PvP)
+- **Sin permisos especiales**: `account` está en todas las keys
+- **Caché corta**: 30 segundos para datos de actividad
+- **Ícono 🕐** en lugar de ⚔️ para reflejar actividad general
+
 ### Globales
 
 - Un único `gn:tokenchange`
@@ -1401,7 +1512,8 @@ assets/icons/
 
 ### Purchase Detail (específico)
 
-- Íconos countdowns locales (no wiki, no render.guildwars2.com)
+- **Estado online**: usar `getAccountInfo()` + `isRecentlyActive()` en lugar de PvP
+- **Íconos countdowns locales** (no wiki, no render.guildwars2.com)
 - Banner y botón con ícono local
 - Timers con formato unificado
 - **Regla dual**: `Math.max(apiPurchased, manualMarks)` para mostrar siempre el valor más alto
@@ -1414,7 +1526,7 @@ assets/icons/
 - Persistencia de marcas directamente en WVSeasonStore
 - Actualización selectiva de UI con `updateCardUI()` sin recargar todo
 
-## 🧾 Historial de decisiones (v5.9)
+## 🧾 Historial de decisiones (v6.0)
 
 - **Q4 2025:** eliminación listener Ach → router controla todo
 - **Q1 2026:** watchdog Achievements (5s) + pipeline conservador
@@ -1449,13 +1561,18 @@ assets/icons/
   - Script GA4 en `<head>` con ID `G-LB782QT9TR`
   - Archivo `analytics.js` v1.0.0 con API pública y cola de eventos
   - Eventos en todos los módulos: navegación, backup, asistente, recarga temporada, gestión de keys
+- **Abr 2026:** **Reemplazo de lógica PvP por last_modified** (v6.0):
+  - `api-gw2.js` v2.11.0: nuevas funciones `getAccountInfo` e `isRecentlyActive`
+  - `wv-purchase-detail.js` v1.13.0: estado online basado en actividad general
+  - Ícono cambiado de ⚔️ a 🕐
+  - Umbral de 20 minutos
 
-## 🎉 Estado actual del proyecto (v5.9)
+## 🎉 Estado actual del proyecto (v6.0)
 
 - ✅ Navegación estable y desacoplada
 - ✅ Achievements sin doble pipeline (watchdog ok)
 - ✅ WV robusta con datos unificados
-- ✅ Purchase Detail v1.11.0 productivo: barra de progreso, input numérico, botón MAX, auto-guardado, regla dual
+- ✅ Purchase Detail v1.13.0 productivo: **estado online basado en last_modified**, barra de progreso, input numérico, botón MAX, auto-guardado, regla dual
 - ✅ Tienda (router.js v2.12.0) productiva: barra de progreso e input manual integrados, persistente, no desaparece
 - ✅ SeasonStore funcionando bien incluso con cuota mínima
 - ✅ Activities v3.19.3 productivo: fractales con ícono local, detección automática de llave semanal con validación de semana actual
@@ -1473,4 +1590,5 @@ assets/icons/
 - ✅ Botones de Leivas funcionando correctamente (sin regresiones)
 - ✅ **Google Analytics integrado**: script en `<head>` con ID `G-LB782QT9TR`
 - ✅ **Eventos personalizados**: 11 eventos en 6 archivos, centralizados en `analytics.js`
+- ✅ **Estado online basado en last_modified**: detecta cualquier actividad (no solo PvP), umbral 20 minutos, ícono 🕐
 ```
