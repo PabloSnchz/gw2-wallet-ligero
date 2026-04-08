@@ -15,6 +15,7 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 - 👥 Panel de Personajes — Lista de personajes, localización y POIs
 - 📊 Detalle de compras Wizard’s Vault — KPIs de Aclamación Astral
 - 🟢 **Estado online basado en actividad reciente** — Detecta cualquier actividad (PvP, PvE, WvW, economía)
+- 📈 **Dashboard de Cartera Multi-Cuenta** — Tabla de todas las cuentas vs divisas seleccionadas, KPIs y ordenamiento dinámico (NUEVO)
 - 🔐 **Panel de Cuentas** — Gestión segura de múltiples cuentas con cifrado local
 - 🧙 **Pantalla de Bienvenida** — Onboarding y accesos rápidos
 - 💾 **Sistema de Backup/Restaurar** — Exporta/importa toda la configuración entre dispositivos
@@ -26,9 +27,43 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 
 ---
 
-## ✨ Novedades principales — v6.0.0
+## ✨ Novedades principales — v6.1.0
 
-### 🟢 Estado online basado en last_modified (NUEVO)
+### 📈 Dashboard de Cartera Multi-Cuenta (NUEVO)
+
+**Nuevo módulo que permite visualizar todas las cuentas y sus divisas en una sola tabla.**
+
+| Característica | Descripción |
+|----------------|-------------|
+| **Tabla cuentas vs divisas** | Filas = cuentas (API keys), Columnas = divisas seleccionadas |
+| **Selector de divisas** | Dropdown con íconos, persistencia en localStorage |
+| **Ordenamiento dinámico** | Clic en encabezado ordena ascendente/descendente |
+| **KPIs resumen** | Tarjetas con Total Oro, Total Karma, Total Laurel, Reconocimiento Astral |
+| **Formato de moneda** | Oro mostrado como `X g Y s Z c` con colores |
+| **Persistencia** | Selección de divisas y ordenamiento guardados en localStorage |
+| **Skeleton loader** | Animación de carga mientras se obtienen datos |
+| **Scroll horizontal** | Tabla con overflow auto para muchas columnas |
+
+**Acceso:**
+- Botón "Dashboard" en el panel de Cartera (`#walletPanel`)
+- Cambia el hash a `#/wallet/dashboard`
+- También disponible en la navegación lateral
+
+**Ruta:** `#/wallet/dashboard`
+
+**Divisas por defecto:**
+- Gemas (ID 4)
+- Oro/Moneda (ID 1)
+- Laurel (ID 3)
+- Reconocimiento Astral (ID 63)
+- Karma (ID 2)
+- Esquirla espiritual (ID 23)
+
+**Persistencia en localStorage:**
+- `wallet_dashboard_selected_currencies` → IDs de divisas seleccionadas
+- `wallet_dashboard_sort` → columna y dirección de ordenamiento
+
+### 🟢 Estado online basado en last_modified (v6.0 - mantenido)
 
 **Reemplazo completo de la lógica de PvP por `last_modified` de `/v2/account`:**
 
@@ -66,7 +101,7 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 - **Eventos personalizados** centralizados en `js/analytics.js` v1.0.0 con API pública `window.Analytics`
 - **Cola de eventos segura**: si gtag no está cargado, los eventos se guardan y se envían cuando esté disponible
 - **Eventos medidos**:
-  - `view_module` — Navegación a cada módulo (8 módulos)
+  - `view_module` — Navegación a cada módulo (9 módulos incluyendo wallet_dashboard)
   - `export_backup` / `import_backup` — Uso de backup/restaurar
   - `open_account_wizard`, `download_excel_template`, `enrich_with_api`, `encrypt_accounts_file` — Uso del asistente de cuentas
   - `force_reload_season` — Recarga forzada de temporada WV
@@ -96,7 +131,7 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 - **Ruta:** `#/welcome`
 - **Secciones completas**: funcionalidades, API Key, asistente de cuentas, acceso rápido, comunidad, apoyo
 - **Botón home** en el utilbar con ícono local (`assets/icons/Welcome/3380755.png`)
-- **Redirección inteligente**: primera visita o sin key → bienvenida
+- **Redirección inteligente**: primera visita o sin key → bienvenida (excepto si ya está en welcome o dashboard)
 - **Flag `gn_welcome_seen`** en localStorage para no mostrar repetidamente
 - **Iconos exclusivos** para cada funcionalidad en la lista (cartera, meta, logros, WV, actividades, personajes, cuentas)
 
@@ -149,6 +184,7 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 | Personajes | `assets/icons/156678.png` |
 | Cuentas | `assets/icons/Cuentas/GW2free.png` |
 | Bienvenida | `assets/icons/Welcome/3380755.png` |
+| **Dashboard Cartera** | `assets/icons/733322.png` (reutiliza ícono de cartera) |
 
 ### 🧭 Header Compacto (v5.9 - mantenido)
 - **Altura reducida**: ~60px (vs ~140px anterior)
@@ -269,12 +305,13 @@ Definí en `index.html` (antes de router.js):
 
 ---
 
-## 📦 Archivos clave (v6.0.0)
+## 📦 Archivos clave (v6.1.0)
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
 | `js/api-gw2.js` | **v2.11.0** | API Layer. **Nuevas funciones `getAccountInfo` e `isRecentlyActive`. Eliminadas funciones PvP** |
 | `js/wv-purchase-detail.js` | **v1.13.0** | Detalle de compras. **Estado online basado en last_modified (🕐 Actividad hace X min)** |
+| `js/wallet-dashboard.js` | **v2.5.0** | **Dashboard de Cartera Multi-Cuenta: tabla cuentas vs divisas, KPIs, ordenamiento, persistencia** |
 | `js/analytics.js` | **v1.0.0** | **Eventos personalizados para Google Analytics. API pública `window.Analytics`. Cola de eventos segura.** |
 | `js/wizards-vault.js` | **v1.3.0** | Módulo Wizard's Vault. **Ícono de recarga forzada de temporada** (`834002.png`) junto al tooltip |
 | `js/accounts-panel.js` | **v1.9.0** | Panel de Cuentas + asistente para crear archivos .enc desde Excel. **Rediseño completo: iconos locales, Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada** |
@@ -284,18 +321,18 @@ Definí en `index.html` (antes de router.js):
 | `js/activities-theme.js` | v2.5.0 | Home Nodes + barra de horarios unificada con iconos GW2 |
 | `js/characters.js` | v2.3.0 | Panel de Personajes. **Íconos profesión locales** |
 | `js/meta-theme.js` | v1.3.1 | Barra de horarios unificada + mejora de horarios en tarjetas |
-| `js/router.js` | **v2.12.0** | Router con prefetch, guardas, navegación por hash. **Barra de progreso e input manual integrados en todas las tarjetas de tienda. Persistencia de marcas sin recargar UI.** |
+| `js/router.js` | **v2.13.0** | Router con prefetch, guardas, navegación por hash. **Incluye ruta #/wallet/dashboard. Barra de progreso e input manual integrados en todas las tarjetas de tienda.** |
 | `js/wallet-theme.js` | v1.3.0 | Badges canónicos + glows preservados |
 | `css/theme-polish.css` | v2.0.0 | Componentes canónicos unificados |
 
 ---
 
-## 🖼️ Assets locales (estructura v6.0.0)
+## 🖼️ Assets locales (estructura v6.1.0)
 
 ```
 assets/icons/
 ├── 3594051.png                 # Cámara del Brujo (banner/button)
-├── 733322.png                  # Cartera
+├── 733322.png                  # Cartera (también usado en Dashboard)
 ├── 102420.png                  # Meta & Eventos
 ├── 155059.png                  # Logros
 ├── 3172791.png                 # Cámara del Brujo (título)
@@ -394,7 +431,18 @@ assets/icons/
 
 ## 🧪 Cómo probar las novedades
 
-### Estado online basado en last_modified (NUEVO en v6.0)
+### Dashboard de Cartera Multi-Cuenta (NUEVO en v6.1)
+1. Navegar a **Cartera** (`#/cards`)
+2. Hacer clic en el botón **"Dashboard"** (junto a "Vista tabla")
+3. Verificar que se muestran todas las cuentas y las divisas seleccionadas
+4. Seleccionar/deseleccionar divisas en el dropdown para ver la tabla actualizarse
+5. Hacer clic en los encabezados de la tabla para ordenar ascendente/descendente
+6. Verificar las tarjetas de KPIs (Total Oro, Total Karma, Total Laurel, Reconocimiento Astral)
+7. Hacer clic en **"Refrescar"** para recargar los datos
+8. Hacer clic en **"Volver a Cartera"** para regresar al panel de cartera clásico
+9. Recargar la página (F5) en `#/wallet/dashboard` para ver que persiste el estado
+
+### Estado online basado en last_modified (v6.0 - mantenido)
 1. Navegar a **Cámara del Brujo** → botón de detalle de compras (icono en toolbar)
 2. Verificar que las cuentas con actividad reciente muestran 🕐 "Actividad hace X min"
 3. Hacer clic en el botón **"Online"** (junto a Sincronizar) para actualizar solo el estado
@@ -475,6 +523,7 @@ assets/icons/
 
 ### Wallet (v5.9 - mantenido)
 1. Verificar que las categorías son badges y los glows especiales se mantienen
+2. Verificar que el botón **"Dashboard"** está presente y funciona
 
 ### Conversor (v5.9 - mantenido)
 1. Verificar que los íconos de gemas y oro son locales
@@ -485,6 +534,7 @@ assets/icons/
 
 - **API Key**: Requiere permisos `account` y `wallet`
 - **Estado online**: Usa `last_modified` de `/v2/account?v=latest` con umbral de 20 minutos
+- **Dashboard Cartera**: Usa `getCurrenciesAll()` y `getAccountWallet()`. Persistencia en `localStorage` con claves `wallet_dashboard_selected_currencies` y `wallet_dashboard_sort`
 - **Rutas assets**: Todas son relativas (`assets/...`) sin barra inicial para compatibilidad con GitHub Pages
 - **Google Analytics**: ID de medición `G-LB782QT9TR`. Los eventos se pueden ver en GA4 → Informes → Eventos
 - **LocalStorage** utilizado para:
@@ -500,6 +550,8 @@ assets/icons/
   - `gn_welcome_seen` (flag de primera visita)
   - `walletPins:*`, `walletSnapshot:*`, `walletCompact`
   - `gn_meta_hecho_hoy:*`, `gn_meta_favs:*`
+  - **`wallet_dashboard_selected_currencies`** (divisas seleccionadas en dashboard)
+  - **`wallet_dashboard_sort`** (ordenamiento del dashboard)
 
 ---
 
@@ -507,6 +559,7 @@ assets/icons/
 
 Este proyecto sigue **Semantic Versioning** (SemVer).
 
+- `v6.1.0`: **Dashboard de Cartera Multi-Cuenta** — Nuevo módulo `wallet-dashboard.js` v2.5.0. Tabla cuentas vs divisas, selector de divisas dropdown, KPIs resumen (Oro, Karma, Laurel, AA), ordenamiento dinámico, persistencia en localStorage. Ruta `#/wallet/dashboard`. Botón "Dashboard" en panel de Cartera.
 - `v6.0.0`: **Estado online basado en last_modified** — Reemplazo completo de lógica PvP por `last_modified` de `/v2/account`. `api-gw2.js` v2.11.0, `wv-purchase-detail.js` v1.13.0. Detecta cualquier actividad (PvP, PvE, WvW, economía). Ícono 🕐, umbral 20 minutos.
 - `v5.9.0`: **Google Analytics y Eventos Personalizados** — Script GA4 en `<head>`, archivo `analytics.js` v1.0.0 con 11 eventos personalizados en 6 archivos
 - `v5.8.0`: **Recarga forzada de temporada WV + Automatización de compras** — Ícono junto al tooltip para restaurar información de temporada manualmente (`wizards-vault.js` v1.3.0); barra de progreso e input manual en dashboard y tienda

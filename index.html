@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="dark light"/>
   <meta name="theme-color" content="#111218"/>
-  <title>Bóveda del Gato Negro — v6.0.0</title>
+  <title>Bóveda del Gato Negro — v6.1.0</title>
 
   <!-- Fuente hero: Cinzel Decorative -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -427,6 +427,10 @@
           <div class="filters-actions">
             <button id="clearFiltersBtn" class="btn" title="Reiniciar filtros">Limpiar filtros</button>
             <button id="toggleViewBtn" class="btn btn--ghost" title="Vista tarjeta/tabla" aria-pressed="false" aria-controls="walletCards walletTableWrap">Vista tabla</button>
+            <!-- Botón para abrir el Dashboard de Cartera -->
+            <button id="walletDashboardBtn" class="btn btn--ghost" title="Abrir Dashboard de Cartera (todas las cuentas)" style="display: inline-flex; align-items: center; gap: 6px;">
+              <img src="assets/icons/733322.png" width="14" height="14" alt="Dashboard"> Dashboard
+            </button>
           </div>
         </div>
 
@@ -457,6 +461,11 @@
           </table>
         </div>
       </div>
+    </section>
+
+    <!-- ======= Dashboard de Cartera (nuevo - en posición correcta dentro de col-main) ======= -->
+    <section id="walletDashboardPanel" class="panel col-main" hidden>
+      <!-- El contenido lo llena wallet-dashboard.js dinámicamente -->
     </section>
 
     <!-- ======= Panel MetaEventos ======= -->
@@ -939,10 +948,13 @@
   <script defer src="js/settings-manager.js?v=1.0.2"></script>
   <script defer src="js/gist-sync.js?v=1.0.0"></script>
   <script defer src="js/welcome-panel.js?v=1.2.0"></script>
-  <script defer src="js/router.js?v=2.12.0"></script>
+  <script defer src="js/router.js?v=2.13.0"></script>
   <script defer src="js/wv-tabs-skin.js?v=1.0.0"></script>
   <script defer src="js/wv-purchase-detail.js?v=1.13.0"></script>
   
+  <!-- NUEVO: Módulo Dashboard de Cartera -->
+  <script defer src="js/wallet-dashboard.js?v=2.4.0"></script>
+
   <!-- Inicialización del icono (solo si no lo definió el usuario antes) -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -950,6 +962,16 @@
         if (!localStorage.getItem('wvpd_icon_url')) {
           WVPurchaseDetail.setIcon('assets/icons/3126787.png');
         }
+      }
+      // Conectar botón del dashboard de cartera
+      var dashboardBtn = document.getElementById('walletDashboardBtn');
+      if (dashboardBtn && window.WalletDashboard && typeof window.WalletDashboard.show === 'function') {
+        dashboardBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          location.hash = '#/wallet/dashboard';
+        });
+      } else if (dashboardBtn) {
+        console.warn('[WalletDashboard] Módulo no disponible aún');
       }
     });
   </script>
