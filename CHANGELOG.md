@@ -8,6 +8,45 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [6.1.0] - 2026-04-08
+
+### Added
+- **Dashboard de Cartera Multi-Cuenta (wallet-dashboard.js v2.5.0)**:
+  - Nuevo módulo que muestra todas las cuentas (API keys) en una tabla
+  - Columnas: divisas seleccionadas por el usuario (Gemas, Oro, Laurel, AA, Karma, Esquirla espiritual por defecto)
+  - Fila de totales (suma de cada divisa entre todas las cuentas)
+  - Selector de divisas dropdown con íconos y persistencia en localStorage
+  - Ordenamiento dinámico por columna (clic en encabezado alterna ascendente/descendente)
+  - KPIs resumen con íconos oficiales: Total Oro, Total Karma, Total Laurel, Reconocimiento Astral
+  - Formato de moneda para Oro: `X g Y s Z c` con colores (amarillo para oro, gris para plata, cobre para cobre)
+  - Skeleton loader animado durante carga de datos
+  - Scroll horizontal para tablas grandes
+  - Botón "Refrescar" para recargar todas las wallets con `nocache: true`
+  - Botón "Volver a Cartera" que cambia el hash a `#/cards`
+- **Nueva ruta `#/wallet/dashboard`** en router.js v2.13.0
+- **Botón "Dashboard" en el panel de Cartera** (`#walletPanel`) que navega a `#/wallet/dashboard`
+- **Persistencia en localStorage**:
+  - `wallet_dashboard_selected_currencies` — IDs de divisas seleccionadas
+  - `wallet_dashboard_sort` — columna y dirección de ordenamiento
+
+### Changed
+- **router.js v2.12.0 → v2.13.0**:
+  - Agregada ruta `#/wallet/dashboard`
+  - Agregado `walletDashboardPanel` a `showPanel()` para que oculte correctamente `walletPanel`
+  - Modificada redirección de bienvenida: no redirige si ya está en `#/welcome` o `#/wallet/dashboard`
+  - Agregado evento `view_module` para `wallet_dashboard`
+- **index.html**:
+  - Agregado panel `#walletDashboardPanel` con clase `panel col-main`
+  - Agregado botón "Dashboard" en los filtros del panel de Cartera
+  - Agregado script `wallet-dashboard.js` a la lista de scripts
+- **Documentación**: README.md, ONBOARDING.md actualizados a v6.1.0
+
+### Fixed
+- **Redirección de bienvenida**: al recargar la página en `#/wallet/dashboard`, ya no redirige a `#/welcome`
+- **Carga inicial del dashboard**: reintento de renderizado si la tabla no existe en el DOM (100ms)
+
+---
+
 ## [6.0.0] - 2026-04-05
 
 ### Added
@@ -686,4 +725,3 @@ Esta versión reemplaza completamente la versión anterior de *gw2-wallet-ligero
 - Integración con `/v2/account/wallet`
 - Grilla de tarjetas
 - Vista compacta (tabla)
-```

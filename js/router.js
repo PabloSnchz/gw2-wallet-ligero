@@ -1,24 +1,16 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.12.0 (2026-03-30) — Barra de progreso + input manual integrados en todas las tarjetas
+ * v2.13.0 (2026-04-08) — Fix: ocultar walletPanel cuando se muestra walletDashboardPanel
  *
- * Cambios v2.12.0:
- *  - Eliminado event listener conflictivo de wv:season-store:mutate
- *  - Barra de progreso y input manual ahora son parte nativa del HTML de la tarjeta
- *  - Persistencia y actualización de marcas manejada internamente sin recargar toda la tienda
- *  - Eliminada dependencia de placeholders y enhanceShopCards externo
- *
- * Cambios v2.11.0:
- *  - Eliminados botones +/- y MAX del renderizado nativo
- *
- * Cambios v2.10.6:
- *  - Añadida ruta '#/welcome' para la pantalla de bienvenida
+ * Cambios v2.13.0:
+ *  - Agregada ruta '#/wallet/dashboard' para el dashboard multi-cuenta de wallet
+ *  - Agregado walletDashboardPanel a showPanel() para que oculte correctamente walletPanel
  */
 
 (function () {
   'use strict';
 
-  console.info('[WV] router-wv.js v2.12.0 — Barra de progreso + input manual integrados');
+  console.info('[WV] router-wv.js v2.13.0 — Barra de progreso + input manual integrados + wallet dashboard');
 
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -112,7 +104,8 @@
           '#/activities':'activities',
           '#/account/characters':'characters',
           '#/account/accounts':'accounts',
-          '#/welcome':'welcome'
+          '#/welcome':'welcome',
+          '#/wallet/dashboard':'walletDashboard'
         };
         var dv = map[h]; if (dv) found = links.find(function (a) { return (a.getAttribute('data-view')||'').trim().toLowerCase()===dv; }) || null;
       }
@@ -130,11 +123,14 @@
       else if (view==='achievements'){ if (ach) ach.hidden=false; }
       else if (view==='accounts'){ /* no sidebar específico por ahora */ }
       else if (view==='welcome'){ /* no sidebar específico para bienvenida */ }
+      else if (view==='walletDashboard'){ /* no sidebar específico */ }
     } catch (e) { console.warn('[router] updateSidebarFor error', e); }
   }
 
+  // ====== FUNCIÓN SHOWPANEL CORREGIDA ======
   function showPanel(idToShow) {
-    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','charactersPanel','accountsPanel','welcomePanel'].forEach(function(id){
+    // Lista completa de todos los paneles principales, incluyendo walletDashboardPanel
+    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','charactersPanel','accountsPanel','welcomePanel','walletDashboardPanel'].forEach(function(id){
       var node=el(id); if (!node) return;
       if (id===idToShow) node.removeAttribute('hidden'); else node.setAttribute('hidden','hidden');
     });
@@ -1301,6 +1297,23 @@
           try { window.Activities.deactivate(); } catch (_) {}
         }
 
+        // Nueva ruta: Dashboard de Cartera
+        if (h === '#/wallet/dashboard') {
+          try {
+            showPanel('walletDashboardPanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('wallet_dashboard');
+            if (window.WalletDashboard && typeof window.WalletDashboard.activate === 'function') {
+              window.WalletDashboard.activate();
+            }
+          } catch (e) {
+            console.warn('[router] show wallet dashboard error', e);
+          } finally {
+            updateSidebarFor('walletDashboard');
+            setActiveNav(h);
+          }
+          return;
+        }
+
         if (h === '#/cards') {
           try { 
             showPanel('walletPanel');
@@ -1485,6 +1498,10 @@
           } catch (e) {
             console.warn('[router] Welcome.activate error', e);
           }
+        }
+      } else if (h === '#/wallet/dashboard') {
+        if (window.WalletDashboard && typeof window.WalletDashboard.activate === 'function') {
+          window.WalletDashboard.activate();
         }
       }
 
