@@ -1,6 +1,14 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.13.0 (2026-04-08) — Fix: ocultar walletPanel cuando se muestra walletDashboardPanel
+ * v2.14.0 (2026-04-08) — Agregada ruta para Raid Tracker
+ *
+ * Cambios v2.14.0:
+ *  - Agregada ruta '#/account/raids' para el seguimiento semanal de raids
+ *  - Agregado raidTrackerPanel a showPanel()
+ *  - Agregado mapeo de raids en setActiveNav()
+ *  - Agregado caso en updateSidebarFor()
+ *  - Agregado bloque en route() para RaidTracker
+ *  - Agregado caso en onKeySelectChange()
  *
  * Cambios v2.13.0:
  *  - Agregada ruta '#/wallet/dashboard' para el dashboard multi-cuenta de wallet
@@ -10,7 +18,7 @@
 (function () {
   'use strict';
 
-  console.info('[WV] router-wv.js v2.13.0 — Barra de progreso + input manual integrados + wallet dashboard');
+  console.info('[WV] router-wv.js v2.14.0 — Barra de progreso + input manual integrados + wallet dashboard + raid tracker');
 
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -105,7 +113,8 @@
           '#/account/characters':'characters',
           '#/account/accounts':'accounts',
           '#/welcome':'welcome',
-          '#/wallet/dashboard':'walletDashboard'
+          '#/wallet/dashboard':'walletDashboard',
+          '#/account/raids':'raids'
         };
         var dv = map[h]; if (dv) found = links.find(function (a) { return (a.getAttribute('data-view')||'').trim().toLowerCase()===dv; }) || null;
       }
@@ -124,13 +133,14 @@
       else if (view==='accounts'){ /* no sidebar específico por ahora */ }
       else if (view==='welcome'){ /* no sidebar específico para bienvenida */ }
       else if (view==='walletDashboard'){ /* no sidebar específico */ }
+      else if (view==='raids'){ /* no sidebar específico para raids */ }
     } catch (e) { console.warn('[router] updateSidebarFor error', e); }
   }
 
   // ====== FUNCIÓN SHOWPANEL CORREGIDA ======
   function showPanel(idToShow) {
-    // Lista completa de todos los paneles principales, incluyendo walletDashboardPanel
-    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','charactersPanel','accountsPanel','welcomePanel','walletDashboardPanel'].forEach(function(id){
+    // Lista completa de todos los paneles principales, incluyendo walletDashboardPanel y raidTrackerPanel
+    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','charactersPanel','accountsPanel','welcomePanel','walletDashboardPanel','raidTrackerPanel'].forEach(function(id){
       var node=el(id); if (!node) return;
       if (id===idToShow) node.removeAttribute('hidden'); else node.setAttribute('hidden','hidden');
     });
@@ -1314,6 +1324,23 @@
           return;
         }
 
+        // Nueva ruta: Raid Tracker
+        if (h === '#/account/raids') {
+          try {
+            showPanel('raidTrackerPanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('raids');
+            if (window.RaidTracker && typeof window.RaidTracker.activate === 'function') {
+              window.RaidTracker.activate();
+            }
+          } catch (e) {
+            console.warn('[router] show raids error', e);
+          } finally {
+            updateSidebarFor('raids');
+            setActiveNav(h);
+          }
+          return;
+        }
+
         if (h === '#/cards') {
           try { 
             showPanel('walletPanel');
@@ -1502,6 +1529,12 @@
       } else if (h === '#/wallet/dashboard') {
         if (window.WalletDashboard && typeof window.WalletDashboard.activate === 'function') {
           window.WalletDashboard.activate();
+        }
+      } else if (h === '#/account/raids') {
+        if (window.RaidTracker && typeof window.RaidTracker.refresh === 'function') {
+          window.RaidTracker.refresh(true);
+        } else if (window.RaidTracker && typeof window.RaidTracker.activate === 'function') {
+          window.RaidTracker.activate();
         }
       }
 

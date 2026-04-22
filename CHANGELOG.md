@@ -1,3 +1,4 @@
+```markdown
 # 📜 Changelog
 
 Todos los cambios notables de este proyecto serán documentados en este archivo.
@@ -5,6 +6,64 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato sigue las recomendaciones de  
 **Keep a Changelog** (https://keepachangelog.com/)  
 y el versionado **SemVer** (https://semver.org/).
+
+---
+
+## [6.2.0] - 2026-04-21
+
+### Added
+- **Raid Tracker — Seguimiento Semanal de Raids (raid-tracker.js v1.3.1)**:
+  - Nuevo módulo que muestra las 8 alas de raid con todos sus encuentros
+  - 33 encuentros totales (21 jefes + 12 eventos)
+  - Marcado automático vía API `/v2/account/raids` (requiere permiso `progression`)
+  - KPIs semanales: Completados / Total y porcentaje de progreso
+  - Modal informativo por encuentro con:
+    - Descripción (5+ bullets)
+    - Estrategia (5+ bullets)
+    - Enlace a video tutorial
+  - Diferenciación visual entre JEFE (👑) y EVENTO (⚡)
+  - Reset semanal automático (misma lógica que Activities, lunes 07:30 UTC)
+  - Manejo seguro de imágenes: sin reintentos infinitos, fallback a emojis (🏰 para alas, 👾 para encuentros)
+  - Escucha `gn:tokenchange` para recargar datos automáticamente
+- **Nueva función `getAccountRaids(token, opts)` en api-gw2.js v2.12.0**:
+  - Endpoint: `/v2/account/raids`
+  - TTL de 5 minutos (el reset es semanal)
+  - Requiere permiso `progression` (devuelve array vacío si no está presente)
+- **Nueva ruta `#/account/raids`** en router.js v2.14.0
+- **Nuevo enlace en sidebar** para Raids (debajo de Actividades, antes de Personajes)
+- **Nuevo panel `#raidTrackerPanel`** en index.html
+- **Nuevo evento Analytics `view_module`** con `module_name: 'raids'`
+- **Nuevos assets en `assets/icons/raids/`**:
+  - `raid-icon.png` — Ícono del módulo (sidebar y título)
+  - `wing1.png` a `wing8.png` — Íconos de cada ala
+  - `bosses/` — 33 archivos de íconos de encuentros
+
+### Changed
+- **api-gw2.js v2.11.0 → v2.12.0**:
+  - Agregada función `getAccountRaids`
+  - Agregado TTL.RAIDS = 5 * 60 * 1000
+  - Actualizada documentación del archivo
+- **router.js v2.13.0 → v2.14.0**:
+  - Agregada ruta `#/account/raids`
+  - Agregado `raidTrackerPanel` a `showPanel()`
+  - Agregado mapeo `'#/account/raids':'raids'` en `setActiveNav()`
+  - Agregado caso en `updateSidebarFor()` para `raids`
+  - Agregado bloque en `route()` para RaidTracker
+  - Agregado caso en `onKeySelectChange()` para recargar al cambiar de key
+- **index.html**:
+  - Agregado panel `#raidTrackerPanel` con clase `panel col-main`
+  - Agregado enlace en sidebar para Raids (después de Actividades, antes de Personajes)
+  - Agregado script `js/raid-tracker.js` a la lista de scripts
+  - Actualizada versión de `api-gw2.js` a v2.12.0-modular
+  - Actualizada versión de `router.js` a v2.14.0
+- **welcome-panel.js v1.2.0**:
+  - Agregada sección de Raids en lista de funcionalidades (8 acciones)
+  - Agregado botón de acceso rápido a Raids
+  - Nuevo ícono exclusivo `assets/icons/welcome/raids-icon.png`
+- **Documentación**: README.md, ONBOARDING.md actualizados a v6.2.0
+
+### Fixed
+- **Ninguno** (nuevo módulo)
 
 ---
 
@@ -100,7 +159,7 @@ y el versionado **SemVer** (https://semver.org/).
   - Nuevo archivo `js/analytics.js` v1.0.0 con API pública `window.Analytics`
   - Cola de eventos segura: si gtag no está cargado, los eventos se guardan y se envían cuando esté disponible
   - Eventos personalizados medidos:
-    - `view_module` — Navegación a cada módulo (8 módulos: wallet, meta_events, achievements, wizards_vault, activities, characters, accounts, welcome)
+    - `view_module` — Navegación a cada módulo (9 módulos: wallet, meta_events, achievements, wizards_vault, activities, characters, accounts, welcome, wallet_dashboard)
     - `export_backup` / `import_backup` — Uso de backup/restaurar
     - `open_account_wizard` — Apertura del asistente de cuentas
     - `download_excel_template` — Descarga de plantilla Excel
@@ -113,7 +172,7 @@ y el versionado **SemVer** (https://semver.org/).
   - Debug en consola: cada evento se loguea con `[Analytics]` prefix
 
 ### Changed
-- **router.js v2.12.0**: Agregados eventos `view_module` en todos los módulos (wallet, meta_events, achievements, wizards_vault, activities, characters, accounts, welcome)
+- **router.js v2.12.0**: Agregados eventos `view_module` en todos los módulos (wallet, meta_events, achievements, wizards_vault, activities, characters, accounts, welcome, wallet_dashboard)
 - **settings-manager.js v1.0.1**: Agregados eventos `export_backup` e `import_backup`
 - **accounts-panel.js v1.9.0**: Agregados eventos `open_account_wizard`, `download_excel_template`, `enrich_with_api`, `encrypt_accounts_file`
 - **wizards-vault.js v1.3.0**: Agregado evento `force_reload_season`
@@ -245,8 +304,8 @@ y el versionado **SemVer** (https://semver.org/).
 ### Added
 - **Pantalla de Bienvenida (welcome-panel.js v1.2.0)**:
   - Nueva ruta `#/welcome` con onboarding completo
-  - Secciones: funcionalidades (7 acciones), API Key, asistente de cuentas, acceso rápido, comunidad, apoyo
-  - Iconos exclusivos para cada funcionalidad (cartera, meta, logros, WV, actividades, personajes, cuentas)
+  - Secciones: funcionalidades (8 acciones, incluyendo Raids), API Key, asistente de cuentas, acceso rápido, comunidad, apoyo
+  - Iconos exclusivos para cada funcionalidad (cartera, meta, logros, WV, actividades, personajes, cuentas, raids)
   - Botón home en utilbar con ícono local (`assets/icons/ui/home.png`)
   - Redirección inteligente: primera visita o sin API key → bienvenida
   - Flag `gn_welcome_seen` en localStorage para no mostrar repetidamente
@@ -725,3 +784,4 @@ Esta versión reemplaza completamente la versión anterior de *gw2-wallet-ligero
 - Integración con `/v2/account/wallet`
 - Grilla de tarjetas
 - Vista compacta (tabla)
+```
