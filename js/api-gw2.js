@@ -1,7 +1,7 @@
 /* =======================================================================
  * js/api-gw2.js  —  Capa API con fallbacks + caché persistente (mejorada)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 2.11.0-modular (2026-04-05) — Account info con last_modified
+ * Versión: 2.12.0-modular (2026-04-08) — Raids: getAccountRaids
  *
  * Cobertura de este archivo:
  *  - Token / permisos (tokeninfo)
@@ -9,7 +9,14 @@
  *  - Items batch (con caché por id)
  *  - Achievements (cuenta + metadatos)
  *  - Account info (con last_modified para detectar actividad)
+ *  - Raids (getAccountRaids para seguimiento semanal)
  *  - Delegados Wizard’s Vault (retrocompatibles)
+ *
+ * Cambios v2.12.0:
+ *  - NUEVA función getAccountRaids(token, opts) para obtener encuentros de raid completados
+ *  - Endpoint: /v2/account/raids
+ *  - TTL de 5 minutos (el reset es semanal)
+ *  - Requiere permiso 'progression'
  *
  * Cambios v2.11.0:
  *  - NUEVA función getAccountInfo(token) que devuelve last_modified
@@ -41,6 +48,7 @@
   var TTL = {
     TOKENINFO:   10 * 60 * 1000,            // 10 min
     ACCOUNT:     30 * 1000,                 // 30 segundos (para detectar actividad reciente)
+    RAIDS:        5 * 60 * 1000,            // 5 minutos (el reset es semanal)
     WV_SEASON:    6 * 60 * 60 * 1000,       // 6 h  (delegado)
     WV_LISTINGS: 30 * 60 * 1000,            // 30 min (delegado)
     WV_ACCOUNT:   5 * 60 * 1000,            // 5 min (delegado)
@@ -250,6 +258,41 @@
   }
 
   // ========================================================================
+  // Raids - Obtener encuentros completados en la semana actual
+  // ========================================================================
+  /**
+   * Obtiene los encuentros de raid completados en la semana actual
+   * @param {string} token - API Key (requiere permiso 'progression')
+   * @param {Object} opts - Opciones (nocache, etc.)
+   * @returns {Promise<string[]>} - Array de IDs de encuentros (ej: ["vale_guardian", "gorseval"])
+   */
+  function getAccountRaids(token, opts) {
+    opts = opts || {};
+    if (!token) return Promise.reject(new Error('Falta access_token'));
+    
+    var key = 'account_raids';
+    var ttl = TTL.RAIDS;
+    
+    var cached = getCache(key, ttl, token, opts.nocache);
+    if (cached) return Promise.resolve(cached);
+    
+    var url = withToken(CFG.API_BASE + '/v2/account/raids', token);
+    var ikey = 'if:account_raids:' + fpToken(token);
+    
+    return inflightOnce(ikey, function () {
+      return fetchWithRetry(url, opts).then(function (data) {
+        var raids = Array.isArray(data) ? data : [];
+        putCache(key, raids, token, ttl);
+        return raids;
+      }).catch(function (error) {
+        console.warn(LOGP, 'Error getting account raids:', error);
+        // Si hay error (ej: falta permiso progression), devolvemos array vacío
+        return [];
+      });
+    });
+  }
+
+  // ========================================================================
   // Wallet / Currencies (fallback para Astral Acclaim)
   // ========================================================================
   function getAccountWallet(token, opts) {
@@ -454,6 +497,9 @@
     // Account info (con last_modified para detectar actividad)
     getAccountInfo: getAccountInfo,
     isRecentlyActive: isRecentlyActive,
+
+    // Raids
+    getAccountRaids: getAccountRaids,
 
     // Wallet / Currencies (fallback AA)
     getAccountWallet: getAccountWallet,
