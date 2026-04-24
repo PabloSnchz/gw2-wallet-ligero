@@ -27,7 +27,7 @@
       {
         "itemName": "Festive Confetti Infusion",
         "wiki": "https://wiki.guildwars2.com/wiki/Festive_Confetti_Infusion",
-        "preview": "https://wiki.guildwars2.com/images/a/ac/Festive_confetti_infusion_top.jpg"
+        "preview": "assets/gifanim/confeti.gif"
       }
     ],
     "highlightItemId": 84882
@@ -126,7 +126,7 @@
       {
         "itemName": "Chromatic Bubbles (cosmetic infusion)",
         "wiki": "https://wiki.guildwars2.com/wiki/Chromatic_Bubbles",
-        "preview": "assets/gifanim/output.gif"
+        "preview": "assets/gifanim/burbuja.gif"
       }
     ],
     "highlightItemId": 106471

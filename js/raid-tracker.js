@@ -1,18 +1,7 @@
 /*!
  * js/raid-tracker.js — Seguimiento de Raids Semanales
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.3.1 (2026-04-08) — Corregido: Ala 7 con evento Puertas de Ahdashim
- *
- * Características:
- *  - Muestra las 8 alas de raid con TODOS los encuentros (jefes y eventos)
- *  - Marca automáticamente encuentros completados vía API (/v2/account/raids)
- *  - Modal con detalles de cada encuentro (mecánicas, estrategia, video)
- *  - Reset semanal automático (lunes 07:30 UTC)
- *  - Manejo seguro de imágenes: sin reintentos infinitos
- *  - Fallback a emojis si no hay assets
- *  - Descripciones y estrategias ampliadas (5+ bullets por encuentro)
- *
- * Total de encuentros: 33 (Ala 1:4, Ala 2:3, Ala 3:4, Ala 4:4, Ala 5:4, Ala 6:3, Ala 7:4, Ala 8:3)
+ * Versión: 1.7.0 (2026-04-23) — Modal con tabs funcionando + LI disponibles (ID 70)
  */
 
 (function (root) {
@@ -21,7 +10,7 @@
   var LOG = '[RaidTracker]';
 
   // ========================================================================
-  // 1. DATOS ESTÁTICOS (HARDCODEADOS) - LISTA COMPLETA DE ENCUENTROS
+  // 1. DATOS ESTÁTICOS - LISTA COMPLETA DE ENCUENTROS
   // ========================================================================
 
   var WINGS = [
@@ -32,10 +21,10 @@
       expansion: "Heart of Thorns",
       icon: "assets/icons/raids/wing1.png",
       encounters: [
-        { id: "vale_guardian", name: "Guardián del valle", nameEn: "Vale Guardian", type: "jefe", icon: "assets/icons/raids/bosses/vale_guardian.png" },
-        { id: "spirit_woods", name: "Bosques Espirituales", nameEn: "Spirit Woods", type: "evento", icon: "assets/icons/raids/bosses/spirit_woods.png" },
-        { id: "gorseval", name: "Gorseval el Múltiple", nameEn: "Gorseval the Multifarious", type: "jefe", icon: "assets/icons/raids/bosses/gorseval.png" },
-        { id: "sabetha", name: "Sabetha la Saboteadora", nameEn: "Sabetha the Saboteur", type: "jefe", icon: "assets/icons/raids/bosses/sabetha.png" }
+        { id: "vale_guardian", name: "Guardián del valle", nameEn: "Vale Guardian", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/vale_guardian.png" },
+        { id: "spirit_woods", name: "Bosques Espirituales", nameEn: "Spirit Woods", type: "evento", li: 0, icon: "assets/icons/raids/bosses/spirit_woods.png" },
+        { id: "gorseval", name: "Gorseval el Múltiple", nameEn: "Gorseval the Multifarious", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/gorseval.png" },
+        { id: "sabetha", name: "Sabetha la Saboteadora", nameEn: "Sabetha the Saboteur", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/sabetha.png" }
       ]
     },
     {
@@ -45,9 +34,9 @@
       expansion: "Heart of Thorns",
       icon: "assets/icons/raids/wing2.png",
       encounters: [
-        { id: "slothasor", name: "Perezón", nameEn: "Slothasor", type: "jefe", icon: "assets/icons/raids/bosses/slothasor.png" },
-        { id: "bandit_trio", name: "Campamento de Prisioneros", nameEn: "Bandit Trio", type: "evento", icon: "assets/icons/raids/bosses/bandit_trio.png" },
-        { id: "matthias", name: "Matías Gabrel", nameEn: "Matthias Gabrel", type: "jefe", icon: "assets/icons/raids/bosses/matthias.png" }
+        { id: "slothasor", name: "Perezón", nameEn: "Slothasor", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/slothasor.png" },
+        { id: "bandit_trio", name: "Campamento de Prisioneros", nameEn: "Bandit Trio", type: "evento", li: 0, icon: "assets/icons/raids/bosses/bandit_trio.png" },
+        { id: "matthias", name: "Matías Gabrel", nameEn: "Matthias Gabrel", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/matthias.png" }
       ]
     },
     {
@@ -57,10 +46,10 @@
       expansion: "Heart of Thorns",
       icon: "assets/icons/raids/wing3.png",
       encounters: [
-        { id: "siege_the_stronghold", name: "Escolta de Glenna", nameEn: "Siege the Stronghold", type: "evento", icon: "assets/icons/raids/bosses/siege_the_stronghold.png" },
-        { id: "keep_construct", name: "Ensamblaje de la Fortaleza", nameEn: "Keep Construct", type: "jefe", icon: "assets/icons/raids/bosses/keep_construct.png" },
-        { id: "twisted_castle", name: "Castillo Retorcido", nameEn: "Twisted Castle", type: "evento", icon: "assets/icons/raids/bosses/twisted_castle.png" },
-        { id: "xera", name: "Xera", nameEn: "Xera", type: "jefe", icon: "assets/icons/raids/bosses/xera.png" }
+        { id: "siege_the_stronghold", name: "Escolta de Glenna", nameEn: "Siege the Stronghold", type: "evento", li: 0, icon: "assets/icons/raids/bosses/siege_the_stronghold.png" },
+        { id: "keep_construct", name: "Ensamblaje de la Fortaleza", nameEn: "Keep Construct", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/keep_construct.png" },
+        { id: "twisted_castle", name: "Castillo Retorcido", nameEn: "Twisted Castle", type: "evento", li: 0, icon: "assets/icons/raids/bosses/twisted_castle.png" },
+        { id: "xera", name: "Xera", nameEn: "Xera", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/xera.png" }
       ]
     },
     {
@@ -70,10 +59,10 @@
       expansion: "Heart of Thorns",
       icon: "assets/icons/raids/wing4.png",
       encounters: [
-        { id: "cairn", name: "Cairn el Indomable", nameEn: "Cairn the Indomitable", type: "jefe", icon: "assets/icons/raids/bosses/cairn.png" },
-        { id: "mursaat_overseer", name: "Dirigente mursaat", nameEn: "Mursaat Overseer", type: "jefe", icon: "assets/icons/raids/bosses/mursaat_overseer.png" },
-        { id: "samarog", name: "Samarog", nameEn: "Samarog", type: "jefe", icon: "assets/icons/raids/bosses/samarog.png" },
-        { id: "deimos", name: "Deimos", nameEn: "Deimos", type: "jefe", icon: "assets/icons/raids/bosses/deimos.png" }
+        { id: "cairn", name: "Cairn el Indomable", nameEn: "Cairn the Indomitable", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/cairn.png" },
+        { id: "mursaat_overseer", name: "Dirigente mursaat", nameEn: "Mursaat Overseer", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/mursaat_overseer.png" },
+        { id: "samarog", name: "Samarog", nameEn: "Samarog", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/samarog.png" },
+        { id: "deimos", name: "Deimos", nameEn: "Deimos", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/deimos.png" }
       ]
     },
     {
@@ -83,10 +72,10 @@
       expansion: "Path of Fire",
       icon: "assets/icons/raids/wing5.png",
       encounters: [
-        { id: "desmina", name: "Horror sin alma", nameEn: "Soulless Horror", type: "jefe", icon: "assets/icons/raids/bosses/desmina.png" },
-        { id: "river_of_souls", name: "Río de Almas", nameEn: "River of Souls", type: "evento", icon: "assets/icons/raids/bosses/river_of_souls.png" },
-        { id: "statues_of_grenth", name: "Estatuas de Grenth", nameEn: "Statues of Grenth", type: "jefe", icon: "assets/icons/raids/bosses/statues_of_grenth.png" },
-        { id: "dhuum", name: "Dhuum", nameEn: "Dhuum", type: "jefe", icon: "assets/icons/raids/bosses/dhuum.png" }
+        { id: "desmina", name: "Horror sin alma", nameEn: "Soulless Horror", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/desmina.png" },
+        { id: "river_of_souls", name: "Río de Almas", nameEn: "River of Souls", type: "evento", li: 0, icon: "assets/icons/raids/bosses/river_of_souls.png" },
+        { id: "statues_of_grenth", name: "Estatuas de Grenth", nameEn: "Statues of Grenth", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/statues_of_grenth.png" },
+        { id: "dhuum", name: "Dhuum", nameEn: "Dhuum", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/dhuum.png" }
       ]
     },
     {
@@ -96,9 +85,9 @@
       expansion: "Path of Fire",
       icon: "assets/icons/raids/wing6.png",
       encounters: [
-        { id: "conjured_amalgamate", name: "Amalgamado conjurado", nameEn: "Conjured Amalgamate", type: "jefe", icon: "assets/icons/raids/bosses/conjured_amalgamate.png" },
-        { id: "twin_largos", name: "Largos gemelos", nameEn: "Twin Largos", type: "jefe", icon: "assets/icons/raids/bosses/twin_largos.png" },
-        { id: "qadim", name: "Qadim", nameEn: "Qadim", type: "jefe", icon: "assets/icons/raids/bosses/qadim.png" }
+        { id: "conjured_amalgamate", name: "Amalgamado conjurado", nameEn: "Conjured Amalgamate", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/conjured_amalgamate.png" },
+        { id: "twin_largos", name: "Largos gemelos", nameEn: "Twin Largos", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/twin_largos.png" },
+        { id: "qadim", name: "Qadim", nameEn: "Qadim", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/qadim.png" }
       ]
     },
     {
@@ -108,10 +97,10 @@
       expansion: "Path of Fire",
       icon: "assets/icons/raids/wing7.png",
       encounters: [
-        { id: "gates_of_ahdashim", name: "Puertas de Ahdashim", nameEn: "Gates of Ahdashim", type: "evento", icon: "assets/icons/raids/bosses/gates_of_ahdashim.png" },
-        { id: "adina", name: "Adina", nameEn: "Adina", type: "jefe", icon: "assets/icons/raids/bosses/adina.png" },
-        { id: "sabir", name: "Sabir", nameEn: "Sabir", type: "jefe", icon: "assets/icons/raids/bosses/sabir.png" },
-        { id: "qadim_the_peerless", name: "Qadim", nameEn: "Qadim the Peerless", type: "jefe", icon: "assets/icons/raids/bosses/qadim_the_peerless.png" }
+        { id: "gates_of_ahdashim", name: "Puertas de Ahdashim", nameEn: "Gates of Ahdashim", type: "evento", li: 0, icon: "assets/icons/raids/bosses/gates_of_ahdashim.png" },
+        { id: "adina", name: "Adina", nameEn: "Adina", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/adina.png" },
+        { id: "sabir", name: "Sabir", nameEn: "Sabir", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/sabir.png" },
+        { id: "qadim_the_peerless", name: "Qadim", nameEn: "Qadim the Peerless", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/qadim_the_peerless.png" }
       ]
     },
     {
@@ -121,19 +110,157 @@
       expansion: "Janthir Wilds",
       icon: "assets/icons/raids/wing8.png",
       encounters: [
-        { id: "ura_guardian", name: "Guardián Ura", nameEn: "Ura Guardian", type: "jefe", icon: "assets/icons/raids/bosses/ura_guardian.png" },
-        { id: "the_threshold", name: "Mecánica del Límite", nameEn: "The Threshold", type: "evento", icon: "assets/icons/raids/bosses/the_threshold.png" },
-        { id: "decimus", name: "Rey Decimus", nameEn: "Decimus the Revenant", type: "jefe", icon: "assets/icons/raids/bosses/decimus.png" }
+        { id: "ura_guardian", name: "Guardián Ura", nameEn: "Ura Guardian", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/ura_guardian.png" },
+        { id: "the_threshold", name: "Mecánica del Límite", nameEn: "The Threshold", type: "evento", li: 0, icon: "assets/icons/raids/bosses/the_threshold.png" },
+        { id: "decimus", name: "Rey Decimus", nameEn: "Decimus the Revenant", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/decimus.png" }
       ]
     }
   ];
 
+  // Datos de recompensas por encuentro
+  var REWARDS_DATA = {
+    "vale_guardian": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
+      ]
+    },
+    "gorseval": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
+      ]
+    },
+    "sabetha": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" },
+        { id: 91517, name: "Mochila de esquirlas de golem", icon: "assets/icons/raids/rewards/golem_backpack.png" }
+      ]
+    },
+    "slothasor": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
+      ]
+    },
+    "matthias": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" },
+        { id: 91518, name: "Mochila de sangre de Matthias", icon: "assets/icons/raids/rewards/matthias_backpack.png" }
+      ]
+    },
+    "keep_construct": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
+      ]
+    },
+    "xera": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" },
+        { id: 91519, name: "Mochila de Xera", icon: "assets/icons/raids/rewards/xera_backpack.png" }
+      ]
+    },
+    "cairn": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
+      ]
+    },
+    "mursaat_overseer": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
+      ]
+    },
+    "samarog": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
+      ]
+    },
+    "deimos": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" },
+        { id: 91520, name: "Mochila de Deimos", icon: "assets/icons/raids/rewards/deimos_backpack.png" }
+      ]
+    },
+    "desmina": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
+      ]
+    },
+    "dhuum": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" },
+        { id: 91521, name: "Mochila de Dhuum", icon: "assets/icons/raids/rewards/dhuum_backpack.png" },
+        { id: 91522, name: "Mini Dhuum", icon: "assets/icons/raids/rewards/mini_dhuum.png" }
+      ]
+    },
+    "conjured_amalgamate": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
+      ]
+    },
+    "twin_largos": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" },
+        { id: 91523, name: "Mochila de Largos", icon: "assets/icons/raids/rewards/largos_backpack.png" }
+      ]
+    },
+    "qadim": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" },
+        { id: 91524, name: "Mochila de Qadim", icon: "assets/icons/raids/rewards/qadim_backpack.png" }
+      ]
+    },
+    "adina": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
+      ]
+    },
+    "sabir": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
+      ]
+    },
+    "qadim_the_peerless": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" },
+        { id: 91525, name: "Mochila de Qadim el sin par", icon: "assets/icons/raids/rewards/qadim_peerless_backpack.png" }
+      ]
+    },
+    "ura_guardian": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
+      ]
+    },
+    "decimus": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
+      ]
+    }
+  };
+
   // ========================================================================
-  // 2. DATOS DE MECÁNICAS Y ESTRATEGIAS (VERSIÓN AMPLIADA)
+  // 2. DATOS DE MECÁNICAS Y ESTRATEGIAS (VERSIÓN COMPLETA)
   // ========================================================================
 
   var BOSS_DETAILS = {
-    // ==================== ALA 1 ====================
     "spirit_woods": {
       description: [
         "• Espesura de Espíritus es un evento de escolta que abre el acceso al ala.",
@@ -150,6 +277,7 @@
         "• CRÍTICO: No dejar que el espíritu muera."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Spirit_Woods",
       image: "assets/icons/raids/bosses/spirit_woods_detail.png"
     },
     "vale_guardian": {
@@ -168,6 +296,7 @@
         "• CRÍTICO: Romper la barra de ruptura cuando el jefe esté al 66% y 33% de vida."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Vale_Guardian",
       image: "assets/icons/raids/bosses/vale_guardian_detail.png"
     },
     "gorseval": {
@@ -186,6 +315,7 @@
         "• CRÍTICO: Si el dps es bajo, usar orbes verdes para curar al grupo."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Gorseval",
       image: "assets/icons/raids/bosses/gorseval_detail.png"
     },
     "sabetha": {
@@ -204,9 +334,9 @@
         "• CRÍTICO: Coordinar el lanzamiento de cohetes para que impacten en la torreta correcta."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Sabetha",
       image: "assets/icons/raids/bosses/sabetha_detail.jpg"
     },
-    // ==================== ALA 2 ====================
     "slothasor": {
       description: [
         "• Slothasor vomita veneno que se expande con el tiempo.",
@@ -223,6 +353,7 @@
         "• CRÍTICO: No dejar que el veneno ocupe demasiado espacio."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Slothasor",
       image: "assets/icons/raids/bosses/slothasor_detail.png"
     },
     "bandit_trio": {
@@ -241,6 +372,7 @@
         "• CRÍTICO: No dejar que un mini-jefe muera mucho antes que los otros."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Bandit_Trio",
       image: "assets/icons/raids/bosses/bandit_trio_detail.png"
     },
     "matthias": {
@@ -259,9 +391,9 @@
         "• CRÍTICO: Coordinar el movimiento durante la tormenta de nieve."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Matthias_Gabrel",
       image: "assets/icons/raids/bosses/matthias_detail.png"
     },
-    // ==================== ALA 3 ====================
     "siege_the_stronghold": {
       description: [
         "• Escolta de Glenna es un evento donde hay que proteger a un NPC mientras destruye puertas.",
@@ -278,6 +410,7 @@
         "• CRÍTICO: No dejar que Glenna muera."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Siege_the_Stronghold",
       image: "assets/icons/raids/bosses/siege_the_stronghold_detail.png"
     },
     "keep_construct": {
@@ -296,6 +429,7 @@
         "• CRÍTICO: No gastar habilidades de ruptura fuera de la barra."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Keep_Construct",
       image: "assets/icons/raids/bosses/keep_construct_detail.png"
     },
     "twisted_castle": {
@@ -314,6 +448,7 @@
         "• CRÍTICO: No activar interruptores en el orden incorrecto."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Twisted_Castle",
       image: "assets/icons/raids/bosses/twisted_castle_detail.png"
     },
     "xera": {
@@ -332,9 +467,9 @@
         "• CRÍTICO: No caerse de las plataformas."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Xera",
       image: "assets/icons/raids/bosses/xera_detail.png"
     },
-    // ==================== ALA 4 ====================
     "cairn": {
       description: [
         "• Cairn lanza espadas que siguen a los jugadores.",
@@ -351,6 +486,7 @@
         "• CRÍTICO: Moverse constantemente para evitar espadas."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Cairn",
       image: "assets/icons/raids/bosses/cairn_detail.png"
     },
     "mursaat_overseer": {
@@ -369,6 +505,7 @@
         "• CRÍTICO: Desactivar torres antes de que disparen."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Mursaat_Overseer",
       image: "assets/icons/raids/bosses/mursaat_overseer_detail.png"
     },
     "samarog": {
@@ -387,6 +524,7 @@
         "• CRÍTICO: No dejar que nadie muera por cadena."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Samarog",
       image: "assets/icons/raids/bosses/samarog_detail.png"
     },
     "deimos": {
@@ -405,9 +543,9 @@
         "• CRÍTICO: No dejar que el acecho explote en el grupo."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Deimos",
       image: "assets/icons/raids/bosses/deimos_detail.png"
     },
-    // ==================== ALA 5 ====================
     "desmina": {
       description: [
         "• Desmina invoca esclavos que deben ser eliminados.",
@@ -424,6 +562,7 @@
         "• CRÍTICO: No dejar esclavos vivos."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Soulless_Horror",
       image: "assets/icons/raids/bosses/desmina_detail.png"
     },
     "river_of_souls": {
@@ -442,6 +581,7 @@
         "• CRÍTICO: No dejar que el alma muera."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/River_of_Souls",
       image: "assets/icons/raids/bosses/river_of_souls_detail.png"
     },
     "statues_of_grenth": {
@@ -460,6 +600,7 @@
         "• CRÍTICO: No dejar que una estatua muera mucho antes que las otras."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Statues_of_Grenth",
       image: "assets/icons/raids/bosses/statues_of_grenth_detail.png"
     },
     "dhuum": {
@@ -478,9 +619,9 @@
         "• CRÍTICO: Coordinar la recolección de orbes."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Dhuum",
       image: "assets/icons/raids/bosses/dhuum_detail.png"
     },
-    // ==================== ALA 6 ====================
     "conjured_amalgamate": {
       description: [
         "• El CA tiene elementos que cambian de color.",
@@ -497,6 +638,7 @@
         "• CRÍTICO: Coordinar los cambios de color."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Conjured_Amalgamate",
       image: "assets/icons/raids/bosses/conjured_amalgamate_detail.png"
     },
     "twin_largos": {
@@ -515,6 +657,7 @@
         "• CRÍTICO: No dejar que un jefe muera muy antes que el otro."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Twin_Largos",
       image: "assets/icons/raids/bosses/twin_largos_detail.png"
     },
     "qadim": {
@@ -533,9 +676,9 @@
         "• CRÍTICO: No dejar lámparas sin recoger."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Qadim",
       image: "assets/icons/raids/bosses/qadim_detail.png"
     },
-    // ==================== ALA 7 ====================
     "gates_of_ahdashim": {
       description: [
         "• Puertas de Ahdashim es el evento de apertura del ala 7.",
@@ -552,6 +695,7 @@
         "• CRÍTICO: No dejar que los NPC mueran."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Gates_of_Ahdashim",
       image: "assets/icons/raids/bosses/gates_of_ahdashim_detail.png"
     },
     "adina": {
@@ -570,6 +714,7 @@
         "• CRÍTICO: No dejar pilares en pie."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Adina",
       image: "assets/icons/raids/bosses/adina_detail.png"
     },
     "sabir": {
@@ -588,6 +733,7 @@
         "• CRÍTICO: No quedarse dentro de las tormentas."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Sabir",
       image: "assets/icons/raids/bosses/sabir_detail.png"
     },
     "qadim_the_peerless": {
@@ -606,9 +752,9 @@
         "• CRÍTICO: Coordinar la recolección de whisps y uso de portales."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Qadim_the_Peerless",
       image: "assets/icons/raids/bosses/qadim_the_peerless_detail.png"
     },
-    // ==================== ALA 8 ====================
     "ura_guardian": {
       description: [
         "• Guardián Ura es el primer encuentro del ala 8.",
@@ -625,6 +771,7 @@
         "• CRÍTICO: Coordinar la recolección de orbes."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Ura_Guardian",
       image: "assets/icons/raids/bosses/ura_guardian_detail.png"
     },
     "the_threshold": {
@@ -643,6 +790,7 @@
         "• CRÍTICO: No separarse del grupo."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/The_Threshold",
       image: "assets/icons/raids/bosses/the_threshold_detail.png"
     },
     "decimus": {
@@ -661,6 +809,7 @@
         "• CRÍTICO: No dejar esqueletos vivos."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Decimus",
       image: "assets/icons/raids/bosses/decimus_detail.png"
     }
   };
@@ -674,9 +823,13 @@
     active: false,
     token: null,
     completedEncounters: [],
+    liAvailable: 0,
     loading: false,
     error: null,
-    refreshTimer: null
+    refreshTimer: null,
+    utcTimeInterval: null,
+    localTimeInterval: null,
+    resetInterval: null
   };
 
   var _refreshInFlight = null;
@@ -705,58 +858,194 @@
     return null;
   }
 
-  // ========================================================================
-  // 5. FUNCIÓN SEGURA PARA CREAR IMÁGENES (SIN REINTENTOS INFINITOS)
-  // ========================================================================
-  
+  function formatTimeUnit(value) {
+    return String(Math.floor(value)).padStart(2, '0');
+  }
+
+  function formatCountdown(ms) {
+    if (!isFinite(ms) || ms <= 0) return '—';
+    var seconds = Math.floor(ms / 1000);
+    var days = Math.floor(seconds / 86400);
+    seconds %= 86400;
+    var hours = Math.floor(seconds / 3600);
+    seconds %= 3600;
+    var minutes = Math.floor(seconds / 60);
+    seconds %= 60;
+    
+    var parts = [];
+    if (days > 0) parts.push(days + 'd');
+    parts.push(formatTimeUnit(hours) + 'h');
+    parts.push(formatTimeUnit(minutes) + 'm');
+    parts.push(formatTimeUnit(seconds) + 's');
+    return parts.join(' ');
+  }
+
+  function getNextWeeklyResetUTC() {
+    var now = new Date();
+    var day = now.getUTCDay();
+    var daysUntilMonday = (1 - day + 7) % 7;
+    if (daysUntilMonday === 0 && (now.getUTCHours() < 7 || (now.getUTCHours() === 7 && now.getUTCMinutes() < 30))) {
+      daysUntilMonday = 7;
+    }
+    var nextReset = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() + daysUntilMonday,
+      7, 30, 0, 0
+    ));
+    return nextReset;
+  }
+
+  function nextDailyResetUTC() {
+    var now = new Date();
+    var y = now.getUTCFullYear();
+    var m = now.getUTCMonth();
+    var d = now.getUTCDate();
+    var next = new Date(Date.UTC(y, m, d, 24, 0, 0, 0));
+    if (next.getTime() <= now.getTime()) {
+      next = new Date(Date.UTC(y, m, d + 1, 0, 0, 0, 0));
+    }
+    return next;
+  }
+
   function createSafeIcon(src, alt, width, height, fallbackEmoji) {
     if (!src || src === '') {
       return '<span style="font-size: ' + (width || 24) + 'px;">' + (fallbackEmoji || '🏰') + '</span>';
     }
-    
     var imgHtml = '<img src="' + esc(src) + '" alt="' + esc(alt) + '" width="' + (width || 28) + '" height="' + (height || 28) + '" loading="lazy" style="border-radius: 8px;" onerror="this.style.display=\'none\'; this.insertAdjacentHTML(\'afterend\', \'<span style=\\\'font-size:' + (width || 24) + 'px;\\\'>' + (fallbackEmoji || '🏰') + '</span>\');">';
     return imgHtml;
   }
 
-  // ========================================================================
-  // 6. RENDERIZADO DEL PANEL
-  // ========================================================================
+  async function loadLiAvailable(token) {
+    if (!token) return 0;
+    try {
+      var wallet = await root.GW2Api.getAccountWallet(token, { nocache: false });
+      if (!Array.isArray(wallet)) return 0;
+      var liItem = wallet.find(function(item) { return item.id === 70; });
+      return liItem ? liItem.value : 0;
+    } catch (error) {
+      console.warn(LOG, 'Error loading LI available:', error);
+      return 0;
+    }
+  }
+
+  function updateUtcTime() {
+    var utcEl = document.getElementById('raidUtcTime');
+    if (utcEl) {
+      var now = new Date();
+      utcEl.textContent = now.toUTCString().split(' ')[4];
+    }
+  }
+
+  function updateLocalTime() {
+    var localEl = document.getElementById('raidLocalTime');
+    if (localEl) {
+      var now = new Date();
+      localEl.textContent = now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+  }
+
+  function updateResetCounters() {
+    var dailyEl = document.getElementById('raidDailyReset');
+    var weeklyEl = document.getElementById('raidWeeklyReset');
+    if (dailyEl) {
+      var nextDaily = nextDailyResetUTC();
+      var msDaily = Math.max(0, nextDaily.getTime() - Date.now());
+      dailyEl.textContent = formatCountdown(msDaily);
+    }
+    if (weeklyEl) {
+      var nextWeekly = getNextWeeklyResetUTC();
+      var msWeekly = Math.max(0, nextWeekly.getTime() - Date.now());
+      weeklyEl.textContent = formatCountdown(msWeekly);
+    }
+  }
+
+  function updateLiDisplay() {
+    var liAvailableEl = document.getElementById('raidLiAvailable');
+    if (liAvailableEl) liAvailableEl.textContent = state.liAvailable.toLocaleString();
+  }
+
+  function startTimers() {
+    if (state.utcTimeInterval) clearInterval(state.utcTimeInterval);
+    if (state.localTimeInterval) clearInterval(state.localTimeInterval);
+    if (state.resetInterval) clearInterval(state.resetInterval);
+    updateUtcTime();
+    updateLocalTime();
+    updateResetCounters();
+    updateLiDisplay();
+    state.utcTimeInterval = setInterval(updateUtcTime, 1000);
+    state.localTimeInterval = setInterval(updateLocalTime, 1000);
+    state.resetInterval = setInterval(updateResetCounters, 1000);
+  }
+
+  function stopTimers() {
+    if (state.utcTimeInterval) { clearInterval(state.utcTimeInterval); state.utcTimeInterval = null; }
+    if (state.localTimeInterval) { clearInterval(state.localTimeInterval); state.localTimeInterval = null; }
+    if (state.resetInterval) { clearInterval(state.resetInterval); state.resetInterval = null; }
+  }
 
   function ensurePanelContent() {
     var panel = document.getElementById('raidTrackerPanel');
     if (!panel) return false;
-    
     var body = panel.querySelector('.panel__body');
     if (!body) {
       body = document.createElement('div');
       body.className = 'panel__body';
       panel.appendChild(body);
     }
-    
-    if (!body.querySelector('#raidKPIs')) {
+    if (!body.querySelector('#raidUtcTime')) {
       body.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
+          <div id="raidLiBadge" style="display: flex; align-items: center; gap: 6px; background: #1a1c24; padding: 6px 14px; border-radius: 32px; font-size: 0.85rem;">
+            <img src="https://render.guildwars2.com/file/6D33B7387BAF2E2CC9B5D37D1D1B01246AB6FA22/1302744.png" width="18" height="18" alt="LI" style="filter: brightness(0.9);">
+            <span>LI disponibles:</span>
+            <strong id="raidLiAvailable" style="font-weight: 700; color: #ffd36b;">0</strong>
+          </div>
+          <div class="meta-clock-bar chips" style="display: inline-flex; gap: 16px; align-items: center; background: #0f1116; padding: 4px 12px; border-radius: 40px; border: 1px solid #2a2c35; font-family: monospace; font-size: 0.85rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 6px;" data-tip="Hora del servidor (UTC+0)">
+              <img src="assets/icons/460028.png" width="20" height="20" alt="UTC" style="filter: brightness(0.9);">
+              <span>UTC</span>
+              <strong id="raidUtcTime">—</strong>
+            </div>
+            <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
+            <div style="display: flex; align-items: center; gap: 6px;" data-tip="Tu hora local">
+              <img src="assets/icons/841720.png" width="20" height="20" alt="Local" style="filter: brightness(0.9);">
+              <span>Local</span>
+              <strong id="raidLocalTime">—</strong>
+            </div>
+            <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
+            <div style="display: flex; align-items: center; gap: 6px;" data-tip="Reset diario a las 00:00 UTC">
+              <img src="assets/icons/534745.png" width="20" height="20" alt="Reset diario" style="filter: brightness(0.9);">
+              <span>Reset diario</span>
+              <strong id="raidDailyReset">—</strong>
+            </div>
+            <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
+            <div style="display: flex; align-items: center; gap: 6px;" data-tip="Reset semanal los lunes a las 07:30 UTC">
+              <img src="assets/icons/155064.png" width="20" height="20" alt="Reset semanal" style="filter: brightness(0.9);">
+              <span>Reset semanal</span>
+              <strong id="raidWeeklyReset">—</strong>
+            </div>
+          </div>
+        </div>
         <div id="raidKPIs" class="raid-kpis"></div>
         <div id="raidWingsGrid" class="raid-wings-grid"></div>
       `;
       console.log(LOG, 'Estructura del panel creada');
     }
-    
     return true;
   }
 
   function renderKPIs(completedCount, totalCount) {
     var kpiContainer = document.getElementById('raidKPIs');
     if (!kpiContainer) return;
-
     var percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-
     kpiContainer.innerHTML = `
-      <div style="display: flex; gap: 20px; margin-bottom: 20px;">
-        <div style="background: #0f1116; border-radius: 12px; padding: 12px 20px; border-left: 3px solid #a0ffc8;">
+      <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+        <div style="background: #0f1116; border-radius: 12px; padding: 12px 20px; border-left: 3px solid #a0ffc8; flex: 1;">
           <div style="color: #a0a6b3; font-size: 12px;">Completados esta semana</div>
           <div style="font-size: 28px; font-weight: 800; color: #a0ffc8;">${completedCount} / ${totalCount}</div>
         </div>
-        <div style="background: #0f1116; border-radius: 12px; padding: 12px 20px; border-left: 3px solid #7bc2ff;">
+        <div style="background: #0f1116; border-radius: 12px; padding: 12px 20px; border-left: 3px solid #7bc2ff; flex: 1;">
           <div style="color: #a0a6b3; font-size: 12px;">Progreso semanal</div>
           <div style="font-size: 28px; font-weight: 800; color: #7bc2ff;">${percentage}%</div>
           <div style="margin-top: 8px; height: 4px; background: #2a2c35; border-radius: 2px; overflow: hidden;">
@@ -773,7 +1062,69 @@
     return '❓';
   }
 
-  function renderWingsGrid(completedEncounters) {
+    function renderRewardsList(encounterId, bossName) {
+    var rewards = REWARDS_DATA[encounterId];
+    if (!rewards || !rewards.drops || rewards.drops.length === 0) {
+      return '<div class="muted" style="text-align: center; padding: 20px;">No hay información de recompensas disponible.</div>';
+    }
+    
+    // Determinar rareza de los drops
+    function getRarityClass(itemId, itemName) {
+      var name = (itemName || '').toLowerCase();
+      if (name.includes('legendary') || name.includes('insight') || itemId === 79722) return 'reward-badge--legendary';
+      if (name.includes('ascended') || name.includes('mochila')) return 'reward-badge--exotic';
+      if (name.includes('mini')) return 'reward-badge--rare';
+      return 'reward-badge--rare';
+    }
+    
+    var liCount = 0;
+    for (var w = 0; w < WINGS.length; w++) {
+      for (var e = 0; e < WINGS[w].encounters.length; e++) {
+        if (WINGS[w].encounters[e].id === encounterId && WINGS[w].encounters[e].li) {
+          liCount = WINGS[w].encounters[e].li;
+          break;
+        }
+      }
+    }
+    
+    var html = '';
+    if (liCount > 0) {
+      html += `
+        <div style="margin-bottom: 16px; padding: 12px; background: #1a1c24; border-radius: 12px; border-left: 3px solid #ffd36b;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 24px;">🔮</span>
+            <div>
+              <div style="font-weight: 700;">Insights legendarias (LI)</div>
+              <div style="font-size: 1.2rem; font-weight: 800; color: #ffd36b;">+${liCount} LI</div>
+              <div class="muted" style="font-size: 0.7rem;">Recompensa garantizada por completar el encuentro</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px;">';
+    rewards.drops.forEach(function(drop) {
+      var rarityClass = getRarityClass(drop.id, drop.name);
+      html += `
+        <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: #0a0c10; border-radius: 10px;">
+          ${createSafeIcon(drop.icon, drop.name, 36, 36, '🎁')}
+          <div>
+            <div style="font-size: 0.75rem; font-weight: 500;">${esc(drop.name)}</div>
+            <span class="reward-badge ${rarityClass}" style="font-size: 0.6rem; padding: 2px 6px; display: inline-block;">Drop ocasional</span>
+          </div>
+        </div>
+      `;
+    });
+    html += '</div>';
+    return html;
+  }
+
+  // ========================================================================
+  // CONTINÚA EN LA PARTE 2...
+  // ========================================================================
+
+    function renderWingsGrid(completedEncounters) {
     var gridContainer = document.getElementById('raidWingsGrid');
     if (!gridContainer) return;
 
@@ -781,20 +1132,40 @@
     var totalEncounters = 0;
     var completedCount = 0;
 
-    var html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">';
+    var html = '<div class="raid-wings-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">';
 
     for (var w = 0; w < WINGS.length; w++) {
       var wing = WINGS[w];
       
+      // Calcular progreso del ala
+      var wingTotal = wing.encounters.length;
+      var wingCompleted = 0;
+      for (var e = 0; e < wing.encounters.length; e++) {
+        if (completedSet.has(wing.encounters[e].id)) wingCompleted++;
+      }
+      var wingProgressPercent = (wingCompleted / wingTotal) * 100;
+      
+      // Determinar clase de expansión
+      var expClass = '';
+      if (wing.expansion === 'Heart of Thorns') expClass = 'raid-expansion--hot';
+      else if (wing.expansion === 'Path of Fire') expClass = 'raid-expansion--pof';
+      else if (wing.expansion === 'Janthir Wilds') expClass = 'raid-expansion--janthir';
+      else expClass = 'raid-expansion--core';
+      
       html += `
-        <div style="background: linear-gradient(180deg, #0f1116 0%, #0d0f14 100%); border: 1px solid #26262b; border-radius: 16px; overflow: hidden;">
+        <div class="raid-wing-card" style="background: linear-gradient(180deg, #0f1116 0%, #0d0f14 100%); border: 1px solid #26262b; border-radius: 16px; overflow: hidden; animation: raidFadeInUp 0.3s ease forwards; opacity: 0; transform: translateY(10px); animation-delay: ${w * 0.02}s;">
           <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #0c0e14; border-bottom: 1px solid #26262b;">
             <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
               ${createSafeIcon(wing.icon, wing.name, 28, 28, '🏰')}
             </div>
-            <div>
-              <div style="font-weight: 700; font-size: 1rem;">${esc(wing.name)}</div>
-              <div style="font-size: 0.7rem; color: #7bc2ff;">${esc(wing.expansion)}</div>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <div style="font-weight: 700; font-size: 1rem;">${esc(wing.name)}</div>
+                <span class="raid-expansion-badge ${expClass}">${esc(wing.expansion)}</span>
+              </div>
+              <div class="raid-wing-progress" style="margin-top: 8px; height: 3px; background: #2a2c35; border-radius: 2px; overflow: hidden;">
+                <div class="raid-wing-progress__fill" style="width: ${wingProgressPercent}%; height: 100%; background: linear-gradient(90deg, #7bc2ff, #a0ffc8); border-radius: 2px; transition: width 0.3s ease;"></div>
+              </div>
             </div>
           </div>
           <div style="padding: 12px; display: flex; flex-direction: column; gap: 8px;">
@@ -806,22 +1177,24 @@
         if (isCompleted) completedCount++;
         totalEncounters++;
 
-        var typeIcon = getTypeIcon(enc.type);
+        var typeIcon = enc.type === 'jefe' ? '👑' : '⚡';
         var typeColor = enc.type === 'jefe' ? '#ffd36b' : '#7bc2ff';
+        var completedClass = isCompleted ? 'raid-encounter-card--completed' : '';
+        var typeClass = enc.type === 'jefe' ? 'raid-encounter-card--jefe' : 'raid-encounter-card--evento';
 
         html += `
-          <div class="raid-encounter-card" data-encounter-id="${esc(enc.id)}" style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #0a0c10; border-radius: 12px; border: 1px solid ${isCompleted ? '#2a6a4a' : '#26262b'};">
+          <div class="raid-encounter-card ${completedClass} ${typeClass}" data-encounter-id="${esc(enc.id)}" style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #0a0c10; border-radius: 12px; border: 1px solid ${isCompleted ? '#2a6a4a' : '#26262b'}; transition: all 0.2s ease;">
             <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
               ${createSafeIcon(enc.icon, enc.name, 36, 36, typeIcon)}
             </div>
             <div style="flex: 1;">
               <div style="display: flex; align-items: center; gap: 6px;">
                 <span style="font-size: 0.65rem; color: ${typeColor}; background: #1a1c24; padding: 2px 6px; border-radius: 12px;">${enc.type === 'jefe' ? 'JEFE' : 'EVENTO'}</span>
-                <div style="font-weight: 600; font-size: 0.85rem;">${esc(enc.name)}</div>
+                <div class="raid-encounter-name" style="font-weight: 600; font-size: 0.85rem; ${isCompleted ? 'text-decoration: line-through; text-decoration-color: #a0ffc8;' : ''}">${esc(enc.name)}</div>
               </div>
               <div style="font-size: 0.65rem; color: ${isCompleted ? '#a0ffc8' : '#ff9d9d'};">${isCompleted ? '✅ Completado' : '❌ Pendiente'}</div>
             </div>
-            <button class="raid-encounter-detail-btn btn btn--ghost" data-encounter-id="${esc(enc.id)}" data-encounter-name="${esc(enc.name)}" style="padding: 4px 12px; font-size: 0.7rem;">Detalle</button>
+            <button class="raid-encounter-detail-btn btn btn--ghost" data-encounter-id="${esc(enc.id)}" data-encounter-name="${esc(enc.name)}" style="padding: 4px 12px; font-size: 0.7rem; transition: transform 0.05s ease;">Detalle</button>
           </div>
         `;
       }
@@ -836,6 +1209,7 @@
     gridContainer.innerHTML = html;
 
     renderKPIs(completedCount, totalEncounters);
+    updateLiDisplay();
 
     var detailBtns = gridContainer.querySelectorAll('.raid-encounter-detail-btn');
     for (var i = 0; i < detailBtns.length; i++) {
@@ -851,13 +1225,9 @@
     }
   }
 
-  // ========================================================================
-  // 7. MODAL DE DETALLE
-  // ========================================================================
-
   var modal = null;
 
-  function ensureModal() {
+    function ensureModal() {
     if (modal) return modal;
 
     modal = document.createElement('div');
@@ -868,12 +1238,18 @@
     modal.setAttribute('hidden', '');
     modal.innerHTML = `
       <div class="modal__backdrop" data-close="1"></div>
-      <div class="modal__dialog" style="max-width: 600px;">
+      <div class="modal__dialog" style="max-width: 650px;">
         <header class="modal__header">
           <h3 id="raidBossModalTitle">Detalle del Encuentro</h3>
           <button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button>
         </header>
-        <div class="modal__body" id="raidBossModalBody">
+        <div class="raid-modal-tabs">
+          <button class="raid-modal-tab active" data-tab="desc">📖 Descripción</button>
+          <button class="raid-modal-tab" data-tab="strat">⚔️ Estrategia</button>
+          <button class="raid-modal-tab" data-tab="rewards">🎁 Recompensas</button>
+          <button class="raid-modal-tab" data-tab="links">🔗 Enlaces</button>
+        </div>
+        <div class="modal__body" id="raidBossModalBody" style="max-height: 60vh; overflow-y: auto; scroll-behavior: smooth;">
           <div class="raid-modal-loading">Cargando...</div>
         </div>
       </div>
@@ -889,7 +1265,35 @@
     return modal;
   }
 
-  function openBossModal(encounterId, encounterName) {
+    function setupModalTabs(modalEl) {
+    var tabBtns = modalEl.querySelectorAll('.raid-modal-tab');
+    var contents = modalEl.querySelectorAll('.raid-tab-content');
+    
+    tabBtns.forEach(function(btn) {
+      var newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+      
+      newBtn.addEventListener('click', function(e) {
+        var tabId = this.getAttribute('data-tab');
+        
+        tabBtns.forEach(function(b) {
+          b.classList.remove('active');
+        });
+        this.classList.add('active');
+        
+        contents.forEach(function(content) {
+          content.classList.remove('active');
+          content.style.display = 'none';
+          if (content.getAttribute('data-tab') === tabId) {
+            content.classList.add('active');
+            content.style.display = 'block';
+          }
+        });
+      });
+    });
+  }
+
+    function openBossModal(encounterId, encounterName) {
     var modalEl = ensureModal();
     var titleEl = document.getElementById('raidBossModalTitle');
     var bodyEl = document.getElementById('raidBossModalBody');
@@ -902,6 +1306,7 @@
       description: ["• Información no disponible para este encuentro."],
       strategy: ["• Consulta la wiki de Guild Wars 2 para más detalles."],
       video: "https://wiki.guildwars2.com/wiki/Main_Page",
+      wiki: "https://wiki.guildwars2.com/wiki/Main_Page",
       image: "assets/icons/raids/bosses/default.png"
     };
 
@@ -912,27 +1317,41 @@
     var strategyHtml = Array.isArray(details.strategy)
       ? details.strategy.map(function(line) { return '<div style="margin-bottom: 8px;">' + esc(line) + '</div>'; }).join('')
       : '<div>' + esc(details.strategy) + '</div>';
+    
+    var rewardsHtml = renderRewardsList(encounterId, encounterName);
 
     bodyEl.innerHTML = `
-      <div style="display: flex; flex-direction: column; gap: 20px;">
-        <div style="display: flex; justify-content: center;">
-          ${createSafeIcon(details.image, encounterName, 80, 80, '👾')}
+      <div class="raid-tab-content active" data-tab="desc" style="padding: 16px;">
+        <div class="raid-modal-boss-image" style="display: flex; justify-content: center; margin-bottom: 16px;">
+          ${createSafeIcon(details.image, encounterName, 120, 120, '👾')}
         </div>
         <div>
           <h4 style="margin: 0 0 12px 0; font-size: 1rem; color: #a0ffc8;">📖 Descripción</h4>
           <div style="margin: 0; font-size: 0.85rem; line-height: 1.5;">${descriptionHtml}</div>
         </div>
+      </div>
+      <div class="raid-tab-content" data-tab="strat" style="display: none; padding: 16px;">
         <div>
           <h4 style="margin: 0 0 12px 0; font-size: 1rem; color: #ffd36b;">⚔️ Estrategia</h4>
           <div style="margin: 0; font-size: 0.85rem; line-height: 1.5;">${strategyHtml}</div>
         </div>
-        <div>
-          <h4 style="margin: 0 0 12px 0; font-size: 1rem; color: #7bc2ff;">🎥 Video tutorial</h4>
-          <a href="${esc(details.video)}" target="_blank" rel="noopener noreferrer" style="color: #7bc2ff; text-decoration: none; border-bottom: 1px solid #7bc2ff;">Ver en YouTube →</a>
+      </div>
+      <div class="raid-tab-content" data-tab="rewards" style="display: none; padding: 16px;">
+        ${rewardsHtml}
+      </div>
+      <div class="raid-tab-content" data-tab="links" style="display: none; padding: 16px;">
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <a href="${esc(details.wiki)}" target="_blank" rel="noopener noreferrer" style="color: #7bc2ff; text-decoration: none; border-bottom: 1px solid #7bc2ff; display: inline-flex; align-items: center; gap: 8px;">
+            <span>📖</span> Ver en Wiki oficial de Guild Wars 2
+          </a>
+          <a href="${esc(details.video)}" target="_blank" rel="noopener noreferrer" style="color: #7bc2ff; text-decoration: none; border-bottom: 1px solid #7bc2ff; display: inline-flex; align-items: center; gap: 8px;">
+            <span>🎥</span> Ver video tutorial en YouTube
+          </a>
         </div>
       </div>
     `;
 
+    setupModalTabs(modalEl);
     modalEl.removeAttribute('hidden');
   }
 
@@ -941,10 +1360,6 @@
       modal.setAttribute('hidden', '');
     }
   }
-
-  // ========================================================================
-  // 8. CARGA DE DATOS
-  // ========================================================================
 
   async function loadRaidData(forceNoCache) {
     console.log(LOG, 'loadRaidData iniciado');
@@ -963,16 +1378,27 @@
         gridContainer.innerHTML = '<div class="muted" style="text-align: center; padding: 40px;">🔑 Seleccioná una API Key para ver el progreso de raids.<br><small>Requiere permiso "progression"</small></div>';
       }
       renderKPIs(0, 0);
+      updateLiDisplay();
+      startTimers();
       return;
     }
 
     state.loading = true;
     state.error = null;
+    startTimers();
 
     try {
-      var completed = await root.GW2Api.getAccountRaids(token, { nocache: !!forceNoCache });
+      var [completed, liAvailable] = await Promise.all([
+        root.GW2Api.getAccountRaids(token, { nocache: !!forceNoCache }),
+        loadLiAvailable(token)
+      ]);
+      
       state.completedEncounters = Array.isArray(completed) ? completed : [];
+      state.liAvailable = liAvailable;
+      
       console.log(LOG, 'Encuentros completados:', state.completedEncounters.length);
+      console.log(LOG, 'LI disponibles:', state.liAvailable);
+      
       renderWingsGrid(state.completedEncounters);
     } catch (error) {
       console.error(LOG, 'Error loading raid data:', error);
@@ -996,10 +1422,6 @@
     }
   }
 
-  // ========================================================================
-  // 9. CICLO DE VIDA DEL PANEL
-  // ========================================================================
-
   function activate() {
     if (state.active) return;
     state.active = true;
@@ -1012,6 +1434,7 @@
     }
 
     ensurePanelContent();
+    startTimers();
     
     var gridContainer = document.getElementById('raidWingsGrid');
     if (gridContainer) {
@@ -1027,6 +1450,8 @@
 
     console.log(LOG, 'deactivate()');
 
+    stopTimers();
+
     var panel = document.getElementById('raidTrackerPanel');
     if (panel) {
       panel.setAttribute('hidden', '');
@@ -1041,15 +1466,14 @@
     if (!token) return;
 
     try {
-      await root.GW2Api.getAccountRaids(token, { nocache: false });
+      await Promise.all([
+        root.GW2Api.getAccountRaids(token, { nocache: false }),
+        loadLiAvailable(token)
+      ]);
     } catch (e) {
       console.debug(LOG, 'prefetch error (ignored)', e);
     }
   }
-
-  // ========================================================================
-  // 10. EVENTOS GLOBALES
-  // ========================================================================
 
   function wireGlobalEvents() {
     document.addEventListener('gn:tokenchange', function() {
@@ -1059,21 +1483,13 @@
     });
   }
 
-  // ========================================================================
-  // 11. INICIALIZACIÓN
-  // ========================================================================
-
   function initOnce() {
     if (state.inited) return;
     ensureModal();
     wireGlobalEvents();
     state.inited = true;
-    console.log(LOG, 'ready v1.3.1');
+    console.log(LOG, 'ready v1.7.0');
   }
-
-  // ========================================================================
-  // 12. API PÚBLICA
-  // ========================================================================
 
   var RaidTracker = {
     initOnce: initOnce,
@@ -1097,6 +1513,6 @@
     initOnce();
   }
 
-  console.info(LOG, 'Módulo cargado v1.3.1');
+  console.info(LOG, 'Módulo cargado v1.7.0');
 
 })(typeof window !== 'undefined' ? window : this);
