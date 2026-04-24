@@ -597,3 +597,306 @@ aside.col-side .panel-head img {
   border: 1px solid #3a3e4a;
   pointer-events: none;
 }
+
+/* ========================================================================
+   Raid Tracker - Modal Tabs y Timer Bar
+   ======================================================================== */
+
+/* Tabs del modal */
+.modal__tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 16px;
+  border-bottom: 1px solid #2a2c35;
+  background: #0f1116;
+}
+
+.modal-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  color: #9aa2b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.modal-tab-btn:hover {
+  color: #e0e4ed;
+}
+
+.modal-tab-btn.active {
+  color: #7bc2ff;
+  border-bottom-color: #7bc2ff;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* Barra de horarios de Raid Tracker */
+.raid-timer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 8px 16px;
+  background: #0c0e14;
+  border-radius: 12px;
+  border: 1px solid #2a2c35;
+}
+
+/* Responsive para móvil */
+@media (max-width: 600px) {
+  .raid-timer-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+/* ========================================================================
+   Raid Tracker - Mejoras visuales v1.7.0
+   ======================================================================== */
+
+/* 1. Skeleton Loader Mejorado */
+.raid-skeleton-card {
+  background: linear-gradient(90deg, #1a1c24 25%, #252830 50%, #1a1c24 75%);
+  background-size: 200% 100%;
+  animation: raidShimmer 1.5s infinite;
+  border-radius: 16px;
+}
+
+@keyframes raidShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 2. Animación fade-in para tarjetas */
+.raid-wing-card {
+  animation: raidFadeInUp 0.3s ease forwards;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.raid-wing-card:nth-child(1) { animation-delay: 0.02s; }
+.raid-wing-card:nth-child(2) { animation-delay: 0.04s; }
+.raid-wing-card:nth-child(3) { animation-delay: 0.06s; }
+.raid-wing-card:nth-child(4) { animation-delay: 0.08s; }
+.raid-wing-card:nth-child(5) { animation-delay: 0.10s; }
+.raid-wing-card:nth-child(6) { animation-delay: 0.12s; }
+.raid-wing-card:nth-child(7) { animation-delay: 0.14s; }
+.raid-wing-card:nth-child(8) { animation-delay: 0.16s; }
+
+@keyframes raidFadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 3. Hover en tarjetas de ala */
+.raid-wing-card {
+  transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1), box-shadow 0.2s ease;
+}
+
+.raid-wing-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+  border-color: #3a4c7a;
+}
+
+/* 4. Badge de expansión por color */
+.raid-expansion-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.raid-expansion--hot { background: #1a3a2a; color: #a0ffc8; border: 1px solid #2a6a4a; }
+.raid-expansion--pof { background: #3a2a1a; color: #ffd36b; border: 1px solid #aa8a3a; }
+.raid-expansion--janthir { background: #1a2a3a; color: #7bc2ff; border: 1px solid #3a6a9a; }
+.raid-expansion--core { background: #2a2a2a; color: #c0c0c0; border: 1px solid #4a4a4a; }
+
+/* 5. Barra de progreso por ala */
+.raid-wing-progress {
+  margin-top: 8px;
+  height: 3px;
+  background: #2a2c35;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.raid-wing-progress__fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7bc2ff, #a0ffc8);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* 6. Glow por rareza en jefes */
+.raid-encounter-card {
+  transition: all 0.2s ease;
+}
+
+.raid-encounter-card--jefe {
+  border-left: 3px solid #ffd36b;
+}
+
+.raid-encounter-card--jefe:hover {
+  box-shadow: 0 0 12px rgba(255, 211, 107, 0.3);
+  border-color: #ffd36b;
+}
+
+.raid-encounter-card--evento {
+  border-left: 3px solid #7bc2ff;
+}
+
+.raid-encounter-card--evento:hover {
+  box-shadow: 0 0 12px rgba(123, 194, 255, 0.3);
+  border-color: #7bc2ff;
+}
+
+/* 7. Modal mejorado */
+.raid-modal-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 16px;
+  border-bottom: 1px solid #2a2c35;
+  background: #0f1116;
+}
+
+.raid-modal-tab {
+  background: transparent;
+  border: none;
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  color: #9aa2b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.raid-modal-tab:hover {
+  color: #e0e4ed;
+}
+
+.raid-modal-tab.active {
+  color: #7bc2ff;
+  border-bottom-color: #7bc2ff;
+}
+
+.raid-tab-content {
+  display: none;
+  animation: raidTabFade 0.25s ease forwards;
+}
+
+.raid-tab-content.active {
+  display: block;
+}
+
+@keyframes raidTabFade {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Imagen de jefe en modal */
+.raid-modal-boss-image {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.raid-modal-boss-image img {
+  width: 120px;
+  height: 120px;
+  border-radius: 16px;
+  box-shadow: 0 0 0 3px #2a2c35, 0 0 0 6px #1a1c24, 0 4px 20px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease;
+}
+
+.raid-modal-boss-image img:hover {
+  transform: scale(1.02);
+}
+
+/* Scroll suave para modal */
+.modal__body {
+  scroll-behavior: smooth;
+}
+
+/* Badges de recompensas */
+.reward-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.reward-badge--legendary {
+  background: #3a2a1a;
+  color: #ffd36b;
+  border: 1px solid #aa8a3a;
+}
+
+.reward-badge--exotic {
+  background: #2a2a3a;
+  color: #ffa405;
+  border: 1px solid #8a6a2a;
+}
+
+.reward-badge--rare {
+  background: #2a2a2a;
+  color: #fcd00b;
+  border: 1px solid #8a8a2a;
+}
+
+/* Efecto de completado en tarjetas */
+.raid-encounter-card--completed {
+  opacity: 0.85;
+  border-color: #2a6a4a;
+  background: linear-gradient(90deg, #0a1a0a, #0a0c10);
+}
+
+.raid-encounter-card--completed .raid-encounter-name {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: #a0ffc8;
+}
+
+/* Botones con feedback de clic */
+.raid-encounter-detail-btn:active {
+  transform: scale(0.96);
+  transition: transform 0.05s ease;
+}
+
+/* Barra de horarios con glow en hover */
+.meta-clock-bar:hover {
+  box-shadow: 0 0 10px rgba(123, 194, 255, 0.2);
+  transition: box-shadow 0.2s ease;
+}
+
+/* KPI con ícono animado */
+.raid-kpi-card {
+  transition: transform 0.2s ease;
+}
+
+.raid-kpi-card:hover {
+  transform: translateY(-2px);
+}
