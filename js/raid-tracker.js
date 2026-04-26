@@ -100,7 +100,7 @@
         { id: "gates_of_ahdashim", name: "Puertas de Ahdashim", nameEn: "Gates of Ahdashim", type: "evento", li: 0, icon: "assets/icons/raids/bosses/gates_of_ahdashim.png" },
         { id: "adina", name: "Adina", nameEn: "Adina", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/adina.png" },
         { id: "sabir", name: "Sabir", nameEn: "Sabir", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/sabir.png" },
-        { id: "qadim_the_peerless", name: "Qadim", nameEn: "Qadim the Peerless", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/qadim_the_peerless.png" }
+        { id: "qadim_the_peerless", name: "Qadim el Simpar", nameEn: "Qadim the Peerless", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/qadim_the_peerless.png" }
       ]
     },
     {
@@ -297,7 +297,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Vale_Guardian",
-      image: "assets/icons/raids/bosses/vale_guardian_detail.png"
+      image: "assets/icons/raids/bosses/vale_guardian_detail.jpg"
     },
     "gorseval": {
       description: [
@@ -316,7 +316,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Gorseval",
-      image: "assets/icons/raids/bosses/gorseval_detail.png"
+      image: "assets/icons/raids/bosses/gorseval_detail.jpg"
     },
     "sabetha": {
       description: [
@@ -354,7 +354,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Slothasor",
-      image: "assets/icons/raids/bosses/slothasor_detail.png"
+      image: "assets/icons/raids/bosses/slothasor_detail.jpg"
     },
     "bandit_trio": {
       description: [
@@ -373,7 +373,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Bandit_Trio",
-      image: "assets/icons/raids/bosses/bandit_trio_detail.png"
+      image: "assets/icons/raids/bosses/bandit_trio_detail.jpg"
     },
     "matthias": {
       description: [
@@ -392,7 +392,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Matthias_Gabrel",
-      image: "assets/icons/raids/bosses/matthias_detail.png"
+      image: "assets/icons/raids/bosses/matthias_detail.jpg"
     },
     "siege_the_stronghold": {
       description: [
@@ -411,7 +411,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Siege_the_Stronghold",
-      image: "assets/icons/raids/bosses/siege_the_stronghold_detail.png"
+      image: "assets/icons/raids/bosses/siege_the_stronghold_detail.jpg"
     },
     "keep_construct": {
       description: [
@@ -430,7 +430,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Keep_Construct",
-      image: "assets/icons/raids/bosses/keep_construct_detail.png"
+      image: "assets/icons/raids/bosses/keep_construct_detail.jpg"
     },
     "twisted_castle": {
       description: [
@@ -449,7 +449,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Twisted_Castle",
-      image: "assets/icons/raids/bosses/twisted_castle_detail.png"
+      image: "assets/icons/raids/bosses/twisted_castle_detail.jpg"
     },
     "xera": {
       description: [
@@ -468,7 +468,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Xera",
-      image: "assets/icons/raids/bosses/xera_detail.png"
+      image: "assets/icons/raids/bosses/xera_detail.jpg"
     },
     "cairn": {
       description: [
@@ -487,7 +487,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Cairn",
-      image: "assets/icons/raids/bosses/cairn_detail.png"
+      image: "assets/icons/raids/bosses/cairn_detail.jpg"
     },
     "mursaat_overseer": {
       description: [
@@ -506,7 +506,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Mursaat_Overseer",
-      image: "assets/icons/raids/bosses/mursaat_overseer_detail.png"
+      image: "assets/icons/raids/bosses/mursaat_overseer_detail.jpg"
     },
     "samarog": {
       description: [
@@ -525,7 +525,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Samarog",
-      image: "assets/icons/raids/bosses/samarog_detail.png"
+      image: "assets/icons/raids/bosses/samarog_detail.jpg"
     },
     "deimos": {
       description: [
@@ -544,7 +544,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Deimos",
-      image: "assets/icons/raids/bosses/deimos_detail.png"
+      image: "assets/icons/raids/bosses/deimos_detail.jpg"
     },
     "desmina": {
       description: [
@@ -582,7 +582,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/River_of_Souls",
-      image: "assets/icons/raids/bosses/river_of_souls_detail.png"
+      image: "assets/icons/raids/bosses/river_of_souls_detail.jpg"
     },
     "statues_of_grenth": {
       description: [
@@ -639,7 +639,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Conjured_Amalgamate",
-      image: "assets/icons/raids/bosses/conjured_amalgamate_detail.png"
+      image: "assets/icons/raids/bosses/conjured_amalgamate_detail.jpg"
     },
     "twin_largos": {
       description: [
@@ -658,7 +658,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Twin_Largos",
-      image: "assets/icons/raids/bosses/twin_largos_detail.png"
+      image: "assets/icons/raids/bosses/twin_largos_detail.gif"
     },
     "qadim": {
       description: [
@@ -677,7 +677,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Qadim",
-      image: "assets/icons/raids/bosses/qadim_detail.png"
+      image: "assets/icons/raids/bosses/qadim_detail.jpg"
     },
     "gates_of_ahdashim": {
       description: [
@@ -965,6 +965,81 @@
     if (liAvailableEl) liAvailableEl.textContent = state.liAvailable.toLocaleString();
   }
 
+  // ========================================================================
+  // SKELETON LOADER
+  // ========================================================================
+
+  function showSkeleton() {
+    var gridContainer = document.getElementById('raidWingsGrid');
+    var kpiContainer = document.getElementById('raidKPIs');
+    
+    // Guardar contenido original si no está guardado
+    if (gridContainer && !gridContainer.__originalContent && gridContainer.innerHTML.trim() !== '') {
+      gridContainer.__originalContent = gridContainer.innerHTML;
+    }
+    if (kpiContainer && !kpiContainer.__originalContent && kpiContainer.innerHTML.trim() !== '') {
+      kpiContainer.__originalContent = kpiContainer.innerHTML;
+    }
+    
+    // Mostrar skeleton en grid
+    if (gridContainer) {
+      gridContainer.innerHTML = `
+        <div class="raid-skeleton-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+          ${Array(8).fill(`
+            <div class="raid-skeleton-card" style="background: linear-gradient(90deg, #1a1c24 25%, #252830 50%, #1a1c24 75%); background-size: 200% 100%; animation: raidShimmer 1.5s infinite; border-radius: 16px; overflow: hidden;">
+              <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #0c0e14;">
+                <div style="width: 32px; height: 32px; background: #2a2c35; border-radius: 8px;"></div>
+                <div style="flex: 1;">
+                  <div style="height: 16px; background: #2a2c35; border-radius: 4px; width: 60%; margin-bottom: 8px;"></div>
+                  <div style="height: 8px; background: #2a2c35; border-radius: 4px; width: 40%;"></div>
+                </div>
+              </div>
+              <div style="padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                ${Array(4).fill(`
+                  <div style="display: flex; align-items: center; gap: 12px; padding: 8px 12px;">
+                    <div style="width: 40px; height: 40px; background: #2a2c35; border-radius: 8px;"></div>
+                    <div style="flex: 1;">
+                      <div style="height: 14px; background: #2a2c35; border-radius: 4px; width: 70%; margin-bottom: 6px;"></div>
+                      <div style="height: 10px; background: #2a2c35; border-radius: 4px; width: 30%;"></div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+    
+    // Mostrar skeleton en KPIs
+    if (kpiContainer) {
+      kpiContainer.innerHTML = `
+        <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+          <div class="skeleton-bar" style="width: 200px; height: 80px; background: linear-gradient(90deg, #1a1c24 25%, #252830 50%, #1a1c24 75%); background-size: 200% 100%; animation: raidShimmer 1.5s infinite; border-radius: 12px;"></div>
+          <div class="skeleton-bar" style="width: 200px; height: 80px; background: linear-gradient(90deg, #1a1c24 25%, #252830 50%, #1a1c24 75%); background-size: 200% 100%; animation: raidShimmer 1.5s infinite; border-radius: 12px;"></div>
+          <div class="skeleton-bar" style="width: 150px; height: 80px; background: linear-gradient(90deg, #1a1c24 25%, #252830 50%, #1a1c24 75%); background-size: 200% 100%; animation: raidShimmer 1.5s infinite; border-radius: 12px;"></div>
+        </div>
+      `;
+    }
+  }
+
+  function hideSkeleton() {
+    var gridContainer = document.getElementById('raidWingsGrid');
+    var kpiContainer = document.getElementById('raidKPIs');
+    
+    // Restaurar contenido original del grid
+    if (gridContainer && gridContainer.__originalContent) {
+      gridContainer.innerHTML = gridContainer.__originalContent;
+      delete gridContainer.__originalContent;
+    }
+    
+    // Restaurar contenido original de KPIs
+    if (kpiContainer && kpiContainer.__originalContent) {
+      kpiContainer.innerHTML = kpiContainer.__originalContent;
+      delete kpiContainer.__originalContent;
+    }
+  }
+
   function startTimers() {
     if (state.utcTimeInterval) clearInterval(state.utcTimeInterval);
     if (state.localTimeInterval) clearInterval(state.localTimeInterval);
@@ -1062,67 +1137,128 @@
     return '❓';
   }
 
-    function renderRewardsList(encounterId, bossName) {
-    var rewards = REWARDS_DATA[encounterId];
-    if (!rewards || !rewards.drops || rewards.drops.length === 0) {
-      return '<div class="muted" style="text-align: center; padding: 20px;">No hay información de recompensas disponible.</div>';
-    }
-    
-    // Determinar rareza de los drops
-    function getRarityClass(itemId, itemName) {
-      var name = (itemName || '').toLowerCase();
-      if (name.includes('legendary') || name.includes('insight') || itemId === 79722) return 'reward-badge--legendary';
-      if (name.includes('ascended') || name.includes('mochila')) return 'reward-badge--exotic';
-      if (name.includes('mini')) return 'reward-badge--rare';
-      return 'reward-badge--rare';
-    }
-    
-    var liCount = 0;
-    for (var w = 0; w < WINGS.length; w++) {
-      for (var e = 0; e < WINGS[w].encounters.length; e++) {
-        if (WINGS[w].encounters[e].id === encounterId && WINGS[w].encounters[e].li) {
-          liCount = WINGS[w].encounters[e].li;
-          break;
+      function renderRewardsList(encounterId, bossName) {
+        // Calcular cantidad de LI para este encuentro
+        var liCount = 0;
+        for (var w = 0; w < WINGS.length; w++) {
+          for (var e = 0; e < WINGS[w].encounters.length; e++) {
+            if (WINGS[w].encounters[e].id === encounterId && WINGS[w].encounters[e].li) {
+              liCount = WINGS[w].encounters[e].li;
+              break;
+            }
+          }
         }
-      }
-    }
-    
-    var html = '';
-    if (liCount > 0) {
-      html += `
-        <div style="margin-bottom: 16px; padding: 12px; background: #1a1c24; border-radius: 12px; border-left: 3px solid #ffd36b;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 24px;">🔮</span>
-            <div>
-              <div style="font-weight: 700;">Insights legendarias (LI)</div>
-              <div style="font-size: 1.2rem; font-weight: 800; color: #ffd36b;">+${liCount} LI</div>
-              <div class="muted" style="font-size: 0.7rem;">Recompensa garantizada por completar el encuentro</div>
+        
+        // ====== RECOMPENSAS BASE (todos los jefes) ======
+        var html = `
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #1a1c24; border-radius: 10px;">
+              <img src="https://render.guildwars2.com/file/6D33B7387BAF2E2CC9B5D37D1D1B01246AB6FA22/1302744.png" width="32" height="32" alt="LI" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Ctext x=%270%27 y=%2720%27 font-size=%2720%27%3E🔮%3C/text%3E%3C/svg%3E'">
+              <div>
+                <div style="font-size: 0.7rem; color: #9aa2b8;">Conocimiento legendario</div>
+                <div style="font-weight: 700; color: #ffd36b;">+${liCount}</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #1a1c24; border-radius: 10px;">
+              <img src="https://render.guildwars2.com/file/98457F504BA2FAC8457F532C4B30EDC23929ACF9/619316.png" width="32" height="32" alt="Oro" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Ctext x=%270%27 y=%2720%27 font-size=%2720%27%3E💰%3C/text%3E%3C/svg%3E'">
+              <div>
+                <div style="font-size: 0.7rem; color: #9aa2b8;">Oro</div>
+                <div style="font-weight: 700; color: #ffd36b;">+2~4</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #1a1c24; border-radius: 10px;">
+              <img src="assets/icons/raids/experience.png" width="32" height="32" alt="Experiencia" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Ctext x=%270%27 y=%2720%27 font-size=%2720%27%3E⭐%3C/text%3E%3C/svg%3E'">
+              <div>
+                <div style="font-size: 0.7rem; color: #9aa2b8;">Experiencia</div>
+                <div style="font-weight: 700; color: #a0ffc8;">+200,025</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #1a1c24; border-radius: 10px;">
+              <img src="https://render.guildwars2.com/file/94953FA23D3E0D23559624015DFEA4CFAA07F0E5/155026.png" width="32" height="32" alt="Karma" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Ctext x=%270%27 y=%2720%27 font-size=%2720%27%3E☯%3C/text%3E%3C/svg%3E'">
+              <div>
+                <div style="font-size: 0.7rem; color: #9aa2b8;">Karma</div>
+                <div style="font-weight: 700; color: #7bc2ff;">+10,000</div>
+              </div>
             </div>
           </div>
-        </div>
-      `;
-    }
-    
-    html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px;">';
-    rewards.drops.forEach(function(drop) {
-      var rarityClass = getRarityClass(drop.id, drop.name);
-      html += `
-        <div style="display: flex; align-items: center; gap: 10px; padding: 8px; background: #0a0c10; border-radius: 10px;">
-          ${createSafeIcon(drop.icon, drop.name, 36, 36, '🎁')}
-          <div>
-            <div style="font-size: 0.75rem; font-weight: 500;">${esc(drop.name)}</div>
-            <span class="reward-badge ${rarityClass}" style="font-size: 0.6rem; padding: 2px 6px; display: inline-block;">Drop ocasional</span>
-          </div>
-        </div>
-      `;
-    });
-    html += '</div>';
-    return html;
-  }
+        `;
+        
+        // ====== RECOMPENSAS EXCLUSIVAS (drops especiales por jefe) ======
+        var specialDrops = getSpecialDrops(encounterId);
+        if (specialDrops && specialDrops.length > 0) {
+          html += `
+            <div style="margin-top: 8px;">
+              <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 12px; color: #ffd36b;">✨ Drops excepcionales</div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">
+          `;
+          
+          for (var i = 0; i < specialDrops.length; i++) {
+            var drop = specialDrops[i];
+            html += `
+              <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #0a0c10; border-radius: 10px; border: 1px solid #2a2c35;">
+                <img src="${drop.icon}" width="32" height="32" alt="${drop.name}" onerror="this.src='assets/icons/raids/bosses/default.png'">
+                <div>
+                  <div style="font-size: 0.75rem; font-weight: 500;">${esc(drop.name)}</div>
+                  <div class="muted" style="font-size: 0.6rem;">${drop.type}</div>
+                </div>
+              </div>
+            `;
+          }
+          
+          html += `
+              </div>
+            </div>
+          `;
+        }
+        
+        return html;
+      }
 
-  // ========================================================================
-  // CONTINÚA EN LA PARTE 2...
-  // ========================================================================
+      function getSpecialDrops(encounterId) {
+        var drops = {
+          // Ala 1
+          "gorseval": [
+            { name: "Infusión Fantasmal", type: "Infusión cosmética", icon: "assets/icons/raids/bosses/Ghostly_Infusion.png" }
+          ],
+          "sabetha": [
+            { name: "Mochila de Sabetha", type: "Mochila", icon: "assets/icons/raids/bosses/sabetha_backpack.png" }
+          ],
+          // Ala 2
+          "matthias": [
+            { name: "Mochila de Matthias", type: "Mochila", icon: "assets/icons/raids/bosses/matthias_backpack.png" }
+          ],
+          // Ala 3
+          "xera": [
+            { name: "Mochila de Xera", type: "Mochila", icon: "assets/icons/raids/bosses/xera_backpack.png" }
+          ],
+          // Ala 4
+          "mursaat_overseer": [
+            { name: "Infusión Ojo Blanco", type: "Infusión cosmética", icon: "assets/icons/raids/bosses/white_eye_infusion.png" }
+          ],
+          "deimos": [
+            { name: "Mochila de Deimos", type: "Mochila", icon: "assets/icons/raids/bosses/deimos_backpack.png" }
+          ],
+          // Ala 5
+          "dhuum": [
+            { name: "Silla del Último Juez amortajada", type: "Silla", icon: "assets/icons/raids/bosses/Silla_del_Último_Juez_amortajada.png" },
+            { name: "Cofre de Armadura de Dhuum", type: "Infusión cosmética", icon: "assets/icons/raids/bosses/Cofre_de_armadura_de_Dhuum.png" }
+          ],
+          // Ala 6
+          "twin_largos": [
+            { name: "Contenedor de tónico de combate de largos", type: "Mochila", icon: "assets/icons/raids/bosses/Contenedor de tónico de combate de largos.png" }
+          ],
+          "qadim": [
+            { name: "Sillín Néctar Fundido", type: "Sillín de montura (Raptor)", icon: "assets/icons/raids/bosses/molten_nectar_skin.png" }
+          ],
+          // Ala 7
+          "qadim_the_peerless": [
+            { name: "Sillín Perfección Fundida", type: "Sillín de montura (Raptor)", icon: "assets/icons/raids/bosses/molten_nectar_skin.png" },
+            { name: "Infusión Corazón Fundido", type: "Infusión cosmética", icon: "assets/icons/raids/bosses/Peerless_Infusion.png" }
+          ]
+        };
+        
+        return drops[encounterId] || [];
+      }
 
     function renderWingsGrid(completedEncounters) {
     var gridContainer = document.getElementById('raidWingsGrid');
@@ -1132,7 +1268,7 @@
     var totalEncounters = 0;
     var completedCount = 0;
 
-    var html = '<div class="raid-wings-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">';
+    var html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">';
 
     for (var w = 0; w < WINGS.length; w++) {
       var wing = WINGS[w];
@@ -1227,133 +1363,186 @@
 
   var modal = null;
 
-    function ensureModal() {
-    if (modal) return modal;
+        function ensureModal() {
+          if (modal) return modal;
 
-    modal = document.createElement('div');
-    modal.id = 'raidBossModal';
-    modal.className = 'modal';
-    modal.setAttribute('role', 'dialog');
-    modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('hidden', '');
-    modal.innerHTML = `
-      <div class="modal__backdrop" data-close="1"></div>
-      <div class="modal__dialog" style="max-width: 650px;">
-        <header class="modal__header">
-          <h3 id="raidBossModalTitle">Detalle del Encuentro</h3>
-          <button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button>
-        </header>
-        <div class="raid-modal-tabs">
-          <button class="raid-modal-tab active" data-tab="desc">📖 Descripción</button>
-          <button class="raid-modal-tab" data-tab="strat">⚔️ Estrategia</button>
-          <button class="raid-modal-tab" data-tab="rewards">🎁 Recompensas</button>
-          <button class="raid-modal-tab" data-tab="links">🔗 Enlaces</button>
-        </div>
-        <div class="modal__body" id="raidBossModalBody" style="max-height: 60vh; overflow-y: auto; scroll-behavior: smooth;">
-          <div class="raid-modal-loading">Cargando...</div>
-        </div>
-      </div>
-    `;
+          modal = document.createElement('div');
+          modal.id = 'raidBossModal';
+          modal.className = 'modal';
+          modal.setAttribute('role', 'dialog');
+          modal.setAttribute('aria-modal', 'true');
+          modal.setAttribute('hidden', '');
+          modal.innerHTML = `
+            <div class="modal__backdrop" data-close="1"></div>
+            <div class="modal__dialog" style="max-width: 650px;">
+              <header class="modal__header">
+                <h3 id="raidBossModalTitle">Detalle del Encuentro</h3>
+                <button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button>
+              </header>
+              <div class="raid-modal-tabs">
+                <button class="raid-modal-tab" data-tab="desc">
+                  <img src="assets/icons/Welcome/222580.png" width="18" height="18" alt="Descripción" style="vertical-align: middle; margin-right: 6px;">
+                  Descripción
+                </button>
+                <button class="raid-modal-tab" data-tab="strat">
+                  <img src="assets/icons/Cuentas/240679.png" width="18" height="18" alt="Estrategia" style="vertical-align: middle; margin-right: 6px;">
+                  Estrategia
+                </button>
+                <button class="raid-modal-tab" data-tab="rewards">
+                  <img src="assets/icons/Cuentas/102438.png" width="18" height="18" alt="Recompensas" style="vertical-align: middle; margin-right: 6px;">
+                  Recompensas
+                </button>
+                <button class="raid-modal-tab" data-tab="links">
+                  <img src="assets/icons/raids/bosses/2604930.png" width="18" height="18" alt="Enlaces" style="vertical-align: middle; margin-right: 6px;">
+                  Enlaces
+                </button>
+              </div>
+              <div class="modal__body" id="raidBossModalBody" style="max-height: 60vh; overflow-y: auto; scroll-behavior: smooth;">
+                <div class="raid-modal-loading">Cargando...</div>
+              </div>
+            </div>
+          `;
 
-    modal.addEventListener('click', function(e) {
-      if (e.target.getAttribute('data-close') === '1') {
-        closeModal();
-      }
-    });
+          modal.addEventListener('click', function(e) {
+            if (e.target.getAttribute('data-close') === '1') {
+              closeModal();
+            }
+          });
 
-    document.body.appendChild(modal);
-    return modal;
-  }
+          document.addEventListener('keydown', function onEscape(e) {
+            if (e.key === 'Escape' && modal && !modal.hasAttribute('hidden')) {
+              closeModal();
+              document.removeEventListener('keydown', onEscape);
+            }
+          });
 
-    function setupModalTabs(modalEl) {
-    var tabBtns = modalEl.querySelectorAll('.raid-modal-tab');
-    var contents = modalEl.querySelectorAll('.raid-tab-content');
-    
-    tabBtns.forEach(function(btn) {
-      var newBtn = btn.cloneNode(true);
-      btn.parentNode.replaceChild(newBtn, btn);
-      
-      newBtn.addEventListener('click', function(e) {
-        var tabId = this.getAttribute('data-tab');
-        
-        tabBtns.forEach(function(b) {
-          b.classList.remove('active');
-        });
-        this.classList.add('active');
-        
-        contents.forEach(function(content) {
-          content.classList.remove('active');
-          content.style.display = 'none';
-          if (content.getAttribute('data-tab') === tabId) {
-            content.classList.add('active');
-            content.style.display = 'block';
-          }
-        });
-      });
-    });
-  }
+          document.body.appendChild(modal);
+          return modal;
+        }
 
-    function openBossModal(encounterId, encounterName) {
-    var modalEl = ensureModal();
-    var titleEl = document.getElementById('raidBossModalTitle');
-    var bodyEl = document.getElementById('raidBossModalBody');
+          
+            function openBossModal(encounterId, encounterName) {
+              var modalEl = ensureModal();
+              var titleEl = document.getElementById('raidBossModalTitle');
+              var bodyEl = document.getElementById('raidBossModalBody');
 
-    if (!titleEl || !bodyEl) return;
+              if (!titleEl || !bodyEl) return;
 
-    titleEl.textContent = encounterName;
+              titleEl.textContent = encounterName;
 
-    var details = BOSS_DETAILS[encounterId] || {
-      description: ["• Información no disponible para este encuentro."],
-      strategy: ["• Consulta la wiki de Guild Wars 2 para más detalles."],
-      video: "https://wiki.guildwars2.com/wiki/Main_Page",
-      wiki: "https://wiki.guildwars2.com/wiki/Main_Page",
-      image: "assets/icons/raids/bosses/default.png"
-    };
+              var details = BOSS_DETAILS[encounterId] || {
+                description: ["• Información no disponible para este encuentro."],
+                strategy: ["• Consulta la wiki de Guild Wars 2 para más detalles."],
+                video: "https://wiki.guildwars2.com/wiki/Main_Page",
+                wiki: "https://wiki.guildwars2.com/wiki/Main_Page",
+                image: "assets/icons/raids/bosses/default.png"
+              };
 
-    var descriptionHtml = Array.isArray(details.description) 
-      ? details.description.map(function(line) { return '<div style="margin-bottom: 8px;">' + esc(line) + '</div>'; }).join('')
-      : '<div>' + esc(details.description) + '</div>';
-      
-    var strategyHtml = Array.isArray(details.strategy)
-      ? details.strategy.map(function(line) { return '<div style="margin-bottom: 8px;">' + esc(line) + '</div>'; }).join('')
-      : '<div>' + esc(details.strategy) + '</div>';
-    
-    var rewardsHtml = renderRewardsList(encounterId, encounterName);
+              var descriptionHtml = Array.isArray(details.description) 
+                ? details.description.map(function(line) { return '<div style="margin-bottom: 8px;">' + esc(line) + '</div>'; }).join('')
+                : '<div>' + esc(details.description) + '</div>';
+                
+              var strategyHtml = Array.isArray(details.strategy)
+                ? details.strategy.map(function(line) { return '<div style="margin-bottom: 8px;">' + esc(line) + '</div>'; }).join('')
+                : '<div>' + esc(details.strategy) + '</div>';
+              
+              var rewardsHtml = renderRewardsList(encounterId, encounterName);
 
-    bodyEl.innerHTML = `
-      <div class="raid-tab-content active" data-tab="desc" style="padding: 16px;">
-        <div class="raid-modal-boss-image" style="display: flex; justify-content: center; margin-bottom: 16px;">
-          ${createSafeIcon(details.image, encounterName, 120, 120, '👾')}
-        </div>
-        <div>
-          <h4 style="margin: 0 0 12px 0; font-size: 1rem; color: #a0ffc8;">📖 Descripción</h4>
-          <div style="margin: 0; font-size: 0.85rem; line-height: 1.5;">${descriptionHtml}</div>
-        </div>
-      </div>
-      <div class="raid-tab-content" data-tab="strat" style="display: none; padding: 16px;">
-        <div>
-          <h4 style="margin: 0 0 12px 0; font-size: 1rem; color: #ffd36b;">⚔️ Estrategia</h4>
-          <div style="margin: 0; font-size: 0.85rem; line-height: 1.5;">${strategyHtml}</div>
-        </div>
-      </div>
-      <div class="raid-tab-content" data-tab="rewards" style="display: none; padding: 16px;">
-        ${rewardsHtml}
-      </div>
-      <div class="raid-tab-content" data-tab="links" style="display: none; padding: 16px;">
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <a href="${esc(details.wiki)}" target="_blank" rel="noopener noreferrer" style="color: #7bc2ff; text-decoration: none; border-bottom: 1px solid #7bc2ff; display: inline-flex; align-items: center; gap: 8px;">
-            <span>📖</span> Ver en Wiki oficial de Guild Wars 2
-          </a>
-          <a href="${esc(details.video)}" target="_blank" rel="noopener noreferrer" style="color: #7bc2ff; text-decoration: none; border-bottom: 1px solid #7bc2ff; display: inline-flex; align-items: center; gap: 8px;">
-            <span>🎥</span> Ver video tutorial en YouTube
-          </a>
-        </div>
-      </div>
-    `;
+              bodyEl.innerHTML = `
+                <div class="raid-tab-content" data-tab="desc" style="display: none; padding: 16px;">
+                  <div class="raid-modal-boss-image" style="display: flex; justify-content: center; margin-bottom: 16px;">
+                    ${createSafeIcon(details.image, encounterName, 120, 120, '👾')}
+                  </div>
+                    <div>
+                      <h4 style="margin: 0 0 12px 0; font-size: 1rem; color: #a0ffc8; display: flex; align-items: center; gap: 8px;">
+                        <img src="assets/icons/Welcome/222580.png" width="20" height="20" alt="Descripción" style="vertical-align: middle;">
+                        Descripción
+                      </h4>
+                      <div style="margin: 0; font-size: 0.85rem; line-height: 1.5;">${descriptionHtml}</div>
+                    </div>
+                  </div>
+                  <div class="raid-tab-content" data-tab="strat" style="display: none; padding: 16px;">
+                    <div>
+                      <h4 style="margin: 0 0 12px 0; font-size: 1rem; color: #ffd36b; display: flex; align-items: center; gap: 8px;">
+                        <img src="assets/icons/Cuentas/240679.png" width="20" height="20" alt="Estrategia" style="vertical-align: middle;">
+                        Estrategia
+                      </h4>
+                      <div style="margin: 0; font-size: 0.85rem; line-height: 1.5;">${strategyHtml}</div>
+                    </div>
+                  </div>
+                  <div class="raid-tab-content" data-tab="rewards" style="display: none; padding: 16px;">
+                    ${rewardsHtml}
+                  </div>
+                  <div class="raid-tab-content" data-tab="links" style="display: none; padding: 16px;">
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                      <a href="${esc(details.wiki)}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; border-bottom: none; color: #7bc2ff; display: inline-flex; align-items: center; gap: 8px;">
+                        <img src="assets/icons/Welcome/222580.png" width="18" height="18" alt="Wiki" style="vertical-align: middle;">
+                        Ver en Wiki oficial de Guild Wars 2
+                      </a>
+                      <a href="${esc(details.video)}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; border-bottom: none; color: #7bc2ff; display: inline-flex; align-items: center; gap: 8px;">
+                        <img src="assets/icons/raids/bosses/Cinematic.png" width="18" height="18" alt="Video" style="vertical-align: middle;">
+                        Ver video tutorial en YouTube
+                      </a>
+                    </div>
+                  </div>
+              `;
 
-    setupModalTabs(modalEl);
-    modalEl.removeAttribute('hidden');
-  }
+              // ========== LIMPIAR Y RECONFIGURAR TABS ==========
+              var tabBtns = modalEl.querySelectorAll('.raid-modal-tab');
+              var contents = modalEl.querySelectorAll('.raid-tab-content');
+              
+              // 1. QUITAR TODAS las clases active de TODOS los tabs
+              tabBtns.forEach(function(btn) {
+                btn.classList.remove('active');
+              });
+              
+              // 2. OCULTAR TODOS los contenidos
+              contents.forEach(function(content) {
+                content.style.display = 'none';
+              });
+              
+              // 3. ACTIVAR SOLO el primer tab y su contenido
+              var firstTab = modalEl.querySelector('.raid-modal-tab[data-tab="desc"]');
+              var firstContent = modalEl.querySelector('.raid-tab-content[data-tab="desc"]');
+              
+              if (firstTab) firstTab.classList.add('active');
+              if (firstContent) firstContent.style.display = 'block';
+              
+              // 4. RECONFIGURAR event listeners (eliminando los anteriores)
+              var newTabBtns = modalEl.querySelectorAll('.raid-modal-tab');
+              newTabBtns.forEach(function(btn) {
+                // Clonar para eliminar listeners anteriores
+                var freshBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(freshBtn, btn);
+                
+                freshBtn.addEventListener('click', function() {
+                  var tabId = this.getAttribute('data-tab');
+                  
+                  // Quitar active de TODOS los tabs
+                  var allBtns = modalEl.querySelectorAll('.raid-modal-tab');
+                  allBtns.forEach(function(b) {
+                    b.classList.remove('active');
+                  });
+                  
+                  // Poner active SOLO en el clickeado
+                  this.classList.add('active');
+                  
+                  // Ocultar TODOS los contenidos
+                  var allContents = modalEl.querySelectorAll('.raid-tab-content');
+                  allContents.forEach(function(c) {
+                    c.style.display = 'none';
+                  });
+                  
+                  // Mostrar SOLO el contenido correspondiente
+                  var targetContent = modalEl.querySelector('.raid-tab-content[data-tab="' + tabId + '"]');
+                  if (targetContent) {
+                    targetContent.style.display = 'block';
+                  }
+                });
+              });
+
+              modalEl.removeAttribute('hidden');
+            }
 
   function closeModal() {
     if (modal) {
@@ -1361,56 +1550,63 @@
     }
   }
 
-  async function loadRaidData(forceNoCache) {
-    console.log(LOG, 'loadRaidData iniciado');
-    
-    var token = getSelectedToken();
-    state.token = token;
+    async function loadRaidData(forceNoCache) {
+      console.log(LOG, 'loadRaidData iniciado');
+      
+      var token = getSelectedToken();
+      state.token = token;
 
-    if (!ensurePanelContent()) {
-      console.error(LOG, 'No se pudo asegurar el contenido del panel');
-      return;
-    }
-
-    if (!token) {
-      var gridContainer = document.getElementById('raidWingsGrid');
-      if (gridContainer) {
-        gridContainer.innerHTML = '<div class="muted" style="text-align: center; padding: 40px;">🔑 Seleccioná una API Key para ver el progreso de raids.<br><small>Requiere permiso "progression"</small></div>';
+      if (!ensurePanelContent()) {
+        console.error(LOG, 'No se pudo asegurar el contenido del panel');
+        return;
       }
-      renderKPIs(0, 0);
-      updateLiDisplay();
+
+      // Mostrar skeleton ANTES de cargar
+      showSkeleton();
+
+      if (!token) {
+        hideSkeleton();
+        var gridContainer = document.getElementById('raidWingsGrid');
+        if (gridContainer) {
+          gridContainer.innerHTML = '<div class="muted" style="text-align: center; padding: 40px;">🔑 Seleccioná una API Key para ver el progreso de raids.<br><small>Requiere permiso "progression"</small></div>';
+        }
+        renderKPIs(0, 0);
+        updateLiDisplay();
+        startTimers();
+        return;
+      }
+
+      state.loading = true;
+      state.error = null;
       startTimers();
-      return;
-    }
 
-    state.loading = true;
-    state.error = null;
-    startTimers();
-
-    try {
-      var [completed, liAvailable] = await Promise.all([
-        root.GW2Api.getAccountRaids(token, { nocache: !!forceNoCache }),
-        loadLiAvailable(token)
-      ]);
-      
-      state.completedEncounters = Array.isArray(completed) ? completed : [];
-      state.liAvailable = liAvailable;
-      
-      console.log(LOG, 'Encuentros completados:', state.completedEncounters.length);
-      console.log(LOG, 'LI disponibles:', state.liAvailable);
-      
-      renderWingsGrid(state.completedEncounters);
-    } catch (error) {
-      console.error(LOG, 'Error loading raid data:', error);
-      state.error = error.message;
-      var gridContainer = document.getElementById('raidWingsGrid');
-      if (gridContainer) {
-        gridContainer.innerHTML = `<div class="error" style="text-align: center; padding: 40px; color: #ff9d9d;">❌ Error al cargar datos de raids: ${esc(error.message)}<br><small>Verificá que la API key tenga permiso "progression"</small></div>`;
+      try {
+        var [completed, liAvailable] = await Promise.all([
+          root.GW2Api.getAccountRaids(token, { nocache: !!forceNoCache }),
+          loadLiAvailable(token)
+        ]);
+        
+        state.completedEncounters = Array.isArray(completed) ? completed : [];
+        state.liAvailable = liAvailable;
+        
+        console.log(LOG, 'Encuentros completados:', state.completedEncounters.length);
+        console.log(LOG, 'LI disponibles:', state.liAvailable);
+        
+        // Ocultar skeleton y mostrar datos reales
+        hideSkeleton();
+        renderWingsGrid(state.completedEncounters);
+      } catch (error) {
+        console.error(LOG, 'Error loading raid data:', error);
+        state.error = error.message;
+        hideSkeleton();
+        var gridContainer = document.getElementById('raidWingsGrid');
+        if (gridContainer) {
+          gridContainer.innerHTML = `<div class="error" style="text-align: center; padding: 40px; color: #ff9d9d;">❌ Error al cargar datos de raids: ${esc(error.message)}<br><small>Verificá que la API key tenga permiso "progression"</small></div>`;
+        }
+      } finally {
+        state.loading = false;
       }
-    } finally {
-      state.loading = false;
     }
-  }
 
   async function refresh(forceNoCache) {
     if (_refreshInFlight) return _refreshInFlight;
@@ -1422,27 +1618,25 @@
     }
   }
 
-  function activate() {
-    if (state.active) return;
-    state.active = true;
+    function activate() {
+      if (state.active) return;
+      state.active = true;
 
-    console.log(LOG, 'activate()');
+      console.log(LOG, 'activate()');
 
-    var panel = document.getElementById('raidTrackerPanel');
-    if (panel) {
-      panel.removeAttribute('hidden');
+      var panel = document.getElementById('raidTrackerPanel');
+      if (panel) {
+        panel.removeAttribute('hidden');
+      }
+
+      ensurePanelContent();
+      startTimers();
+      
+      // Mostrar skeleton en lugar del texto simple
+      showSkeleton();
+      
+      refresh(false);
     }
-
-    ensurePanelContent();
-    startTimers();
-    
-    var gridContainer = document.getElementById('raidWingsGrid');
-    if (gridContainer) {
-      gridContainer.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="muted">Cargando raids...</div></div>';
-    }
-    
-    refresh(false);
-  }
 
   function deactivate() {
     if (!state.active) return;
