@@ -1,11 +1,14 @@
 /*!
  * Meta Theme (expansión/temporada) — outline + halo usando --meta-title-color
- * v1.3.2 (2026-03-23)
+ * v1.3.3 (2026-04-26)
  *
- * Cambios v1.3.2:
- *  - Mejora en resaltado de horarios: evento activo en VERDE, próximo en ÁMBAR
- *  - Corrección de lógica para detectar horario activo (ventana de 15 min)
+ * Cambios v1.3.3:
+ *  - Fix hora local correcta para cualquier zona horaria del usuario
+ *  - convertScheduleToLocalTime() guarda data-utc en cada chip
+ *  - getNextScheduleTime() construye timestamp real con Date.UTC()
+ *    en lugar de comparar minutos del día (bug con UTC±N)
  *
+ * v1.3.2: Horarios activos en verde, próximos en ámbar
  * v1.3.1: Barra de horarios unificada con UTC
  * v1.3.0: Barra de horarios unificada con iconos GW2
  * v1.2.2: Horarios en hora local con color dinámico
@@ -14,7 +17,7 @@
 (function () {
   'use strict';
 
-  console.info('[MetaTheme] meta-theme.js v1.3.2 — horarios activos en verde, próximos en ámbar');
+  console.info('[MetaTheme] meta-theme.js v1.3.3 — fix zona horaria: timestamps UTC reales');
 
   var DEBUG = false;
 
@@ -54,10 +57,9 @@
   // BARRA DE HORARIOS (estilo Activities con iconos GW2)
   // ==========================================================================
 
-  // Iconos oficiales de GW2 desde wiki
-  var ICON_UTC = 'assets/icons/460028.png';
-  var ICON_LOCAL = 'assets/icons/841720.png';
-  var ICON_DAILY = 'assets/icons/534745.png';
+  var ICON_UTC    = 'assets/icons/460028.png';
+  var ICON_LOCAL  = 'assets/icons/841720.png';
+  var ICON_DAILY  = 'assets/icons/534745.png';
   var ICON_WEEKLY = 'assets/icons/155064.png';
 
   function formatCountdownWithSeconds(ms) {
@@ -69,13 +71,13 @@
     s %= 3600;
     var m = Math.floor(s / 60);
     s %= 60;
-    
+
     var parts = [];
     if (d > 0) parts.push(d + 'd');
     if (h > 0 || d > 0) parts.push(String(h).padStart(2, '0') + 'h');
     if (m > 0 || h > 0 || d > 0) parts.push(String(m).padStart(2, '0') + 'm');
     parts.push(String(s).padStart(2, '0') + 's');
-    
+
     return parts.join(' ');
   }
 
@@ -105,145 +107,123 @@
 
   function updateMetaClock() {
     var now = new Date();
-    
-    // Hora server (UTC)
-    var utcHours = now.getUTCHours().toString().padStart(2, '0');
-    var utcMinutes = now.getUTCMinutes().toString().padStart(2, '0');
-    var utcSeconds = now.getUTCSeconds().toString().padStart(2, '0');
-    var utcTime = utcHours + ':' + utcMinutes + ':' + utcSeconds;
-    
-    // Hora local
-    var localHours = now.getHours().toString().padStart(2, '0');
-    var localMinutes = now.getMinutes().toString().padStart(2, '0');
-    var localSeconds = now.getSeconds().toString().padStart(2, '0');
-    var localTime = localHours + ':' + localMinutes + ':' + localSeconds;
-    
-    // Reset diario
-    var dailyReset = nextDailyResetUTC();
-    var dailyMs = dailyReset.getTime() - now.getTime();
-    var dailyCountdown = formatCountdownWithSeconds(dailyMs);
-    
-    // Reset semanal
-    var weeklyReset = nextWeeklyResetUTC();
-    var weeklyMs = weeklyReset.getTime() - now.getTime();
-    var weeklyCountdown = formatCountdownWithSeconds(weeklyMs);
-    
-    // Actualizar DOM
-    var utcEl = document.getElementById('metaUtcTime');
-    var localEl = document.getElementById('metaLocalTime');
-    var dailyEl = document.getElementById('metaDailyReset');
+
+    var utcTime   = String(now.getUTCHours()).padStart(2,'0') + ':' +
+                    String(now.getUTCMinutes()).padStart(2,'0') + ':' +
+                    String(now.getUTCSeconds()).padStart(2,'0');
+
+    var localTime = String(now.getHours()).padStart(2,'0') + ':' +
+                    String(now.getMinutes()).padStart(2,'0') + ':' +
+                    String(now.getSeconds()).padStart(2,'0');
+
+    var dailyMs  = nextDailyResetUTC().getTime() - now.getTime();
+    var weeklyMs = nextWeeklyResetUTC().getTime() - now.getTime();
+
+    var utcEl    = document.getElementById('metaUtcTime');
+    var localEl  = document.getElementById('metaLocalTime');
+    var dailyEl  = document.getElementById('metaDailyReset');
     var weeklyEl = document.getElementById('metaWeeklyReset');
-    
-    if (utcEl) utcEl.textContent = utcTime;
-    if (localEl) localEl.textContent = localTime;
-    if (dailyEl) dailyEl.textContent = dailyCountdown;
-    if (weeklyEl) weeklyEl.textContent = weeklyCountdown;
+
+    if (utcEl)    utcEl.textContent    = utcTime;
+    if (localEl)  localEl.textContent  = localTime;
+    if (dailyEl)  dailyEl.textContent  = formatCountdownWithSeconds(dailyMs);
+    if (weeklyEl) weeklyEl.textContent = formatCountdownWithSeconds(weeklyMs);
   }
 
   function renderMetaClockBar(metaPanel) {
     var panelHead = metaPanel.querySelector('.panel-head');
     if (!panelHead) return;
-    
+
     var title = panelHead.querySelector('.panel-head__title');
-    
+
     var clockBar = document.createElement('div');
     clockBar.className = 'meta-clock-bar chips';
-    clockBar.style.display = 'flex';
-    clockBar.style.gap = '16px';
-    clockBar.style.alignItems = 'center';
-    clockBar.style.background = '#0f1116';
-    clockBar.style.padding = '4px 12px';
-    clockBar.style.borderRadius = '40px';
-    clockBar.style.border = '1px solid #2a2c35';
-    clockBar.style.fontFamily = 'monospace';
-    clockBar.style.fontSize = '0.85rem';
-    clockBar.style.flexWrap = 'wrap';
-    
-    clockBar.innerHTML = `
-      <div style="display: flex; align-items: center; gap: 6px;" data-tip="Hora del servidor (UTC+0)">
-        <img src="${ICON_UTC}" width="24" height="24" alt="UTC" style="filter: brightness(0.9);">
-        <span>UTC</span>
-        <strong id="metaUtcTime">--:--:--</strong>
-      </div>
-      <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
-      <div style="display: flex; align-items: center; gap: 6px;" data-tip="Tu hora local">
-        <img src="${ICON_LOCAL}" width="24" height="24" alt="Local" style="filter: brightness(0.9);">
-        <span>Local</span>
-        <strong id="metaLocalTime">--:--:--</strong>
-      </div>
-      <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
-      <div style="display: flex; align-items: center; gap: 6px;" data-tip="Reset diario a las 00:00 UTC">
-        <img src="${ICON_DAILY}" width="24" height="24" alt="Reset diario" style="filter: brightness(0.9);">
-        <span>Reset diario</span>
-        <strong id="metaDailyReset">--</strong>
-      </div>
-      <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
-      <div style="display: flex; align-items: center; gap: 6px;" data-tip="Reset semanal los lunes a las 07:30 UTC">
-        <img src="${ICON_WEEKLY}" width="24" height="24" alt="Reset semanal" style="filter: brightness(0.9);">
-        <span>Reset semanal</span>
-        <strong id="metaWeeklyReset">--</strong>
-      </div>
-    `;
-    
-    panelHead.style.display = 'flex';
-    panelHead.style.justifyContent = 'space-between';
-    panelHead.style.alignItems = 'center';
-    panelHead.style.flexWrap = 'wrap';
-    panelHead.style.gap = '12px';
-    
+    clockBar.style.cssText = [
+      'display:flex', 'gap:16px', 'align-items:center',
+      'background:#0f1116', 'padding:4px 12px', 'border-radius:40px',
+      'border:1px solid #2a2c35', 'font-family:monospace',
+      'font-size:0.85rem', 'flex-wrap:wrap'
+    ].join(';');
+
+    clockBar.innerHTML =
+      '<div style="display:flex;align-items:center;gap:6px;" data-tip="Hora del servidor (UTC+0)">' +
+        '<img src="' + ICON_UTC + '" width="24" height="24" alt="UTC" style="filter:brightness(0.9);">' +
+        '<span>UTC</span><strong id="metaUtcTime">--:--:--</strong>' +
+      '</div>' +
+      '<div style="width:1px;height:24px;background:#2a2c35;"></div>' +
+      '<div style="display:flex;align-items:center;gap:6px;" data-tip="Tu hora local">' +
+        '<img src="' + ICON_LOCAL + '" width="24" height="24" alt="Local" style="filter:brightness(0.9);">' +
+        '<span>Local</span><strong id="metaLocalTime">--:--:--</strong>' +
+      '</div>' +
+      '<div style="width:1px;height:24px;background:#2a2c35;"></div>' +
+      '<div style="display:flex;align-items:center;gap:6px;" data-tip="Reset diario a las 00:00 UTC">' +
+        '<img src="' + ICON_DAILY + '" width="24" height="24" alt="Reset diario" style="filter:brightness(0.9);">' +
+        '<span>Reset diario</span><strong id="metaDailyReset">--</strong>' +
+      '</div>' +
+      '<div style="width:1px;height:24px;background:#2a2c35;"></div>' +
+      '<div style="display:flex;align-items:center;gap:6px;" data-tip="Reset semanal los lunes a las 07:30 UTC">' +
+        '<img src="' + ICON_WEEKLY + '" width="24" height="24" alt="Reset semanal" style="filter:brightness(0.9);">' +
+        '<span>Reset semanal</span><strong id="metaWeeklyReset">--</strong>' +
+      '</div>';
+
+    panelHead.style.cssText = 'display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;';
     panelHead.innerHTML = '';
     if (title) panelHead.appendChild(title);
     panelHead.appendChild(clockBar);
-    
+
     updateMetaClock();
     if (window.__metaClockInterval) clearInterval(window.__metaClockInterval);
     window.__metaClockInterval = setInterval(updateMetaClock, 1000);
   }
 
   // ==========================================================================
-  // MEJORA DE HORARIOS EN TARJETAS (v1.3.2)
+  // MEJORA DE HORARIOS EN TARJETAS (v1.3.3)
   // ==========================================================================
 
   /**
-   * Extrae hora UTC del atributo title de un chip
-   * Formato esperado: "Ventana 00:21 UTC"
+   * Extrae hora UTC del atributo title de un chip.
+   * Formato esperado: "Ventana HH:MM UTC"
+   * Devuelve { hours, minutes } o null.
    */
   function getUTCTimeFromChip(chip) {
     var title = chip.getAttribute('title') || '';
     var match = title.match(/Ventana (\d{2}):(\d{2})\s*UTC/);
     if (match) {
-      return {
-        hours: parseInt(match[1], 10),
-        minutes: parseInt(match[2], 10)
-      };
+      return { hours: parseInt(match[1], 10), minutes: parseInt(match[2], 10) };
     }
     return null;
   }
 
   /**
-   * Convierte hora UTC a hora local
+   * Convierte hora UTC a cadena de hora local "HH:MM".
    */
   function convertToLocalTime(utcHours, utcMinutes) {
     var date = new Date();
     date.setUTCHours(utcHours, utcMinutes, 0, 0);
-    var localHours = date.getHours();
-    var localMinutes = date.getMinutes();
-    return String(localHours).padStart(2, '0') + ':' + String(localMinutes).padStart(2, '0');
+    return String(date.getHours()).padStart(2, '0') + ':' +
+           String(date.getMinutes()).padStart(2, '0');
   }
 
   /**
-   * Convierte todos los horarios de una tarjeta de UTC a hora local
+   * Convierte todos los horarios de una tarjeta de UTC a hora local.
+   * FIX v1.3.3: guarda data-utc="HH:MM" en cada chip ANTES de reemplazar
+   * el texto, para que getNextScheduleTime() pueda construir timestamps reales.
    */
   function convertScheduleToLocalTime(card) {
     var schedulePanel = card.querySelector('.m-win');
     if (!schedulePanel) return;
-    
+
     var chips = schedulePanel.querySelectorAll('.chip.chip--ghost');
     var hasChanges = false;
-    
+
     chips.forEach(function(chip) {
       var utcTime = getUTCTimeFromChip(chip);
       if (utcTime) {
+        // FIX: guardamos el valor UTC original antes de perderlo
+        var utcStr = String(utcTime.hours).padStart(2,'0') + ':' +
+                     String(utcTime.minutes).padStart(2,'0');
+        chip.setAttribute('data-utc', utcStr);
+
         var localTime = convertToLocalTime(utcTime.hours, utcTime.minutes);
         if (chip.textContent !== localTime) {
           chip.textContent = localTime;
@@ -254,78 +234,77 @@
         }
       }
     });
-    
+
     if (hasChanges && !schedulePanel.querySelector('.local-indicator')) {
       var header = document.createElement('div');
       header.className = 'schedule-panel__header';
-      header.style.marginBottom = '8px';
-      header.style.paddingBottom = '4px';
-      header.style.borderBottom = '1px solid #2a2c35';
-      header.style.fontSize = '0.7rem';
-      header.style.color = '#b4bad0';
+      header.style.cssText = 'margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #2a2c35;font-size:0.7rem;color:#b4bad0;';
       header.innerHTML = '📅 Horarios de hoy <span class="local-indicator" style="opacity:0.7">(hora local)</span>';
       schedulePanel.insertBefore(header, schedulePanel.firstChild);
     }
   }
 
   /**
-   * Obtiene el próximo horario (en timestamp) para un evento
+   * Devuelve el timestamp (ms) del próximo horario futuro para una tarjeta.
+   *
+   * FIX v1.3.3: usa data-utc para construir Date.UTC() real en lugar de
+   * comparar minutos del día. Esto garantiza que el resultado sea correcto
+   * para cualquier zona horaria (Argentina UTC-3, España UTC+2, Japón UTC+9…).
+   *
+   * Algoritmo:
+   *  1. Lee data-utc="HH:MM" de cada chip.
+   *  2. Construye un Date con Date.UTC(año, mes, día, H, M) → hoy en UTC.
+   *  3. Si ese timestamp ya pasó, suma 24h (el evento es mañana en UTC).
+   *  4. Devuelve el más próximo al instante actual.
    */
   function getNextScheduleTime(card) {
     var schedulePanel = card.querySelector('.m-win');
     if (!schedulePanel) return null;
-    
+
     var chips = schedulePanel.querySelectorAll('.chip.chip--ghost');
     if (!chips.length) return null;
-    
-    var now = new Date();
-    var nowLocal = now.getHours() * 60 + now.getMinutes();
-    var closestDiff = Infinity;
-    var closestTime = null;
-    
+
+    var now = Date.now();
+    var closest = null;
+
     chips.forEach(function(chip) {
-      var timeStr = chip.textContent;
-      var match = timeStr.match(/(\d{2}):(\d{2})/);
-      if (!match) return;
-      
-      var hours = parseInt(match[1], 10);
-      var minutes = parseInt(match[2], 10);
-      var eventTime = hours * 60 + minutes;
-      var diff = eventTime - nowLocal;
-      
-      if (diff < 0) diff += 24 * 60;
-      
-      if (diff < closestDiff) {
-        closestDiff = diff;
-        closestTime = eventTime;
-      }
+      var utcStr = chip.getAttribute('data-utc');
+      if (!utcStr) return;
+
+      var parts = utcStr.split(':');
+      if (parts.length < 2) return;
+
+      var utcH = parseInt(parts[0], 10);
+      var utcM = parseInt(parts[1], 10);
+      if (isNaN(utcH) || isNaN(utcM)) return;
+
+      // Construir timestamp UTC para hoy
+      var d = new Date();
+      var ts = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), utcH, utcM, 0, 0);
+
+      // Si ya pasó, el próximo es mañana
+      if (ts <= now) ts += 24 * 60 * 60 * 1000;
+
+      if (closest === null || ts < closest) closest = ts;
     });
-    
-    if (closestTime === null) return null;
-    
-    var today = new Date();
-    today.setHours(Math.floor(closestTime / 60), closestTime % 60, 0, 0);
-    return today.getTime();
+
+    return closest;
   }
 
   /**
-   * Actualiza el color del botón "Horarios" según el próximo evento
+   * Actualiza el color del botón "Horarios" según el próximo evento.
    */
   function updateScheduleButtonColor(card) {
     var btn = card.querySelector('.m-win__toggle');
     if (!btn) return;
-    
+
     var nextTime = getNextScheduleTime(card);
-    if (!nextTime) {
-      btn.classList.remove('badge--success', 'badge--warning', 'badge--info');
-      return;
-    }
-    
-    var now = Date.now();
-    var timeLeft = nextTime - now;
-    
     btn.classList.remove('badge--success', 'badge--warning', 'badge--info');
-    
+
+    if (nextTime === null) return;
+
+    var timeLeft = nextTime - Date.now();
+
     if (timeLeft <= 0) {
       btn.classList.add('badge--success');
       btn.setAttribute('data-tip', '🟢 Evento activo ahora');
@@ -340,79 +319,78 @@
   }
 
   /**
-   * Resalta el horario activo (verde) o el próximo (ámbar) en la lista de horarios
-   * @param {HTMLElement} card - tarjeta de evento
+   * Resalta el horario activo (verde) o el próximo (ámbar) en la lista.
+   * FIX v1.3.3: usa data-utc para detectar el evento activo y el próximo
+   * correctamente sin depender de la hora local del texto del chip.
    */
   function highlightNextSchedule(card) {
     var schedulePanel = card.querySelector('.m-win');
     if (!schedulePanel) return;
-    
+
     var chips = schedulePanel.querySelectorAll('.chip.chip--ghost');
     if (!chips.length) return;
-    
-    var now = new Date();
-    var nowLocal = now.getHours() * 60 + now.getMinutes();
-    
+
+    var now = Date.now();
     var activeIndex = -1;
-    var nextIndex = -1;
+    var nextIndex   = -1;
     var closestDiff = Infinity;
-    
+
     chips.forEach(function(chip, idx) {
-      var timeStr = chip.textContent;
-      var match = timeStr.match(/(\d{2}):(\d{2})/);
-      if (!match) return;
-      
-      var hours = parseInt(match[1], 10);
-      var minutes = parseInt(match[2], 10);
-      var eventTime = hours * 60 + minutes;
-      var diff = eventTime - nowLocal;
-      
-      // Detectar si este horario es el actual (activo)
-      // Un evento se considera activo si la hora actual está dentro de su ventana
-      // La duración típica de los eventos es 15 minutos
-      if (diff <= 0 && diff > -15) {
+      var utcStr = chip.getAttribute('data-utc');
+      if (!utcStr) return;
+
+      var parts = utcStr.split(':');
+      var utcH = parseInt(parts[0], 10);
+      var utcM = parseInt(parts[1], 10);
+      if (isNaN(utcH) || isNaN(utcM)) return;
+
+      var d = new Date();
+      var tsStart = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), utcH, utcM, 0, 0);
+      var durationMs = 15 * 60 * 1000; // 15 min por defecto
+      var tsEnd = tsStart + durationMs;
+
+      // Activo: ahora está dentro de la ventana
+      if (now >= tsStart && now < tsEnd) {
         activeIndex = idx;
       }
-      
-      // Buscar el próximo (diferencia positiva más pequeña)
-      if (diff < 0) diff += 24 * 60;
+
+      // Próximo: diferencia positiva más pequeña
+      var diff = tsStart - now;
+      if (diff < 0) diff += 24 * 60 * 60 * 1000;
       if (diff < closestDiff) {
         closestDiff = diff;
         nextIndex = idx;
       }
     });
-    
-    // Aplicar estilos
+
     chips.forEach(function(chip, idx) {
       chip.classList.remove('chip--active', 'chip--next');
-      chip.style.fontWeight = 'normal';
-      chip.style.borderColor = '';
-      chip.style.color = '';
+      chip.style.fontWeight      = 'normal';
+      chip.style.borderColor     = '';
+      chip.style.color           = '';
       chip.style.backgroundColor = '';
-      chip.style.boxShadow = '';
-      
+      chip.style.boxShadow       = '';
+
       if (idx === activeIndex) {
-        // Activo → verde
         chip.classList.add('chip--active');
-        chip.style.fontWeight = 'bold';
-        chip.style.borderColor = '#a0ffc8';
-        chip.style.color = '#a0ffc8';
-        chip.style.backgroundColor = 'rgba(160, 255, 200, 0.1)';
-        chip.style.boxShadow = '0 0 0 1px rgba(160, 255, 200, 0.3) inset';
+        chip.style.fontWeight      = 'bold';
+        chip.style.borderColor     = '#a0ffc8';
+        chip.style.color           = '#a0ffc8';
+        chip.style.backgroundColor = 'rgba(160,255,200,0.1)';
+        chip.style.boxShadow       = '0 0 0 1px rgba(160,255,200,0.3) inset';
       } else if (idx === nextIndex && activeIndex === -1) {
-        // Próximo (solo si no hay activo) → ámbar
         chip.classList.add('chip--next');
-        chip.style.fontWeight = 'bold';
-        chip.style.borderColor = '#ffd966';
-        chip.style.color = '#ffd966';
-        chip.style.backgroundColor = 'rgba(255, 217, 102, 0.1)';
-        chip.style.boxShadow = '0 0 0 1px rgba(255, 217, 102, 0.3) inset';
+        chip.style.fontWeight      = 'bold';
+        chip.style.borderColor     = '#ffd966';
+        chip.style.color           = '#ffd966';
+        chip.style.backgroundColor = 'rgba(255,217,102,0.1)';
+        chip.style.boxShadow       = '0 0 0 1px rgba(255,217,102,0.3) inset';
       }
     });
   }
 
   /**
-   * Mejora el botón con ícono
+   * Mejora el botón con ícono.
    */
   function enhanceScheduleButton(card) {
     var btn = card.querySelector('.m-win__toggle');
@@ -423,11 +401,10 @@
   }
 
   /**
-   * Aplica todas las mejoras de horarios a una tarjeta
+   * Aplica todas las mejoras de horarios a una tarjeta.
    */
   function enhanceSchedule(card) {
     if (!card) return;
-    
     convertScheduleToLocalTime(card);
     enhanceScheduleButton(card);
     updateScheduleButtonColor(card);
@@ -454,12 +431,12 @@
 
     try {
       if (bColor && gColor) {
-        card.style.border = '1px solid ' + bColor;
-        card.style.boxShadow = '0 0 0 1px ' + bColor + ' inset, 0 0 14px ' + gColor;
+        card.style.border     = '1px solid ' + bColor;
+        card.style.boxShadow  = '0 0 0 1px ' + bColor + ' inset, 0 0 14px ' + gColor;
       }
       if (!card.style.borderRadius) card.style.borderRadius = '12px';
     } catch (_) {}
-    
+
     enhanceSchedule(card);
   }
 
@@ -468,7 +445,7 @@
   // ==========================================================================
 
   function themeMetaNow(root) {
-    var host = (root || document).querySelector('#metaPanel') || root || document;
+    var host  = (root || document).querySelector('#metaPanel') || root || document;
     var cards = Array.from(host.querySelectorAll('.meta-card, .m-card'));
     cards.forEach(applyMetaTheme);
   }
@@ -478,42 +455,38 @@
   // ==========================================================================
 
   function migrateCardsToCardClass(root) {
-    var host = root || document;
+    var host      = root || document;
     var metaPanel = host.querySelector('#metaPanel') || host;
-    var cards = metaPanel.querySelectorAll('.meta-card:not(.card), .m-card:not(.card)');
+    var cards     = metaPanel.querySelectorAll('.meta-card:not(.card), .m-card:not(.card)');
     cards.forEach(function(card) { card.classList.add('card'); });
   }
 
   function migrateStatusBadges(root) {
-    var host = root || document;
+    var host      = root || document;
     var metaPanel = host.querySelector('#metaPanel') || host;
-    
-    var activeBadges = metaPanel.querySelectorAll('.m-badge--active');
-    activeBadges.forEach(function(badge) {
+
+    metaPanel.querySelectorAll('.m-badge--active').forEach(function(badge) {
       if (!badge.classList.contains('migrated-status')) {
         badge.classList.remove('m-badge--active');
         badge.classList.add('badge', 'badge--success', 'migrated-status');
         if (!badge.innerHTML.includes('✅')) badge.innerHTML = '✅ ' + badge.textContent.trim();
       }
     });
-    
-    var soonBadges = metaPanel.querySelectorAll('.m-badge--soon');
-    soonBadges.forEach(function(badge) {
+
+    metaPanel.querySelectorAll('.m-badge--soon').forEach(function(badge) {
       if (!badge.classList.contains('migrated-status')) {
         badge.classList.remove('m-badge--soon');
         badge.classList.add('badge', 'badge--warning', 'migrated-status');
         if (!badge.innerHTML.includes('⏰')) badge.innerHTML = '⏰ ' + badge.textContent.trim();
       }
     });
-    
-    var genericBadges = metaPanel.querySelectorAll('.m-badge:not(.m-badge--active):not(.m-badge--soon):not(.migrated-status)');
-    genericBadges.forEach(function(badge) {
+
+    metaPanel.querySelectorAll('.m-badge:not(.m-badge--active):not(.m-badge--soon):not(.migrated-status)').forEach(function(badge) {
       badge.classList.remove('m-badge');
       badge.classList.add('badge', 'badge--info', 'migrated-status');
     });
-    
-    var doneButtons = metaPanel.querySelectorAll('.m-done.m-done--on');
-    doneButtons.forEach(function(btn) {
+
+    metaPanel.querySelectorAll('.m-done.m-done--on').forEach(function(btn) {
       if (!btn.classList.contains('badge')) {
         btn.classList.add('badge', 'badge--success');
         if (!btn.innerHTML.includes('✅')) btn.innerHTML = '✅ ' + btn.textContent.trim();
@@ -522,35 +495,32 @@
   }
 
   function migrateExpansionBadges(root) {
-    var host = root || document;
+    var host      = root || document;
     var metaPanel = host.querySelector('#metaPanel') || host;
-    var expBadges = metaPanel.querySelectorAll('.badge-exp');
-    expBadges.forEach(function(badge) {
+    metaPanel.querySelectorAll('.badge-exp').forEach(function(badge) {
       if (!badge.classList.contains('pill')) {
         badge.classList.add('pill');
         var icon = badge.querySelector('img');
         if (icon) { icon.style.height = '24px'; icon.style.width = 'auto'; }
-        badge.style.padding = '2px 10px';
+        badge.style.padding  = '2px 10px';
         badge.style.fontSize = '0.75rem';
       }
     });
   }
 
   function migrateItemTags(root) {
-    var host = root || document;
+    var host      = root || document;
     var metaPanel = host.querySelector('#metaPanel') || host;
-    
-    var infTags = metaPanel.querySelectorAll('.m-tag.tag--inf');
-    infTags.forEach(function(tag) {
+
+    metaPanel.querySelectorAll('.m-tag.tag--inf').forEach(function(tag) {
       if (!tag.classList.contains('badge')) {
         tag.classList.add('badge', 'badge--info');
         tag.classList.remove('m-tag', 'tag--inf');
         if (!tag.innerHTML.includes('💎')) tag.innerHTML = '💎 ' + tag.textContent.trim();
       }
     });
-    
-    var dropTags = metaPanel.querySelectorAll('.m-tag.tag--drop');
-    dropTags.forEach(function(tag) {
+
+    metaPanel.querySelectorAll('.m-tag.tag--drop').forEach(function(tag) {
       if (!tag.classList.contains('badge')) {
         tag.classList.add('badge', 'badge--warning');
         tag.classList.remove('m-tag', 'tag--drop');
@@ -560,20 +530,19 @@
   }
 
   function migrateNextTime(root) {
-    var host = root || document;
+    var host      = root || document;
     var metaPanel = host.querySelector('#metaPanel') || host;
-    var nextSpans = metaPanel.querySelectorAll('.m-next');
-    nextSpans.forEach(function(span) {
+    metaPanel.querySelectorAll('.m-next').forEach(function(span) {
       if (!span.classList.contains('pill') && span.textContent.trim()) {
         span.classList.add('pill');
         span.style.fontSize = '0.7rem';
-        span.style.padding = '2px 8px';
+        span.style.padding  = '2px 8px';
       }
     });
   }
 
   function applyMetaPolish(root) {
-    var host = root || document;
+    var host      = root || document;
     var metaPanel = host.querySelector('#metaPanel');
     if (!metaPanel || metaPanel.hasAttribute('hidden')) return;
     migrateCardsToCardClass(metaPanel);
@@ -601,16 +570,15 @@
   function ensureObserver() {
     if (mo) return;
     var panel = document.getElementById('metaPanel') || document;
-    mo = new MutationObserver(function (muts) {
-      muts.forEach(function (m) {
+    mo = new MutationObserver(function(muts) {
+      muts.forEach(function(m) {
         if (!m.addedNodes) return;
-        m.addedNodes.forEach(function (n) {
+        m.addedNodes.forEach(function(n) {
           if (!(n instanceof HTMLElement)) return;
           if (n.matches && (n.matches('.meta-card, .m-card'))) {
             applyMetaTheme(n);
           } else {
-            var cards = Array.from(n.querySelectorAll('.meta-card, .m-card'));
-            cards.forEach(applyMetaTheme);
+            Array.from(n.querySelectorAll('.meta-card, .m-card')).forEach(applyMetaTheme);
           }
         });
       });
@@ -627,10 +595,12 @@
         if (mutation.addedNodes.length) {
           mutation.addedNodes.forEach(function(node) {
             if (node.nodeType === Node.ELEMENT_NODE) {
-              if (node.classList && (node.classList.contains('meta-card') || node.classList.contains('m-card'))) {
+              if (node.classList &&
+                  (node.classList.contains('meta-card') || node.classList.contains('m-card'))) {
                 needsPolish = true;
               }
-              if (node.querySelectorAll && node.querySelectorAll('.meta-card, .m-card').length) {
+              if (node.querySelectorAll &&
+                  node.querySelectorAll('.meta-card, .m-card').length) {
                 needsPolish = true;
               }
             }
@@ -655,12 +625,12 @@
     ensurePolishObserver();
   }
 
-  function onRoute() { 
-    requestAnimationFrame(function(){ 
+  function onRoute() {
+    requestAnimationFrame(function() {
       themeMetaNow(document);
       applyMetaPolish(document);
       initMetaClockBar();
-    }); 
+    });
   }
 
   // ==========================================================================
@@ -668,28 +638,28 @@
   // ==========================================================================
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function(){ 
-      onRoute(); 
+    document.addEventListener('DOMContentLoaded', function() {
+      onRoute();
       ensureObserver();
       initMetaPolish();
     });
   } else {
-    onRoute(); 
+    onRoute();
     ensureObserver();
     initMetaPolish();
   }
 
-  window.addEventListener('hashchange', function () {
+  window.addEventListener('hashchange', function() {
     var p = document.getElementById('metaPanel');
     if (p && !p.hasAttribute('hidden')) {
       setTimeout(function() { initMetaClockBar(); }, 50);
       onRoute();
     }
   });
-  
-  document.addEventListener('gn:tabchange', function (ev) {
+
+  document.addEventListener('gn:tabchange', function(ev) {
     if (ev.detail && ev.detail.view === 'meta') {
-      setTimeout(function() { 
+      setTimeout(function() {
         themeMetaNow(document);
         applyMetaPolish(document);
         initMetaClockBar();
@@ -698,12 +668,12 @@
   });
 
   document.addEventListener('gn:tokenchange', function() {
-    setTimeout(function() { 
+    setTimeout(function() {
       themeMetaNow(document);
       applyMetaPolish(document);
       initMetaClockBar();
     }, 150);
   });
 
-  console.info('[MetaTheme] ready v1.3.2 — horarios activos en verde, próximos en ámbar');
+  console.info('[MetaTheme] ready v1.3.3 — fix zona horaria: timestamps UTC reales');
 })();
