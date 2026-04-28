@@ -136,7 +136,7 @@
                       <span style="color: #c8cdd8; font-weight: 500; font-size: 0.85rem;">Guardar tus cuentas de forma segura (todo en tu PC)</span>
                     </li>
                     <li style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: #0a0c10; border-radius: 10px; border: 1px solid #1e2028; cursor: pointer;">
-                      <a href="https://pablosnchz.github.io/gw2-wallet-ligero/#/welcome" target="_blank" rel="noopener" style="display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit; width: 100%;">
+                      <a href="https://pablosnchz.github.io/gw2-wallet-ligero/docs/user-guide.html" target="_blank" rel="noopener" style="display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit; width: 100%;">
                         <img src="assets/icons/Welcome/222580.png" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain; flex-shrink: 0;">
                         <span style="color: #7bc2ff; font-weight: 600; font-size: 0.85rem;">Guía de Usuario — Aprendé a sacarle el máximo provecho a la Bóveda</span>
                       </a>
