@@ -1,23 +1,21 @@
 /*!
- * Meta Theme (expansión/temporada) — outline + halo usando --meta-title-color
- * v1.3.3 (2026-04-26)
+ * Meta Theme (expansión/temporada) — diseño sobrio con borde izquierdo de color
+ * v1.4.1 (2026-04-28)
  *
- * Cambios v1.3.3:
- *  - Fix hora local correcta para cualquier zona horaria del usuario
- *  - convertScheduleToLocalTime() guarda data-utc en cada chip
- *  - getNextScheduleTime() construye timestamp real con Date.UTC()
- *    en lugar de comparar minutos del día (bug con UTC±N)
+ * Cambios v1.4.1:
+ *  - Badges de estado con mejor espaciado (padding consistente)
+ *  - Chips de horarios activo/próximo con fondo más suave (0.06 en vez de 0.1)
+ *  - Botón "Horarios" con ícono local (523379.png) en vez de emoji 🕒
  *
- * v1.3.2: Horarios activos en verde, próximos en ámbar
- * v1.3.1: Barra de horarios unificada con UTC
- * v1.3.0: Barra de horarios unificada con iconos GW2
- * v1.2.2: Horarios en hora local con color dinámico
+ * v1.4.0:
+ *  - Rediseño suave: borde neutro, glow unificado, solo border-left de color
+ *  - Título conserva el color de la expansión
  */
 
 (function () {
   'use strict';
 
-  console.info('[MetaTheme] meta-theme.js v1.3.3 — fix zona horaria: timestamps UTC reales');
+  console.info('[MetaTheme] meta-theme.js v1.4.1 — badges pulidos, chips suaves, ícono local en Horarios');
 
   var DEBUG = false;
 
@@ -54,13 +52,18 @@
   }
 
   // ==========================================================================
-  // BARRA DE HORARIOS (estilo Activities con iconos GW2)
+  // ICONOS LOCALES
   // ==========================================================================
 
-  var ICON_UTC    = 'assets/icons/460028.png';
-  var ICON_LOCAL  = 'assets/icons/841720.png';
-  var ICON_DAILY  = 'assets/icons/534745.png';
-  var ICON_WEEKLY = 'assets/icons/155064.png';
+  var ICON_UTC      = 'assets/icons/460028.png';
+  var ICON_LOCAL    = 'assets/icons/841720.png';
+  var ICON_DAILY    = 'assets/icons/534745.png';
+  var ICON_WEEKLY   = 'assets/icons/155064.png';
+  var ICON_SCHEDULE = 'assets/icons/523379.png'; // Para el botón "Horarios"
+
+  // ==========================================================================
+  // BARRA DE HORARIOS (estilo Activities con iconos GW2)
+  // ==========================================================================
 
   function formatCountdownWithSeconds(ms) {
     if (!isFinite(ms) || ms <= 0) return '—';
@@ -180,11 +183,6 @@
   // MEJORA DE HORARIOS EN TARJETAS (v1.3.3)
   // ==========================================================================
 
-  /**
-   * Extrae hora UTC del atributo title de un chip.
-   * Formato esperado: "Ventana HH:MM UTC"
-   * Devuelve { hours, minutes } o null.
-   */
   function getUTCTimeFromChip(chip) {
     var title = chip.getAttribute('title') || '';
     var match = title.match(/Ventana (\d{2}):(\d{2})\s*UTC/);
@@ -194,9 +192,6 @@
     return null;
   }
 
-  /**
-   * Convierte hora UTC a cadena de hora local "HH:MM".
-   */
   function convertToLocalTime(utcHours, utcMinutes) {
     var date = new Date();
     date.setUTCHours(utcHours, utcMinutes, 0, 0);
@@ -204,11 +199,6 @@
            String(date.getMinutes()).padStart(2, '0');
   }
 
-  /**
-   * Convierte todos los horarios de una tarjeta de UTC a hora local.
-   * FIX v1.3.3: guarda data-utc="HH:MM" en cada chip ANTES de reemplazar
-   * el texto, para que getNextScheduleTime() pueda construir timestamps reales.
-   */
   function convertScheduleToLocalTime(card) {
     var schedulePanel = card.querySelector('.m-win');
     if (!schedulePanel) return;
@@ -219,7 +209,6 @@
     chips.forEach(function(chip) {
       var utcTime = getUTCTimeFromChip(chip);
       if (utcTime) {
-        // FIX: guardamos el valor UTC original antes de perderlo
         var utcStr = String(utcTime.hours).padStart(2,'0') + ':' +
                      String(utcTime.minutes).padStart(2,'0');
         chip.setAttribute('data-utc', utcStr);
@@ -244,19 +233,6 @@
     }
   }
 
-  /**
-   * Devuelve el timestamp (ms) del próximo horario futuro para una tarjeta.
-   *
-   * FIX v1.3.3: usa data-utc para construir Date.UTC() real en lugar de
-   * comparar minutos del día. Esto garantiza que el resultado sea correcto
-   * para cualquier zona horaria (Argentina UTC-3, España UTC+2, Japón UTC+9…).
-   *
-   * Algoritmo:
-   *  1. Lee data-utc="HH:MM" de cada chip.
-   *  2. Construye un Date con Date.UTC(año, mes, día, H, M) → hoy en UTC.
-   *  3. Si ese timestamp ya pasó, suma 24h (el evento es mañana en UTC).
-   *  4. Devuelve el más próximo al instante actual.
-   */
   function getNextScheduleTime(card) {
     var schedulePanel = card.querySelector('.m-win');
     if (!schedulePanel) return null;
@@ -278,11 +254,9 @@
       var utcM = parseInt(parts[1], 10);
       if (isNaN(utcH) || isNaN(utcM)) return;
 
-      // Construir timestamp UTC para hoy
       var d = new Date();
       var ts = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), utcH, utcM, 0, 0);
 
-      // Si ya pasó, el próximo es mañana
       if (ts <= now) ts += 24 * 60 * 60 * 1000;
 
       if (closest === null || ts < closest) closest = ts;
@@ -291,9 +265,6 @@
     return closest;
   }
 
-  /**
-   * Actualiza el color del botón "Horarios" según el próximo evento.
-   */
   function updateScheduleButtonColor(card) {
     var btn = card.querySelector('.m-win__toggle');
     if (!btn) return;
@@ -318,11 +289,6 @@
     }
   }
 
-  /**
-   * Resalta el horario activo (verde) o el próximo (ámbar) en la lista.
-   * FIX v1.3.3: usa data-utc para detectar el evento activo y el próximo
-   * correctamente sin depender de la hora local del texto del chip.
-   */
   function highlightNextSchedule(card) {
     var schedulePanel = card.querySelector('.m-win');
     if (!schedulePanel) return;
@@ -346,15 +312,13 @@
 
       var d = new Date();
       var tsStart = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), utcH, utcM, 0, 0);
-      var durationMs = 15 * 60 * 1000; // 15 min por defecto
+      var durationMs = 15 * 60 * 1000;
       var tsEnd = tsStart + durationMs;
 
-      // Activo: ahora está dentro de la ventana
       if (now >= tsStart && now < tsEnd) {
         activeIndex = idx;
       }
 
-      // Próximo: diferencia positiva más pequeña
       var diff = tsStart - now;
       if (diff < 0) diff += 24 * 60 * 60 * 1000;
       if (diff < closestDiff) {
@@ -376,33 +340,31 @@
         chip.style.fontWeight      = 'bold';
         chip.style.borderColor     = '#a0ffc8';
         chip.style.color           = '#a0ffc8';
-        chip.style.backgroundColor = 'rgba(160,255,200,0.1)';
-        chip.style.boxShadow       = '0 0 0 1px rgba(160,255,200,0.3) inset';
+        chip.style.backgroundColor = 'rgba(160,255,200,0.06)';
+        chip.style.boxShadow       = '0 0 0 1px rgba(160,255,200,0.2) inset';
       } else if (idx === nextIndex && activeIndex === -1) {
         chip.classList.add('chip--next');
         chip.style.fontWeight      = 'bold';
         chip.style.borderColor     = '#ffd966';
         chip.style.color           = '#ffd966';
-        chip.style.backgroundColor = 'rgba(255,217,102,0.1)';
-        chip.style.boxShadow       = '0 0 0 1px rgba(255,217,102,0.3) inset';
+        chip.style.backgroundColor = 'rgba(255,217,102,0.06)';
+        chip.style.boxShadow       = '0 0 0 1px rgba(255,217,102,0.2) inset';
       }
     });
   }
 
   /**
-   * Mejora el botón con ícono.
+   * Mejora el botón con ícono local (en vez de emoji 🕒).
    */
   function enhanceScheduleButton(card) {
     var btn = card.querySelector('.m-win__toggle');
-    if (btn && !btn.innerHTML.includes('🕒')) {
-      btn.innerHTML = '🕒 ' + btn.textContent;
+    if (btn && !btn.hasAttribute('data-schedule-icon')) {
+      btn.setAttribute('data-schedule-icon', '1');
+      btn.innerHTML = '<img src="' + ICON_SCHEDULE + '" width="14" height="14" alt="" style="filter:brightness(0.9);vertical-align:middle;margin-right:5px;"> ' + btn.textContent;
       btn.style.transition = 'all 0.1s ease';
     }
   }
 
-  /**
-   * Aplica todas las mejoras de horarios a una tarjeta.
-   */
   function enhanceSchedule(card) {
     if (!card) return;
     convertScheduleToLocalTime(card);
@@ -412,7 +374,7 @@
   }
 
   // ==========================================================================
-  // TEMA BASE (glow por expansión)
+  // TEMA BASE (v1.4.1 — diseño sobrio, borde izquierdo de color)
   // ==========================================================================
 
   function applyMetaTheme(card) {
@@ -421,20 +383,38 @@
     var tint = getMetaTint(card) || '#FFFFFF';
     if (DEBUG) console.log('[MetaTheme] tint:', tint, 'for card', card.getAttribute('data-id') || '');
 
-    var bColor = hexToRGBA(tint, 0.26);
-    var gColor = hexToRGBA(tint, 0.34);
+    // Borde izquierdo sutil del color de la expansión
+    var bLeft = hexToRGBA(tint, 0.5);
 
+    // Borde general neutro (como las cards de Activities)
+    var bNeutral = 'rgba(255, 255, 255, 0.08)';
+
+    // Glow neutro unificado (celeste suave, igual que el hover de Bienvenida)
+    var gNeutral = 'rgba(90, 110, 154, 0.15)';
+
+    // TÍTULO: color de la expansión (mismo tono que el borde izquierdo)
     try {
       var title = card.querySelector('.meta-card__title') || card.querySelector('.m-title');
       if (title) title.style.color = tint;
     } catch (_) {}
 
+    // TARJETA: borde neutro + glow neutro + borde izquierdo de color
     try {
-      if (bColor && gColor) {
-        card.style.border     = '1px solid ' + bColor;
-        card.style.boxShadow  = '0 0 0 1px ' + bColor + ' inset, 0 0 14px ' + gColor;
-      }
-      if (!card.style.borderRadius) card.style.borderRadius = '12px';
+      card.style.border      = '1px solid ' + bNeutral;
+      card.style.boxShadow   = '0 0 8px ' + gNeutral;
+      card.style.borderLeft  = '3px solid ' + bLeft;
+      if (!card.style.borderRadius) card.style.borderRadius = '10px';
+    } catch (_) {}
+
+    // BADGES DE ESTADO: mejor espaciado (padding consistente)
+    try {
+      var statusBadges = card.querySelectorAll('.meta-status, .m-done');
+      statusBadges.forEach(function(badge) {
+        badge.style.padding = '3px 10px';
+        badge.style.borderRadius = '20px';
+        badge.style.fontSize = '0.7rem';
+        badge.style.fontWeight = '500';
+      });
     } catch (_) {}
 
     enhanceSchedule(card);
@@ -675,5 +655,5 @@
     }, 150);
   });
 
-  console.info('[MetaTheme] ready v1.3.3 — fix zona horaria: timestamps UTC reales');
+  console.info('[MetaTheme] ready v1.4.1 — badges pulidos, chips suaves, ícono local en Horarios');
 })();
