@@ -1,16 +1,17 @@
 /*!
  * js/welcome-panel.js — Pantalla de Bienvenida
- * v1.2.0 (2026-03-27)
+ * v1.3.0 (2026-04-27)
  * 
- * MEJORAS v1.2.0:
+ * MEJORAS v1.3.0:
+ * - Rediseño completo de todas las secciones con tarjetas y glows
+ * - Íconos agrandados (32-40px) para más presencia visual
+ * - Hover con glow suave en todas las tarjetas interactivas
+ * - Sección Acceso Rápido: grid de 4 columnas con tarjetas
+ * - Agregado Raids entre Actividades y Personajes
+ * - Comunidad y Apoyo migrados a formato tarjeta
+ * 
+ * v1.2.0:
  * - Iconos exclusivos para cada funcionalidad (no repetidos de los paneles)
- * 
- * v1.1.0:
- * - Iconos en lista de funcionalidades
- * 
- * v1.0.0:
- * - Pantalla de inicio con información de la Bóveda, accesos rápidos,
- *   enlaces a redes sociales y opciones de apoyo.
  */
 
 (function (root) {
@@ -21,7 +22,6 @@
   // CONFIGURACIÓN
   // =======================================================================
   var CONFIG = {
-    // Enlaces sociales
     LINKS: {
       discord: 'https://discord.gg/ZGNsfsqyKe',
       instagram: 'https://www.instagram.com/pablin.schez/',
@@ -30,9 +30,8 @@
       github: 'https://github.com/PabloSnchz',
       paypal: 'https://www.paypal.com/paypalme/pblsnchz',
       kofi: 'https://ko-fi.com/pablinschez',
-      email: 'contacto@bovedagatonegro.com'
+      email: 'pablinnn@gmail.com'
     },
-    // Iconos exclusivos para las funcionalidades (diferentes a los de los paneles)
     FEATURE_ICONS: {
       wallet: 'assets/icons/Welcome/1013045.png',
       meta: 'assets/icons/Welcome/1770688.png',
@@ -42,20 +41,31 @@
       characters: 'assets/icons/Welcome/784388.png',
       accounts: 'assets/icons/Welcome/733266.png'
     },
-    // Iconos para accesos rápidos (mantenemos los mismos de los paneles)
     QUICK_ICONS: {
       wallet: 'assets/icons/733322.png',
       meta: 'assets/icons/102420.png',
       achievements: 'assets/icons/155059.png',
       wv: 'assets/icons/3172791.png',
       activities: 'assets/icons/1302773.png',
+      raids: 'assets/icons/raids/raid-icon.png',
       characters: 'assets/icons/156678.png',
       accounts: 'assets/icons/3601748.png'
+    },
+    SOCIAL_ICONS: {
+      discord: 'assets/icons/Welcome/discord.png',
+      instagram: 'assets/icons/Welcome/instagram.png',
+      youtube: 'assets/icons/Welcome/youtube.png',
+      twitch: 'assets/icons/Welcome/twitchlogo.png',
+      github: 'assets/icons/Welcome/github.png'
     },
     ICONS: {
       home: 'assets/icons/Welcome/3380755.png'
     }
   };
+
+  // Estilo de hover reutilizable para tarjetas interactivas
+  var HOVER_ATTRS = ' onmouseover="this.style.borderColor=\'#5a6e9a\';this.style.boxShadow=\'0 0 14px rgba(90,110,154,0.25)\';this.style.transform=\'scale(1.02)\';" onmouseout="this.style.borderColor=\'#26262b\';this.style.boxShadow=\'none\';this.style.transform=\'scale(1)\';"';
+  var CARD_BASE = 'display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 8px;background:#0f1116;border:1px solid #26262b;border-radius:10px;text-decoration:none;transition:all 0.2s ease;text-align:center;';
 
   // =======================================================================
   // 1. ESTADO
@@ -86,170 +96,195 @@
     container.innerHTML = `
       <div style="display: flex; flex-direction: column; gap: 24px;">
         
-        <!-- Sección: Funcionalidades con iconos exclusivos -->
-        <div class="card" style="padding: 20px;">
-          <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-            <img src="assets/icons/Welcome/1302775.png" width="28" height="28" alt="" style="filter: brightness(0.9); object-fit: contain;">
-            ¿Qué puedo hacer aquí?
-          </h3>
-          <ul style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px;">
-            <li style="display: flex; align-items: center; gap: 12px;">
-              <img src="${CONFIG.FEATURE_ICONS.wallet}" width="28" height="28" alt="" style="filter: brightness(0.9); object-fit: contain;">
-              <span>Ver mi cartera de divisas (oro, gemas, karma, laureles)</span>
-            </li>
-            <li style="display: flex; align-items: center; gap: 12px;">
-              <img src="${CONFIG.FEATURE_ICONS.meta}" width="28" height="28" alt="" style="filter: brightness(0.9); object-fit: contain;">
-              <span>Seguir meta eventos y world bosses en tiempo real</span>
-            </li>
-            <li style="display: flex; align-items: center; gap: 12px;">
-              <img src="${CONFIG.FEATURE_ICONS.achievements}" width="28" height="28" alt="" style="filter: brightness(0.9); object-fit: contain;">
-              <span>Consultar logros y próximos a completar</span>
-            </li>
-            <li style="display: flex; align-items: center; gap: 12px;">
-              <img src="${CONFIG.FEATURE_ICONS.wv}" width="28" height="28" alt="" style="filter: brightness(0.9); object-fit: contain;">
-              <span>Revisar objetivos de la Cámara del Brujo</span>
-            </li>
-            <li style="display: flex; align-items: center; gap: 12px;">
-              <img src="${CONFIG.FEATURE_ICONS.activities}" width="28" height="28" alt="" style="filter: brightness(0.9); object-fit: contain;">
-              <span>Gestionar actividades semanales (llave del León Negro, Leivas)</span>
-            </li>
-            <li style="display: flex; align-items: center; gap: 12px;">
-              <img src="${CONFIG.FEATURE_ICONS.characters}" width="28" height="28" alt="" style="filter: brightness(0.9); object-fit: contain;">
-              <span>Administrar tus personajes y sus POIs</span>
-            </li>
-            <li style="display: flex; align-items: center; gap: 12px;">
-              <img src="${CONFIG.FEATURE_ICONS.accounts}" width="28" height="28" alt="" style="filter: brightness(0.9); object-fit: contain;">
-              <span>Guardar tus cuentas de forma segura (todo en tu PC)</span>
-            </li>
-          </ul>
-        </div>
+                <!-- Sección: ¿Qué puedo hacer aquí? -->
+                <div class="card" style="padding: 24px;">
+                  <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; color: #e0e4ed;">
+                    <img src="assets/icons/Welcome/1302775.png" width="34" height="34" alt="" style="filter: brightness(0.9); object-fit: contain;">
+                    ¿Qué puedo hacer aquí?
+                  </h3>
+                  <ul style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px;">
+                    <li style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: #0a0c10; border-radius: 10px; border: 1px solid #1e2028;">
+                      <img src="${CONFIG.FEATURE_ICONS.wallet}" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain; flex-shrink: 0;">
+                      <span style="color: #c8cdd8; font-weight: 500; font-size: 0.85rem;">Ver mi cartera de divisas (oro, gemas, karma, laureles)</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: #0a0c10; border-radius: 10px; border: 1px solid #1e2028;">
+                      <img src="${CONFIG.FEATURE_ICONS.meta}" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain; flex-shrink: 0;">
+                      <span style="color: #c8cdd8; font-weight: 500; font-size: 0.85rem;">Seguir meta eventos y world bosses en tiempo real</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: #0a0c10; border-radius: 10px; border: 1px solid #1e2028;">
+                      <img src="${CONFIG.FEATURE_ICONS.achievements}" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain; flex-shrink: 0;">
+                      <span style="color: #c8cdd8; font-weight: 500; font-size: 0.85rem;">Consultar logros y próximos a completar</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: #0a0c10; border-radius: 10px; border: 1px solid #1e2028;">
+                      <img src="${CONFIG.FEATURE_ICONS.wv}" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain; flex-shrink: 0;">
+                      <span style="color: #c8cdd8; font-weight: 500; font-size: 0.85rem;">Revisar objetivos de la Cámara del Brujo</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: #0a0c10; border-radius: 10px; border: 1px solid #1e2028;">
+                      <img src="${CONFIG.FEATURE_ICONS.activities}" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain; flex-shrink: 0;">
+                      <span style="color: #c8cdd8; font-weight: 500; font-size: 0.85rem;">Gestionar actividades semanales (llave del León Negro, Leivas)</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: #0a0c10; border-radius: 10px; border: 1px solid #1e2028;">
+                      <img src="assets/icons/Welcome/102338.png" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain; flex-shrink: 0;">
+                      <span style="color: #c8cdd8; font-weight: 500; font-size: 0.85rem;">Seguimiento semanal de raids: alas, encuentros, drops y mecánicas</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: #0a0c10; border-radius: 10px; border: 1px solid #1e2028;">
+                      <img src="${CONFIG.FEATURE_ICONS.characters}" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain; flex-shrink: 0;">
+                      <span style="color: #c8cdd8; font-weight: 500; font-size: 0.85rem;">Administrar tus personajes y sus POIs</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: #0a0c10; border-radius: 10px; border: 1px solid #1e2028;">
+                      <img src="${CONFIG.FEATURE_ICONS.accounts}" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain; flex-shrink: 0;">
+                      <span style="color: #c8cdd8; font-weight: 500; font-size: 0.85rem;">Guardar tus cuentas de forma segura (todo en tu PC)</span>
+                    </li>
+                    <li style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: #0a0c10; border-radius: 10px; border: 1px solid #1e2028; cursor: pointer;">
+                      <a href="#" target="_blank" rel="noopener" style="display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit; width: 100%;">
+                        <img src="assets/icons/Welcome/222580.png" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain; flex-shrink: 0;">
+                        <span style="color: #7bc2ff; font-weight: 600; font-size: 0.85rem;">Guía de Usuario — Aprendé a sacarle el máximo provecho a la Bóveda</span>
+                      </a>
+                    </li>
+                  </ul>
+                </div>
 
-        <!-- Sección: API Key -->
-        <div class="card" style="padding: 20px;">
-          <h3 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-            <img src="assets/icons/Welcome/2604909.png" width="24" height="24" alt="" style="filter: brightness(0.9); object-fit: contain;">
-            ¿Ya tenés una API Key?
-          </h3>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
-            <button id="welcomeAddKeyBtn" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">
-              <img src="assets/icons/Welcome/155911.png" width="18" height="18" alt="" style="filter: brightness(0.9);">
-              Agregar API Key
-            </button>
-            <button id="welcomeManageKeysBtn" class="btn" style="display: flex; align-items: center; gap: 6px;">
-              <img src="assets/icons/Welcome/3443186.png" width="18" height="18" alt="" style="filter: brightness(0.9);">
-              Gestionar Keys
-            </button>
+        <!-- Fila unificada: API Key + Asistente de Cuentas -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          
+          <!-- API Key -->
+          <div class="card" style="padding: 24px;">
+            <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; color: #e0e4ed;">
+              <img src="assets/icons/Welcome/2604909.png" width="34" height="34" alt="" style="filter: brightness(0.9); object-fit: contain;">
+              ¿Ya tenés una API Key?
+            </h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+              <button id="welcomeAddKeyBtn" class="btn btn--accent" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; font-weight: 600; font-size: 0.9rem;">
+                <img src="assets/icons/Welcome/155911.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
+                Agregar API Key
+              </button>
+              <button id="welcomeManageKeysBtn" class="btn" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; font-weight: 600; font-size: 0.9rem;">
+                <img src="assets/icons/Welcome/3443186.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
+                Gestionar Keys
+              </button>
+            </div>
+            <p class="muted" style="display: flex; align-items: center; gap: 6px;">
+              <img src="assets/icons/Welcome/547832.png" width="18" height="18" alt="" style="vertical-align: middle;">
+              Obtenela en <a href="https://account.arena.net/applications" target="_blank" rel="noopener" style="color: #7bc2ff; font-weight: 500;">account.arena.net</a>
+            </p>
           </div>
-          <p class="muted">
-            <img src="assets/icons/Welcome/547832.png" width="16" height="16" alt="" style="vertical-align: middle; margin-right: 4px;">
-            Podés obtener tu API Key en <a href="https://account.arena.net/applications" target="_blank" rel="noopener">account.arena.net/applications</a>
-          </p>
+
+          <!-- Asistente de Cuentas -->
+          <div class="card" style="padding: 24px; background: linear-gradient(135deg, #1a1e2a 0%, #151a28 100%);">
+            <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; color: #e0e4ed;">
+              <img src="assets/icons/Welcome/2604909.png" width="34" height="34" alt="" style="filter: brightness(0.9); object-fit: contain;">
+              Asistente de Cuentas
+            </h3>
+            <button id="welcomeAccountsBtn" class="btn btn--accent" style="display: flex; align-items: center; gap: 8px; padding: 10px 18px; font-weight: 600; font-size: 0.9rem; margin-bottom: 14px;">
+              <img src="assets/icons/Welcome/2604904.png" width="22" height="22" alt="" style="filter: brightness(0.9);">
+              Ir al Asistente
+            </button>
+            <p class="muted" style="display: flex; align-items: flex-start; gap: 8px;">
+              <img src="assets/icons/Welcome/733266.png" width="18" height="18" alt="" style="vertical-align: middle; margin-top: 1px;">
+              <span>Guardá emails, contraseñas y API Keys de forma segura. Todo en tu PC.</span>
+            </p>
+          </div>
+
         </div>
 
-        <!-- Sección: Asistente de Cuentas -->
-        <div class="card" style="padding: 20px; background: linear-gradient(135deg, #1a1e2a 0%, #151a28 100%);">
-          <h3 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-            <img src="assets/icons/Welcome/2604909.png" width="24" height="24" alt="" style="filter: brightness(0.9); object-fit: contain;">
-            ¿Querés guardar tus cuentas de forma segura?
+        <!-- Sección: Acceso Rápido -->
+        <div class="card" style="padding: 24px;">
+          <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; color: #e0e4ed;">
+            <img src="assets/icons/Welcome/102631.png" width="34" height="34" alt="" style="filter: brightness(0.9); object-fit: contain;">
+            Acceso rápido
           </h3>
-          <button id="welcomeAccountsBtn" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px;">
-            <img src="assets/icons/Welcome/2604904.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
-            Ir al Asistente de Cuentas
-          </button>
-          <p class="muted">
-            <img src="assets/icons/Welcome/733266.png" width="16" height="16" alt="" style="vertical-align: middle; margin-right: 4px;">
-            Guardá emails, contraseñas y API Keys de todas tus cuentas en tu PC.<br>
-            Todo el proceso ocurre en tu navegador — ningún dato sale de tu computadora.
-          </p>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+            <a href="#/cards" style="${CARD_BASE}"${HOVER_ATTRS}>
+              <img src="${CONFIG.QUICK_ICONS.wallet}" width="40" height="40" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.8rem;">Cartera</span>
+            </a>
+            <a href="#/meta" style="${CARD_BASE}"${HOVER_ATTRS}>
+              <img src="${CONFIG.QUICK_ICONS.meta}" width="40" height="40" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.8rem;">Meta y Eventos</span>
+            </a>
+            <a href="#/account/achievements" style="${CARD_BASE}"${HOVER_ATTRS}>
+              <img src="${CONFIG.QUICK_ICONS.achievements}" width="40" height="40" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.8rem;">Logros</span>
+            </a>
+            <a href="#/account/wizards-vault" style="${CARD_BASE}"${HOVER_ATTRS}>
+              <img src="${CONFIG.QUICK_ICONS.wv}" width="40" height="40" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.7rem;">Cámara del Brujo</span>
+            </a>
+            <a href="#/activities" style="${CARD_BASE}"${HOVER_ATTRS}>
+              <img src="${CONFIG.QUICK_ICONS.activities}" width="40" height="40" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.8rem;">Actividades</span>
+            </a>
+            <a href="#/account/raids" style="${CARD_BASE}"${HOVER_ATTRS}>
+              <img src="${CONFIG.QUICK_ICONS.raids}" width="40" height="40" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.8rem;">Raids</span>
+            </a>
+            <a href="#/account/characters" style="${CARD_BASE}"${HOVER_ATTRS}>
+              <img src="${CONFIG.QUICK_ICONS.characters}" width="40" height="40" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.8rem;">Personajes</span>
+            </a>
+            <a href="#/account/accounts" style="${CARD_BASE}"${HOVER_ATTRS}>
+              <img src="${CONFIG.QUICK_ICONS.accounts}" width="40" height="40" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.8rem;">Cuentas</span>
+            </a>
+          </div>
         </div>
-
-        <!-- Sección: Acceso Rápido (con iconos de los paneles) -->
-<div class="card" style="padding: 20px;">
-  <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-    <img src="assets/icons/Welcome/102631.png" width="24" height="24" alt="" style="filter: brightness(0.9); object-fit: contain;">
-    Acceso rápido
-  </h3>
-  <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-    <a href="#/cards" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-      <img src="${CONFIG.QUICK_ICONS.wallet}" width="20" height="20" alt=""> Cartera
-    </a>
-    <a href="#/meta" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-      <img src="${CONFIG.QUICK_ICONS.meta}" width="20" height="20" alt=""> Meta & Eventos
-    </a>
-    <a href="#/account/achievements" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-      <img src="${CONFIG.QUICK_ICONS.achievements}" width="20" height="20" alt=""> Logros
-    </a>
-    <a href="#/account/wizards-vault" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-      <img src="${CONFIG.QUICK_ICONS.wv}" width="20" height="20" alt=""> Cámara del Brujo
-    </a>
-    <a href="#/activities" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-      <img src="${CONFIG.QUICK_ICONS.activities}" width="20" height="20" alt=""> Actividades
-    </a>
-    <a href="#/account/characters" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-      <img src="${CONFIG.QUICK_ICONS.characters}" width="20" height="20" alt=""> Personajes
-    </a>
-    <a href="#/account/accounts" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-      <img src="${CONFIG.QUICK_ICONS.accounts}" width="20" height="20" alt=""> Cuentas
-    </a>
-  </div>
-</div>
 
         <!-- Sección: Comunidad -->
-        <div class="card" style="padding: 20px;">
-          <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-            <img src="assets/icons/Welcome/156409.png" width="24" height="24" alt="" style="filter: brightness(0.9); object-fit: contain;">
+        <div class="card" style="padding: 24px;">
+          <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; color: #e0e4ed;">
+            <img src="assets/icons/Welcome/156409.png" width="34" height="34" alt="" style="filter: brightness(0.9); object-fit: contain;">
             Comunidad
           </h3>
-          <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;">
-            <a href="${CONFIG.LINKS.discord}" target="_blank" rel="noopener" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-              <img src="assets/icons/Welcome/discord.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
-              Discord
+          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 18px;">
+            <a href="${CONFIG.LINKS.discord}" target="_blank" rel="noopener" style="${CARD_BASE}"${HOVER_ATTRS}>
+              <img src="${CONFIG.SOCIAL_ICONS.discord}" width="36" height="36" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.8rem;">Discord</span>
             </a>
-            <a href="${CONFIG.LINKS.instagram}" target="_blank" rel="noopener" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-              <img src="assets/icons/Welcome/instagram.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
-              Instagram
+            <a href="${CONFIG.LINKS.instagram}" target="_blank" rel="noopener" style="${CARD_BASE}"${HOVER_ATTRS}>
+              <img src="${CONFIG.SOCIAL_ICONS.instagram}" width="36" height="36" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.8rem;">Instagram</span>
             </a>
-            <a href="${CONFIG.LINKS.youtube}" target="_blank" rel="noopener" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-              <img src="assets/icons/Welcome/youtube.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
-              YouTube
+            <a href="${CONFIG.LINKS.youtube}" target="_blank" rel="noopener" style="${CARD_BASE}"${HOVER_ATTRS}>
+              <img src="${CONFIG.SOCIAL_ICONS.youtube}" width="36" height="36" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.8rem;">YouTube</span>
             </a>
-            <a href="${CONFIG.LINKS.twitch}" target="_blank" rel="noopener" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-              <img src="assets/icons/Welcome/twitchlogo.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
-              Twitch
+            <a href="${CONFIG.LINKS.twitch}" target="_blank" rel="noopener" style="${CARD_BASE}"${HOVER_ATTRS}>
+              <img src="${CONFIG.SOCIAL_ICONS.twitch}" width="36" height="36" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.8rem;">Twitch</span>
             </a>
-            <a href="${CONFIG.LINKS.github}" target="_blank" rel="noopener" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-              <img src="assets/icons/Welcome/github.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
-              GitHub
+            <a href="${CONFIG.LINKS.github}" target="_blank" rel="noopener" style="${CARD_BASE}"${HOVER_ATTRS}>
+              <img src="${CONFIG.SOCIAL_ICONS.github}" width="36" height="36" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.8rem;">GitHub</span>
             </a>
           </div>
-          <p class="muted">
-            <img src="assets/icons/Welcome/11_Cartero aviador quaggan.png" width="16" height="16" alt="" style="vertical-align: middle; margin-right: 4px;">
+          <p class="muted" style="display: flex; align-items: center; gap: 6px;">
+            <img src="assets/icons/Welcome/11_Cartero aviador quaggan.png" width="18" height="18" alt="" style="vertical-align: middle;">
             ${CONFIG.LINKS.email}
           </p>
         </div>
 
         <!-- Sección: Apoyar el proyecto -->
-        <div class="card" style="padding: 20px;">
-          <h3 style="margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
-            <img src="assets/icons/Welcome/156143.png" width="24" height="24" alt="" style="filter: brightness(0.9); object-fit: contain;">
+        <div class="card" style="padding: 24px;">
+          <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; color: #e0e4ed;">
+            <img src="assets/icons/Welcome/156143.png" width="34" height="34" alt="" style="filter: brightness(0.9); object-fit: contain;">
             Apoyar el proyecto
           </h3>
-          <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px;">
-            <a href="${CONFIG.LINKS.paypal}" target="_blank" rel="noopener" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-              <img src="assets/icons/Welcome/payp.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
-              PayPal
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 14px;">
+            <a href="${CONFIG.LINKS.paypal}" target="_blank" rel="noopener" style="${CARD_BASE}"${HOVER_ATTRS}>
+              <img src="assets/icons/Welcome/payp.png" width="36" height="36" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.85rem;">PayPal</span>
             </a>
-            <a href="${CONFIG.LINKS.kofi}" target="_blank" rel="noopener" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
-              <img src="assets/icons/Welcome/kofi.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
-              Ko-fi
+            <a href="${CONFIG.LINKS.kofi}" target="_blank" rel="noopener" style="${CARD_BASE}"${HOVER_ATTRS}>
+              <img src="assets/icons/Welcome/kofi.png" width="36" height="36" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.85rem;">Ko-fi</span>
             </a>
           </div>
-          <p class="muted">Tu apoyo ayuda a mantener el servidor y desarrollar nuevas funciones.</p>
+          <p class="muted" style="font-weight: 500;">Tu apoyo ayuda a mantener el servidor y desarrollar nuevas funciones.</p>
         </div>
       </div>
     `;
 
-    // Wire eventos
+    // Wire eventos de modales (SIN CAMBIOS)
     var addKeyBtn = document.getElementById('welcomeAddKeyBtn');
     if (addKeyBtn) {
       addKeyBtn.onclick = function() {
@@ -279,7 +314,7 @@
       };
     }
 
-    // Función auxiliar para asegurar que el modal cierra correctamente
+    // Función auxiliar para asegurar que el modal cierra correctamente (SIN CAMBIOS)
     function ensureModalCloses(modal) {
       if (modal.__closeHandlerSetup) return;
       modal.__closeHandlerSetup = true;
@@ -294,7 +329,6 @@
       if (backdrop) backdrop.onclick = closeModal;
       if (closeBtn) closeBtn.onclick = closeModal;
       
-      // Escuchar ESC
       var escHandler = function(e) {
         if (e.key === 'Escape' && !modal.hidden) {
           modal.hidden = true;
@@ -353,7 +387,7 @@
       if (state.inited) return;
       ensurePanel();
       state.inited = true;
-      console.info(LOG, 'ready v1.2.0 — Iconos exclusivos para cada funcionalidad');
+      console.info(LOG, 'ready v1.3.0 — Rediseño completo con tarjetas y glow');
     },
     activate: activate,
     deactivate: deactivate,
