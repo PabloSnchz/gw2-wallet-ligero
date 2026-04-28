@@ -1328,7 +1328,10 @@
                 <span style="font-size: 0.65rem; color: ${typeColor}; background: #1a1c24; padding: 2px 6px; border-radius: 12px;">${enc.type === 'jefe' ? 'JEFE' : 'EVENTO'}</span>
                 <div class="raid-encounter-name" style="font-weight: 600; font-size: 0.85rem; ${isCompleted ? 'text-decoration: line-through; text-decoration-color: #a0ffc8;' : ''}">${esc(enc.name)}</div>
               </div>
-              <div style="font-size: 0.65rem; color: ${isCompleted ? '#a0ffc8' : '#ff9d9d'};">${isCompleted ? '✅ Completado' : '❌ Pendiente'}</div>
+              <div style="font-size: 0.65rem; color: ${isCompleted ? '#a0ffc8' : '#ff9d9d'}; display: flex; align-items: center; gap: 4px;">
+                <img src="assets/icons/Welcome/${isCompleted ? '156108' : '156107'}.png" width="12" height="12" alt="" style="vertical-align: middle;">
+                ${isCompleted ? 'Completado' : 'Pendiente'}
+              </div>
             </div>
             <button class="raid-encounter-detail-btn btn btn--ghost" data-encounter-id="${esc(enc.id)}" data-encounter-name="${esc(enc.name)}" style="padding: 4px 12px; font-size: 0.7rem; transition: transform 0.05s ease;">Detalle</button>
           </div>
