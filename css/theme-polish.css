@@ -903,3 +903,97 @@ aside.col-side .panel-head img {
   max-height: 60vh;
   overflow-y: auto;
 }
+
+/* Logros — grid compacto con filas de altura uniforme */
+#achievementsMain {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+  align-items: stretch;
+}
+
+/* Logros — cards compactas */
+.a-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px 10px 10px 10px !important;
+  gap: 1px !important;
+}
+.a-card .a-title {
+  display: flex !important;
+  align-items: center !important;
+  font-size: 0.8rem !important;
+  gap: 8px;
+}
+.a-card .a-title img {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  object-fit: contain;
+  flex-shrink: 0;
+  align-self: center;
+}
+.a-card .a-desc {
+  display: flex !important;
+  align-items: center !important;
+  font-size: 0.75rem !important;
+  gap: 6px;
+  margin-bottom: 1px;
+}
+.a-card .a-desc img {
+  align-self: center;
+  flex-shrink: 0;
+}
+.a-card .a-rewards {
+  margin-top: 1px !important;
+  margin-bottom: 1px;
+}
+.a-card .a-rewards span {
+  font-size: 0.72rem !important;
+  color: #d0d4e0 !important;
+}
+.a-card .a-rewards img {
+  width: 16px !important;
+  height: 16px !important;
+}
+.a-card .a-meta {
+  margin-bottom: 0 !important;
+  margin-top: 1px;
+}
+.a-card .a-meta .cats {
+  font-size: 0.72rem !important;
+}
+.a-card .ach-progline {
+  font-size: 0.6rem !important;
+  margin-bottom: 0 !important;
+  margin-top: 1px;
+}
+.a-card .ach-prog {
+  height: 7px !important;
+  margin-bottom: 2px;
+}
+.a-card .pill {
+  padding: 1px 6px !important;
+  font-size: 0.6rem !important;
+}
+.a-card .btn--ghost {
+  padding: 2px 6px !important;
+  font-size: 0.65rem !important;
+}
+
+/* Ícono de categoría más grande y alineado */
+.a-card .ach-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px;
+}
+.a-card .ach-badge img {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
+  object-fit: contain;
+  flex-shrink: 0;
+}

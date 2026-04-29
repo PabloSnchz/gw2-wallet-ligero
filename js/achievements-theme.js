@@ -1,8 +1,14 @@
 /*!
- * Achievements Theme — glow por Categoría (badge)
- * v1.0.0 (2026-03-01)
+ * Achievements Theme — diseño sobrio con borde izquierdo de color
+ * v1.1.0 (2026-04-28)
  *
- * Enfoque:
+ * Cambios v1.1.0:
+ *  - Títulos en blanco (#e0e4ed) en vez del color de la categoría
+ *  - Borde general neutro + glow unificado suave
+ *  - El color de la categoría se conserva solo en el borde izquierdo (3px)
+ *  - Misma receta visual que Meta Theme v1.4.1
+ *
+ * v1.0.0:
  *  - achievements.js ya pinta un badge de categoría (.ach-badge) dentro de .a-desc.
  *  - Este script lee ese nombre, lo mapea a un tinte de paleta y aplica borde+halo a .a-card.
  *  - Si no matchea, usa un fallback celeste neutro.
@@ -14,9 +20,9 @@
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
 
-  console.info('[AchTheme] achievements-theme.js v1.0.0 — glow por Categoría');
+  console.info('[AchTheme] achievements-theme.js v1.1.0 — diseño sobrio, solo borde izquierdo de color');
 
-  var DEBUG = false; // true para loggear "categoria -> color"
+  var DEBUG = false;
 
   // ---- Utils -------------------------------------------------------------------
   function hexToRGBA(hex, alpha) {
@@ -40,40 +46,39 @@
 
     // Expansiones / Historias
     if (/\bheart of thorns\b|\bhot\b|maguuma|verdant brink|auric basin|tangled depths|dragon's stand|dragons stand/.test(n))
-      return '#b9f3c8'; // HoT (verde jade)
+      return '#b9f3c8';
 
     if (/\bpath of fire\b|\bpof\b|elona|desert|desierto|crystal desert|vabbi|elon|domain of/i.test(n))
-      return '#fbc49e'; // PoF (arena)
+      return '#fbc49e';
 
     if (/\bend of dragons\b|\beod\b|kaineng|echovald|jade|new kaineng|seitung|seitung province/i.test(n))
-      return '#9cd6e4'; // EoD (turquesa)
+      return '#9cd6e4';
 
     if (/\bsecrets of the obscure\b|\bsoto\b|skywatch|amnytas|convergence|convergences/i.test(n))
-      return '#d7caff'; // SotO (violeta)
+      return '#d7caff';
 
     if (/living world(?:\s*season)?\s*4|lw4|ls4|joko|kourna|thunderhead|grothmar/i.test(n))
-      return '#d7caff'; // LS4 (violeta como SotO)
+      return '#d7caff';
 
     // Modos / Actividades
     if (/\bwvw\b|world vs|mundo contra mundo|borderlands|eternal battleground/i.test(n))
-      return '#cfe3ff'; // WvW (celeste frío)
+      return '#cfe3ff';
 
     if (/\bpvp\b|player vs player|ranked|unranked|conquest/i.test(n))
-      return '#ffd3b3'; // PvP (durazno)
+      return '#ffd3b3';
 
     if (/fractal|fractales|undaunting|mistlock|fracto/i.test(n))
-      return '#bcd0ff'; // Fractales (celeste claro)
+      return '#bcd0ff';
 
     // Core / General / Historia / Mapas Tyria
     if (/core|tyria|historia|story|explor|aventura|colecci|world completion|map completion/i.test(n))
-      return '#bcd0ff'; // Core / general
+      return '#bcd0ff';
 
     // Fallback general
     return '#bcd0ff';
   }
 
   function readCategoryName(card){
-    // achievements.js arma el badge de categoría en .a-desc
     var badge = card.querySelector('.a-desc .ach-badge');
     if (!badge) return '';
     return (badge.textContent || '').trim();

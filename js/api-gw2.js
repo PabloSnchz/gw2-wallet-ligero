@@ -382,11 +382,11 @@
     for (var i=0; i<ids.length; i+=chunk) {
       (function (slice) {
         chain = chain.then(function () {
-          var key = 'ach_meta:' + CFG.LANG + ':' + slice.join(',');
+          var key = 'ach_meta_v2:' + CFG.LANG + ':' + slice.join(',');
           var cached = getCache(key, TTL.ACH_META, null, opts.nocache);
           if (cached) { out = out.concat(cached || []); return; }
 
-          var url = withParams(CFG.API_BASE + '/v2/achievements', { ids: slice.join(','), lang: CFG.LANG });
+          var url = withParams(CFG.API_BASE + '/v2/achievements?v=latest', { ids: slice.join(','), lang: CFG.LANG });
           var ikey = 'if:' + key;
 
           return inflightOnce(ikey, function () {

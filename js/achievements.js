@@ -1,13 +1,11 @@
 /* ===========================================================================
- * js/achievements.js — Achievements con toolbar, aside, wiki links,
- * ocultar completados, categorías e iconos + deep‑links + KPIs AP.
- * Versión: 2.10.0 (2026‑03‑03)
- *  - Guard de secuencia (“última llamada gana”) en loadAll().
- *  - AP Diario histórico desde /v2/account (daily_ap + monthly_ap) [no-store].
- *  - AP Permanente por tiers ganados (no Daily/Monthly).
- *  - NUEVO: Delta de Legado (ajusta diferencias API vs cliente sumando a Perm.).
- *  - NUEVO: Iconos separados (perm/daily/total) + link a wiki en KPIs.
- *  - NUEVO: Pills con icono oficial y contenido alineado verticalmente.
+ * js/achievements.js — Logros enfocado en "próximo a completar"
+ * Versión: 3.2.0 (2026-04-28)
+ *  - Grid único de pendientes (sin completados, sin resumen duplicado)
+ *  - Recompensas visibles: items, títulos, maestrías con íconos y nombres oficiales
+ *  - Toolbar unificada con 3 dropdowns personalizados (Umbral, Categoría, Recompensa)
+ *  - Cards compactas con pills y barras alineados al fondo
+ *  - KPIs AP conservados
  * =========================================================================== */
 
 (function (root) {
@@ -17,65 +15,45 @@
   var $  = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.from((r || document).querySelectorAll(s)); };
 
-  var _loadSeq = 0;  // “última llamada gana” (evita pisado entre requests al cambiar de key)
+  var _loadSeq = 0;
 
-  // ======================= ICONOS OFICIALES (WIKI) =========================
-  // KPIs (separados por tipo):
-  var ICON_AP_PERM  = 'https://wiki.guildwars2.com/images/thumb/c/cd/AP.png/30px-AP.png';  // Permanente (Heavy)
-  var ICON_AP_DAILY = 'https://wiki.guildwars2.com/images/1/14/Daily_Achievement.png';       // Diario (Normal)
-  var ICON_AP_TOTAL = 'https://wiki.guildwars2.com/images/thumb/c/cd/AP.png/30px-AP.png'; // Total (Large)
-  // Pills (tamaño chico):
+  // ======================= ICONOS =========================
+  var ICON_AP_PERM  = 'https://wiki.guildwars2.com/images/thumb/c/cd/AP.png/30px-AP.png';
+  var ICON_AP_DAILY = 'https://wiki.guildwars2.com/images/1/14/Daily_Achievement.png';
+  var ICON_AP_TOTAL = 'https://wiki.guildwars2.com/images/thumb/c/cd/AP.png/30px-AP.png';
   var ICON_AP_18    = 'https://wiki.guildwars2.com/images/thumb/c/cd/AP.png/30px-AP.png';
-  // Página de la wiki (enlace de los KPIs):
   var ICON_AP_PAGE  = 'https://wiki.guildwars2.com/wiki/Achievement_Chest';
+
+  var REWARD_FALLBACK = {
+    'Item':    'assets/icons/Welcome/122890.png',
+    'Title':   'assets/icons/Welcome/605001.png',
+    'Mastery': 'assets/icons/Welcome/1078543.png',
+    'Coins':   'assets/icons/733322.png'
+  };
 
   // ---------------------------- Estado / DOM -------------------------------
   var el = {
-    panel: null,
-    head: null,
-    body: null,
-    summaryGrid: null,
-    summaryStat: null,
-    chipsOld: null,
-    search: null,
-    pct: null,
-    nearlyGrid: null,
-    toolbar: null,
-    cat: null,
-    hideDoneChk: null,
-    // aside
-    aside: null,
-    asideTopList: null,
-    asideCats: null,
-    // KPIs AP
+    panel: null, head: null, body: null,
+    chipsOld: null, search: null,
+    mainGrid: null, toolbar: null,
+    aside: null, asideTopList: null, asideCats: null,
     kpiWrap: null
   };
 
   var state = {
     token: null,
-    acc: [],                 // /v2/account/achievements
-    metaById: new Map(),     // id -> meta /v2/achievements
-    // categorías
+    acc: [],
+    metaById: new Map(),
     categories: [],
-    catById: new Map(),      // id -> category
-    achIdToCat: new Map(),   // achievementId -> categoryId
-    // filtros
-    qRaw: '',                // texto crudo (input / hash)
-    qNorm: '',               // normalizado (búsqueda efectiva)
-    pct: 0.8,
-    cat: '',                 // '' = todas | string(categoryId)
-    hideDone: false,         // Ocultar completados
-    // AP (cuenta)
-    apDailyHist: 0,          // daily_ap + monthly_ap (account)
-    apPermanent: 0,          // suma de tiers ganados (no daily/monthly)
-    apLegacyDelta: 0,        // AP no atribuibles por API (legado/histórico)
-    // flags
-    loaded: false,
-    loading: false,
-    catsLoaded: false,
-    // wiring
-    _wiredTokenListener: false,
-    _wiredHashListener: false
+    catById: new Map(),
+    achIdToCat: new Map(),
+    qRaw: '', qNorm: '', pct: 0.8, cat: '',
+    rewardFilter: '',
+    apDailyHist: 0,
+    apPermanent: 0,
+    apLegacyDelta: 0,
+    loaded: false, loading: false, catsLoaded: false,
+    _wiredTokenListener: false, _wiredHashListener: false
   };
 
   // ------------------------------- Utils -----------------------------------
@@ -99,6 +77,67 @@
     return '<img src="'+esc(url)+'" alt="'+esc(alt||'')+'" width="'+s+'" height="'+s+'" loading="lazy" decoding="async" referrerpolicy="no-referrer"'+style+' />';
   }
 
+  // ======================= CACHÉ DE RECOMPENSAS =========================
+  var _rewardCache   = {};
+  var _titleCache    = {};
+  var _masteryCache  = {};
+
+  function loadRewardItemDetail(itemId) {
+    if (_rewardCache[itemId] || _rewardCache['_loading_' + itemId]) return;
+    _rewardCache['_loading_' + itemId] = true;
+    root.GW2Api.getItemsMany([itemId], { nocache: false })
+      .then(function(items) {
+        if (items && items.length) {
+          _rewardCache[itemId] = {
+            icon: items[0].icon || REWARD_FALLBACK['Item'],
+            name: items[0].name || ('Ítem #' + itemId)
+          };
+        } else {
+          _rewardCache[itemId] = { icon: REWARD_FALLBACK['Item'], name: 'Ítem #' + itemId };
+        }
+        if (el.mainGrid && el.mainGrid.children.length) renderMainGrid();
+      })
+      .catch(function() {
+        _rewardCache[itemId] = { icon: REWARD_FALLBACK['Item'], name: 'Ítem #' + itemId };
+      });
+  }
+
+  function loadRewardTitleDetail(titleId) {
+    if (_titleCache[titleId] || _titleCache['_loading_' + titleId]) return;
+    _titleCache['_loading_' + titleId] = true;
+    fetch('https://api.guildwars2.com/v2/titles?id=' + encodeURIComponent(titleId))
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data && data.name) {
+          _titleCache[titleId] = { name: data.name, icon: data.icon || REWARD_FALLBACK['Title'] };
+        } else {
+          _titleCache[titleId] = { name: 'Título', icon: REWARD_FALLBACK['Title'] };
+        }
+        if (el.mainGrid && el.mainGrid.children.length) renderMainGrid();
+      })
+      .catch(function() {
+        _titleCache[titleId] = { name: 'Título', icon: REWARD_FALLBACK['Title'] };
+      });
+  }
+
+  function loadRewardMasteryDetail(masteryId) {
+    if (_masteryCache[masteryId] || _masteryCache['_loading_' + masteryId]) return;
+    _masteryCache['_loading_' + masteryId] = true;
+    fetch('https://api.guildwars2.com/v2/masteries?id=' + encodeURIComponent(masteryId))
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data && data.name) {
+          _masteryCache[masteryId] = { name: data.name, icon: data.icon || REWARD_FALLBACK['Mastery'] };
+        } else {
+          _masteryCache[masteryId] = { name: 'Maestría', icon: REWARD_FALLBACK['Mastery'] };
+        }
+        if (el.mainGrid && el.mainGrid.children.length) renderMainGrid();
+      })
+      .catch(function() {
+        _masteryCache[masteryId] = { name: 'Maestría', icon: REWARD_FALLBACK['Mastery'] };
+      });
+  }
+
   // --------------------------- Deep‑links (hash) ----------------------------
   function parseHashParams(){
     var h = String(location.hash || '');
@@ -112,24 +151,16 @@
     var q = parsed.params.get('q') || '';
     var pct = parsed.params.get('pct');
     var cat = parsed.params.get('cat') || '';
-    var done = parsed.params.get('done') || ''; // 'hide' | ''
+    var reward = parsed.params.get('reward') || '';
     var pNum = pct != null ? parseFloat(pct) : NaN;
 
     state.qRaw  = String(q||'');
     state.qNorm = norm(state.qRaw);
-
     if (isFinite(pNum) && pNum > 0 && pNum <= 1) state.pct = pNum;
     state.cat = cat ? String(cat) : '';
-    state.hideDone = (done === 'hide');
+    state.rewardFilter = reward ? String(reward) : '';
 
     if (el.search) el.search.value = state.qRaw;
-    if (el.pct) {
-      var allowed = ['0.8','0.9','0.95'];
-      el.pct.value = allowed.includes(String(state.pct)) ? String(state.pct) : '0.8';
-      state.pct = parseFloat(el.pct.value);
-    }
-    if (el.cat) el.cat.value = state.cat || '';
-    if (el.hideDoneChk) el.hideDoneChk.checked = !!state.hideDone;
   }
   function writeFiltersToHashSilently(){
     var base = '#/account/achievements';
@@ -138,7 +169,7 @@
     if (qRaw) params.set('q', qRaw);
     if (state.pct && state.pct !== 0.8) params.set('pct', String(state.pct));
     if (state.cat) params.set('cat', String(state.cat));
-    if (state.hideDone) params.set('done', 'hide');
+    if (state.rewardFilter) params.set('reward', state.rewardFilter);
     var newHash = params.toString() ? (base + '?' + params.toString()) : base;
     var url = new URL(location.href);
     url.hash = newHash;
@@ -151,7 +182,6 @@
     var cur = Number(accountRec?.current || 0);
     var max = Number(accountRec?.max || 0);
     var done = !!accountRec?.done;
-
     var tiers = Array.isArray(meta?.tiers) ? meta.tiers.slice() : [];
     var target = 0;
     if (tiers.length) {
@@ -159,7 +189,6 @@
       target = Math.max(target, Number(last?.count || 0));
     }
     if (!target && max) target = max;
-
     if (done) {
       var t = target || cur || 1;
       return { cur: t, max: t, pct: 1, label: 'Completado' };
@@ -186,7 +215,6 @@
     var done = !!accountRec?.done;
     var tiers = Array.isArray(meta?.tiers) ? meta.tiers.slice() : [];
     tiers.sort(function(a,b){ return Number(a?.count||0) - Number(b?.count||0); });
-
     var sum = 0;
     for (var i=0;i<tiers.length;i++){
       var need = Number(tiers[i]?.count || 0);
@@ -217,18 +245,6 @@
     });
     return total;
   }
-  function potentialAPForThreshold(accArr, metaById, threshold){
-    var sum = 0;
-    (accArr || []).forEach(function(r){
-      var meta = metaById.get(r.id); if (!meta) return;
-      var pr = computeProgress(r, meta);
-      if (pr.pct >= 1) return;
-      if (pr.pct < (threshold||0)) return;
-      var left = totalAP(meta) - earnedAP(r, meta);
-      if (left > 0) sum += left;
-    });
-    return sum;
-  }
 
   // ---------------------------- Carga categorías ----------------------------
   async function ensureCategories(){
@@ -240,7 +256,6 @@
       if (!Array.isArray(arr)) arr = [];
       state.categories = arr.slice();
       state.catById = new Map(arr.map(function(c){ return [String(c.id), c]; }));
-
       var map = new Map();
       arr.forEach(function(cat){
         var list = Array.isArray(cat.achievements) ? cat.achievements : [];
@@ -295,24 +310,20 @@
     if (!el.kpiWrap) return;
     var permFinal = Number(apPerm||0) + Number(apLegacyDelta||0);
     var total = permFinal + Number(apDaily||0);
-
     var tipPerm = 'Permanente API'+(apLegacyDelta>0?(' + Legado '+fmtInt(apLegacyDelta)):'');
     el.kpiWrap.innerHTML = [
-      // Permanente
       '<div class="ach-kpi__tile" title="'+esc(tipPerm)+'">',
         '<a class="ach-kpi__icon" href="'+esc(ICON_AP_PAGE)+'" target="_blank" rel="noopener">'+iconImg(ICON_AP_PERM, 20, 'AP')+'</a>',
         '<span class="ach-kpi__lbl">Permanente</span>',
         (apLegacyDelta>0?('<span class="ach-kpi__delta">+'+fmtInt(apLegacyDelta)+' legado</span>'):''),
         '<span class="ach-kpi__num">'+fmtInt(permFinal)+'</span>',
       '</div>',
-      // Diario
       '<div class="ach-kpi__tile" title="Logro diario acumulado (incluye histórico mensual)">',
         '<a class="ach-kpi__icon" href="'+esc(ICON_AP_PAGE)+'" target="_blank" rel="noopener">'+iconImg(ICON_AP_DAILY, 20, 'AP')+'</a>',
         '<span class="ach-kpi__lbl">Logro diario</span>',
         '<span class="ach-kpi__num">'+fmtInt(apDaily)+'</span>',
       '</div>',
       '<span class="ach-kpi__sep">+</span>',
-      // Total
       '<div class="ach-kpi__tile" title="Total de puntos de logro acumulados">',
         '<a class="ach-kpi__icon" href="'+esc(ICON_AP_PAGE)+'" target="_blank" rel="noopener">'+iconImg(ICON_AP_TOTAL, 20, 'AP')+'</a>',
         '<span class="ach-kpi__lbl">Total</span>',
@@ -327,7 +338,7 @@
     if (!cid) return '';
     var cat = state.catById.get(String(cid));
     if (!cat) return '';
-    var icon = iconImg(cat.icon, 16, cat.name || 'Categoría', 'margin-right:6px;border-radius:3px');
+    var icon = iconImg(cat.icon, 22, cat.name || 'Categoría', 'margin-right:6px;border-radius:3px');
     var name = esc(cat.name || '');
     return '<span class="ach-badge">'+ icon + name + '</span>';
   }
@@ -337,6 +348,42 @@
     if (!name) return '';
     var href = 'https://wiki.guildwars2.com/wiki/' + encodeURIComponent(name);
     return '<a class="btn btn--ghost" href="'+href+'" target="_blank" rel="noopener" title="Abrir en la Wiki">Wiki</a>';
+  }
+
+  function rewardsHTML(meta) {
+    if (!meta || !Array.isArray(meta.rewards) || !meta.rewards.length) return '';
+    var parts = meta.rewards.map(function(r) {
+      var icon = '';
+      var label = '';
+      switch(r.type) {
+        case 'Item':
+          icon = _rewardCache[r.id] ? _rewardCache[r.id].icon : REWARD_FALLBACK['Item'];
+          label = _rewardCache[r.id] ? _rewardCache[r.id].name : ('Ítem #' + r.id);
+          if (!_rewardCache[r.id]) loadRewardItemDetail(r.id);
+          break;
+        case 'Title':
+          icon = _titleCache[r.id] ? _titleCache[r.id].icon : REWARD_FALLBACK['Title'];
+          label = _titleCache[r.id] ? _titleCache[r.id].name : 'Título';
+          if (!_titleCache[r.id]) loadRewardTitleDetail(r.id);
+          break;
+        case 'Mastery':
+          icon = _masteryCache[r.id] ? _masteryCache[r.id].icon : REWARD_FALLBACK['Mastery'];
+          label = _masteryCache[r.id] ? _masteryCache[r.id].name : 'Maestría';
+          if (!_masteryCache[r.id]) loadRewardMasteryDetail(r.id);
+          break;
+        case 'Coins':
+          icon = REWARD_FALLBACK['Coins'];
+          label = fmtInt(r.count || 0) + ' cobre';
+          break;
+        default:
+          return '';
+      }
+      return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;color:#d0d4e0;margin-right:10px;" title="'+esc(label)+'">' +
+        '<img src="'+esc(icon)+'" width="22" height="22" alt="" style="border-radius:4px;filter:brightness(0.95);flex-shrink:0;">' +
+        '<span style="font-weight:500;">'+esc(label)+'</span>'+
+        '</span>';
+    }).filter(Boolean).join('');
+    return parts ? '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center;" class="a-rewards">' + parts + '</div>' : '';
   }
 
   function progressSeverity(pr){
@@ -357,20 +404,18 @@
     );
   }
 
-  function cardSummaryHTML(meta, r, pr){
-    var icon = iconImg(meta?.icon, 18, meta?.name, 'margin-right:6px;border-radius:3px');
+  function cardMainHTML(meta, r, pr){
+    var iconUrl = meta?.icon || 'assets/icons/155059.png';
+    var icon = iconImg(iconUrl, 28, meta?.name || 'Logro', 'margin-right:8px;border-radius:4px;flex-shrink:0;');
     var name = esc(meta?.name || ('#' + r.id));
     var catBadge = categoryBadgeHTML(r.id);
-
     var pctTxt = fmtPct(pr.pct);
     var ratioTxt = pr.cur + '/' + pr.max;
-    var badge = (pr.pct >= 1) ? '<span class="pill pill--ok">Completado</span>' : '';
     var wiki = wikiLinkHTML(meta);
-
     var apTot = totalAP(meta);
     var apGot = earnedAP(r, meta);
+    var rewards = rewardsHTML(meta);
 
-    // === Pill con icono oficial y contenido alineado verticalmente ===
     var apHtml = (apTot > 0)
       ? '<span class="pill" title="Puntos de logro (ganados / posibles)">'+
           '<span style="display:inline-flex;align-items:center;gap:6px;">'+
@@ -381,89 +426,26 @@
       : '';
 
     return (
-      '<article class="card a-card" data-id="' + r.id + '">' +
+      '<article class="card a-card" data-id="' + r.id + '" data-pct="' + Math.round(pr.pct * 100) + '">' +
         '<div class="card__head a-head">' +
           '<h3 class="card__title a-title">' + icon + name + '</h3>' +
-          '<div class="card__amount-wrap a-amount">' + badge + '</div>' +
         '</div>' +
-        (catBadge ? ('<div class="card__desc a-desc">' + catBadge + '</div>') : '<div class="card__desc a-desc"></div>') +
-        '<div class="card__meta a-meta">' +
-          '<span class="cats">' + esc(pr.label) + ' • ' + ratioTxt + '</span>' +
-          '<span class="a-actions">'+ (apHtml ? apHtml : '') + (wiki ? (' ' + wiki) : '') +'</span>' +
+        (catBadge ? ('<div class="card__desc a-desc">' + catBadge + '</div>') : '') +
+        (rewards ? ('<div class="card__desc a-rewards">' + rewards + '</div>') : '') +
+        '<div style="margin-top:auto;">' +
+          '<div class="card__meta a-meta">' +
+            '<span class="cats" style="font-size:0.72rem;">' + ratioTxt + '</span>' +
+            '<span class="a-actions">'+ (apHtml ? apHtml : '') + (wiki ? (' ' + wiki) : '') +'</span>' +
+          '</div>' +
+          '<div class="ach-progline"><span>Progreso</span><span>'+ pctTxt +'</span></div>' +
+          progressBarHTML(pr) +
         '</div>' +
-        '<div class="ach-progline"><span>Progreso</span><span>'+ pctTxt +'</span></div>' +
-        progressBarHTML(pr) +
       '</article>'
     );
-  }
-
-  function rowNearlyHTML(meta, r, pr){
-    var icon = iconImg(meta?.icon, 18, meta?.name, 'margin-right:6px;border-radius:3px');
-    var name = esc(meta?.name || ('#' + r.id));
-    var catBadge = categoryBadgeHTML(r.id);
-
-    var pctTxt = fmtPct(pr.pct);
-    var ratioTxt = pr.cur + '/' + pr.max;
-    var wiki = wikiLinkHTML(meta);
-
-    var apTot = totalAP(meta);
-    var apGot = earnedAP(r, meta);
-
-    // === Pill con icono oficial y contenido alineado verticalmente ===
-    var apHtml = (apTot > 0)
-      ? '<span class="pill" title="Puntos de logro (ganados / posibles)">'+
-          '<span style="display:inline-flex;align-items:center;gap:6px;">'+
-            iconImg(ICON_AP_18, 18, 'AP', 'border-radius:3px')+
-            'AP: '+fmtInt(apGot)+' / '+fmtInt(apTot)+
-          '</span>'+
-        '</span>'
-      : '';
-
-    return (
-      '<article class="card a-card" data-id="' + r.id + '">' +
-        '<div class="card__head a-head">' +
-          '<h3 class="card__title a-title">' + icon + name + '</h3>' +
-          '<div class="card__amount-wrap a-amount"></div>' +
-        '</div>' +
-        (catBadge ? ('<div class="card__desc a-desc">' + catBadge + '</div>') : '<div class="card__desc a-desc"></div>') +
-        '<div class="card__meta a-meta">' +
-          '<span class="cats">' + ratioTxt + '</span>' +
-          '<span class="a-actions">'+ (apHtml ? apHtml : '') + (wiki ? (' ' + wiki) : '') +'</span>' +
-        '</div>' +
-        '<div class="ach-progline"><span>Progreso</span><span>'+ pctTxt +'</span></div>' +
-        progressBarHTML(pr) +
-      '</article>'
-    );
-  }
-
-  function renderSummary(){
-    if (!el.summaryGrid) return;
-
-    var rows = [];
-    (state.acc || []).forEach(function (r) {
-      var meta = state.metaById.get(r.id);
-      if (!meta) return;
-      var pr = computeProgress(r, meta);
-      if (state.hideDone && pr.pct >= 1) return;
-      rows.push({ r: r, meta: meta, pr: pr });
-    });
-    rows.sort(function(a,b){ return b.pr.pct - a.pr.pct; });
-    var top = rows.slice(0, 12);
-    el.summaryGrid.innerHTML = top.map(function(x){ return cardSummaryHTML(x.meta, x.r, x.pr); }).join('');
-
-    var apPot = potentialAPForThreshold(state.acc, state.metaById, state.pct);
-    if (el.summaryStat) {
-      var permFinal = state.apPermanent + state.apLegacyDelta;
-      el.summaryStat.textContent =
-        'AP cuenta — Permanente: ' + fmtInt(permFinal) +
-        ' • Diario: ' + fmtInt(state.apDailyHist) +
-        ' • Total: ' + fmtInt(permFinal + state.apDailyHist) +
-        ' • AP potencial (≥ ' + Math.round(state.pct*100) + '%): ' + fmtInt(apPot);
-    }
-    renderKpi(state.apPermanent, state.apDailyHist, state.apLegacyDelta);
   }
 
   function passesFilters(meta, pr, achId){
+    if (pr.pct >= 1) return false;
     if (state.cat) {
       var cid = state.achIdToCat.get(String(achId)) || '';
       if (String(cid) !== String(state.cat)) return false;
@@ -475,13 +457,16 @@
       var cat  = norm(String(meta?.category || ''));
       if (!(name.includes(q) || desc.includes(q) || cat.includes(q))) return false;
     }
-    if (state.hideDone && pr.pct >= 1) return false;
     if (pr.pct < state.pct) return false;
-    return pr.pct < 1;
+    if (state.rewardFilter) {
+      var rewards = meta.rewards || [];
+      if (!rewards.some(function(r) { return r.type === state.rewardFilter; })) return false;
+    }
+    return true;
   }
 
-  function renderNearly(){
-    if (!el.nearlyGrid) return;
+  function renderMainGrid(){
+    if (!el.mainGrid) return;
     var rows = [];
     (state.acc || []).forEach(function (r) {
       var meta = state.metaById.get(r.id); if (!meta) return;
@@ -491,9 +476,9 @@
     rows.sort(function(a,b){ return b.pr.pct - a.pr.pct; });
     rows = rows.slice(0, 60);
     if (!rows.length) {
-      el.nearlyGrid.innerHTML = '<p class="muted">No hay logros que coincidan con los filtros.</p>';
+      el.mainGrid.innerHTML = '<p class="muted">No hay logros que coincidan con los filtros.</p>';
     } else {
-      el.nearlyGrid.innerHTML = rows.map(function(x){ return rowNearlyHTML(x.meta, x.r, x.pr); }).join('');
+      el.mainGrid.innerHTML = rows.map(function(x){ return cardMainHTML(x.meta, x.r, x.pr); }).join('');
     }
     renderKpi(state.apPermanent, state.apDailyHist, state.apLegacyDelta);
   }
@@ -538,7 +523,7 @@
       head1.className = 'panel-head';
       const h3_1 = document.createElement('h3');
       h3_1.className = 'panel-head__title';
-      h3_1.textContent = 'Casi listos (Top 5)';
+      h3_1.textContent = 'Más cercanos';
       head1.appendChild(h3_1);
       const hr1 = document.createElement('hr'); hr1.className = 'hr-hairline';
       const body1 = document.createElement('div'); body1.className = 'panel__body';
@@ -558,9 +543,9 @@
     p.removeAttribute('hidden');
   }
 
-  function renderAside(rowsNearly){
+  function renderAside(rows){
     ensureAside();
-    var top = (rowsNearly || []).slice(0,5);
+    var top = (rows || []).slice(0,5);
     if (el.asideTopList) {
       if (!top.length) {
         el.asideTopList.innerHTML = '<li class="muted">Sin candidatos cercanos con los filtros actuales.</li>';
@@ -581,8 +566,7 @@
       var list = state.categories.slice().sort(function(a,b){ return String(a?.name||'').localeCompare(String(b?.name||'')); });
       var activeIdx = list.findIndex(function(c){ return String(c?.id) === String(state.cat||''); });
       var sliced = list.slice(0,30);
-      if (activeIdx >= 30 && activeIdx >= 0) sliced.unshift(list[activeIdx]); // asegurar visible
-
+      if (activeIdx >= 30 && activeIdx >= 0) sliced.unshift(list[activeIdx]);
       el.asideCats.innerHTML = sliced.map(function(c){
         var icon = iconImg(c.icon, 16, c.name, 'margin-right:6px;border-radius:3px');
         var active = (String(state.cat) === String(c.id));
@@ -594,35 +578,30 @@
           state.cat = (String(state.cat) === String(cid)) ? '' : String(cid);
           if (el.cat) el.cat.value = state.cat || '';
           writeFiltersToHashSilently();
-          renderNearly();
-          renderSummary();
+          renderMainGrid();
         });
       });
     }
   }
 
-  // ------------------------ Toolbar + acciones ------------------------------
+  // ------------------------ Toolbar (CSS) ------------------------------
   function injectToolbarStyles(){
     if (document.getElementById('ach-toolbar-styles')) return;
     var css = `
       .ach-toolbar{
         display:flex; flex-wrap:wrap; gap:10px; align-items:center;
         margin:10px 0 0; padding:10px 12px;
-        background:#0f1013; border:1px solid #26262b; border-radius:12px;
+        background:#0f1116; border:1px solid #26262b; border-radius:40px;
       }
       .ach-toolbar .group{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
-      .ach-toolbar input[type="text"]{min-width:220px}
-      .ach-toolbar select{min-width:160px}
-      .ach-toolbar .pill--ok{background:#172318;border-color:#284c36;color:#b9f3c8}
-      .pill--ok {background:#172318 !important;border-color:#284c36 !important;color:#b9f3c8 !important;}
-      .card.a-card{ padding-right:12px !important; }
-      .a-card{ display:flex; flex-direction:column; gap:6px; overflow:visible; }
+      .ach-toolbar input[type="text"]{min-width:200px}
+      .a-card{ display:flex; flex-direction:column; gap:2px; overflow:visible; }
       .a-card *{ min-width:0; }
       .a-head{ display:flex; align-items:flex-start; gap:8px; flex-wrap:wrap; }
       .a-head .a-title{ flex:1 1 auto; min-width:0; }
-      .a-head .a-amount{ flex:0 0 auto; }
       .a-title{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
       .a-desc{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+      .a-rewards{ display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
       .a-meta{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; width:100%; }
       .a-meta .cats{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; overflow-wrap:anywhere; }
       .a-actions{ display:flex; gap:8px; flex-wrap:wrap; }
@@ -633,6 +612,13 @@
       .ach-prog__bar.ach-prog--80{  background: linear-gradient(90deg, #ff4000 0%, #ffa733 100%); }
       .ach-prog__bar.ach-prog--90{  background: linear-gradient(90deg, #ffa733 0%, #f6e100 100%); }
       .ach-prog__bar.ach-prog--done{background: linear-gradient(90deg, #7ff600 0%, #04ff4b 100%); }
+      .ach-custom-select { position:relative; display:inline-block; }
+      .ach-select-btn { display:flex; align-items:center; gap:6px; padding:5px 10px; background:#1a1c24; border:1px solid #2a2c35; border-radius:20px; color:#e0e4ed; font-size:0.75rem; cursor:pointer; min-width:130px; }
+      .ach-select-btn:hover { border-color:#3a3e4a; background:#20222c; }
+      .ach-select-list { display:none; position:absolute; top:100%; left:0; z-index:50; background:#1a1c24; border:1px solid #2a2c35; border-radius:8px; padding:4px; min-width:160px; margin-top:4px; max-height:250px; overflow-y:auto; }
+      .ach-select-option { display:flex; align-items:center; gap:8px; padding:6px 10px; cursor:pointer; border-radius:6px; color:#b4bad0; font-size:0.75rem; }
+      .ach-select-option:hover { background:#252830; color:#e0e4ed; }
+      .ach-select-option.active { background:#1a2a3a; color:#7bc2ff; }
     `;
     var s = document.createElement('style'); s.id='ach-toolbar-styles'; s.textContent=css;
     document.head.appendChild(s);
@@ -669,21 +655,48 @@
     tb.className = 'ach-toolbar';
     tb.innerHTML = [
       '<div class="group">',
-        '<strong style="margin-right:6px">Logros:</strong>',
+        '<strong style="margin-right:6px;color:#b4bad0;">Logros:</strong>',
         '<input type="text" id="achSearch_alt" placeholder="Buscar logro…">',
       '</div>',
       '<div class="group">',
-        '<label>Umbral %: ',
-          '<select id="achPct_alt">',
-            '<option value="0.8">≥ 80%</option>',
-            '<option value="0.9">≥ 90%</option>',
-            '<option value="0.95">≥ 95%</option>',
-          '</select>',
-        '</label>',
-        '<label>Categoría: ',
-          '<select id="achCat"><option value="">(Todas)</option></select>',
-        '</label>',
-        '<label class="ach-hide-done"><input type="checkbox" id="achHideDone"> Ocultar completados</label>',
+        // Dropdown Umbral
+        '<label style="color:#b4bad0;font-size:0.8rem;">Umbral:</label>',
+        '<div class="ach-custom-select">',
+          '<button class="ach-select-btn" data-dropdown="achDropdownPct">',
+            '<span class="ach-select-btn-text">≥ 80%</span>',
+            '<span style="margin-left:auto;font-size:0.6rem;">▼</span>',
+          '</button>',
+          '<div class="ach-select-list" id="achDropdownPct">',
+            '<div class="ach-select-option" data-value="0.8">≥ 80%</div>',
+            '<div class="ach-select-option" data-value="0.9">≥ 90%</div>',
+            '<div class="ach-select-option" data-value="0.95">≥ 95%</div>',
+          '</div>',
+        '</div>',
+        // Dropdown Categoría
+        '<label style="color:#b4bad0;font-size:0.8rem;">Categoría:</label>',
+        '<div class="ach-custom-select" id="achCatDropdown">',
+          '<button class="ach-select-btn" data-dropdown="achDropdownCat">',
+            '<span class="ach-select-btn-text">Todas</span>',
+            '<span style="margin-left:auto;font-size:0.6rem;">▼</span>',
+          '</button>',
+          '<div class="ach-select-list" id="achDropdownCat">',
+            '<div class="ach-select-option" data-value="">Todas</div>',
+          '</div>',
+        '</div>',
+        // Dropdown Recompensa
+        '<label style="color:#b4bad0;font-size:0.8rem;">Recompensa:</label>',
+        '<div id="achRewardDropdown" class="ach-custom-select">',
+          '<button id="achRewardBtn" class="ach-select-btn">',
+            '<span id="achRewardBtnText">Todas</span>',
+            '<span style="margin-left:auto;font-size:0.6rem;">▼</span>',
+          '</button>',
+          '<div id="achRewardList" class="ach-select-list">',
+            '<div class="ach-select-option" data-value="">Todas</div>',
+            '<div class="ach-select-option" data-value="Item"><img src="assets/icons/Welcome/1228903.png" width="18" height="18" alt="" style="border-radius:3px;filter:brightness(0.9);">Con ítem</div>',
+            '<div class="ach-select-option" data-value="Title"><img src="assets/icons/Welcome/605001.png" width="18" height="18" alt="" style="border-radius:3px;filter:brightness(0.9);">Con título</div>',
+            '<div class="ach-select-option" data-value="Mastery"><img src="assets/icons/Welcome/1078543.png" width="18" height="18" alt="" style="border-radius:3px;filter:brightness(0.9);">Con maestría</div>',
+          '</div>',
+        '</div>',
       '</div>'
     ].join('');
 
@@ -693,35 +706,31 @@
     el.toolbar = tb;
 
     var oldSearch = document.getElementById('achSearch');
-    var oldPct = document.getElementById('achPct');
-
     el.search = oldSearch || document.getElementById('achSearch_alt');
-    el.pct    = oldPct    || document.getElementById('achPct_alt');
-    el.cat    = document.getElementById('achCat');
-    el.hideDoneChk = document.getElementById('achHideDone');
-
-    if (oldSearch) { var slot = document.getElementById('achSearch_alt'); slot.replaceWith(oldSearch); }
-    if (oldPct)    { var slot2 = document.getElementById('achPct_alt'); slot2.replaceWith(oldPct); }
+    if (oldSearch) {
+      var slot = document.getElementById('achSearch_alt');
+      if (slot) slot.replaceWith(oldSearch);
+    }
   }
 
-  function fillCategorySelect(){
-    if (!el.cat) return;
-    if (el.cat.__filled) return;
-    var frag = document.createDocumentFragment();
-    var list = state.categories.slice().sort(function(a,b){
+  function fillCategoryDropdown(){
+    var list = document.getElementById('achDropdownCat');
+    if (!list || list.__filled) return;
+    list.__filled = true;
+
+    var categories = state.categories.slice().sort(function(a,b){
       return String(a?.name || '').localeCompare(String(b?.name || ''));
     });
-    list.forEach(function (c) {
-      var o = document.createElement('option');
-      o.value = String(c.id);
-      o.textContent = c.name || ('#' + c.id);
-      frag.appendChild(o);
+
+    var html = '<div class="ach-select-option" data-value="">Todas</div>';
+    categories.forEach(function(c) {
+      var icon = iconImg(c.icon, 16, c.name, 'margin-right:6px;border-radius:3px');
+      html += '<div class="ach-select-option" data-value="' + esc(String(c.id)) + '" style="display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;border-radius:6px;color:#b4bad0;font-size:0.75rem;">' + icon + esc(c.name || ('#' + c.id)) + '</div>';
     });
-    el.cat.appendChild(frag);
-    el.cat.__filled = true;
-    el.cat.value = state.cat || '';
+    list.innerHTML = html;
   }
 
+  // ------------------------ Toolbar (wiring) ------------------------------
   function wireToolbar(){
     if (el.search && !el.search.__wired) {
       el.search.__wired = true;
@@ -732,52 +741,78 @@
           state.qRaw  = el.search.value || '';
           state.qNorm = norm(state.qRaw);
           writeFiltersToHashSilently();
-          renderNearly();
-          renderSummary();
+          renderMainGrid();
         }, 120);
       });
     }
-    if (el.pct && !el.pct.__wired) {
-      el.pct.__wired = true;
-      el.pct.addEventListener('change', function(){
-        var v = parseFloat(el.pct.value || '0.8');
-        state.pct = (isFinite(v) ? v : 0.8);
-        writeFiltersToHashSilently();
-        renderNearly();
-        renderSummary();
+    wireCustomDropdowns();
+  }
+
+  function wireCustomDropdowns(){
+    var dropdowns = document.querySelectorAll('.ach-custom-select');
+    dropdowns.forEach(function(dropdown) {
+      var btn = dropdown.querySelector('.ach-select-btn');
+      var list = dropdown.querySelector('.ach-select-list');
+      var btnText = dropdown.querySelector('.ach-select-btn-text');
+      if (!btn || !list || btn.__wired) return;
+      btn.__wired = true;
+
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var isOpen = list.style.display === 'block';
+        closeAllDropdowns();
+        list.style.display = isOpen ? 'none' : 'block';
+      });
+
+      var options = list.querySelectorAll('.ach-select-option');
+      options.forEach(function(opt) {
+        opt.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var value = this.dataset.value;
+          if (btnText) {
+            btnText.textContent = this.textContent.trim() || (value || 'Todas');
+          }
+          options.forEach(function(o) { o.classList.remove('active'); });
+          this.classList.add('active');
+
+          var listId = list.id;
+          if (listId === 'achDropdownPct') {
+            state.pct = parseFloat(value) || 0.8;
+          } else if (listId === 'achDropdownCat') {
+            state.cat = value || '';
+          } else if (listId === 'achRewardList') {
+            state.rewardFilter = value || '';
+          }
+
+          list.style.display = 'none';
+          writeFiltersToHashSilently();
+          renderMainGrid();
+        });
+      });
+    });
+
+    if (!document.__achDropdownGlobalWired) {
+      document.__achDropdownGlobalWired = true;
+      document.addEventListener('click', function() {
+        closeAllDropdowns();
       });
     }
-    if (el.cat && !el.cat.__wired) {
-      el.cat.__wired = true;
-      el.cat.addEventListener('change', function(){
-        state.cat = el.cat.value || '';
-        writeFiltersToHashSilently();
-        renderNearly();
-        renderSummary();
-      });
-    }
-    if (el.hideDoneChk && !el.hideDoneChk.__wired) {
-      el.hideDoneChk.__wired = true;
-      el.hideDoneChk.addEventListener('change', function(){
-        state.hideDone = !!el.hideDoneChk.checked;
-        writeFiltersToHashSilently();
-        renderSummary();
-        renderNearly();
-      });
-    }
+  }
+
+  function closeAllDropdowns(){
+    document.querySelectorAll('.ach-select-list').forEach(function(list) {
+      list.style.display = 'none';
+    });
   }
 
   // ------------------------------- Carga -----------------------------------
   function ensureDomRefs(){
     if (el.panel) return;
-    el.panel       = document.getElementById('achievementsPanel');
-    el.head        = el.panel ? el.panel.querySelector('.panel-head') : null;
-    el.body        = el.panel ? el.panel.querySelector('.panel__body') : null;
-    el.summaryGrid = document.getElementById('achievementsSummary');
-    el.summaryStat = document.getElementById('achSummaryStat');
-    el.nearlyGrid  = document.getElementById('achievementsNearly');
-    if (el.summaryGrid) el.summaryGrid.setAttribute('aria-live','polite');
-    if (el.nearlyGrid)  el.nearlyGrid.setAttribute('aria-live','polite');
+    el.panel      = document.getElementById('achievementsPanel');
+    el.head       = el.panel ? el.panel.querySelector('.panel-head') : null;
+    el.body       = el.panel ? el.panel.querySelector('.panel__body') : null;
+    el.mainGrid   = document.getElementById('achievementsMain');
+    if (el.mainGrid) el.mainGrid.setAttribute('aria-live','polite');
   }
 
   function setLoading(on){
@@ -801,12 +836,10 @@
 
   async function loadAll(opts){
     opts = opts || {};
-
     const mySeq = ++_loadSeq;
     const tokenAtStart = getSelectedToken();
 
-    if (el.summaryGrid) el.summaryGrid.innerHTML = '<p class="muted">Cargando logros…</p>';
-    if (el.nearlyGrid)  el.nearlyGrid.innerHTML  = '<p class="muted">Cargando…</p>';
+    if (el.mainGrid) el.mainGrid.innerHTML = '<p class="muted">Cargando logros…</p>';
 
     ensureDomRefs();
     ensureRefreshButton();
@@ -817,15 +850,14 @@
     if (!token) {
       state.token = null; state.acc = []; state.metaById = new Map();
       state.apDailyHist = 0; state.apPermanent = 0; state.apLegacyDelta = 0;
-      await ensureCategories(); fillCategorySelect(); ensureAside(); renderAside([]);
-      renderSummary(); renderNearly();
+      await ensureCategories(); fillCategoryDropdown(); ensureAside(); renderAside([]);
+      renderMainGrid();
       return;
     }
     state.token = token;
 
     setLoading(true);
     try {
-      // 1) Progreso + AP de cuenta (histórico)
       var [acc, apObj] = await Promise.all([
         root.GW2Api.getAccountAchievements(token, { nocache: !!opts.nocache }),
         fetchAccountAP(token)
@@ -835,36 +867,28 @@
       state.acc = Array.isArray(acc) ? acc : [];
       state.apDailyHist = Number(apObj?.dailyHist || 0);
 
-      // 2) Metadatos
       var ids = Array.from(new Set((state.acc || []).map(a => a.id))).filter(id => id != null);
       var metas = ids.length ? await root.GW2Api.getAchievementsMeta(ids, { nocache: !!opts.nocache }) : [];
       if (mySeq !== _loadSeq || tokenAtStart !== getSelectedToken()) return;
       state.metaById = (function buildMetaMap(arr){ var m = new Map(); (arr || []).forEach(x => { if (x && x.id != null) m.set(x.id, x); }); return m; })(metas);
 
-      // 3) Categorías + aside
       await ensureCategories();
       if (mySeq !== _loadSeq || tokenAtStart !== getSelectedToken()) return;
-      fillCategorySelect();
+      fillCategoryDropdown();
       ensureAside();
 
-      // 4) AP permanente (por tiers ganados en logros no Daily/Monthly)
       state.apPermanent = computePermanentAP(state.acc, state.metaById);
-
-      // 5) Delta de Legado = max(0, API_TOTAL - (apDailyHist + apPermanent))
       var apiTotal = computeApiTotal(state.acc, state.metaById);
       var seenTotal = state.apDailyHist + state.apPermanent;
       state.apLegacyDelta = Math.max(0, apiTotal - seenTotal);
 
       if (mySeq !== _loadSeq || tokenAtStart !== getSelectedToken()) return;
       state.loaded = true;
-      renderSummary();
-      renderNearly();
+      renderMainGrid();
 
     } catch (e) {
       console.warn(LOGP, e);
-      if (el.nearlyGrid) el.nearlyGrid.innerHTML = '<p class="muted">No se pudieron cargar logros.</p>';
-      if (el.summaryGrid) el.summaryGrid.innerHTML = '';
-      if (el.summaryStat) el.summaryStat.textContent = '—';
+      if (el.mainGrid) el.mainGrid.innerHTML = '<p class="muted">No se pudieron cargar logros.</p>';
     } finally {
       wireToolbar();
       setLoading(false);
@@ -916,7 +940,6 @@
   };
   root.Achievements = Achievements;
 
-  // Listeners globales (por si el router tarda en cablearse)
   (function wireOnce(){
     if (!state._wiredTokenListener && document && document.addEventListener){
       document.addEventListener('gn:tokenchange', function(){
@@ -939,6 +962,6 @@
     }
   })();
 
-  console.info(LOGP, 'OK v2.10.0 — AP diario histórico + perm(API) + delta legado + iconos wiki + pills alineadas');
+  console.info(LOGP, 'OK v3.2.0 — Toolbar unificada con 3 dropdowns personalizados');
 
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
