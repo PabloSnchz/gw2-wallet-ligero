@@ -549,31 +549,13 @@
       </h2>
       <div class="panel__body">
         <div class="panel-head">
-          <h3 class="panel-head__title">Resumen y próximos a completar</h3>
-          <div class="meta-topline">
-            <span class="meta-stat"><span id="achSummaryStat" class="muted">—</span></span>
-          </div>
+          <h3 class="panel-head__title">Próximos a completar</h3>
         </div>
         <hr class="hr-hairline"/>
 
-        <div id="achievementsSummary" class="grid"></div>
+        <div id="achievementsMain" class="grid"></div>
 
-        <div class="chips" aria-label="Filtros de logros" style="display:none">
-          <div class="chip">
-            <label for="achSearch" class="visually-hidden">Buscar logros</label>
-            <input id="achSearch" type="text" placeholder="Buscar logro…"/>
-          </div>
-          <div class="chip">
-            <label for="achPct" class="visually-hidden">Umbral %</label>
-            <select id="achPct">
-              <option value="0.8">≥ 80%</option>
-              <option value="0.9">≥ 90%</option>
-              <option value="0.95">≥ 95%</option>
-            </select>
-          </div>
-        </div>
-
-        <div id="achievementsNearly" class="grid"></div>
+       
       </div>
     </section>
 
@@ -958,7 +940,7 @@
   <script src="js/wv-season-storage.js?v=1.1.1"></script>
   
   <!-- Módulos de vistas que no dependen del router -->
-  <script defer src="js/achievements.js?v=2.10.0"></script>
+  <script defer src="js/achievements.js?v=3.2.0"></script>
   <script defer src="js/meta.js?v=3.2.1"></script>
   <script defer src="js/sidebar-nav.js?v=1.2"></script>
 
