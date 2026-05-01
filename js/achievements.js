@@ -25,7 +25,7 @@
   var ICON_AP_PAGE  = 'https://wiki.guildwars2.com/wiki/Achievement_Chest';
 
   var REWARD_FALLBACK = {
-    'Item':    'assets/icons/Welcome/122890.png',
+    'Item':    'assets/icons/Welcome/1228903.png',
     'Title':   'assets/icons/Welcome/605001.png',
     'Mastery': 'assets/icons/Welcome/1078543.png',
     'Coins':   'assets/icons/733322.png'
@@ -279,19 +279,26 @@
 
   // -------------------------- KPI visual de AP ------------------------------
   function injectKpiStyles(){
-    if (document.getElementById('ach-kpi-styles')) return;
-    var css = `
-      .ach-kpi{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:8px 0 6px}
-      .ach-kpi__tile{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#0f1013;border:1px solid #26262b}
-      .ach-kpi__num{font-size:16px;font-weight:700;color:#ffd27a}
-      .ach-kpi__lbl{font-size:12px;color:#cfd2d8}
-      .ach-kpi__sep{opacity:.5}
-      .ach-kpi__icon img{vertical-align:middle;border-radius:4px;box-shadow:0 0 0 1px #2a2a2f inset}
-      .ach-kpi__delta{font-size:12px;color:#a0ffc8;background:#12261b;border:1px solid #265a3c;border-radius:999px;padding:2px 6px}
-      @media (prefers-color-scheme: light){ .ach-kpi__num{color:#a26a00} }
-    `;
-    var s = document.createElement('style'); s.id='ach-kpi-styles'; s.textContent=css;
-    document.head.appendChild(s);
+      if (document.getElementById('ach-kpi-styles')) return;
+      var css = `
+        .ach-kpi{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:8px 0 6px}
+        .ach-kpi__tile{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#0f1013;border:1px solid #26262b}
+        .ach-kpi__tile--pot{
+          border-left:3px solid #a0ffc8;
+          background:linear-gradient(135deg, #0d1a14 0%, #0f1116 100%);
+          box-shadow:0 0 10px rgba(160,255,200,0.08);
+          margin-left:auto;
+          cursor:default;
+        }
+        .ach-kpi__num{font-size:16px;font-weight:700;color:#ffd27a}
+        .ach-kpi__lbl{font-size:12px;color:#cfd2d8}
+        .ach-kpi__sep{opacity:.5}
+        .ach-kpi__icon img{vertical-align:middle;border-radius:4px;box-shadow:0 0 0 1px #2a2a2f inset}
+        .ach-kpi__delta{font-size:12px;color:#a0ffc8;background:#12261b;border:1px solid #265a3c;border-radius:999px;padding:2px 6px}
+        @media (prefers-color-scheme: light){ .ach-kpi__num{color:#a26a00} }
+      `;
+      var s = document.createElement('style'); s.id='ach-kpi-styles'; s.textContent=css;
+      document.head.appendChild(s);
   }
   function ensureKpiHeader(){
     injectKpiStyles();
@@ -305,31 +312,68 @@
       el.kpiWrap = box;
     }
   }
+
+  function potentialAPForThreshold(accArr, metaById, threshold){
+      var sum = 0;
+      (accArr || []).forEach(function(r){
+        var meta = metaById.get(r.id); if (!meta) return;
+        var pr = computeProgress(r, meta);
+        if (pr.pct >= 1) return;
+        if (pr.pct < (threshold||0)) return;
+        var left = totalAP(meta) - earnedAP(r, meta);
+        if (left > 0) sum += left;
+      });
+      return sum;
+  }
+  function renderPotentialAP(){
+      // Eliminar chips anteriores
+      var allOld = document.querySelectorAll('.ach-potential');
+      allOld.forEach(function(el) { el.remove(); });
+      
+      var head = el.panel ? el.panel.querySelector('.panel-head') : null;
+      var h3 = head ? head.querySelector('.panel-head__title') : null;
+      if (!h3) return;
+      
+      var apPot = 0;
+      try {
+        apPot = potentialAPForThreshold(state.acc, state.metaById, state.pct);
+        if (!isFinite(apPot)) apPot = 0;
+      } catch(e) { apPot = 0; }
+      
+      var chip = document.createElement('span');
+      chip.className = 'ach-potential';
+      chip.style.cssText = 'display:inline-flex;align-items:center;gap:8px;padding:5px 14px;background:#0f1116;border:1px solid #1e2028;border-radius:20px;font-size:0.75rem;white-space:nowrap;';
+      chip.innerHTML = '<img src="assets/icons/155059.png" width="16" height="16" alt="" style="border-radius:3px;filter:brightness(0.9);"><span style="color:#9aa2b8;">AP potenciales (≥ ' + Math.round(state.pct*100) + '%)</span><span style="color:#a0ffc8;font-weight:700;">+' + fmtInt(apPot) + '</span>';
+      
+      // Insertarlo justo después del <h3>, dentro del panel-head
+      h3.insertAdjacentElement('afterend', chip);
+  }
   function renderKpi(apPerm, apDaily, apLegacyDelta){
-    ensureKpiHeader();
-    if (!el.kpiWrap) return;
-    var permFinal = Number(apPerm||0) + Number(apLegacyDelta||0);
-    var total = permFinal + Number(apDaily||0);
-    var tipPerm = 'Permanente API'+(apLegacyDelta>0?(' + Legado '+fmtInt(apLegacyDelta)):'');
-    el.kpiWrap.innerHTML = [
-      '<div class="ach-kpi__tile" title="'+esc(tipPerm)+'">',
-        '<a class="ach-kpi__icon" href="'+esc(ICON_AP_PAGE)+'" target="_blank" rel="noopener">'+iconImg(ICON_AP_PERM, 20, 'AP')+'</a>',
-        '<span class="ach-kpi__lbl">Permanente</span>',
-        (apLegacyDelta>0?('<span class="ach-kpi__delta">+'+fmtInt(apLegacyDelta)+' legado</span>'):''),
-        '<span class="ach-kpi__num">'+fmtInt(permFinal)+'</span>',
-      '</div>',
-      '<div class="ach-kpi__tile" title="Logro diario acumulado (incluye histórico mensual)">',
-        '<a class="ach-kpi__icon" href="'+esc(ICON_AP_PAGE)+'" target="_blank" rel="noopener">'+iconImg(ICON_AP_DAILY, 20, 'AP')+'</a>',
-        '<span class="ach-kpi__lbl">Logro diario</span>',
-        '<span class="ach-kpi__num">'+fmtInt(apDaily)+'</span>',
-      '</div>',
-      '<span class="ach-kpi__sep">+</span>',
-      '<div class="ach-kpi__tile" title="Total de puntos de logro acumulados">',
-        '<a class="ach-kpi__icon" href="'+esc(ICON_AP_PAGE)+'" target="_blank" rel="noopener">'+iconImg(ICON_AP_TOTAL, 20, 'AP')+'</a>',
-        '<span class="ach-kpi__lbl">Total</span>',
-        '<span class="ach-kpi__num">'+fmtInt(total)+'</span>',
-      '</div>'
-    ].join('');
+      ensureKpiHeader();
+      if (!el.kpiWrap) return;
+      var permFinal = Number(apPerm||0) + Number(apLegacyDelta||0);
+      var total = permFinal + Number(apDaily||0);
+      var tipPerm = 'Permanente API'+(apLegacyDelta>0?(' + Legado '+fmtInt(apLegacyDelta)):'');
+
+      el.kpiWrap.innerHTML = [
+        '<div class="ach-kpi__tile" title="'+esc(tipPerm)+'">',
+          '<a class="ach-kpi__icon" href="'+esc(ICON_AP_PAGE)+'" target="_blank" rel="noopener">'+iconImg(ICON_AP_PERM, 20, 'AP')+'</a>',
+          '<span class="ach-kpi__lbl">Permanente</span>',
+          (apLegacyDelta>0?('<span class="ach-kpi__delta">+'+fmtInt(apLegacyDelta)+' legado</span>'):''),
+          '<span class="ach-kpi__num">'+fmtInt(permFinal)+'</span>',
+        '</div>',
+        '<div class="ach-kpi__tile" title="Logro diario acumulado (incluye histórico mensual)">',
+          '<a class="ach-kpi__icon" href="'+esc(ICON_AP_PAGE)+'" target="_blank" rel="noopener">'+iconImg(ICON_AP_DAILY, 20, 'AP')+'</a>',
+          '<span class="ach-kpi__lbl">Logro diario</span>',
+          '<span class="ach-kpi__num">'+fmtInt(apDaily)+'</span>',
+        '</div>',
+        '<span class="ach-kpi__sep">+</span>',
+        '<div class="ach-kpi__tile" title="Total de puntos de logro acumulados">',
+          '<a class="ach-kpi__icon" href="'+esc(ICON_AP_PAGE)+'" target="_blank" rel="noopener">'+iconImg(ICON_AP_TOTAL, 20, 'AP')+'</a>',
+          '<span class="ach-kpi__lbl">Total</span>',
+          '<span class="ach-kpi__num">'+fmtInt(total)+'</span>',
+        '</div>'
+      ].join('');
   }
 
   // ------------------------------- Render ----------------------------------
@@ -481,6 +525,7 @@
       el.mainGrid.innerHTML = rows.map(function(x){ return cardMainHTML(x.meta, x.r, x.pr); }).join('');
     }
     renderKpi(state.apPermanent, state.apDailyHist, state.apLegacyDelta);
+    renderPotentialAP();
   }
 
   // --------------------------- Aside de Logros ------------------------------
@@ -842,19 +887,21 @@
     if (el.mainGrid) el.mainGrid.innerHTML = '<p class="muted">Cargando logros…</p>';
 
     ensureDomRefs();
-    ensureRefreshButton();
+    // ensureRefreshButton(); // Reemplazado por AP potencial en el KPI
     ensureToolbar();
     readFiltersFromHashIntoState();
 
     var token = getSelectedToken();
-    if (!token) {
-      state.token = null; state.acc = []; state.metaById = new Map();
-      state.apDailyHist = 0; state.apPermanent = 0; state.apLegacyDelta = 0;
-      await ensureCategories(); fillCategoryDropdown(); ensureAside(); renderAside([]);
-      renderMainGrid();
-      return;
-    }
-    state.token = token;
+        if (!token) {
+          state.token = null; state.acc = []; state.metaById = new Map();
+          state.apDailyHist = 0; state.apPermanent = 0; state.apLegacyDelta = 0;
+          await ensureCategories(); fillCategoryDropdown(); ensureAside(); renderAside([]);
+          renderMainGrid();
+          var pot = document.querySelector('.ach-potential');
+          if (pot) pot.remove();
+          return;
+        }
+        state.token = token;
 
     setLoading(true);
     try {
@@ -918,13 +965,13 @@
   var Achievements = {
     async initOnce(){
       ensureDomRefs();
-      ensureRefreshButton();
+      // ensureRefreshButton(); // Reemplazado por AP potencial en el KPI
       ensureToolbar();
       await loadAll({ nocache: false });
     },
     async render(opts){
       ensureDomRefs();
-      ensureRefreshButton();
+      // ensureRefreshButton(); // Reemplazado por AP potencial en el KPI
       ensureToolbar();
       if (!state.loaded) {
         await Achievements.initOnce();

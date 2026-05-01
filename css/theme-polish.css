@@ -997,3 +997,9 @@ aside.col-side .panel-head img {
   object-fit: contain;
   flex-shrink: 0;
 }
+#achievementsPanel .panel-head {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap;
+  gap: 8px;
+}
