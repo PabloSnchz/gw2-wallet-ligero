@@ -187,7 +187,13 @@
     }
     return tags;
   }
-
+    function getBorderColor(account) {
+    var tags = getAccountTypeTags(account);
+    if (tags.indexOf('main') !== -1)  return 'rgba(255,217,102,0.5)';  // dorado
+    if (tags.indexOf('alter') !== -1) return 'rgba(177,156,217,0.5)';  // violeta
+    if (tags.indexOf('f2p') !== -1)   return 'rgba(123,194,255,0.5)';  // azul
+    return 'rgba(255,255,255,0.12)';  // neutro
+  }
   function isMainAccount(account) {
     var tags = getAccountTypeTags(account);
     return tags.indexOf('main') !== -1;
@@ -254,6 +260,47 @@
     try {
       localStorage.removeItem(CONFIG.STORAGE_LAST_FILE_KEY);
     } catch (e) {}
+  }
+
+    // =======================================================================
+  // 3BIS. SINCRONIZAR TAGS CON API KEYS
+  // =======================================================================
+  function syncAccountTagsToKeys(accounts) {
+    if (!accounts || !Array.isArray(accounts)) return;
+    try {
+      var keys = JSON.parse(localStorage.getItem('gw2_keys') || '[]');
+      if (!keys.length) return;
+      var changed = false;
+
+      accounts.forEach(function(acc) {
+        var apiKey = acc.apiKey?.value || acc.apiKey;
+        if (!apiKey) return;
+        var tags = acc.tags || [];
+        var tipo = tags.includes('main') ? 'main' : 
+                   tags.includes('alter') ? 'alter' : 
+                   tags.includes('f2p') ? 'f2p' : null;
+        if (!tipo) return;
+
+        var found = keys.find(function(k) { return k.value === apiKey; });
+        if (found && found.tag !== tipo) {
+          found.tag = tipo;
+          changed = true;
+          console.log(LOG, 'Tag sincronizado:', found.label || 'Key', '→', tipo);
+        }
+      });
+
+      if (changed) {
+        localStorage.setItem('gw2_keys', JSON.stringify(keys));
+        // Refrescar el KeyManager si está disponible
+        try {
+          if (typeof window !== 'undefined' && window.__GN__) {
+            // El KeyManager se refrescará al recargar o al cambiar de key
+          }
+        } catch(e) {}
+      }
+    } catch(e) {
+      console.warn(LOG, 'Error sincronizando tags', e);
+    }
   }
 
   // =======================================================================
@@ -325,6 +372,10 @@
       state.showPasswords = {};
       state.showTwitchPasswords = {};
       state.expandedAccounts = {};
+      
+      // NUEVO: Sincronizar tags de cuenta con API keys del KeyManager
+      syncAccountTagsToKeys(data.accounts);
+      
       render();
       window.toast('success', 'Cuentas cargadas automáticamente', { ttl: 1500 });
       return true;
@@ -557,8 +608,12 @@
       </div>
     `;
 
+    var bLeft    = getBorderColor(acc);
+    var bNeutral = 'rgba(255, 255, 255, 0.08)';
+    var gNeutral = 'rgba(90, 110, 154, 0.12)';
+
     return '' +
-      '<article class="wallet-card" style="' + (isMain ? 'border-left: 3px solid #ffd966;' : '') + '">' +
+      '<article class="wallet-card" style="border:1px solid ' + bNeutral + '; border-left:3px solid ' + bLeft + '; box-shadow:0 0 8px ' + gNeutral + ';">' +
         '<div class="wallet-card__top">' +
           '<div class="wallet-card__iconWrap">' +
             '<img src="' + decorativeIcon + '" width="30" height="30" alt="Cuenta" loading="lazy" style="filter: brightness(0.9);">' +
@@ -697,71 +752,134 @@
     });
   }
 
-  function renderTableRow(acc) {
-    var login = acc.login || {};
-    var gw2 = acc.gw2 || {};
-    var services = acc.services || {};
-    var tags = getAccountTypeTags(acc);
-    var decorativeIcon = getRandomDecorativeIcon();
-    var isExpanded = state.expandedAccounts[acc.id] ? Object.keys(state.expandedAccounts[acc.id]).length > 0 : false;
+    function renderTableRow(acc) {
+          var login = acc.login || {};
+          var gw2 = acc.gw2 || {};
+          var services = acc.services || {};
+          var tags = getAccountTypeTags(acc);
+          var decorativeIcon = getRandomDecorativeIcon();
+          var isExpanded = state.expandedAccounts[acc.id] ? Object.keys(state.expandedAccounts[acc.id]).length > 0 : false;
 
-    var showPass = state.showPasswords[acc.id] || false;
-    var showTwitchPass = state.showTwitchPasswords[acc.id] || false;
-    var passwordDisplay = showPass ? esc(login.password || '—') : '••••••••';
-    var gmailPassDisplay = showPass ? esc(login.gmailPassword || '—') : '••••••••';
-    
-    // Twitch info para tabla
-    var twitchInfo = '';
-    if (services.twitch && services.twitch.linked) {
-      var twitchUsername = services.twitch.username || '';
-      twitchInfo = '<div class="muted" style="font-size: 11px;"><img src="' + CONFIG.ICONS.twitch + '" width="12" height="12" style="vertical-align: middle;"> Twitch: @' + esc(twitchUsername) + '</div>';
-    }
+          var showPass = state.showPasswords[acc.id] || false;
+          var showTwitchPass = state.showTwitchPasswords[acc.id] || false;
+          var passwordDisplay = showPass ? esc(login.password || '—') : '••••••••';
+          var gmailPassDisplay = showPass ? esc(login.gmailPassword || '—') : '••••••••';
+          
+          // Twitch info para tabla
+          var twitchInfo = '';
+          if (services.twitch && services.twitch.linked) {
+            var twitchUsername = services.twitch.username || '';
+            twitchInfo = '<div class="muted" style="font-size: 11px;"><img src="' + CONFIG.ICONS.twitch + '" width="12" height="12" style="vertical-align: middle;"> Twitch: @' + esc(twitchUsername) + '</div>';
+          }
 
-    // Tipo de cuenta para tabla
-    var accountType = null;
-    if (tags.indexOf('main') !== -1) {
-      accountType = 'main';
-    } else if (tags.indexOf('alter') !== -1) {
-      accountType = 'alter';
-    } else if (tags.indexOf('f2p') !== -1) {
-      accountType = 'f2p';
-    }
-    
-    var typeIconHtml = '';
-    if (accountType && CONFIG.TYPE_ICONS[accountType]) {
-      typeIconHtml = '<img src="' + CONFIG.TYPE_ICONS[accountType] + '" width="16" height="16" alt="' + accountType + '" title="' + accountType + '" style="filter: brightness(0.9); margin-left: 4px; cursor: help;">';
-    }
-    
-    // Tags adicionales para tabla
-    var tagIconsHtml = '';
-    var tagOrder = ['farming', 'keys', 'weekly', 'taxi'];
-    for (var i = 0; i < tagOrder.length; i++) {
-      var tag = tagOrder[i];
-      if (tags.indexOf(tag) !== -1 && CONFIG.TAG_ICONS[tag]) {
-        tagIconsHtml += '<img src="' + CONFIG.TAG_ICONS[tag] + '" width="16" height="16" alt="' + tag + '" title="' + tag + '" style="filter: brightness(0.9); margin-left: 4px; cursor: help;">';
-      }
-    }
-    
-    var rightIcons = typeIconHtml + tagIconsHtml;
+          // Tipo de cuenta para tabla
+          var accountType = null;
+          if (tags.indexOf('main') !== -1) {
+            accountType = 'main';
+          } else if (tags.indexOf('alter') !== -1) {
+            accountType = 'alter';
+          } else if (tags.indexOf('f2p') !== -1) {
+            accountType = 'f2p';
+          }
+          
+          var typeIconHtml = '';
+          if (accountType && CONFIG.TYPE_ICONS[accountType]) {
+            typeIconHtml = '<img src="' + CONFIG.TYPE_ICONS[accountType] + '" width="16" height="16" alt="' + accountType + '" title="' + accountType + '" style="filter: brightness(0.9); margin-left: 4px; cursor: help;">';
+          }
+          
+          // Tags adicionales para tabla
+          var tagIconsHtml = '';
+          var tagOrder = ['farming', 'keys', 'weekly', 'taxi'];
+          for (var i = 0; i < tagOrder.length; i++) {
+            var tag = tagOrder[i];
+            if (tags.indexOf(tag) !== -1 && CONFIG.TAG_ICONS[tag]) {
+              tagIconsHtml += '<img src="' + CONFIG.TAG_ICONS[tag] + '" width="16" height="16" alt="' + tag + '" title="' + tag + '" style="filter: brightness(0.9); margin-left: 4px; cursor: help;">';
+            }
+          }
+          
+          var rightIcons = typeIconHtml + tagIconsHtml;
+          var bLeftTable = getBorderColor(acc);
 
-    return '' +
-      '<tr data-id="' + acc.id + '" style="' + (isMainAccount(acc) ? 'background: rgba(255,217,102,0.08);' : '') + '">' +
-        '}<img src="' + decorativeIcon + '" width="24" height="24" alt=""><\/td>' +
-        '}<strong style="cursor: pointer;" data-toggle-expand-table data-id="' + acc.id + '">' + esc(acc.name || 'Cuenta') + '</strong>' +
-          (isExpanded ? '<div class="muted" style="font-size: 11px; margin-top: 4px;">' + (acc.notes || '') + '</div>' : '') +
-          twitchInfo +
-        '<\/td>' +
-        '}<div><img src="' + CONFIG.CARD_ICONS.email + '" width="14" height="14" style="vertical-align: middle;"> <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.email || '') + '" data-field="Email">' + esc(login.email || '—') + '</span></div>' +
-          '<div class="muted" style="font-size: 11px;"><img src="' + CONFIG.CARD_ICONS.lock + '" width="12" height="12" style="vertical-align: middle;"> Pass: <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.password || '') + '" data-field="Contraseña">' + passwordDisplay + '</span> <button class="btn-ghost toggle-password" data-id="' + acc.id + '" style="padding: 0 4px; display: inline-flex; align-items: center;"><img src="' + CONFIG.CARD_ICONS.eye + '" width="12" height="12" alt=""></button></div>' +
-          (login.gmailPassword ? '<div class="muted" style="font-size: 11px;"><img src="' + CONFIG.CARD_ICONS.gmailPass + '" width="12" height="12" style="vertical-align: middle;"> Gmail: <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.gmailPassword) + '" data-field="Gmail Pass">' + gmailPassDisplay + '</span></div>' : '') +
-        '<\/td>' +
-        '}<img src="' + CONFIG.CARD_ICONS.gw2id + '" width="14" height="14" style="vertical-align: middle;"> ' + esc(gw2.accountName || '—') + '<\/td>' +
-        '<td class="right"><img src="' + CONFIG.CARD_ICONS.trophy + '" width="14" height="14" style="vertical-align: middle;"> ' + fmtNumber(gw2.achievementPoints) + '<\/td>' +
-        '<td class="right"><img src="' + CONFIG.CARD_ICONS.medal + '" width="14" height="14" style="vertical-align: middle;"> ' + (gw2.legendaries || 0) + '<\/td>' +
-        '}<div style="display: flex; align-items: center; gap: 2px;">' + rightIcons + '<\/div><\/td>' +
-      '<\/tr>';
-  }
+          // Contenido de la fila expandible (misma info que las tarjetas)
+          var expandedRowHtml = '';
+          if (isExpanded) {
+            var expansions = acc.expansions || {};
+            var expOrder = ['core', 'heroic', 'heartOfThorns', 'pathOfFire', 'endOfDragons', 'secretsOfTheObscure', 'janthirWilds', 'visionsOfEternity'];
+            var expIcons = [];
+            expOrder.forEach(function(key) {
+              if (expansions[key] !== undefined) {
+                expIcons.push(getExpansionIcon(key, expansions[key]));
+              }
+            });
 
+            var twitchDetail = '';
+            if (services.twitch && services.twitch.linked) {
+              twitchDetail = '<div style="margin-top:4px;"><img src="' + CONFIG.ICONS.twitch + '" width="14" height="14" style="vertical-align:middle;"> <strong>Twitch:</strong> @' + esc(services.twitch.username || '—');
+              if (services.twitch.email) twitchDetail += ' · <span style="cursor:pointer;text-decoration:underline dotted;" data-copy="' + esc(services.twitch.email) + '" data-field="Email Twitch">' + esc(services.twitch.email) + '</span>';
+              twitchDetail += '</div>';
+            }
+            var geforceDetail = '';
+            if (services.geforceNow && services.geforceNow.linked) {
+              geforceDetail = '<div style="margin-top:4px;"><img src="' + CONFIG.ICONS.geforce + '" width="14" height="14" style="vertical-align:middle;"> <strong>GeForce Now:</strong> <img src="assets/icons/Welcome/156108.png" width="14" height="14" alt="Vinculado" style="vertical-align:middle;"> Vinculado</div>';
+            }
+            var apiKeyDetail = '';
+            if (acc.apiKey) {
+              var apiKeyValue = acc.apiKey.value || acc.apiKey;
+              apiKeyDetail = '<div style="margin-top:4px;"><img src="' + CONFIG.CARD_ICONS.apiKey + '" width="14" height="14" style="vertical-align:middle;"> <strong>API Key:</strong> <code style="cursor:pointer;text-decoration:underline dotted;" data-copy="' + esc(apiKeyValue) + '" data-field="API Key">' + esc(apiKeyValue) + '</code></div>';
+            }
+
+            expandedRowHtml =
+              '<td colspan="7" style="padding:12px 16px; background:#0a0c10; border-bottom:2px solid #2a2c35;">' +
+                '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">' +
+                  // Columna 1: GW2 Avanzado
+                  '<div>' +
+                    '<div style="font-weight:600;color:#ffd966;margin-bottom:6px;">GW2 Avanzado</div>' +
+                    '<div style="font-size:0.8rem;display:flex;flex-direction:column;gap:4px;">' +
+                      '<span><strong>Creación:</strong> ' + formatDate(gw2.created) + ' (' + formatAgeDays(gw2.created) + ')</span>' +
+                      '<span><strong>Chars:</strong> ' + (gw2.characterSlots || gw2.characterCount || '—') + '</span>' +
+                      '<span><strong>Mochilas:</strong> ' + (gw2.bagSlots || '—') + '</span>' +
+                      '<span><strong>Bancos:</strong> ' + (gw2.bankSlots || '—') + '</span>' +
+                      '<span><strong>Material:</strong> ' + (gw2.materialStorage || '—') + '</span>' +
+                      (gw2.level80 !== undefined ? '<span><strong>Nivel 80:</strong> ' + (gw2.level80 ? '✅ Sí' : '❌ No') + '</span>' : '') +
+                    '</div>' +
+                  '</div>' +
+                  // Columna 2: Expansiones
+                  '<div>' +
+                    '<div style="font-weight:600;color:#ffd966;margin-bottom:6px;">Expansiones</div>' +
+                    '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + (expIcons.length ? expIcons.join(' ') : '<span class="muted">—</span>') + '</div>' +
+                  '</div>' +
+                  // Columna 3: Servicios y API
+                  '<div>' +
+                    '<div style="font-weight:600;color:#ffd966;margin-bottom:6px;">Servicios y API</div>' +
+                    twitchDetail +
+                    geforceDetail +
+                    apiKeyDetail +
+                  '</div>' +
+                  // Notas
+                  (acc.notes ? '<div><div style="font-weight:600;color:#ffd966;margin-bottom:6px;">Notas</div><div class="muted" style="font-size:0.8rem;">' + esc(acc.notes) + '</div></div>' : '') +
+                '</div>' +
+              '</td>';
+          }
+
+          return '' +
+            '<tr data-id="' + acc.id + '" style="border-left:3px solid ' + bLeftTable + ';">' +
+              '<td><img src="' + decorativeIcon + '" width="24" height="24" alt=""></td>' +
+              '<td style="min-width:140px;"><strong style="cursor: pointer;" data-toggle-expand-table data-id="' + acc.id + '">' + esc(acc.name || 'Cuenta') + '</strong>' +
+                '<div class="muted" style="font-size: 10px; margin-top: 2px;">' + (isExpanded ? '▲ Ocultar' : '▼ Más info') + '</div>' +
+              '</td>' +
+              '<td style="min-width:200px;"><div><img src="' + CONFIG.CARD_ICONS.email + '" width="14" height="14" style="vertical-align: middle;"> <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.email || '') + '" data-field="Email">' + esc(login.email || '—') + '</span></div>' +
+                '<div class="muted" style="font-size: 11px;"><img src="' + CONFIG.CARD_ICONS.lock + '" width="12" height="12" style="vertical-align: middle;"> Pass: <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.password || '') + '" data-field="Contraseña">' + passwordDisplay + '</span> <button class="btn-ghost toggle-password" data-id="' + acc.id + '" style="padding: 0 4px; display: inline-flex; align-items: center;"><img src="' + CONFIG.CARD_ICONS.eye + '" width="12" height="12" alt=""></button></div>' +
+                (login.gmailPassword ? '<div class="muted" style="font-size: 11px;"><img src="' + CONFIG.CARD_ICONS.gmailPass + '" width="12" height="12" style="vertical-align: middle;"> Gmail: <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.gmailPassword) + '" data-field="Gmail Pass">' + gmailPassDisplay + '</span></div>' : '') +
+              '</td>' +
+              '<td style="min-width:140px;"><img src="' + CONFIG.CARD_ICONS.gw2id + '" width="14" height="14" style="vertical-align: middle;"> ' + esc(gw2.accountName || '—') + '</td>' +
+              '<td class="right"><img src="' + CONFIG.CARD_ICONS.trophy + '" width="14" height="14" style="vertical-align: middle;"> ' + fmtNumber(gw2.achievementPoints) + '</td>' +
+              '<td class="right"><img src="' + CONFIG.CARD_ICONS.medal + '" width="14" height="14" style="vertical-align: middle;"> ' + (gw2.legendaries || 0) + '</td>' +
+              '<td><div style="display: flex; align-items: center; gap: 2px;">' + rightIcons + '</div></td>' +
+            '</tr>' +
+            (expandedRowHtml ? '<tr class="account-expanded-row" data-parent="' + acc.id + '">' + expandedRowHtml + '</tr>' : '');
+        }
+
+      
   function renderTable(accounts) {
     var container = document.getElementById('accountsList');
     if (!container) return;
@@ -769,9 +887,9 @@
     container.innerHTML = '' +
       '<div class="table-wrap">' +
         '<table class="simple" style="width:100%; border-collapse: separate; border-spacing: 0;">' +
-          '<thead>' +
-            '械' +
-              '<th style="width:32px;"></th>' +
+        '<thead>' +
+        '<tr>' +
+          '<th style="width:32px;"></th>' +
               '<th>Cuenta</th>' +
               '<th>Credenciales</th>' +
               '<th>GW2 ID</th>' +
@@ -1006,123 +1124,146 @@
   // =======================================================================
   // 7. FORMULARIO DE CARGA (completo con asistente arriba y acceso a cuentas abajo)
   // =======================================================================
-  function renderLoadForm() {
-    var body = document.querySelector('#accountsPanel .panel__body');
-    if (!body) return;
+    function renderLoadForm() {
+      var body = document.querySelector('#accountsPanel .panel__body');
+      if (!body) return;
 
-    var lastFile = getLastFileInfo();
-    var hasStoredFile = !!lastFile;
+      var lastFile = getLastFileInfo();
+      var hasStoredFile = !!lastFile;
 
-    body.innerHTML = `
-      <!-- BLOQUE ASISTENTE -->
-      <div id="assistantBlock" style="background: #1a1e2a; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid #2a2c35;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <img src="assets/icons/Welcome/2604904.png" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain;">
-            <div>
-              <h3 style="margin: 0; font-size: 1rem;">Asistente de cuentas</h3>
-              <div class="muted" style="font-size: 0.75rem;">Guía paso a paso para crear tu archivo seguro</div>
-            </div>
-          </div>
-          <button id="openWizardBtn" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">
-            <img src="assets/icons/Welcome/155911.png" width="18" height="18" alt="" style="filter: brightness(0.9);">
-            Crear nuevo archivo
-          </button>
-        </div>
-      </div>
-
-      <!-- BLOQUE ACCESO A CUENTAS -->
-      <div id="accessBlock" style="background: #1a1e2a; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #2a2c35;">
-        <h3 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;">
-          <img src="assets/icons/Welcome/733266.png" width="24" height="24" alt="">
-          Acceso a cuentas
-        </h3>
-        
-        ${hasStoredFile ? `
-          <div style="background: #0f1116; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+      body.innerHTML = `
+        <!-- DISEÑO A 2 COLUMNAS -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          
+          <!-- COLUMNA IZQUIERDA: Asistente -->
+          <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <img src="assets/icons/Welcome/2604904.png" width="40" height="40" alt="" style="filter: brightness(0.9);">
               <div>
-                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                  <img src="assets/icons/Welcome/102353.png" width="18" height="18" alt="" style="filter: brightness(0.9);">
-                  <strong>Último archivo:</strong> ${esc(lastFile.name)}
-                </div>
-                <span class="muted">Ingresá tu contraseña para acceder automáticamente</span>
+                <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #e0e4ed;">Asistente de cuentas</h3>
+                <div class="muted" style="font-size: 0.8rem;">Guía paso a paso para crear tu archivo seguro</div>
               </div>
-              <button id="accountsUseStoredBtn" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">
-                <img src="assets/icons/Welcome/834002.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
-                Usar archivo guardado
-              </button>
+            </div>
+            <div style="font-size: 0.8rem; color: #b4bad0; display: flex; flex-direction: column; gap: 10px; line-height: 1.5;">
+            <div style="display: flex; align-items: flex-start; gap: 8px;">
+              <img src="assets/icons/Welcome/733266.png" width="18" height="18" alt="" style="margin-top: 3px; flex-shrink: 0;">
+              <span>Creá tu archivo <code style="background:#1a1c24;padding:1px 6px;border-radius:4px;">.enc</code> desde una plantilla Excel. El asistente te guía en <strong>4 pasos simples</strong>.</span>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 8px;">
+              <img src="assets/icons/Welcome/544515.png" width="18" height="18" alt="" style="margin-top: 3px; flex-shrink: 0;">
+              <span>El cifrado AES se aplica <strong>antes de guardar</strong> el archivo. Sin tu contraseña, nadie puede leerlo.</span>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 8px;">
+              <img src="assets/icons/Cuentas/GW2free.png" width="18" height="18" alt="" style="margin-top: 3px; flex-shrink: 0;">
+              <span><strong>Todo ocurre en tu navegador.</strong> No hay servidores, ni bases de datos, ni terceros involucrados. Tus datos nunca salen de tu PC.</span>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 8px; margin-top: 4px; padding-top: 10px; border-top: 1px solid #1e2028;">
+              <img src="assets/icons/Welcome/discord.png" width="18" height="18" alt="" style="margin-top: 3px; flex-shrink: 0;">
+              <span>¿Dudas? Somos la <strong>Comunidad Gato Negro</strong>, desarrolladores reconocidos dentro de Guild Wars 2. Buscanos en Discord o YouTube como <strong>@pablinschez</strong>.</span>
             </div>
           </div>
-          <hr style="border-color: #2a2c35; margin: 16px 0;">
-          <p class="muted">O seleccioná un archivo diferente:</p>
-        ` : ''}
-
-        <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
-          <div style="flex: 2;">
-            <label>Archivo cifrado (.enc)</label>
-            <input type="file" id="accountsFileInput" accept=".enc">
-          </div>
-          <div style="flex: 1;">
-            <label>Contraseña</label>
-            <input type="password" id="accountsPasswordInput" placeholder="Contraseña de descifrado">
-          </div>
-          <div>
-            <button id="accountsLoadBtn" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">
-              <img src="assets/icons/Welcome/528726.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
-              Cargar y mostrar
+            <button id="openWizardBtn" class="btn btn--accent" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; font-weight: 600; font-size: 0.9rem; margin-top: auto;">
+              <img src="assets/icons/Welcome/155911.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
+              Crear nuevo archivo
             </button>
           </div>
+
+          <!-- COLUMNA DERECHA: Acceso a cuentas -->
+          <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <img src="assets/icons/Welcome/733266.png" width="36" height="36" alt="" style="filter: brightness(0.9);">
+              <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #e0e4ed;">Acceso a cuentas</h3>
+            </div>
+            
+            ${hasStoredFile ? `
+            <div style="background: #0a0c10; border-radius: 10px; padding: 14px; border: 1px solid #1e2028;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                <img src="assets/icons/Welcome/102353.png" width="18" height="18" alt="" style="filter: brightness(0.9);">
+                <span style="font-weight: 600; font-size: 0.85rem;">Último archivo:</span>
+                <span style="color: #ffd966;">${esc(lastFile.name)}</span>
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="password" id="accountsPasswordInput" placeholder="Contraseña de descifrado" style="flex: 1; min-width: 140px;">
+                <button id="accountsUseStoredBtn" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                  <img src="assets/icons/Welcome/834002.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
+                  Usar archivo guardado
+                </button>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="flex: 1; height: 1px; background: #2a2c35;"></div>
+              <span class="muted" style="font-size: 0.75rem; white-space: nowrap;">o cargá un archivo nuevo</span>
+              <div style="flex: 1; height: 1px; background: #2a2c35;"></div>
+            </div>
+            ` : ''}
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+              <button type="button" id="accountsFileButton" class="btn" style="display: flex; align-items: center; gap: 8px; padding: 10px 14px; font-size: 0.85rem; width: 100%; justify-content: center;">
+                <img src="assets/icons/Welcome/102619.png" width="18" height="18" alt="" style="filter: brightness(0.9);">
+                <span id="accountsFileName">Seleccionar archivo .enc</span>
+              </button>
+              <input type="file" id="accountsFileInput" accept=".enc" style="display: none;">
+            </div>
+              ${!hasStoredFile ? `
+              <div style="display: flex; align-items: center; gap: 10px; background: #0a0c10; border-radius: 8px; padding: 8px 12px; border: 1px solid #1e2028;">
+                <img src="assets/icons/Cuentas/733265.png" width="20" height="20" alt="" style="filter: brightness(0.9); flex-shrink: 0;">
+                <input type="password" id="accountsPasswordInput" placeholder="Contraseña de descifrado" style="flex: 1; min-width: 0;">
+              </div>
+              ` : ''}
+              <button id="accountsLoadBtn" class="btn btn--accent" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; font-weight: 600; font-size: 0.9rem;">
+                <img src="assets/icons/Welcome/528726.png" width="18" height="18" alt="" style="filter: brightness(0.9);">
+                Cargar y mostrar
+              </button>
+            </div>
+            <div id="accountsLoadStatus" class="muted" style="font-size: 0.8rem; text-align: center; min-height: 20px;"></div>
+          </div>
+
         </div>
-        <div id="accountsLoadStatus" class="muted" style="margin-top: 12px;"></div>
+      `;
 
-      <div id="accountsStats"></div>
-      <div id="accountsFilters"></div>
-      <div id="accountsList" class="wallet-card-grid"></div>
-    `;
+      // Eventos (sin cambios)
+      var useStoredBtn = document.getElementById('accountsUseStoredBtn');
+      var statusEl = document.getElementById('accountsLoadStatus');
+      var fileInput = document.getElementById('accountsFileInput');
+      var passwordInput = document.getElementById('accountsPasswordInput');
+      var loadBtn = document.getElementById('accountsLoadBtn');
 
-    // Evento para usar archivo guardado
-    var useStoredBtn = document.getElementById('accountsUseStoredBtn');
-    var statusEl = document.getElementById('accountsLoadStatus');
-    var fileInput = document.getElementById('accountsFileInput');
-    var passwordInput = document.getElementById('accountsPasswordInput');
-    var loadBtn = document.getElementById('accountsLoadBtn');
+      if (useStoredBtn) {
+        useStoredBtn.onclick = async function() {
+          var password = passwordInput.value;
+          if (!password) {
+            if (statusEl) { statusEl.textContent = '⚠️ Ingresá la contraseña'; statusEl.style.color = '#ffd966'; }
+            return;
+          }
+          if (statusEl) { statusEl.textContent = '🔓 Descifrando archivo guardado...'; statusEl.style.color = '#ffd966'; }
+          var success = await loadFromStoredFile(password);
+          if (!success && statusEl) {
+            statusEl.textContent = '❌ Contraseña incorrecta. Probá con otro archivo.';
+            statusEl.style.color = '#f28b82';
+          }
+        };
+      }
 
-    if (useStoredBtn) {
-      useStoredBtn.onclick = async function() {
-        var password = passwordInput.value;
-        if (!password) {
-          if (statusEl) { statusEl.textContent = '⚠️ Ingresá la contraseña'; statusEl.style.color = '#ffd966'; }
-          return;
-        }
-        if (statusEl) { statusEl.textContent = '🔓 Descifrando archivo guardado...'; statusEl.style.color = '#ffd966'; }
-        var success = await loadFromStoredFile(password);
-        if (!success && statusEl) {
-          statusEl.textContent = '❌ Contraseña incorrecta. Probá con otro archivo.';
-          statusEl.style.color = '#f28b82';
-        }
-      };
-    }
-
-    if (loadBtn) {
-      loadBtn.onclick = async function() {
-        var file = fileInput.files[0];
-        var password = passwordInput.value;
-        if (!file) { if (statusEl) statusEl.textContent = '⚠️ Seleccioná un archivo'; return; }
-        if (!password) { if (statusEl) statusEl.textContent = '⚠️ Ingresá la contraseña'; return; }
-        if (statusEl) { statusEl.textContent = '🔓 Descifrando archivo...'; statusEl.style.color = '#ffd966'; }
-        var success = await loadFromFile(file, password, true);
-        if (success && statusEl) {
-          statusEl.textContent = '✅ Archivo cargado correctamente';
-          statusEl.style.color = '#a7f3d0';
-          fileInput.value = '';
-          passwordInput.value = '';
-        } else if (statusEl) {
-          statusEl.textContent = '❌ Error al descifrar. Verificá la contraseña o el archivo.';
-          statusEl.style.color = '#f28b82';
-        }
-      };
-    }
+      if (loadBtn) {
+        loadBtn.onclick = async function() {
+          var file = fileInput.files[0];
+          var password = passwordInput.value;
+          if (!file) { if (statusEl) statusEl.textContent = '⚠️ Seleccioná un archivo'; return; }
+          if (!password) { if (statusEl) statusEl.textContent = '⚠️ Ingresá la contraseña'; return; }
+          if (statusEl) { statusEl.textContent = '🔓 Descifrando archivo...'; statusEl.style.color = '#ffd966'; }
+          var success = await loadFromFile(file, password, true);
+          if (success && statusEl) {
+            statusEl.textContent = '✅ Archivo cargado correctamente';
+            statusEl.style.color = '#a7f3d0';
+            fileInput.value = '';
+            passwordInput.value = '';
+          } else if (statusEl) {
+            statusEl.textContent = '❌ Error al descifrar. Verificá la contraseña o el archivo.';
+            statusEl.style.color = '#f28b82';
+          }
+        };
+      }
 
     var openWizardBtn = document.getElementById('openWizardBtn');
     if (openWizardBtn && !openWizardBtn.__wired) {
@@ -1131,7 +1272,23 @@
         openWizardModal();
       });
     }
-  }
+
+    // NUEVO: Botón estilizado para selector de archivo
+    var fileButton = document.getElementById('accountsFileButton');
+    if (fileButton && fileInput) {
+      fileButton.addEventListener('click', function() {
+        fileInput.click();
+      });
+      fileInput.addEventListener('change', function() {
+        var fileName = fileInput.files[0] ? fileInput.files[0].name : 'Seleccionar archivo .enc';
+        var nameSpan = document.getElementById('accountsFileName');
+        if (nameSpan) {
+          nameSpan.textContent = fileName;
+          nameSpan.style.color = '#a0ffc8';
+        }
+      });
+    }
+  }  // ← llave de cierre de renderLoadForm
 
   // =======================================================================
   // 8. MODAL DEL ASISTENTE

@@ -59,7 +59,7 @@
   var ICON_LOCAL    = 'assets/icons/841720.png';
   var ICON_DAILY    = 'assets/icons/534745.png';
   var ICON_WEEKLY   = 'assets/icons/155064.png';
-  var ICON_SCHEDULE = 'assets/icons/523379.png'; // Para el botón "Horarios"
+  var ICON_SCHEDULE = 'assets/icons/523381.png'; // Para el botón "Horarios"
 
   // ==========================================================================
   // BARRA DE HORARIOS (estilo Activities con iconos GW2)
@@ -418,6 +418,7 @@
     } catch (_) {}
 
     enhanceSchedule(card);
+    card.classList.add('card');
   }
 
   // ==========================================================================

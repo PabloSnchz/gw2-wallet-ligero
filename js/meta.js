@@ -36,11 +36,9 @@
   const LS_MANUAL     = 'gw2_meta_manual_v1';
 
   // Persistencia de toggles de UI
-  const LS_META_DELUXE  = 'gw2_meta_deluxe';
   const LS_META_COMPACT = 'gw2_meta_compact';
 
   const BODY = document.body;
-  const DELUXE_DEFAULT  = (localStorage.getItem(LS_META_DELUXE)  ?? 'on')  === 'on';
   const COMPACT_DEFAULT = (localStorage.getItem(LS_META_COMPACT) ?? 'off') === 'on';
 
   
@@ -952,45 +950,29 @@ const EXP_ICON = {
   }
 
   // ---------- Deluxe toggles ----------
-  function setDeluxe(on){ BODY.setAttribute('data-meta-deluxe', on ? 'on' : 'off'); }
   function setCompact(on){ BODY.setAttribute('data-meta-compact', on ? 'on' : 'off'); }
   function injectUIToggles(){
-    const actions = $('#metaPanel .filters-actions');
-    if(!actions) return;
-    if(actions.querySelector('#metaToggleDeluxe')) return;
+      const actions = $('#metaPanel .filters-actions');
+      if(!actions) return;
+      if(actions.querySelector('#metaToggleCompact')) return;
 
-    const btnDeluxe = document.createElement('button');
-    btnDeluxe.id = 'metaToggleDeluxe';
-    btnDeluxe.className = 'btn btn--ghost';
-    btnDeluxe.type = 'button';
-    btnDeluxe.title = 'Alternar Modo Deluxe / Clásico';
-    btnDeluxe.textContent = (BODY.getAttribute('data-meta-deluxe')==='on') ? 'Modo: Deluxe' : 'Modo: Clásico';
+      const btnCompact = document.createElement('button');
+      btnCompact.id = 'metaToggleCompact';
+      btnCompact.className = 'btn btn--ghost';
+      btnCompact.type = 'button';
+      btnCompact.title = 'Alternar Vista compacta / detallada';
+      btnCompact.textContent = (BODY.getAttribute('data-meta-compact')==='on') ? 'Vista detallada' : 'Vista compacta';
 
-    const btnCompact = document.createElement('button');
-    btnCompact.id = 'metaToggleCompact';
-    btnCompact.className = 'btn btn--ghost';
-    btnCompact.type = 'button';
-    btnCompact.title = 'Alternar Vista compacta / detallada';
-    btnCompact.textContent = (BODY.getAttribute('data-meta-compact')==='on') ? 'Vista detallada' : 'Vista compacta';
+      btnCompact.addEventListener('click', ()=>{
+        const nowOn = BODY.getAttribute('data-meta-compact')!=='on';
+        setCompact(nowOn);
+        btnCompact.textContent = nowOn ? 'Vista detallada' : 'Vista compacta';
+        localStorage.setItem(LS_META_COMPACT, nowOn ? 'on' : 'off');
+        render();
+      });
 
-    btnDeluxe.addEventListener('click', ()=>{
-      const nowOn = BODY.getAttribute('data-meta-deluxe')!=='on';
-      setDeluxe(nowOn);
-      btnDeluxe.textContent = nowOn ? 'Modo: Deluxe' : 'Modo: Clásico';
-      localStorage.setItem(LS_META_DELUXE, nowOn ? 'on' : 'off');
-      render();
-    });
-    btnCompact.addEventListener('click', ()=>{
-      const nowOn = BODY.getAttribute('data-meta-compact')!=='on';
-      setCompact(nowOn);
-      btnCompact.textContent = nowOn ? 'Vista detallada' : 'Vista compacta';
-      localStorage.setItem(LS_META_COMPACT, nowOn ? 'on' : 'off');
-      render();
-    });
-
-    actions.appendChild(btnDeluxe);
-    actions.appendChild(btnCompact);
-  }
+      actions.appendChild(btnCompact);
+    }
 
   // ---------- Tooltips de infusiones ----------
   function bindInfusionPreviews(){
@@ -1071,7 +1053,6 @@ const EXP_ICON = {
       await refreshAccountFlags(false, { token: window.__GN__?.getSelectedToken?.() ?? null });
 
       manualDoneSet = loadManualDone();
-      setDeluxe(DELUXE_DEFAULT);
       setCompact(COMPACT_DEFAULT);
       injectUIToggles();
 

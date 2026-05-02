@@ -63,7 +63,8 @@
   --elev-0: none;
   --elev-1: 0 1px 0 0 #1a1b20 inset, 0 0 0 1px rgba(255,255,255,0.02);
   --elev-2: 0 6px 16px rgba(0,0,0,.35), 0 0 0 1px rgba(82,118,255,.08);
-
+  /* NUEVO: Elevación hover unificada para todas las cards */
+  --elev-hover: 0 10px 28px rgba(0,0,0,0.45), 0 0 16px rgba(90,110,154,0.20), 0 0 0 1px rgba(82,118,255,0.12);
   /* Motion */
   --ease-1: cubic-bezier(.2,.7,.2,1);
   --dur-1: .14s;
@@ -121,14 +122,14 @@ p, li, span {
     var(--bg-2);
   box-shadow: var(--elev-1);
   transition:
-    transform var(--dur-1) var(--ease-1),
-    box-shadow var(--dur-1) var(--ease-1),
-    border-color var(--dur-1) var(--ease-1);
+    transform 0.22s cubic-bezier(0.2, 0.9, 0.4, 1.1),
+    box-shadow 0.22s cubic-bezier(0.2, 0.9, 0.4, 1.1),
+    border-color 0.22s ease;
 }
 .card:hover {
-  transform: translateY(-1px);
+  transform: translateY(-3px);
   border-color: var(--bd-2);
-  box-shadow: var(--elev-2);
+  box-shadow: var(--elev-hover);
 }
 
 /* Comodines de layout para tarjetas (no invasivos) */
@@ -474,19 +475,23 @@ aside.col-side .panel-head img {
 }
 
 /* ============================== TABLA UNIFICADA ============================ */
-.table-unified {
+.table-unified,
+#walletTable {
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
 }
 .table-unified th,
-.table-unified td {
+.table-unified td,
+#walletTable th,
+#walletTable td {
   padding: 10px 12px;
   border-bottom: 1px solid #24252a;
   white-space: nowrap;
   vertical-align: middle;
 }
-.table-unified thead th {
+.table-unified thead th,
+#walletTable thead th {
   position: sticky;
   top: 0;
   background: #0f1118;
@@ -499,11 +504,55 @@ aside.col-side .panel-head img {
   border-bottom: 1px solid #2a2c35;
 }
 .table-unified th:first-child,
-.table-unified td:first-child {
+.table-unified td:first-child,
+#walletTable th:first-child,
+#walletTable td:first-child {
   position: sticky;
   left: 0;
   background: #0e1116;
   z-index: 1;
+}
+
+/* Hover unificado en filas */
+.table-unified tbody tr:hover,
+#walletTable tbody tr:hover {
+  background: #1a1d28;
+}
+/* Tabla de Cuentas */
+#accountsList .table-unified,
+#accountsList table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+#accountsList table th,
+#accountsList table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #24252a;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+#accountsList table thead th {
+  position: sticky;
+  top: 0;
+  background: #0f1118;
+  z-index: 2;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9aa2b8;
+  border-bottom: 1px solid #2a2c35;
+}
+#accountsList table tbody tr:hover {
+  background: #1a1d28;
+}
+/* Contenedor de tabla wallet */
+#walletTableWrap {
+  border: 1px solid #26262b;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 8px;
 }
 
 /* ============================== CELDAS DE DATOS NUMÉRICOS ================== */

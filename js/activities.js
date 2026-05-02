@@ -626,7 +626,7 @@
       var disabled = hasChat ? '' : ' disabled';
       var tooltip = hasChat ? 'Copiar waypoint' : 'Código no disponible';
       html += `
-        <article class="card psna-card" data-psna-region="${esc(item.region)}" style="padding: 8px 10px; display: flex; flex-direction: column; width: 100%;">
+        <article class="card psna-card" data-psna-region="${esc(item.region)}" style="padding: 10px; display: flex; flex-direction: column; width: 100%; border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid rgba(123,194,255,0.5); box-shadow: 0 0 8px rgba(90,110,154,0.12);">
           <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
             <img src="https://wiki.guildwars2.com/images/thumb/d/d2/Waypoint_%28map_icon%29.png/32px-Waypoint_%28map_icon%29.png" 
                  width="24" height="24" alt="WP" loading="lazy" style="flex-shrink: 0;">
@@ -739,8 +739,9 @@
       var done = state.daily.ecto.done.has(String(key));
       var name = item ? item.name : key;
       var icon = item && item.icon ? '<img src="' + esc(item.icon) + '" width="36" height="36" alt="" style="border-radius: 6px;">' : '';
+      var bLeftColor = done ? 'rgba(160,255,200,0.5)' : 'rgba(255,211,107,0.5)';
       html += `
-        <article class="card ecto-card" style="padding: 6px 8px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px;">
+        <article class="card ecto-card" style="padding: 10px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid ${bLeftColor}; box-shadow: 0 0 8px rgba(90,110,154,0.12);">
           <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
             ${icon}
           </div>
@@ -846,7 +847,8 @@
     t4.forEach(function(fractal) {
       var name = typeof fractal === 'string' ? fractal : fractal.name;
       var hasCM = fractal.cm === true;
-      html += '<article class="card fractal-card" style="padding: 10px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; background: #0c0e13; border: 1px solid #2a2c35; border-radius: 10px;">' +
+      var bLeftT4 = hasCM ? 'rgba(255,211,107,0.5)' : 'rgba(160,255,200,0.5)';
+      html += '<article class="card fractal-card" style="padding: 10px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid ' + bLeftT4 + '; box-shadow: 0 0 8px rgba(90,110,154,0.12); border-radius: 10px;">' +
               '<div style="width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;">' + getFractalIconHtml(name, 48) + '</div>' +
               '<div style="width: 100%;"><div style="font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="' + esc(name) + '">' + esc(name) + '</div>' +
               (hasCM ? '<div style="margin-top: 6px;"><span class="badge badge--warning" style="font-size: 0.6rem; padding: 2px 6px;">⚠️ CM</span></div>' : '') +
@@ -857,7 +859,8 @@
     rec.forEach(function(r) {
       var scaleNum = r.scale || parseInt(String(r.name || r).match(/\d+/)?.[0] || '0', 10);
       var scaleName = typeof r === 'string' ? r : (r.name || 'Scale ' + scaleNum);
-      html += '<article class="card fractal-card" style="padding: 10px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; background: #0c0e13; border: 1px solid #2a2c35; border-radius: 10px;">' +
+      var bLeftRec = 'rgba(123,194,255,0.5)';
+      html += '<article class="card fractal-card" style="padding: 10px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid ' + bLeftRec + '; box-shadow: 0 0 8px rgba(90,110,154,0.12); border-radius: 10px;">' +
               '<div style="width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;">' + getScaleIconHtml(scaleNum, 48) + '</div>' +
               '<div style="width: 100%;"><div style="font-weight: 600; font-size: 0.85rem;">' + esc(scaleName) + '</div>' +
               '<div style="margin-top: 6px;"><span class="badge badge--info" style="font-size: 0.6rem; padding: 2px 6px;">📊 Escala ' + scaleNum + '</span></div></div></article>';
