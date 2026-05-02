@@ -136,66 +136,43 @@
 
     // --- Aplicar tema (colores y glows unificados v1.4.0) -----------------------
   function applyCurrencyTheme(card) {
-    if (!card) return;
+      if (!card) return;
 
-    var key = resolveCurrencyKey(card);
-    var hex = colorForKey(key);
-    var isColorful = (key !== 'default');
+      var key = resolveCurrencyKey(card);
+      var hex = colorForKey(key);
+      var isColorful = (key !== 'default');
+      var bLeft = hexToRGBA(isColorful ? hex : '#FFFFFF', 0.5);
 
-    if (DEBUG) {
-      var titleDbg = readTitle(card);
-      console.log('[WalletTheme] resolve:', titleDbg, '→', key);
+      // Solo: borde izquierdo de color
+      try {
+        card.style.borderLeft = '3px solid ' + bLeft;
+      } catch (_) {}
+
+      // Solo: título tintado
+      try {
+        var title =
+          card.querySelector('.wv-card__top .wv-card__name') ||
+          card.querySelector('.wv-card__name') ||
+          card.querySelector('.wallet-card__name') ||
+          card.querySelector('.cur-card__title') ||
+          card.querySelector('.wallet-card__title') ||
+          card.querySelector('.w-card__title') ||
+          card.querySelector('.title, .name');
+        if (title) title.style.color = isColorful ? hex : '#FFFFFF';
+      } catch (_) {}
+          // Glow en el ícono (mismo patrón que WV Tienda)
+    if (isColorful) {
+      try {
+        var iconWrap = card.querySelector('.wallet-card__iconWrap');
+        if (iconWrap) {
+          var iconGlow = hexToRGBA(hex, 0.36);
+          var iconBorder = hexToRGBA(hex, 0.32);
+          iconWrap.style.boxShadow = '0 0 0 2px ' + iconBorder + ', 0 0 10px ' + iconGlow;
+          iconWrap.style.borderRadius = '10px';
+        }
+      } catch (_) {}
     }
-
-    // Constantes de la receta unificada
-    var bNeutral  = 'rgba(255, 255, 255, 0.08)';          // borde neutro
-    var gNeutral  = 'rgba(90, 110, 154, 0.12)';           // glow suave
-    var bLeft     = hexToRGBA(isColorful ? hex : '#FFFFFF', 0.5);  // borde izq de color
-    var iconColor = hexToRGBA(isColorful ? hex : '#FFFFFF', 0.3);  // marco ícono sutil
-
-    // Título tintado
-    try {
-      var title =
-        card.querySelector('.wv-card__top .wv-card__name') ||
-        card.querySelector('.wv-card__name') ||
-        card.querySelector('.wallet-card__name') ||
-        card.querySelector('.cur-card__title') ||
-        card.querySelector('.wallet-card__title') ||
-        card.querySelector('.w-card__title') ||
-        card.querySelector('.title, .name');
-      if (title) title.style.color = isColorful ? hex : '#FFFFFF';
-    } catch (_) {}
-
-    // Contenedor tarjeta: borde neutro + glow suave + borde izquierdo de color
-    try {
-      card.style.border = '1px solid ' + bNeutral;
-      card.style.boxShadow = '0 0 8px ' + gNeutral;
-      card.style.borderLeft = '3px solid ' + bLeft;
-      card.style.borderRadius = '10px';
-    } catch (_) {}
-
-    // Marco del ícono: sutil, sin glow exagerado
-    try {
-      var iconWrap =
-        card.querySelector('.wv-card__iconWrap') ||
-        card.querySelector('.wallet-card__iconWrap') ||
-        card.querySelector('.cur-card__iconWrap') ||
-        card.querySelector('.w-card__iconWrap') ||
-        card.querySelector('.icon, .icon-wrap');
-      if (iconWrap && iconColor) {
-        iconWrap.style.boxShadow = '0 0 0 2px ' + iconColor;
-        iconWrap.style.borderRadius = '6px';
-      }
-    } catch (_) {}
-
-    // Cantidad/pill
-    try {
-      var amount =
-        card.querySelector('.wallet-amount') ||
-        card.querySelector('.cur-amt, .wallet-amt, .w-amt, .pill.value, .value, .wv-badge strong');
-      if (amount) amount.style.color = isColorful ? hex : '#FFFFFF';
-    } catch (_) {}
-  }
+    }
 
   // --- Migración de categorías a badges ----------------------------------------
   function migrateCategoriesToBadges(root) {

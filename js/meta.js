@@ -5,7 +5,7 @@
   const $  = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => Array.from((r||document).querySelectorAll(s));
 
-  console.info('%cMetaEventos meta.js v3.2.1 — Recuadro + logo de expansión (borde del color del título)',
+  console.info('%cMetaEventos meta.js v3.3.0 — Rediseño unificado de tarjetas (ícono con glow + border-left)',
     'color:#7dd3fc; font-weight:700');
 
   // --------- Elementos del DOM ----------
@@ -28,118 +28,83 @@
   };
 
   // --------- Constantes / Estado ----------
-  const LS_FAVS   = 'gw2_meta_favs';      // fijados (antes favoritos)
+  const LS_FAVS   = 'gw2_meta_favs';
   const SOON_MIN  = 20;
 
   const LS_FLAGS      = 'gw2_meta_flags_v1';
   const FLAGS_TTL_MS  = 5 * 60 * 1000;
   const LS_MANUAL     = 'gw2_meta_manual_v1';
 
-  // Persistencia de toggles de UI
   const LS_META_COMPACT = 'gw2_meta_compact';
 
   const BODY = document.body;
   const COMPACT_DEFAULT = (localStorage.getItem(LS_META_COMPACT) ?? 'off') === 'on';
 
   
-// --------- Normalización de expansiones/temporadas ----------
-const EXP_MAP = {
-  // Core
-  'core':'core', 'core tyria':'core',
-
-  // Heart of Thorns
-  'hot':'hot', 'heart of thorns':'hot',
-
-  // Path of Fire
-  'pof':'pof', 'path of fire':'pof',
-
-  // End of Dragons
-  'eod':'eod', 'end of dragons':'eod',
-
-  // Secrets of the Obscure
-  'soto':'soto', 'secrets of the obscure':'soto',
-
-  // Janthir
-  'janthir':'janthir',
-
-  // Visions of Eternity
-  'voe':'visionseternity', 'visions of eternity':'visionseternity',
-
-  // Living World Season 2
-  'lw2':'livingworlds2', 'living world s2':'livingworlds2',
-  'living world season 2':'livingworlds2', 'livingworlds2':'livingworlds2',
-
-  // Living World Season 3
-  'lw3':'livingworlds3', 'living world s3':'livingworlds3',
-  'living world season 3':'livingworlds3', 'livingworlds3':'livingworlds3',
-
-  // Living World Season 4 (ya existía, lo mantenemos)
-  'ls4':'livingworlds4', 'living world s4':'livingworlds4',
-  'living world season 4':'livingworlds4', 'livingworlds4':'livingworlds4',
-
-  // The Icebrood Saga (Living World Season 5)
-  'ibs':'icebroodsaga', 'icebrood saga':'icebroodsaga',
-  'the icebrood saga':'icebroodsaga', 'living world season 5':'icebroodsaga',
-  'lw5':'icebroodsaga',
-
-  // Agrupadores/aliases comunes dentro de IBS
-  'visions of the past':'icebroodsaga',
-  'steel and fire':'icebroodsaga'
-};
+  // --------- Normalización de expansiones/temporadas ----------
+  const EXP_MAP = {
+    'core':'core', 'core tyria':'core',
+    'hot':'hot', 'heart of thorns':'hot',
+    'pof':'pof', 'path of fire':'pof',
+    'eod':'eod', 'end of dragons':'eod',
+    'soto':'soto', 'secrets of the obscure':'soto',
+    'janthir':'janthir',
+    'voe':'visionseternity', 'visions of eternity':'visionseternity',
+    'lw2':'livingworlds2', 'living world s2':'livingworlds2',
+    'living world season 2':'livingworlds2', 'livingworlds2':'livingworlds2',
+    'lw3':'livingworlds3', 'living world s3':'livingworlds3',
+    'living world season 3':'livingworlds3', 'livingworlds3':'livingworlds3',
+    'ls4':'livingworlds4', 'living world s4':'livingworlds4',
+    'living world season 4':'livingworlds4', 'livingworlds4':'livingworlds4',
+    'ibs':'icebroodsaga', 'icebrood saga':'icebroodsaga',
+    'the icebrood saga':'icebroodsaga', 'living world season 5':'icebroodsaga',
+    'lw5':'icebroodsaga',
+    'visions of the past':'icebroodsaga',
+    'steel and fire':'icebroodsaga'
+  };
 
 
   // --------- Tinte/colores por expansión/temporada ----------
-const EXP_TINT = {
-  // Core (rojo oficial del logo)
-  core: '#DC241F',     // fuente: página del logo oficial GW2
+  const EXP_TINT = {
+    core: '#DC241F',
+    hot: '#1E8D39',
+    pof: '#f5a14c',
+    eod: '#15C3B7',
+    soto: '#A6A75A',
+    janthir: '#3A6EEB',
+    visionseternity: '#C28E0E',
+    livingworlds2: '#f6654f',
+    livingworlds3: '#1E8D39',
+    livingworlds4: '#e545ca',
+    icebroodsaga: '#7EC3FF'
+  };
 
-  // Expansions (paleta práctica y consistente en UI)
-  hot: '#1E8D39',      // verde Maguuma
-  pof: '#f5a14c',      // magenta del desierto
-  eod: '#15C3B7',      // jade/teal Cantha
-  soto: '#A6A75A',     // violeta/azul “sky”
-  janthir: '#3A6EEB',  // verde-oliva/“wilds”
-  visionseternity: '#C28E0E', // azul “castoran/mist”
+  // --------- Iconos oficiales ----------
+  const EXP_ICON = {
+    core: 'https://wiki.guildwars2.com/images/thumb/d/df/GW2Logo_new.png/600px-GW2Logo_new.png',
+    hot: 'https://wiki.guildwars2.com/images/thumb/5/52/HoT_Texture_Centered_Trans.png/600px-HoT_Texture_Centered_Trans.png',
+    pof: 'https://wiki.guildwars2.com/images/thumb/0/0e/GW2-PoF_Texture_Centered_Trans.png/600px-GW2-PoF_Texture_Centered_Trans.png',
+    eod: 'https://wiki.guildwars2.com/images/thumb/c/cc/EoD_Texture_Trans.png/600px-EoD_Texture_Trans.png',
+    soto: 'https://wiki.guildwars2.com/images/4/44/Secrets_of_the_Obscure_logo.png',
+    janthir: 'https://wiki.guildwars2.com/images/thumb/6/60/Janthir_Wilds_logo.png/600px-Janthir_Wilds_logo.png',
+    visionseternity: 'https://wiki.guildwars2.com/images/thumb/c/cd/Visions_of_Eternity_logo.png/600px-Visions_of_Eternity_logo.png',
+    livingworlds2: 'https://wiki.guildwars2.com/images/e/e8/Living_World_logo.png',
+    livingworlds3: 'https://wiki.guildwars2.com/images/thumb/c/ca/Living_World_Season_3_logo.png/450px-Living_World_Season_3_logo.png',
+    livingworlds4: 'https://wiki.guildwars2.com/images/thumb/a/a1/Living_World_Season_4_logo.png/450px-Living_World_Season_4_logo.png',
+    icebroodsaga: 'https://wiki.guildwars2.com/images/thumb/1/19/Living_World_Season_5_logo.png/450px-Living_World_Season_5_logo.png'
+  };
 
-  // Living World / Saga
-  livingworlds2: '#f6654f',   // dorado (pre-HoT, Tyria central)
-  livingworlds3: '#1E8D39',   // sigue paleta HoT
-  livingworlds4: '#e545ca',   // sigue paleta PoF
-  icebroodsaga: '#7EC3FF'     // azul “ice/tundra”
-};
-
-  // --------- Iconos oficiales (páginas File:/artículos de la wiki) ----------
-const EXP_ICON = {
-  // Core (Tyria base)
-  core: 'https://wiki.guildwars2.com/images/thumb/d/df/GW2Logo_new.png/600px-GW2Logo_new.png',
-
-  // Expansions
-  hot: 'https://wiki.guildwars2.com/images/thumb/5/52/HoT_Texture_Centered_Trans.png/600px-HoT_Texture_Centered_Trans.png',
-  pof: 'https://wiki.guildwars2.com/images/thumb/0/0e/GW2-PoF_Texture_Centered_Trans.png/600px-GW2-PoF_Texture_Centered_Trans.png',
-  eod: 'https://wiki.guildwars2.com/images/thumb/c/cc/EoD_Texture_Trans.png/600px-EoD_Texture_Trans.png',
-  soto: 'https://wiki.guildwars2.com/images/4/44/Secrets_of_the_Obscure_logo.png',
-  janthir: 'https://wiki.guildwars2.com/images/thumb/6/60/Janthir_Wilds_logo.png/600px-Janthir_Wilds_logo.png',
-  visionseternity: 'https://wiki.guildwars2.com/images/thumb/c/cd/Visions_of_Eternity_logo.png/600px-Visions_of_Eternity_logo.png',
-
-  // Living World / Saga
-  livingworlds2: 'https://wiki.guildwars2.com/images/e/e8/Living_World_logo.png',
-  livingworlds3: 'https://wiki.guildwars2.com/images/thumb/c/ca/Living_World_Season_3_logo.png/450px-Living_World_Season_3_logo.png',
-  livingworlds4: 'https://wiki.guildwars2.com/images/thumb/a/a1/Living_World_Season_4_logo.png/450px-Living_World_Season_4_logo.png',
-  icebroodsaga: 'https://wiki.guildwars2.com/images/thumb/1/19/Living_World_Season_5_logo.png/450px-Living_World_Season_5_logo.png'
-};
-
-  let seed = [];                 // metas (assets/meta-events.json)
-  let favs = new Set();          // fijados (ids)
+  let seed = [];
+  let favs = new Set();
   let filters = { type: '', exp: '', onlyActive: false, onlySoon: false, onlyInf: false };
 
-  let accountFlags = {           // banderas de cuenta (completado hoy)
+  let accountFlags = {
     worldbosses: new Set(),
     mapchests:   new Set(),
     lastTs:      0,
     lastHuman:   '—'
   };
 
-  // >>> NUEVO: control de concurrencia para flags
   let _flagsSeq = 0;
   let _flagsAbort = null;
 
@@ -179,6 +144,19 @@ const EXP_ICON = {
     el.reset.textContent = `Próximo reset en ${pad2(hh)}:${pad2(mm)} h`;
   }
 
+  function hexToRGBA(hex, alpha) {
+    try {
+      var h = String(hex || '').trim().replace(/^#/, '');
+      if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join('');
+      if (h.length !== 6) return null;
+      var r = parseInt(h.slice(0, 2), 16);
+      var g = parseInt(h.slice(2, 4), 16);
+      var b = parseInt(h.slice(4, 6), 16);
+      var a = (typeof alpha === 'number') ? Math.max(0, Math.min(1, alpha)) : 1;
+      return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+    } catch (_) { return null; }
+  }
+
   // --- SKELETON HELPERS ---
   function renderSkeletonMeta(count=8){
     if(!el.list) return;
@@ -214,13 +192,12 @@ const EXP_ICON = {
     seed = await r.json();
     await loadExternalDrops();
 
-    // Merge: seed + externalDrops
     seed = seed.map(m => {
       const ext = externalDrops.get(m.id);
       if(!ext) return m;
       const merged = { ...m };
       if (Object.prototype.hasOwnProperty.call(ext, 'highlightItemId')) {
-        merged.highlightItemId = ext.highlightItemId; // null anula
+        merged.highlightItemId = ext.highlightItemId;
       }
       if (Array.isArray(ext.items)) merged._extItems = ext.items;
       return merged;
@@ -240,7 +217,7 @@ const EXP_ICON = {
   function tokenFingerprint(){
     const t = window.__GN__?.getSelectedToken?.() ?? null;
     if(!t) return null;
-    return `${t.slice(0,4)}…${t.slice(-4)}`; // no exponemos completa
+    return `${t.slice(0,4)}…${t.slice(-4)}`;
   }
   function tokenFingerprintFrom(t){
     if(!t) return null;
@@ -371,7 +348,7 @@ const EXP_ICON = {
 
   function buildInstance(meta){
     const list = Array.isArray(meta.windowsUTC) ? meta.windowsUTC : [];
-    const now = nowLocal();                // FIX parseo
+    const now = nowLocal();
     let nextAt = null, state='later';
 
     for(const w of list){
@@ -411,7 +388,7 @@ const EXP_ICON = {
     const t = String(meta?.type || '').toLowerCase();
 
     if (hasWB) return '• Cofre diario (worldboss) • Recom. 40+';
-    if (hasMC) return '• Cofre diario: Hero’s Choice';
+    if (hasMC) return '• Cofre diario: Hero\'s Choice';
     if (t==='global')   return '• Evento rotativo / no marcado por API';
     if (t==='instance') return '• Instancia pública • no marcado por API';
     if (t==='temple')   return '• Evento de templo • no marcado por API';
@@ -473,6 +450,22 @@ const EXP_ICON = {
       .replace(/>/g,'&gt;')
       .replace(/\n/g,'&#10;');
 
+    // Obtener URL de preview desde meta._extItems
+    var previewUrl = '';
+    if (listFromExt.length && listFromExt[0].preview) {
+      previewUrl = listFromExt[0].preview;
+    }
+
+    // Determinar si es infusión
+    var isInfusion = false;
+    if (meta.highlightItemId && itemCache.has(meta.highlightItemId)) {
+      isInfusion = isInfusionItemObj(itemCache.get(meta.highlightItemId));
+    }
+    if (!isInfusion) {
+      const n = listFromExt.length ? (listFromExt[0].itemName ?? '') : '';
+      isInfusion = isInfusionNameOrWhitelist(n);
+    }
+
     if (meta.highlightItemId){
       if (!item){
         return `
@@ -482,30 +475,30 @@ const EXP_ICON = {
           </div>
         `;
       }
-      const label = labelByItemOrName(item, item.name);
-      const icon  = iconTag(item.icon, 18, item.name ?? 'Drop');
+      const label = isInfusion ? 'Infusión destacada' : 'Drop destacado';
+      const tagClass = isInfusion ? 'm-tag--infusion' : 'tag--drop';
+      const icon  = iconTag(item.icon, 24, item.name ?? 'Drop');
       const name  = esc(item.name ?? '—');
-      const css   = (label === 'Infusión destacada') ? 'tag--inf' : 'tag--drop';
       return `
         <div class="m-foot" data-tip="${tipAttr}">
-          <span class="m-tag ${css}">${label}</span>
-          <span class="m-item">${icon}<span class="m-item__name">${name}</span></span>
+          <span class="m-tag ${tagClass}">${label}</span>
+          <span class="m-item m-item--large" data-preview="${esc(previewUrl)}">${icon}<span class="m-item__name">${name}</span></span>
         </div>
       `;
     }
 
     const nameFromList = listFromExt.length ? esc(listFromExt[0].itemName ?? '—') : '—';
-    const label = labelByItemOrName(null, nameFromList);
-    const css   = (label === 'Infusión destacada') ? 'tag--inf' : 'tag--drop';
+    const label = isInfusion ? 'Infusión destacada' : 'Drop destacado';
+    const tagClass = isInfusion ? 'm-tag--infusion' : 'tag--drop';
     return `
       <div class="m-foot" data-tip="${tipAttr}">
-        <span class="m-tag ${css}">${label}</span>
-        <span class="m-item"><span class="m-item__name">${nameFromList}</span></span>
+        <span class="m-tag ${tagClass}">${label}</span>
+        <span class="m-item" data-preview="${esc(previewUrl)}"><span class="m-item__name">${nameFromList}</span></span>
       </div>
     `;
   }
 
-  // ---------- NUEVO: chips y color por expansión ----------
+  // ========== NUEVO v3.3.0: Ícono de expansión con glow (como Cartera/WV) ==========
   function expKeyOf(meta){
     const raw = String(meta.expansion ?? '').toLowerCase().trim();
     return EXP_MAP[raw] ?? raw.replace(/\s+/g,'');
@@ -515,37 +508,41 @@ const EXP_ICON = {
     return EXP_TINT[k] || '#e9e9f1';
   }
 
-  // >>> MOD: chip (recuadro) por expansión con logo + clase específica
-  function chipForExp(meta){
-    const k = expKeyOf(meta);
-    const cls = `meta-chip meta-chip--exp meta-chip--${k}`;
-    const label = String(meta.expansion || '—');
-    const url = EXP_ICON[k] || '';
+  function expIconHTML(meta) {
+    var k = expKeyOf(meta);
+    var tint = expTintColor(meta);
+    var url = EXP_ICON[k] || '';
+    var label = String(meta.expansion || '—');
+
+    var iconGlowColor = hexToRGBA(tint, 0.36);
+    var iconBorderColor = hexToRGBA(tint, 0.32);
+    var iconDeco = (iconBorderColor && iconGlowColor)
+      ? ' style="box-shadow: 0 0 0 2px ' + iconBorderColor + ', 0 0 10px ' + iconGlowColor + '; border-radius:10px;"'
+      : '';
+
     if (url) {
-      // img + title para accesibilidad; sin texto redundante
-      return `<span class="${cls}" title="Expansión / Temporada: ${esc(label)}" aria-label="Expansión / Temporada: ${esc(label)}">${iconTag(url, 16, label)}</span>`;
+      return '<div class="meta-card__iconWrap"' + iconDeco + ' title="' + esc(label) + '" aria-label="Expansión: ' + esc(label) + '"><img class="meta-card__icon" src="' + esc(url) + '" alt="' + esc(label) + '" loading="lazy"/></div>';
     }
-    // Fallback textual si aún no definiste el logo
-    return `<span class="${cls}" title="Expansión / Temporada: ${esc(label)}" aria-label="Expansión / Temporada: ${esc(label)}">${esc(label)}</span>`;
+    // Fallback: inicial del nombre de expansión con el color
+    var initial = label.charAt(0).toUpperCase();
+    return '<div class="meta-card__iconWrap meta-card__iconWrap--fallback"' + iconDeco + ' title="' + esc(label) + '" aria-label="Expansión: ' + esc(label) + '"><span class="meta-card__icon--fallback" style="color:' + tint + ';font-size:22px;font-weight:700;">' + initial + '</span></div>';
   }
 
   function chipsForTiming(inst, minsRemaining){
+    var chips = [];
     if(inst.state === 'active'){
-      return [
-        '<span class="meta-chip">Activo</span>',
-        `<span class="meta-chip">Termina en ${minsRemaining} min</span>`
-      ];
+      chips.push('<span class="meta-chip meta-chip--active">Activo</span>');
+      chips.push('<span class="meta-chip">Termina en ' + minsRemaining + ' min</span>');
+    } else if(minsRemaining != null){
+      chips.push('<span class="meta-chip meta-chip--soon">Próximo</span>');
+      chips.push('<span class="meta-chip">En ' + minsRemaining + ' min</span>');
+    } else {
+      chips.push('<span class="meta-chip meta-chip--later">Más tarde</span>');
     }
-    if(minsRemaining != null){
-      return [
-        '<span class="meta-chip">Más tarde</span>',
-        `<span class="meta-chip">Próximo en ${minsRemaining} min</span>`
-      ];
-    }
-    return ['<span class="meta-chip">Más tarde</span>'];
+    return chips;
   }
 
-  // ---------- Render ----------
+  // ========== NUEVO v3.3.0: cardHTML rediseñada (estructura unificada) ==========
   function cardHTML(meta, inst, item, isFav){
     const now = nowLocal();
     const minsRemaining = inst?.nextAt ? Math.max(1, Math.floor((inst.nextAt - now)/60000)) : null;
@@ -563,82 +560,84 @@ const EXP_ICON = {
         ? `No hecho hoy (fuente: ${srcTxt}) — Click para marcar manualmente`
         : `No hecho hoy (fuente: ${srcTxt}; actualizado ${when})`;
 
-    // Estado al estilo WV (verde/amarillo)
     const doneAttrs = manualEligible
       ? `data-manual="1" data-id="${meta.id}" role="button" tabindex="0" aria-pressed="${dt.done?'true':'false'}"`
       : '';
-    const statusHtml = dt.done
-      ? `<span class="meta-status meta-status--done" ${doneAttrs} title="${esc(doneTitle)}">✅ Hecho hoy</span>`
-      : `<span class="meta-status meta-status--pending" ${doneAttrs} title="${esc(doneTitle)}">Pendiente</span>`;
 
-    // Acciones (wiki/mapa/compartir/horarios)
+    // Estado
+    var statusCls = dt.done ? 'meta-status--done' : 'meta-status--pending';
+    var statusText = dt.done ? 'Hecho hoy' : 'Pendiente';
+
+    // Acciones
     const wikiHtml = meta.wiki
-      ? `<a class="m-wiki" href="${esc(meta.wiki)}" target="_blank" rel="noopener">Wiki</a>`
+      ? `<a class="btn btn--ghost m-wiki" href="${esc(meta.wiki)}" target="_blank" rel="noopener">Wiki</a>`
       : '';
-
     const mapHref = meta.map ? `https://maps.gw2.io/#/?q=${encodeURIComponent(meta.map)}` : '';
     const mapBtn  = mapHref
       ? `<a class="btn btn--ghost m-map" href="${mapHref}" target="_blank" rel="noopener" title="Abrir mapa (gw2.io)">Mapa</a>`
       : '';
     const shareBtn = `<button class="btn btn--ghost m-share" data-id="${meta.id}" title="Copiar texto para compartir">Compartir</button>`;
-
     const hasWins = Array.isArray(meta.windowsUTC) && meta.windowsUTC.length>0;
     const winBtn  = hasWins ? `<button class="btn btn--ghost m-win__toggle" aria-expanded="false" title="Ver horarios">Horarios</button>` : '';
     const winPane = hasWins ? buildWindowsChips(meta) : '';
 
     const ctx = buildContext(meta);
-    const ctxHtml = ctx ? `<div class="m-context">${esc(ctx)}</div>` : '';
 
-    // Botón pin (en lugar de estrella)
+    // Pin
     const pinBtn = `<button class="wv-pin ${isFav?'wv-pin--active':''}" data-pin="${meta.id}" aria-pressed="${isFav?'true':'false'}" title="${isFav?'Desfijar':'Fijar'}">📌</button>`;
 
-    // Chips (expansión [logo], timing)
-    const chips = [ chipForExp(meta), ...chipsForTiming(inst, minsRemaining) ].join('');
+    // Ícono de expansión con glow
+    const expIcon = expIconHTML(meta);
 
-    // Tinte de título por expansión
+    // Tinte de título
     const tint = expTintColor(meta);
     const styleTint = tint ? ` style="--meta-title-color:${tint}"` : '';
 
-    // >>> MOD: Línea secundaria SIN el pill textual de "expansión"
-    const subLine = `
-      <div class="meta-tags">
-        <span class="meta-pill">${meta.map ? esc(meta.map) : '—'}</span>
-        <span class="meta-pill">${esc(meta.type)}</span>
-        ${statusHtml}
-      </div>
-    `;
+    // ===== CHIPS DE TIMING (más sutiles, solo color en borde izquierdo del chip) =====
+    var timingHtml = '';
+    if (inst.state === 'active') {
+      timingHtml = '<span class="meta-chip meta-chip--active">Activo</span>' +
+                   '<span class="meta-chip meta-chip--neutral">Termina en ' + minsRemaining + ' min</span>';
+    } else if (minsRemaining != null) {
+      timingHtml = '<span class="meta-chip meta-chip--soon">Próximo</span>' +
+                   '<span class="meta-chip meta-chip--neutral">En ' + minsRemaining + ' min</span>';
+    } else {
+      timingHtml = '<span class="meta-chip meta-chip--neutral">Más tarde</span>';
+    }
 
-    // Acciones
-    const actions = `
-      <div class="meta-linkbar">
-        ${meta.chat ? `<button class="btn btn--ghost m-copy" data-copy="${esc(meta.chat)}" title="Copiar waypoint" aria-label="Copiar waypoint">${wpIcon(16)}</button>` : ''}
-        ${wikiHtml}
-        ${mapBtn}
-        ${shareBtn}
-        ${winBtn}
-      </div>
-    `;
-
-    // Footer drops (con imagen/tooltip)
+    // ===== FOOTER CON DROP (infusión con glow dorado) =====
     const foot = footerDropHTML(meta, item);
 
-    // Estructura final (conserva .m-card para compat)
+    // ===== NUEVA ESTRUCTURA UNIFICADA =====
     return `
       <article class="m-card meta-card meta-card--tint-title" data-id="${meta.id}" data-type="${esc(meta.type)}" data-exp="${esc(meta.expansion)}"${styleTint}>
         <div class="meta-card__top">
-          <div>
+          ${expIcon}
+          <div class="meta-card__title-wrap">
             <div class="meta-card__title">${esc(meta.name)}</div>
-            <div class="meta-card__subtitle">${chips}</div>
+            <div class="meta-card__timing">${timingHtml}</div>
           </div>
-            ${pinBtn}
+          ${pinBtn}
         </div>
 
-        <div class="meta-sep"></div>
-
         <div class="meta-body">
-          ${subLine}
-          ${ctxHtml}
-          ${actions}
+          <div class="meta-tags">
+            <span class="meta-pill">${meta.map ? esc(meta.map) : '—'}</span>
+            <span class="meta-pill">${esc(meta.type)}</span>
+            <span class="meta-status ${statusCls}" ${doneAttrs} title="${esc(doneTitle)}">${statusText}</span>
+          </div>
+          ${ctx ? `<div class="m-context">${esc(ctx)}</div>` : ''}
+          <div class="meta-linkbar">
+            <span class="meta-linkbar__primary">
+              ${meta.chat ? `<button class="btn btn--ghost m-copy" data-copy="${esc(meta.chat)}" title="Copiar waypoint" aria-label="Copiar waypoint">${wpIcon(16)}</button>` : ''}
+              ${wikiHtml}
+              ${mapBtn}
+            </span>
+            <span class="meta-linkbar__secondary">
+              ${shareBtn}
+              ${winBtn}
+            </span>
+          </div>
           ${winPane}
         </div>
 
@@ -649,12 +648,7 @@ const EXP_ICON = {
         </div>
       </article>`;
   }
-
-  function computeAllInstances(){
-    return seed.map(m => ({ meta:m, inst:buildInstance(m), fav:favs.has(m.id) }));
-  }
-  const minutesDiff = (d) => Math.max(0, Math.floor((d - nowLocal())/60000));
-
+  
   function buildWindowsChips(meta){
     const list = Array.isArray(meta.windowsUTC) ? meta.windowsUTC : [];
     if (!list.length) return '';
@@ -673,65 +667,10 @@ const EXP_ICON = {
     return `<div class="m-win" hidden><div class="chips">${chips}</div></div>`;
   }
 
-  function renderMiniNext(rowsRaw){
-    if(!el.miniNext) return;
-    const list = rowsRaw
-      .map(r => ({...r, nextAt:r.inst.nextAt ?? null}))
-      .filter(r => !!r.nextAt)
-      .sort((a,b) => a.nextAt.getTime() - b.nextAt.getTime())
-      .slice(0,3);
-
-    if(!list.length){
-      el.miniNext.innerHTML = `<li class="muted">Sin próximas metas en la ventana actual</li>`;
-      return;
-    }
-
-    const html = list.map(r=>{
-      const mins = minutesDiff(r.nextAt);
-      const nextTxt = (r.inst.state==='active') ? '¡Activo!' : `En ${mins} min`;
-      const copyBtn = r.meta.chat ? `<button class="btn btn--ghost meta-mini_copy" data-copy="${esc(r.meta.chat)}" title="Copiar waypoint" aria-label="Copiar waypoint">${wpIcon(14)}</button>` : '';
-      return `
-        <li class="meta-mini">
-          <div class="meta-mini__top">
-            <span class="meta-mini__name">${esc(r.meta.name)}</span>
-            <span class="meta-mini__next">${nextTxt}</span>
-          </div>
-          <div class="meta-mini__sub">
-            <span>${r.meta.map ? esc(r.meta.map) : '—'}</span>
-            <span>•</span>
-            <span>${esc(r.meta.expansion)}</span>
-          </div>
-          <div class="meta-mini__actions">
-            ${copyBtn}
-            <button class="btn meta-mini_focus" data-id="${r.meta.id}">Ver</button>
-          </div>
-        </li>`;
-    }).join('');
-
-    el.miniNext.innerHTML = html;
-
-    // Bind acciones del Top 3
-    $$('.meta-mini_copy', el.miniNext).forEach(b=>{
-      b.addEventListener('click', ()=>{
-        const v=b.getAttribute('data-copy') ?? '';
-        if(!v) return;
-        navigator.clipboard.writeText(v).then(()=>{
-          setStatus('Copiado al portapapeles.','ok');
-          if (typeof toast === 'function' && toast.legacy) toast.legacy('Copiado al portapapeles','ok', 1600);
-          else if (typeof toast === 'function') toast('success','Copiado al portapapeles',{ttl:1600});
-        });
-      });
-    });
-    $$('.meta-mini_focus', el.miniNext).forEach(b=>{
-      b.addEventListener('click', ()=>{
-        const id=b.getAttribute('data-id');
-        if(!id) return;
-        const n = $(`.m-card[data-id="${id}"]`, el.list) || $(`.m-card[data-id="${id}"]`, el.favGrid);
-        if(n) n.scrollIntoView({behavior:'smooth', block:'center'});
-      });
-    });
+  function computeAllInstances(){
+    return seed.map(m => ({ meta:m, inst:buildInstance(m), fav:favs.has(m.id) }));
   }
-
+  
   // ---------- Render principal ----------
   async function render(){
     if(!el.list) return;
@@ -739,7 +678,6 @@ const EXP_ICON = {
     readFilters();
     const rowsRaw = computeAllInstances();
 
-    // Filtros
     let rows = rowsRaw;
     if(filters.type)       rows = rows.filter(r => r.meta.type===filters.type);
     if(filters.exp)        rows = rows.filter(r => r.meta.expansion===filters.exp);
@@ -747,7 +685,6 @@ const EXP_ICON = {
     if(filters.onlySoon)   rows = rows.filter(r => r.inst.state==='soon');
     if(filters.onlyInf)    rows = rows.filter(r => isInfusionMeta(r.meta));
 
-    // Orden (fijados primero, luego estado, luego proximidad)
     const rankState = (s) => s==='active'?0 : (s==='soon'?1:2);
     rows.sort((a,b)=>{
       if(a.fav!==b.fav) return a.fav? -1 : 1;
@@ -758,12 +695,10 @@ const EXP_ICON = {
       return an - bn;
     });
 
-    // Resolver items para drops
     const ids     = [...new Set(rows.map(x=>x.meta.highlightItemId).filter(Boolean))];
     const missing = ids.filter(id => !itemCache.has(id));
     if(missing.length) await batchItems(missing);
 
-    // Fijados (máx. 6)
     const favRows = rows.filter(r=>r.fav).slice(0,6);
     if(favRows.length){
       el.favBlock?.removeAttribute('hidden');
@@ -775,14 +710,15 @@ const EXP_ICON = {
       el.favGrid.innerHTML='';
     }
 
-    // Resto
     const rest = rows.filter(r=>!r.fav);
     el.list.innerHTML = rest
       .map(r=>cardHTML(r.meta, r.inst, itemCache.get(r.meta.highlightItemId), false))
       .join('');
 
+    // ===== v3.3.0: Tooltips de infusión PRIMERO (antes de listeners) =====
+    bindInfusionPreviews();
+
     // Acciones de tarjeta
-    // Copiar WP
     $$('.m-copy', el.panel).forEach(btn=>{
       btn.addEventListener('click', ()=>{
         const v = btn.getAttribute('data-copy') ?? '';
@@ -795,7 +731,7 @@ const EXP_ICON = {
       });
     });
 
-    // PIN (reemplaza estrella). Mantengo límite 6 fijados
+    // PIN
     $$('.wv-pin', el.panel).forEach(btn=>{
       btn.addEventListener('click', ()=>{
         const id = btn.getAttribute('data-pin');
@@ -814,7 +750,7 @@ const EXP_ICON = {
       });
     });
 
-    // ✔ manual (con aria-pressed) — soporta selector viejo (.m-done) y nuevo (.meta-status)
+    // ✔ manual
     $$('.m-done[data-manual="1"], .meta-status[data-manual="1"]', el.panel).forEach(x=>{
       const id = x.getAttribute('data-id');
       if(!id) return;
@@ -823,7 +759,7 @@ const EXP_ICON = {
         if(!meta) return;
         const state = toggleManual(meta);
         x.setAttribute('aria-pressed', String(state));
-        setStatus(state ? 'Marcado como “Hecho hoy” (manual).' : 'Desmarcado (manual).','ok');
+        setStatus(state ? 'Marcado como "Hecho hoy" (manual).' : 'Desmarcado (manual).','ok');
         render();
       });
       x.addEventListener('keydown', (e)=>{
@@ -867,10 +803,6 @@ const EXP_ICON = {
     // Sidebar Top 3
     renderMiniNext(rowsRaw);
 
-    // Tooltips de infusión
-    bindInfusionPreviews();
-
-    // TS visible (API)
     if(el.flagsTs){
       el.flagsTs.textContent = `Actualizado ${accountFlags.lastHuman || '—'}`;
       el.flagsTs.title = `Última actualización de 'Hecho hoy': ${accountFlags.lastHuman || '—'}`;
@@ -886,7 +818,6 @@ const EXP_ICON = {
     const delta = nextResetUTC().getTime() - Date.now();
     if(delta > 0 && delta < 36*3600*1000){
       midnightTimer = setTimeout(async ()=>{
-        // >>> usar el pipeline con control de concurrencia
         await window.Meta.refresh({ token: window.__GN__?.getSelectedToken?.() ?? null, nocache: true });
         manualDoneSet = loadManualDone();
         render();
@@ -919,7 +850,6 @@ const EXP_ICON = {
       }
     }
 
-    // Concurrencia: abortar petición anterior y marcar secuencia
     _flagsSeq += 1;
     const seq = _flagsSeq;
     try{
@@ -933,7 +863,6 @@ const EXP_ICON = {
         fetchMapChests(token, { signal: _flagsAbort.signal })
       ]);
 
-      // Si llegó una respuesta vieja, la descartamos (última gana)
       if (seq !== _flagsSeq || _flagsAbort.signal.aborted) return;
 
       accountFlags.worldbosses = wb;
@@ -943,7 +872,7 @@ const EXP_ICON = {
       saveFlagsToCache(token);
       setStatus('Listo.','ok');
     }catch(e){
-      if (e?.name === 'AbortError') return; // fue reemplazada por otra actualización: OK
+      if (e?.name === 'AbortError') return;
       console.warn('[meta] account flags', e);
       setStatus('No se pudo actualizar "Hecho hoy".','error');
     }
@@ -952,91 +881,76 @@ const EXP_ICON = {
   // ---------- Deluxe toggles ----------
   function setCompact(on){ BODY.setAttribute('data-meta-compact', on ? 'on' : 'off'); }
   function injectUIToggles(){
-      const actions = $('#metaPanel .filters-actions');
-      if(!actions) return;
-      if(actions.querySelector('#metaToggleCompact')) return;
+    const actions = $('#metaPanel .filters-actions');
+    if(!actions) return;
+    if(actions.querySelector('#metaToggleCompact')) return;
 
-      const btnCompact = document.createElement('button');
-      btnCompact.id = 'metaToggleCompact';
-      btnCompact.className = 'btn btn--ghost';
-      btnCompact.type = 'button';
-      btnCompact.title = 'Alternar Vista compacta / detallada';
-      btnCompact.textContent = (BODY.getAttribute('data-meta-compact')==='on') ? 'Vista detallada' : 'Vista compacta';
+    const btnCompact = document.createElement('button');
+    btnCompact.id = 'metaToggleCompact';
+    btnCompact.className = 'btn btn--ghost';
+    btnCompact.type = 'button';
+    btnCompact.title = 'Alternar Vista compacta / detallada';
+    btnCompact.textContent = (BODY.getAttribute('data-meta-compact')==='on') ? 'Vista detallada' : 'Vista compacta';
 
-      btnCompact.addEventListener('click', ()=>{
-        const nowOn = BODY.getAttribute('data-meta-compact')!=='on';
-        setCompact(nowOn);
-        btnCompact.textContent = nowOn ? 'Vista detallada' : 'Vista compacta';
-        localStorage.setItem(LS_META_COMPACT, nowOn ? 'on' : 'off');
-        render();
-      });
+    btnCompact.addEventListener('click', ()=>{
+      const nowOn = BODY.getAttribute('data-meta-compact')!=='on';
+      setCompact(nowOn);
+      btnCompact.textContent = nowOn ? 'Vista detallada' : 'Vista compacta';
+      localStorage.setItem(LS_META_COMPACT, nowOn ? 'on' : 'off');
+      render();
+    });
 
-      actions.appendChild(btnCompact);
-    }
+    actions.appendChild(btnCompact);
+  }
 
   // ---------- Tooltips de infusiones ----------
   function bindInfusionPreviews(){
     // Limpiar previos
     document.querySelectorAll('.inf-prev').forEach(n=>n.remove());
 
-    const cards = Array.from(document.querySelectorAll('.m-card'));
-    for (const card of cards) {
-      const id = card.getAttribute('data-id');
-      const meta = seed.find(m => m.id === id);
-      if (!meta) continue;
-      if (!isInfusionMeta(meta)) continue;
-
-      const target = card.querySelector('.m-foot .m-item');
+    var cards = document.querySelectorAll('.m-card');
+    for (var i = 0; i < cards.length; i++) {
+      var card = cards[i];
+      var target = card.querySelector('.m-foot .m-item');
       if (!target) continue;
 
-      let preview = '';
-      if (Array.isArray(meta._extItems) && meta._extItems.length && meta._extItems[0].preview) {
-        preview = meta._extItems[0].preview;
-      } else if (meta.highlightItemId && itemCache.has(meta.highlightItemId)) {
-        preview = itemCache.get(meta.highlightItemId)?.icon ?? '';
-      }
+      // Leer URL del preview directamente del DOM
+      var preview = target.getAttribute('data-preview') || '';
       if (!preview) continue;
 
-      let pop = null, hideT = null;
+      (function(target, preview) {
+        var pop = null, hideT = null;
 
-      function position(e){
-        if (!pop) return;
-        const pageX = e?.pageX ?? (target.getBoundingClientRect().left + window.scrollX + 12);
-        const pageY = e?.pageY ?? (target.getBoundingClientRect().top + window.scrollY - 12);
-        const x = Math.max(8, pageX + 14);
-        const y = Math.max(8, pageY - (pop.offsetHeight + 16));
-        pop.style.left = `${x}px`;
-        pop.style.top  = `${y}px`;
-      }
+        target.addEventListener('mouseenter', function(e) {
+          clearTimeout(hideT);
+          if (pop) pop.remove();
+          pop = document.createElement('div');
+          pop.className = 'inf-prev on';
+          var a = document.createElement('img');
+          a.src = preview;
+          a.alt = 'Preview de infusión';
+          pop.appendChild(a);
+          document.body.appendChild(pop);
+          var x = (e.pageX || 0) + 14;
+          var y = (e.pageY || 0) - (pop.offsetHeight || 280) - 16;
+          pop.style.left = x + 'px';
+          pop.style.top = y + 'px';
+        });
 
-      function show(e){
-        clearTimeout(hideT);
-        if (pop) pop.remove();
-        pop = document.createElement('div');
-        pop.className = 'inf-prev';
-        const a = document.createElement('img');
-        a.src = preview;
-        a.alt = 'Preview de infusión';
-        a.decoding = 'async';
-        a.referrerPolicy = 'no-referrer';
-        pop.appendChild(a);
-        document.body.appendChild(pop);
-        position(e);
-        requestAnimationFrame(() => pop.classList.add('on'));
-      }
+        target.addEventListener('mousemove', function(e) {
+          if (!pop) return;
+          var x = (e.pageX || 0) + 14;
+          var y = (e.pageY || 0) - (pop.offsetHeight || 280) - 16;
+          pop.style.left = x + 'px';
+          pop.style.top = y + 'px';
+        });
 
-      function hide(){
-        hideT = setTimeout(() => {
-          if (pop) {
-            pop.classList.remove('on');
-            setTimeout(() => pop && pop.remove(), 120);
-          }
-        }, 90);
-      }
-
-      target.addEventListener('mouseenter', show);
-      target.addEventListener('mousemove', position);
-      target.addEventListener('mouseleave', hide);
+        target.addEventListener('mouseleave', function() {
+          hideT = setTimeout(function() {
+            if (pop) { pop.remove(); pop = null; }
+          }, 90);
+        });
+      })(target, preview);
     }
   }
 
@@ -1049,7 +963,6 @@ const EXP_ICON = {
       loadFavs();
       await loadSeed();
 
-      // >>> primer pass de flags (usa cache si hay)
       await refreshAccountFlags(false, { token: window.__GN__?.getSelectedToken?.() ?? null });
 
       manualDoneSet = loadManualDone();
@@ -1080,7 +993,7 @@ const EXP_ICON = {
     }
   }
 
-  // ---------- API pública (refresh con single-flight) ----------
+  // ---------- API pública ----------
   window.Meta = window.Meta || {};
   window.Meta.refresh = async function metaRefresh({ token, nocache = false } = {}){
     try {
@@ -1096,15 +1009,13 @@ const EXP_ICON = {
   // ---------- Eventos del shell ----------
   let inited=false;
 
-  // Navegación por tabs (legacy)
   document.addEventListener('gn:tabchange', (ev) => {
     if (ev.detail?.view === 'meta' && !inited) {
       inited = true;
-      initOnce();   // inicializa el panel MetaEventos
+      initOnce();
     }
   });
 
-  // Filtros
   ['change','input'].forEach(ev=>{
     el.type?.addEventListener(ev, render);
     el.exp?.addEventListener(ev, render);
@@ -1113,34 +1024,28 @@ const EXP_ICON = {
   });
   el.onlyInf?.addEventListener('change', render);
 
-  // Refrescar estado manual
   el.refreshFlagsBtn?.addEventListener('click', async ()=>{
     const old = el.refreshFlagsBtn.textContent;
     try{
       el.refreshFlagsBtn.disabled = true;
       el.refreshFlagsBtn.textContent = 'Actualizando…';
-
-      // >>> canal único de refresco (single-flight)
       await window.Meta.refresh({ token: window.__GN__?.getSelectedToken?.() ?? null, nocache: true });
-
-      if (typeof toast === 'function' && toast.legacy) toast.legacy('Estado “Hecho hoy” actualizado','ok', 1400);
-      else if (typeof toast === 'function') toast('success','Estado “Hecho hoy” actualizado', { ttl:1400 });
+      if (typeof toast === 'function' && toast.legacy) toast.legacy('Estado "Hecho hoy" actualizado','ok', 1400);
+      else if (typeof toast === 'function') toast('success','Estado "Hecho hoy" actualizado', { ttl:1400 });
     }finally{
       el.refreshFlagsBtn.disabled = false;
       el.refreshFlagsBtn.textContent = old;
     }
   });
 
-  /* === Auto-refresh Meta & Eventos al cambiar de API Key (Opción A) === */
+  /* === Auto-refresh Meta & Eventos al cambiar de API Key === */
   (function () {
-    // Evitamos registrar múltiples veces si meta.js se evalúa de nuevo.
     var FLAG = '__gn_meta_autorefresh_wired__';
     if (window[FLAG]) return;
     window[FLAG] = true;
 
     document.addEventListener('gn:meta-refresh', function (ev) {
       try {
-        // Feedback inmediato
         var status = document.getElementById('metaStatus');
         if (status) {
           status.textContent = 'Cargando…';
@@ -1153,7 +1058,6 @@ const EXP_ICON = {
                       ? window.__GN__.getSelectedToken()
                       : null);
 
-        // >>> canal único de refresco (single-flight)
         window.Meta.refresh({ token: token, nocache: true });
 
       } catch (e) {

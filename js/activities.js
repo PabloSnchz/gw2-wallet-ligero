@@ -716,7 +716,7 @@
   };
 
   // =======================================================================
-  // 10. RENDERIZADO ECTO (sin cambios)
+  // 10. RENDERIZADO ECTO
   // =======================================================================
   function renderEcto() {
     var host = $('#ectoGrid');
@@ -738,12 +738,14 @@
       var item = items.get(String(itemId));
       var done = state.daily.ecto.done.has(String(key));
       var name = item ? item.name : key;
-      var icon = item && item.icon ? '<img src="' + esc(item.icon) + '" width="36" height="36" alt="" style="border-radius: 6px;">' : '';
+      var icon = item && item.icon ? item.icon : '';
       var bLeftColor = done ? 'rgba(160,255,200,0.5)' : 'rgba(255,211,107,0.5)';
+      var glowColor = done ? 'rgba(160,255,200,0.25)' : 'rgba(255,211,107,0.25)';
+      var glowBorder = done ? 'rgba(160,255,200,0.3)' : 'rgba(255,211,107,0.3)';
       html += `
         <article class="card ecto-card" style="padding: 10px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid ${bLeftColor}; box-shadow: 0 0 8px rgba(90,110,154,0.12);">
-          <div style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
-            ${icon}
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: #0f1116; display: flex; align-items: center; justify-content: center; border: 1px solid #262a33; box-shadow: 0 0 0 2px ${glowBorder}, 0 0 10px ${glowColor};">
+            ${icon ? '<img src="' + esc(icon) + '" width="32" height="32" alt="" style="border-radius: 8px; object-fit: contain;">' : ''}
           </div>
           <div style="width: 100%;">
             <div style="font-weight: 600; font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${esc(name)}">

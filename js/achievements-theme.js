@@ -1,6 +1,12 @@
 /*!
  * Achievements Theme — diseño sobrio con borde izquierdo de color
- * v1.1.0 (2026-04-28)
+ * v1.1.1 (2026-05-02)
+ *
+ * Cambios v1.1.1:
+ *  - CORRECCIÓN: solo aplica border-left de color, el resto lo hereda de .card (theme-polish.css)
+ *  - Eliminada la sobrescritura de border y box-shadow que pisaba los estilos base y el hover
+ *  - Agregado card.classList.add('card') para heredar el tema base
+ *  - Mismo patrón que wallet-theme.js v1.3.0 y meta-theme.js v1.4.2
  *
  * Cambios v1.1.0:
  *  - Títulos en blanco (#e0e4ed) en vez del color de la categoría
@@ -20,7 +26,7 @@
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
 
-  console.info('[AchTheme] achievements-theme.js v1.1.0 — diseño sobrio, solo borde izquierdo de color');
+  console.info('[AchTheme] achievements-theme.js v1.1.1 — solo border-left, hereda .card de theme-polish.css');
 
   var DEBUG = false;
 
@@ -92,24 +98,19 @@
 
     if (DEBUG) console.log('[AchTheme] cat:', catName, '→', tint);
 
-    // Misma receta que en WV/Wallet/Meta
-    var bColor = hexToRGBA(tint, 0.22); // borde interior suave
-    var gColor = hexToRGBA(tint, 0.30); // glow exterior
+    var bLeft = hexToRGBA(tint, 0.5);
 
-    // 1) Título (refuerzo visual; no afecta al pill "Completado")
+    // Solo borde izquierdo de color — el resto lo hereda de .card (theme-polish.css)
+    try { card.style.borderLeft = '3px solid ' + bLeft; } catch(_) {}
+
+    // Título tintado
     try {
       var title = card.querySelector('.a-title') || card.querySelector('.card__title');
       if (title) title.style.color = tint;
     } catch(_){}
 
-    // 2) Contenedor (borde + halo)
-    try {
-      if (bColor && gColor) {
-        card.style.border = '1px solid ' + bColor;
-        card.style.boxShadow = '0 0 0 1px ' + bColor + ' inset, 0 0 12px ' + gColor;
-      }
-      if (!card.style.borderRadius) card.style.borderRadius = '10px';
-    } catch(_){}
+    // Heredar tema base de theme-polish.css
+    card.classList.add('card');
   }
 
   function themeAchNow(root){
@@ -155,4 +156,6 @@
   document.addEventListener('gn:tabchange', function(ev){
     if (location.hash === '#/account/achievements') onRoute();
   });
+
+  console.info('[AchTheme] ready v1.1.1 — solo border-left, hereda .card de theme-polish.css');
 })();

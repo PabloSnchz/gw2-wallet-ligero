@@ -1,6 +1,11 @@
 /*!
  * Meta Theme (expansión/temporada) — diseño sobrio con borde izquierdo de color
- * v1.4.1 (2026-04-28)
+ * v1.4.2 (2026-05-02)
+ *
+ * Cambios v1.4.2:
+ *  - CORRECCIÓN: solo aplica border-left de color, el resto lo hereda de .card (theme-polish.css)
+ *  - Eliminada la sobrescritura de border y box-shadow que pisaba los estilos base y el hover
+ *  - Mismo patrón que wallet-theme.js v1.3.0
  *
  * Cambios v1.4.1:
  *  - Badges de estado con mejor espaciado (padding consistente)
@@ -15,7 +20,7 @@
 (function () {
   'use strict';
 
-  console.info('[MetaTheme] meta-theme.js v1.4.1 — badges pulidos, chips suaves, ícono local en Horarios');
+  console.info('[MetaTheme] meta-theme.js v1.4.2 — solo border-left, hereda .card de theme-polish.css');
 
   var DEBUG = false;
 
@@ -374,7 +379,7 @@
   }
 
   // ==========================================================================
-  // TEMA BASE (v1.4.1 — diseño sobrio, borde izquierdo de color)
+  // TEMA BASE (v1.4.2 — solo border-left, hereda .card de theme-polish.css)
   // ==========================================================================
 
   function applyMetaTheme(card) {
@@ -383,14 +388,8 @@
     var tint = getMetaTint(card) || '#FFFFFF';
     if (DEBUG) console.log('[MetaTheme] tint:', tint, 'for card', card.getAttribute('data-id') || '');
 
-    // Borde izquierdo sutil del color de la expansión
+    // Solo borde izquierdo del color de la expansión
     var bLeft = hexToRGBA(tint, 0.5);
-
-    // Borde general neutro (como las cards de Activities)
-    var bNeutral = 'rgba(255, 255, 255, 0.08)';
-
-    // Glow neutro unificado (celeste suave, igual que el hover de Bienvenida)
-    var gNeutral = 'rgba(90, 110, 154, 0.15)';
 
     // TÍTULO: color de la expansión (mismo tono que el borde izquierdo)
     try {
@@ -398,12 +397,9 @@
       if (title) title.style.color = tint;
     } catch (_) {}
 
-    // TARJETA: borde neutro + glow neutro + borde izquierdo de color
+    // Solo borde izquierdo — el borde general, glow y hover los hereda de .card (theme-polish.css)
     try {
-      card.style.border      = '1px solid ' + bNeutral;
-      card.style.boxShadow   = '0 0 8px ' + gNeutral;
-      card.style.borderLeft  = '3px solid ' + bLeft;
-      if (!card.style.borderRadius) card.style.borderRadius = '10px';
+      card.style.borderLeft = '3px solid ' + bLeft;
     } catch (_) {}
 
     // BADGES DE ESTADO: mejor espaciado (padding consistente)
@@ -656,5 +652,5 @@
     }, 150);
   });
 
-  console.info('[MetaTheme] ready v1.4.1 — badges pulidos, chips suaves, ícono local en Horarios');
+  console.info('[MetaTheme] ready v1.4.2 — solo border-left, hereda .card de theme-polish.css');
 })();
