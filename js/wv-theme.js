@@ -1,16 +1,17 @@
 /*!
  * WV Theme — diseño unificado para Cámara del Brujo
- * v1.0.0 (2026-05-01)
+ * v1.0.1 (2026-05-02)
  *
- * Aplica la receta visual unificada a las cards de la Tienda y Objetivos:
- *  - Borde neutro rgba(255,255,255,0.08)
- *  - Glow suave rgba(90,110,154,0.12)
+ * Cambios v1.0.1:
+ *  - CORRECCIÓN: solo aplica border-left de color, el resto lo hereda de .card (theme-polish.css)
+ *  - Eliminada la sobrescritura de border-top/right/bottom y box-shadow
+ *  - La clase .card ya se agrega (se mantiene) para heredar el tema base
+ *  - Mismo patrón que wallet-theme.js v1.3.0, meta-theme.js v1.4.2, etc.
+ *
+ * v1.0.0:
+ *  - Aplica la receta visual unificada a las cards de la Tienda y Objetivos
  *  - Borde izquierdo de 3px del color de rareza (tienda) o modo (objetivos)
- *  - Hover: translateY(-3px) + sombra profunda (heredado de .card)
  *  - Observer para nuevas cards inyectadas dinámicamente
- *
- * NO modifica la lógica de renderizado ni el estado.
- * Si falla, la tienda se ve como antes.
  */
 
 (function () {
@@ -19,7 +20,7 @@
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
 
-  console.info('[WVTheme] wv-theme.js v1.0.0 — unificación visual de WV');
+  console.info('[WVTheme] wv-theme.js v1.0.1 — solo border-left, hereda .card de theme-polish.css');
 
   // ==========================================================================
   // UTILIDADES
@@ -38,18 +39,11 @@
     } catch (_) { return null; }
   }
 
-  // ==========================================================================
-  // CONSTANTES DE LA RECETA UNIFICADA
-  // ==========================================================================
-
-  var bNeutral = 'rgba(255, 255, 255, 0.08)';
-  var gNeutral = 'rgba(90, 110, 154, 0.12)';
-
   // Colores de referencia para modos de objetivos (si no se detecta color)
   var MODE_COLORS = {
     'pve': '#a0ffc8',
-    'pvp': '#cfd1ff',
-    'wvw': '#ffd3b3'
+    'pvp': '#ff6b6b',
+    'wvw': '#ffd36b'
   };
 
   // ==========================================================================
@@ -57,7 +51,7 @@
   // ==========================================================================
 
   function detectColor(card) {
-    // 1) Leer el color aplicado por router.js en el título (rareza)
+    // 1) Leer el color aplicado en el título (rareza para tienda)
     var nameEl = card.querySelector('.wv-card__name');
     if (nameEl) {
       var color = nameEl.style.color;
@@ -68,7 +62,9 @@
     var modeEl = card.querySelector('.wv-obj-mode, [data-wv-mode], [data-mode]');
     if (modeEl) {
       var mode = (modeEl.getAttribute('data-wv-mode') || modeEl.getAttribute('data-mode') || modeEl.textContent || '').trim().toLowerCase();
-      if (MODE_COLORS[mode]) return MODE_COLORS[mode];
+      if (mode === 'pve' || mode.includes('pve')) return '#a0ffc8';      // Verde PvE
+      if (mode === 'pvp' || mode.includes('pvp')) return '#ff6b6b';      // Rojo PvP
+      if (mode === 'wvw' || mode.includes('wvw')) return '#ffd36b';      // Ámbar WvW
     }
 
     // 3) Fallback: color neutro
@@ -87,12 +83,8 @@
       var color = detectColor(card);
       var bLeft = hexToRGBA(color, 0.5);
 
-      card.style.border = 'none';
+      // Solo borde izquierdo de color — el resto lo hereda de .card (theme-polish.css)
       card.style.borderLeft = '3px solid ' + bLeft;
-      card.style.borderTop = '1px solid ' + bNeutral;
-      card.style.borderRight = '1px solid ' + bNeutral;
-      card.style.borderBottom = '1px solid ' + bNeutral;
-      card.style.boxShadow = '0 0 8px ' + gNeutral;
       card.classList.add('card');
     } catch (_) {}
   }
@@ -119,19 +111,16 @@
     panel.__wvThemeObs = true;
 
     var mo = new MutationObserver(function (muts) {
-      var needsTheme = false;
       muts.forEach(function (m) {
         if (!m.addedNodes) return;
         m.addedNodes.forEach(function (n) {
           if (!(n instanceof HTMLElement)) return;
           if (n.matches && (n.matches('.wv-card') || n.matches('.wv-obj-card'))) {
             applyCardTheme(n);
-            needsTheme = true;
           } else if (n.querySelectorAll) {
             var cards = n.querySelectorAll('.wv-card, .wv-obj-card');
             if (cards.length) {
               cards.forEach(applyCardTheme);
-              needsTheme = true;
             }
           }
         });
@@ -147,21 +136,18 @@
 
   function init() {
     observePanel();
-    // Aplicar a cards ya renderizadas
     var panel = document.getElementById('wvPanel');
     if (panel && !panel.hasAttribute('hidden')) {
       themeAllNow(panel);
     }
   }
 
-  // Disparar en múltiples momentos para cubrir todos los casos
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
   }
 
-  // Al navegar a WV
   window.addEventListener('hashchange', function () {
     var p = document.getElementById('wvPanel');
     if (p && !p.hasAttribute('hidden')) {
@@ -178,14 +164,13 @@
     }
   });
 
-  // Al cambiar de API key (se recargan objetivos/tienda)
   document.addEventListener('gn:tokenchange', function () {
     setTimeout(function () {
       var p = document.getElementById('wvPanel');
       if (p && !p.hasAttribute('hidden')) themeAllNow(p);
     }, 400);
   });
-  // Forzar aplicación del tema después de que todo esté listo
+
   window.addEventListener('load', function() {
     setTimeout(function() {
       var panel = document.getElementById('wvPanel');
@@ -194,8 +179,7 @@
       }
     }, 1000);
   });
-  
-  // También al cambiar a la tab de tienda
+
   document.addEventListener('gn:tabchange', function(ev) {
     if (ev.detail && ev.detail.view === 'wv') {
       setTimeout(function() {
@@ -204,5 +188,14 @@
       }, 500);
     }
   });
-  console.info('[WVTheme] ready v1.0.0');
-})();
+
+    console.info('[WVTheme] ready v1.0.1 — solo border-left, hereda .card de theme-polish.css');
+
+  // ==========================================================================
+  // API PÚBLICA — expuesta para que wv-shop-ui.js pueda forzar la aplicación
+  // ==========================================================================
+  window.WVTheme = {
+    themeAllNow: themeAllNow
+  };
+
+})();   // ← cierre de la IIFE

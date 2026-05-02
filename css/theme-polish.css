@@ -116,11 +116,11 @@ p, li, span {
 
 .card {
   border-radius: var(--radius-lg);
-  border: 1px solid var(--bd-1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   background:
     linear-gradient(180deg, rgba(255,255,255,.02) 0%, rgba(255,255,255,0) 40%),
     var(--bg-2);
-  box-shadow: var(--elev-1);
+  box-shadow: 0 0 8px rgba(90, 110, 154, 0.12);
   transition:
     transform 0.22s cubic-bezier(0.2, 0.9, 0.4, 1.1),
     box-shadow 0.22s cubic-bezier(0.2, 0.9, 0.4, 1.1),
@@ -227,19 +227,6 @@ select:disabled { opacity:.55; cursor:not-allowed; }
 .icon-img.contrast { filter: drop-shadow(0 0 1px rgba(0,0,0,.4)); }
 
 /* =========================== TOOLTIPS / TOASTS =========================== */
-.inf-prev {
-  position:absolute;
-  z-index: 50;
-  border:1px solid #2b2f3a;
-  background:#0f1117;
-  border-radius: var(--radius-md);
-  box-shadow: var(--elev-2);
-  padding:6px;
-  opacity: 0; transform: translateY(-4px);
-  transition: opacity var(--dur-1) var(--ease-1), transform var(--dur-1) var(--ease-1);
-}
-.inf-prev.on { opacity:1; transform: translateY(0); }
-.inf-prev img { width:auto; height:auto; max-width:260px; max-height:260px; display:block; }
 
 .toasts { display:grid; gap:10px; position:fixed; right:14px; bottom:16px; z-index:60; }
 .toast {
@@ -1051,4 +1038,62 @@ aside.col-side .panel-head img {
   align-items: center !important;
   flex-wrap: wrap;
   gap: 8px;
+}
+/* ===== Meta cards — Ícono de expansión (v3.3.0) ===== */
+.meta-card__top {
+  display: grid;
+  grid-template-columns: 44px 1fr 28px;
+  gap: 10px;
+  align-items: start;
+}
+.meta-card__iconWrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #0e0f12;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #262a33;
+  overflow: hidden;
+}
+.meta-card__iconWrap--fallback {
+  font-weight: 700;
+  font-size: 22px;
+}
+.meta-card__icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+.meta-card__icon--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+.meta-card__title-wrap {
+  min-width: 0;
+}
+.meta-card__timing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.meta-chip--active {
+  background: rgba(160,255,200,0.12);
+  border-color: rgba(160,255,200,0.3);
+  color: #a0ffc8;
+}
+.meta-chip--soon {
+  background: rgba(255,211,107,0.12);
+  border-color: rgba(255,211,107,0.3);
+  color: #ffd36b;
+}
+.meta-chip--later {
+  background: rgba(123,194,255,0.08);
+  border-color: rgba(123,194,255,0.2);
+  color: #7bc2ff;
 }

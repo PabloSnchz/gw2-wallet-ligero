@@ -1,6 +1,6 @@
 /*!
  * js/wv-shop-ui.js — UI de la Tienda de Wizard's Vault
- * v1.0.1 (2026-05-02)
+ * v1.0.2 (2026-05-02)
  *
  * Extraído de router.js para separar renderizado de navegación.
  * Responsabilidades:
@@ -10,6 +10,7 @@
  *  - Toolbar de tienda
  *  - Auto-refresh
  *
+ * v1.0.2: Fix visual — glow solo en ícono, no en tarjeta. Borde izquierdo lo aplica wv-theme.js
  * v1.0.1: Fix de timing — verifica que window.WV esté disponible antes de operar.
  *
  * Depende de:
@@ -172,111 +173,111 @@
     return host;
   }
 
-    function ensureShopToolbar() {
-      var st = getState();
-      if (!st) return;
-      var host = ensureShopHost();
-      if (host.__wired && host.querySelector('.wv-shop-toolbar')) return;
-      host.__wired = true;
+  function ensureShopToolbar() {
+    var st = getState();
+    if (!st) return;
+    var host = ensureShopHost();
+    if (host.__wired && host.querySelector('.wv-shop-toolbar')) return;
+    host.__wired = true;
 
-      // Inyectar estilos del botón PD si no existen
-      if (!document.getElementById('wvpd-hotfix-ui')) {
-        var styleEl = document.createElement('style');
-        styleEl.id = 'wvpd-hotfix-ui';
-        styleEl.textContent = '.wvpd-iconbtn{background:none!important;border:none!important;padding:0!important;margin:0 0 0 auto!important;width:auto!important;height:auto!important;display:inline-flex!important;align-items:center;justify-content:center;cursor:pointer}.wvpd-iconbtn img{width:40px!important;height:40px!important;display:block!important;border-radius:8px!important;box-shadow:none!important;background:transparent!important;pointer-events:none!important}.wvpd-iconbtn:hover img{filter:brightness(1.08)}';
-        document.head.appendChild(styleEl);
-      }
+    // Inyectar estilos del botón PD si no existen
+    if (!document.getElementById('wvpd-hotfix-ui')) {
+      var styleEl = document.createElement('style');
+      styleEl.id = 'wvpd-hotfix-ui';
+      styleEl.textContent = '.wvpd-iconbtn{background:none!important;border:none!important;padding:0!important;margin:0 0 0 auto!important;width:auto!important;height:auto!important;display:inline-flex!important;align-items:center;justify-content:center;cursor:pointer}.wvpd-iconbtn img{width:40px!important;height:40px!important;display:block!important;border-radius:8px!important;box-shadow:none!important;background:transparent!important;pointer-events:none!important}.wvpd-iconbtn:hover img{filter:brightness(1.08)}';
+      document.head.appendChild(styleEl);
+    }
 
-      var legacyVis = st.legacyFilter || 'show';
-      host.innerHTML = [
-        '<div class="wv-shop-toolbar">',
-          '<div class="group" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">',
-            '<strong style="margin-right:6px">Tienda:</strong>',
-            '<input id="wvShopSearch" type="text" placeholder="Buscar (nombre o ID)…" />',
-            '<select id="wvShopSort">',
-              '<option value="name">Nombre (A→Z)</option>',
-              '<option value="cost">Costo AA (↑)</option>',
-              '<option value="costDesc">Costo AA (↓)</option>',
-              '<option value="id">ID (↑)</option>',
-            '</select>',
-            '<button id="wvShopToggleView" class="btn btn--ghost">Vista: ' + (st.view === 'cards' ? 'Tarjetas' : 'Tabla') + '</button>',
-            '<button id="wvShopRefresh" class="btn btn--ghost">Refrescar</button>',
-            '<label for="wvLegacyFilter" class="muted" style="margin-left:8px;">Recompensas Legado:</label>',
-            '<select id="wvLegacyFilter">',
-              '<option value="show"' + (legacyVis === 'show' ? ' selected' : '') + '>Mostrar</option>',
-              '<option value="hide"' + (legacyVis === 'hide' ? ' selected' : '') + '>Ocultar</option>',
-            '</select>',
-            '<button id="wvClearSynced" class="btn btn--ghost" title="Borrar o recortar marcas ya cubiertas por el API">Limpiar sincronizados</button>',
-            '<button id="wvPDOpenBtn" class="wvpd-iconbtn" title="Detalle de compras (todas las cuentas)" style="margin-left: auto;"><img src="' + (localStorage.getItem('wvpd_icon_url') || 'assets/icons/3126787.png') + '" alt="" loading="lazy" width="40" height="40"></button>',
-          '</div>',
-          shopSyncLine(),
-          '<div id="wvShopHeader" class="muted" style="margin-top:4px">—</div>',
-        '</div>'
-      ].join('');
+    var legacyVis = st.legacyFilter || 'show';
+    host.innerHTML = [
+      '<div class="wv-shop-toolbar">',
+        '<div class="group" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">',
+          '<strong style="margin-right:6px">Tienda:</strong>',
+          '<input id="wvShopSearch" type="text" placeholder="Buscar (nombre o ID)…" />',
+          '<select id="wvShopSort">',
+            '<option value="name">Nombre (A→Z)</option>',
+            '<option value="cost">Costo AA (↑)</option>',
+            '<option value="costDesc">Costo AA (↓)</option>',
+            '<option value="id">ID (↑)</option>',
+          '</select>',
+          '<button id="wvShopToggleView" class="btn btn--ghost">Vista: ' + (st.view === 'cards' ? 'Tarjetas' : 'Tabla') + '</button>',
+          '<button id="wvShopRefresh" class="btn btn--ghost">Refrescar</button>',
+          '<label for="wvLegacyFilter" class="muted" style="margin-left:8px;">Recompensas Legado:</label>',
+          '<select id="wvLegacyFilter">',
+            '<option value="show"' + (legacyVis === 'show' ? ' selected' : '') + '>Mostrar</option>',
+            '<option value="hide"' + (legacyVis === 'hide' ? ' selected' : '') + '>Ocultar</option>',
+          '</select>',
+          '<button id="wvClearSynced" class="btn btn--ghost" title="Borrar o recortar marcas ya cubiertas por el API">Limpiar sincronizados</button>',
+          '<button id="wvPDOpenBtn" class="wvpd-iconbtn" title="Detalle de compras (todas las cuentas)" style="margin-left: auto;"><img src="' + (localStorage.getItem('wvpd_icon_url') || 'assets/icons/3126787.png') + '" alt="" loading="lazy" width="40" height="40"></button>',
+        '</div>',
+        shopSyncLine(),
+        '<div id="wvShopHeader" class="muted" style="margin-top:4px">—</div>',
+      '</div>'
+    ].join('');
 
-      // Wire events
-      var q = host.querySelector('#wvShopSearch');
-      var s = host.querySelector('#wvShopSort');
-      var v = host.querySelector('#wvShopToggleView');
-      var r = host.querySelector('#wvShopRefresh');
-      var lf = host.querySelector('#wvLegacyFilter');
-      var cls = host.querySelector('#wvClearSynced');
+    // Wire events
+    var q = host.querySelector('#wvShopSearch');
+    var s = host.querySelector('#wvShopSort');
+    var v = host.querySelector('#wvShopToggleView');
+    var r = host.querySelector('#wvShopRefresh');
+    var lf = host.querySelector('#wvLegacyFilter');
+    var cls = host.querySelector('#wvClearSynced');
 
-      if (q) q.addEventListener('input', function () { st.q = (q.value || '').trim().toLowerCase(); WVShopUI.render(); });
-      if (s) s.addEventListener('change', function () { st.sort = s.value; WVShopUI.render(); });
-      if (v) v.addEventListener('click', function () {
-        st.view = (st.view === 'cards') ? 'table' : 'cards';
-        try { localStorage.setItem('gw2_wv_view_v1', st.view); } catch (_) {}
-        WVShopUI.render();
-      });
-      if (r) r.addEventListener('click', function () { WVShopUI.refresh(true); });
-      if (lf) lf.addEventListener('change', function () {
-        st.legacyFilter = lf.value || 'show';
-        try { localStorage.setItem('gw2_wv_legacy_filter_v1', st.legacyFilter); } catch (_) {}
-        WVShopUI.render();
-      });
+    if (q) q.addEventListener('input', function () { st.q = (q.value || '').trim().toLowerCase(); WVShopUI.render(); });
+    if (s) s.addEventListener('change', function () { st.sort = s.value; WVShopUI.render(); });
+    if (v) v.addEventListener('click', function () {
+      st.view = (st.view === 'cards') ? 'table' : 'cards';
+      try { localStorage.setItem('gw2_wv_view_v1', st.view); } catch (_) {}
+      WVShopUI.render();
+    });
+    if (r) r.addEventListener('click', function () { WVShopUI.refresh(true); });
+    if (lf) lf.addEventListener('change', function () {
+      st.legacyFilter = lf.value || 'show';
+      try { localStorage.setItem('gw2_wv_legacy_filter_v1', st.legacyFilter); } catch (_) {}
+      WVShopUI.render();
+    });
 
-      // Asignar evento al botón de Purchase Detail
-      var pdBtn = host.querySelector('#wvPDOpenBtn');
-      if (pdBtn && !pdBtn.__wvpdClick) {
-        pdBtn.__wvpdClick = true;
-        pdBtn.addEventListener('click', function(ev) {
-          ev.preventDefault();
-          try { window.WVPurchaseDetail?.show(); } catch(e) { console.warn('[WV-PD] show error', e); }
-        });
-      }
-
-      if (cls) cls.addEventListener('click', async function () {
-        var marks = st.marks || {};
-        var changed = false;
-        (st.merged || []).forEach(function (row) {
-          var id = String(row.id);
-          var limit = (typeof row.purchase_limit === 'number') ? row.purchase_limit : null;
-          var purchasedApi = (typeof row.purchased === 'number') ? row.purchased : 0;
-          var m = +marks[id] || 0;
-          if (limit == null) return;
-          if (purchasedApi >= limit && m) { delete marks[id]; changed = true; }
-          else if (m > 0 && purchasedApi + m > limit) { marks[id] = Math.max(0, limit - purchasedApi); changed = true; }
-        });
-        if (changed) {
-          st.marks = marks;
-          try {
-            var token = getSelectedToken();
-            var fp = token ? token.slice(0, 4) + '…' + token.slice(-4) : 'anon';
-            if (root.WVSeasonStore && st.season) {
-              await root.WVSeasonStore.setMarks(st.season.year, st.season.seq, fp, marks);
-            }
-            WVShopUI.render();
-            root.toast?.('success', 'Marcas sincronizadas con el API', { ttl: 1800 });
-          } catch (e) {
-            WVShopUI.refresh(false);
-            root.toast?.('error', 'No se pudo limpiar marcas', { ttl: 1800 });
-          }
-        } else {
-          root.toast?.('info', 'No hay marcas para limpiar', { ttl: 1500 });
-        }
+    // Asignar evento al botón de Purchase Detail
+    var pdBtn = host.querySelector('#wvPDOpenBtn');
+    if (pdBtn && !pdBtn.__wvpdClick) {
+      pdBtn.__wvpdClick = true;
+      pdBtn.addEventListener('click', function(ev) {
+        ev.preventDefault();
+        try { window.WVPurchaseDetail?.show(); } catch(e) { console.warn('[WV-PD] show error', e); }
       });
     }
+
+    if (cls) cls.addEventListener('click', async function () {
+      var marks = st.marks || {};
+      var changed = false;
+      (st.merged || []).forEach(function (row) {
+        var id = String(row.id);
+        var limit = (typeof row.purchase_limit === 'number') ? row.purchase_limit : null;
+        var purchasedApi = (typeof row.purchased === 'number') ? row.purchased : 0;
+        var m = +marks[id] || 0;
+        if (limit == null) return;
+        if (purchasedApi >= limit && m) { delete marks[id]; changed = true; }
+        else if (m > 0 && purchasedApi + m > limit) { marks[id] = Math.max(0, limit - purchasedApi); changed = true; }
+      });
+      if (changed) {
+        st.marks = marks;
+        try {
+          var token = getSelectedToken();
+          var fp = token ? token.slice(0, 4) + '…' + token.slice(-4) : 'anon';
+          if (root.WVSeasonStore && st.season) {
+            await root.WVSeasonStore.setMarks(st.season.year, st.season.seq, fp, marks);
+          }
+          WVShopUI.render();
+          root.toast?.('success', 'Marcas sincronizadas con el API', { ttl: 1800 });
+        } catch (e) {
+          WVShopUI.refresh(false);
+          root.toast?.('error', 'No se pudo limpiar marcas', { ttl: 1800 });
+        }
+      } else {
+        root.toast?.('info', 'No hay marcas para limpiar', { ttl: 1500 });
+      }
+    });
+  }
 
   function syncShopToggleLabel() {
     var st = getState();
@@ -378,6 +379,25 @@
 
     wirePinButtons(area, st);
     wireManualInputs(area, st);
+
+    // v1.0.2: Aplicar tema visual a las cards recién renderizadas
+    setTimeout(function () {
+      var cards = area.querySelectorAll('.wv-card, .wv-obj-card');
+      cards.forEach(function (card) {
+        card.__wvThemed = false;
+        var nameEl = card.querySelector('.wv-card__name');
+        var borderColor = 'rgba(255, 255, 255, 0.5)'; // fallback neutro
+        if (nameEl && nameEl.style.color && nameEl.style.color !== 'rgb(233, 233, 241)' && nameEl.style.color !== '#e9e9f1') {
+          // Convertir rgb(26, 147, 6) a rgba(26, 147, 6, 0.5)
+          var match = nameEl.style.color.match(/[\d.]+/g);
+          if (match && match.length >= 3) {
+            borderColor = 'rgba(' + match[0] + ', ' + match[1] + ', ' + match[2] + ', 0.5)';
+          }
+        }
+        card.style.borderLeft = '3px solid ' + borderColor;
+        card.classList.add('card');
+      });
+    }, 80);
   }
 
   function renderShopTable(area, rows, itemsById, st) {
@@ -417,73 +437,83 @@
   }
 
   function renderShopCards(area, rows, itemsById, st) {
-      var marks = st.marks || {};
-      var cards = rows.map(function (x) {
-        var it = (x.item_id != null) ? itemsById.get(x.item_id) : null;
-        var icon = it && it.icon ? it.icon : '';
-        var name = it && it.name ? it.name : (x.item_id != null ? ('Item #' + x.item_id) : (x.type || '—'));
-        var rarity = it && it.rarity ? String(it.rarity) : null;
-        var color = rarityColor(rarity);
-        var cost = (x.cost || 0);
-        var limit = (typeof x.purchase_limit === 'number') ? x.purchase_limit : null;
-        var purchasedApi = (typeof x.purchased === 'number') ? x.purchased : 0;
-        var marked = Number(marks[x.id] || 0);
-        var purchasedEff = purchasedApi + marked;
-        var leftVal = (limit == null) ? null : Math.max(0, limit - purchasedEff);
-        var leftDisplay = (limit == null) ? '∞' : leftVal;
-        var totalRemainingAA = leftVal !== null ? leftVal * cost : 0;
-        var progressPercent = limit ? (purchasedEff / limit) * 100 : 0;
-        var isCompleted = leftVal !== null && leftVal === 0;
-        var statusIcon = isCompleted ? '✅' : '⚠️';
-        var statusText = isCompleted ? 'Completado' : (limit === null ? 'Ilimitado' : 'Pendiente');
-        var statusColor = isCompleted ? '#a0ffc8' : (limit === null ? '#7bc2ff' : '#ffd36b');
+    var marks = st.marks || {};
+    var cards = rows.map(function (x) {
+      var it = (x.item_id != null) ? itemsById.get(x.item_id) : null;
+      var icon = it && it.icon ? it.icon : '';
+      var name = it && it.name ? it.name : (x.item_id != null ? ('Item #' + x.item_id) : (x.type || '—'));
+      var rarity = it && it.rarity ? String(it.rarity) : null;
+      var color = rarityColor(rarity);
+      var cost = (x.cost || 0);
+      var limit = (typeof x.purchase_limit === 'number') ? x.purchase_limit : null;
+      var purchasedApi = (typeof x.purchased === 'number') ? x.purchased : 0;
+      var marked = Number(marks[x.id] || 0);
+      var purchasedEff = purchasedApi + marked;
+      var leftVal = (limit == null) ? null : Math.max(0, limit - purchasedEff);
+      var leftDisplay = (limit == null) ? '∞' : leftVal;
+      var totalRemainingAA = leftVal !== null ? leftVal * cost : 0;
+      var progressPercent = limit ? (purchasedEff / limit) * 100 : 0;
+      var isCompleted = leftVal !== null && leftVal === 0;
+      var statusIcon = isCompleted ? '✅' : '⚠️';
+      var statusText = isCompleted ? 'Completado' : (limit === null ? 'Ilimitado' : 'Pendiente');
+      var statusColor = isCompleted ? '#a0ffc8' : (limit === null ? '#7bc2ff' : '#ffd36b');
 
-        var pinActive = !!(st.pinned && st.pinned[x.id]);
-        var pinCls = 'wv-pin' + (pinActive ? ' wv-pin--active' : '');
-        var pinBtn = '<button class="' + pinCls + '" data-pin="' + x.id + '" title="' + (pinActive ? 'Desfijar' : 'Fijar') + '">📌</button>';
+      var pinActive = !!(st.pinned && st.pinned[x.id]);
+      var pinCls = 'wv-pin' + (pinActive ? ' wv-pin--active' : '');
+      var pinBtn = '<button class="' + pinCls + '" data-pin="' + x.id + '" title="' + (pinActive ? 'Desfijar' : 'Fijar') + '">📌</button>';
 
-        var rowStyle = 'display:flex;justify-content:space-between;align-items:center;gap:8px;';
+      // ===== NUEVO v1.0.2: Glow solo en el ícono, no en la tarjeta =====
+      var iconGlowColor = color ? hexToRGBA(color, 0.36) : null;
+      var iconBorderColor = color ? hexToRGBA(color, 0.32) : null;
+      var iconDeco = (iconBorderColor && iconGlowColor)
+        ? ' style="box-shadow: 0 0 0 2px ' + iconBorderColor + ', 0 0 10px ' + iconGlowColor + '; border-radius:6px;"'
+        : '';
 
-        var progressHtml = '<div class="wvpd-item-progress wvpd-item-progress--compact">' +
-          '<div class="wvpd-item-progress__status" style="color:' + statusColor + '" title="' + (isCompleted ? 'Completado' : (limit === null ? 'Sin límite' : 'Faltan ' + leftVal + ' unidades (' + totalRemainingAA + ' AA)')) + '">' +
-          statusIcon + ' ' + statusText + ': ' + (leftDisplay === '∞' ? '∞' : leftDisplay + ' (' + totalRemainingAA + ' AA)') +
-          '</div>' +
-          '<div class="wvpd-item-progress__bar">' +
-          '<div class="wvpd-item-progress__fill" style="width:' + Math.min(100, progressPercent) + '%"></div>' +
-          '</div>' +
-          '</div>';
+      // La tarjeta NO recibe glow ni border inline — lo hereda de .card (theme-polish.css) + wv-theme.js (border-left)
+      // ===== FIN NUEVO =====
 
-        var manualInputHtml = '<div class="wvpd-manual-input" data-id="' + x.id + '">' +
-          '<label>Compras manuales:</label>' +
-          '<input type="number" class="wvpd-manual-input-field" data-id="' + x.id + '" value="' + marked + '" min="0" max="' + (limit || 999) + '" step="1">' +
-          '<button class="btn-max" data-id="' + x.id + '" data-limit="' + (limit || 0) + '">MAX</button>' +
-          '</div>';
+      var rowStyle = 'display:flex;justify-content:space-between;align-items:center;gap:8px;';
 
-        return '<div class="wv-card" data-id="' + x.id + '">' +
-          '<div class="wv-card__top">' +
-            '<div class="wv-card__iconWrap">' + (icon ? ('<img class="wv-card__icon" src="' + esc(icon) + '" alt="" loading="lazy"/>') : '') + '</div>' +
-            '<div class="wv-card__name" title="' + esc(name) + '"' + (color ? ' style="color:' + color + '"' : '') + '>' + esc(name) + '</div>' +
-            pinBtn +
-          '</div>' +
-          '<div class="wv-card__meta">' +
-            '<span class="wv-badge">Costo: <strong>' + cost + '</strong> AA</span>' +
-            '<span class="wv-type">' + esc(x.type || '—') + '</span>' +
-          '</div>' +
-          '<div class="wv-card__body">' +
-            '<div class="sep"></div>' +
-            '<div class="wv-card__row" style="' + rowStyle + '"><span class="muted">Comprado (API):</span><span class="pill">' + purchasedApi + ' / ' + (limit == null ? '∞' : limit) + '</span></div>' +
-            '<div class="wv-card__row" style="' + rowStyle + '"><span class="muted">Restante:</span><span class="pill">' + leftDisplay + '</span></div>' +
-            progressHtml +
-            manualInputHtml +
-          '</div>' +
-          '<div class="wv-card__bottom" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
-            '<span class="wv-id">ID ' + x.id + '</span>' +
-          '</div>' +
-          '</div>';
-      }).join('');
+      var progressHtml = '<div class="wvpd-item-progress wvpd-item-progress--compact">' +
+        '<div class="wvpd-item-progress__status" style="color:' + statusColor + '" title="' + (isCompleted ? 'Completado' : (limit === null ? 'Sin límite' : 'Faltan ' + leftVal + ' unidades (' + totalRemainingAA + ' AA)')) + '">' +
+        statusIcon + ' ' + statusText + ': ' + (leftDisplay === '∞' ? '∞' : leftDisplay + ' (' + totalRemainingAA + ' AA)') +
+        '</div>' +
+        '<div class="wvpd-item-progress__bar">' +
+        '<div class="wvpd-item-progress__fill" style="width:' + Math.min(100, progressPercent) + '%"></div>' +
+        '</div>' +
+        '</div>';
 
-      area.innerHTML = '<div class="wv-card-grid">' + cards + '</div>';
-    }
+      var manualInputHtml = '<div class="wvpd-manual-input" data-id="' + x.id + '">' +
+        '<label>Compras manuales:</label>' +
+        '<input type="number" class="wvpd-manual-input-field" data-id="' + x.id + '" value="' + marked + '" min="0" max="' + (limit || 999) + '" step="1">' +
+        '<button class="btn-max" data-id="' + x.id + '" data-limit="' + (limit || 0) + '">MAX</button>' +
+        '</div>';
+
+      return '<div class="wv-card" data-id="' + x.id + '">' +
+        '<div class="wv-card__top">' +
+          '<div class="wv-card__iconWrap"' + iconDeco + '>' + (icon ? ('<img class="wv-card__icon" src="' + esc(icon) + '" alt="" loading="lazy"/>') : '') + '</div>' +
+          '<div class="wv-card__name" title="' + esc(name) + '"' + (color ? ' style="color:' + color + '"' : '') + '>' + esc(name) + '</div>' +
+          pinBtn +
+        '</div>' +
+        '<div class="wv-card__meta">' +
+          '<span class="wv-badge">Costo: <strong>' + cost + '</strong> AA</span>' +
+          '<span class="wv-type">' + esc(x.type || '—') + '</span>' +
+        '</div>' +
+        '<div class="wv-card__body">' +
+          '<div class="sep"></div>' +
+          '<div class="wv-card__row" style="' + rowStyle + '"><span class="muted">Comprado (API):</span><span class="pill">' + purchasedApi + ' / ' + (limit == null ? '∞' : limit) + '</span></div>' +
+          '<div class="wv-card__row" style="' + rowStyle + '"><span class="muted">Restante:</span><span class="pill">' + leftDisplay + '</span></div>' +
+          progressHtml +
+          manualInputHtml +
+        '</div>' +
+        '<div class="wv-card__bottom" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
+          '<span class="wv-id">ID ' + x.id + '</span>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+
+    area.innerHTML = '<div class="wv-card-grid">' + cards + '</div>';
+  }
 
   function wirePinButtons(area, st) {
     $$('[data-pin]', area).forEach(function (btn) {
@@ -635,6 +665,6 @@
   };
 
   root.WVShopUI = WVShopUI;
-  console.info(LOG, 'ready v1.0.1 — fix de timing');
+  console.info(LOG, 'ready v1.0.2 — glow solo en ícono, tarjeta sin glow inline');
 
 })(typeof window !== 'undefined' ? window : this);

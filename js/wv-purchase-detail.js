@@ -1012,49 +1012,40 @@ function hidePanel(){
     return Math.max(apiPurchased, manualMarks);
   }
 
-  // ====== FUNCIÓN PARA ACTUALIZAR UNA SOLA FILA EN LA TABLA ======
-  function updateSingleAccountRow(rowIndex, updatedAccount) {
-    const table = document.getElementById('wvpdTable');
+  // ====== FUNCIÓN PARA ACTUALIZAR UNA SOLA FILA EN LA TABLA (POR TOKEN) ======
+  function updateSingleAccountRow(token, updatedAccount) {
+    var table = document.getElementById('wvpdTable');
     if (!table) return;
     
-    const tbody = table.querySelector('tbody');
+    var tbody = table.querySelector('tbody');
     if (!tbody) return;
     
-    const rows = tbody.querySelectorAll('tr');
-    if (rowIndex >= rows.length) return;
-    
-    const row = rows[rowIndex];
+    // Buscar la fila por data-token en lugar de por índice
+    var row = tbody.querySelector('tr[data-token="' + esc(token) + '"]');
     if (!row) return;
     
-    const firstCell = row.cells[0];
-    if (firstCell) {
-      const isOnline = updatedAccount.isOnline || false;
-      const statusColor = isOnline ? 'green' : 'red';
-      const statusTitle = isOnline ? 'Activo (actividad reciente)' : 'Inactivo';
-      const lastPlayedInfo = isOnline && updatedAccount.lastPlayedChar ? 
-          '<div class="wvpd-online-info">🕐 ' + esc(updatedAccount.lastPlayedChar) + '</div>' : '';
-      
-      const existingContent = firstCell.innerHTML;
-      const progressMatch = existingContent.match(/<div class="wvpd-account-progress">[\s\S]*?<\/div>/);
-      const progressHtml = progressMatch ? progressMatch[0] : '';
-      const nameMatch = existingContent.match(/<div class="wvpd-account-name[^>]*>([\s\S]*?)<\/div>/);
-      const accountName = nameMatch ? nameMatch[1] : esc(updatedAccount.label);
-      
-      // Mantener el color según progreso semanal
-      const stp = Number(updatedAccount.seasonMetaSteps || 0);
-      const nameColorClass = (stp >= 6) ? 'wvpd-acc--green' : (stp >= 4 ? 'wvpd-acc--yellow' : 'wvpd-acc--red');
-      
-      firstCell.innerHTML = `
-        <div class="wvpd-account-cell">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="wvpd-online-dot wvpd-online-dot--${statusColor}" title="${statusTitle}"></span>
-            <div class="wvpd-account-name ${nameColorClass}">${accountName}</div>
-          </div>
-          ${lastPlayedInfo}
-          ${progressHtml}
+    var firstCell = row.cells[0];
+    if (!firstCell) return;
+    
+    var isOnline = updatedAccount.isOnline || false;
+    var statusColor = isOnline ? 'green' : 'red';
+    var statusTitle = isOnline ? 'Activo (actividad reciente)' : 'Inactivo';
+    var lastPlayedInfo = isOnline && updatedAccount.lastPlayedChar ? 
+        '<div class="wvpd-online-info"><img src="assets/icons/523381.png" width="14" height="14" alt="" style="vertical-align: middle; margin-right: 4px;">' + esc(updatedAccount.lastPlayedChar) + '</div>' : '';
+    
+    // Mantener el color según progreso semanal
+    var stp = Number(updatedAccount.seasonMetaSteps || 0);
+    var nameColorClass = (stp >= 6) ? 'wvpd-acc--green' : (stp >= 4 ? 'wvpd-acc--yellow' : 'wvpd-acc--red');
+    
+    firstCell.innerHTML = `
+      <div class="wvpd-account-cell">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="wvpd-online-dot wvpd-online-dot--${statusColor}" title="${statusTitle}"></span>
+          <div class="wvpd-account-name ${nameColorClass}">${esc(updatedAccount.label)}</div>
         </div>
-      `;
-    }
+        ${lastPlayedInfo}
+      </div>
+    `;
   }
 
   // ====== FUNCIÓN PARA ACTUALIZAR TODOS LOS ESTADOS ONLINE (VÍA LAST_MODIFIED) ======
@@ -1090,7 +1081,8 @@ function hidePanel(){
         if (acc.isOnline !== isOnline || acc.lastPlayedChar !== lastPlayedChar) {
           acc.isOnline = isOnline;
           acc.lastPlayedChar = lastPlayedChar;
-          updateSingleAccountRow(i, acc);
+          // Buscar por token en vez de por índice
+          updateSingleAccountRow(acc.token, acc);
           updatedCount++;
         }
         if (isOnline) onlineCount++;
@@ -1102,7 +1094,7 @@ function hidePanel(){
     
     if (window.toast) {
       if (onlineCount > 0) {
-        window.toast('success', onlineCount + ' cuenta(s) activa(s) en los últimos 20 min', { ttl: 2000 });
+        window.toast('success', onlineCount + ' cuenta(s) activa(s) en los últimos 10 min', { ttl: 2000 });
       } else {
         window.toast('info', 'No se encontraron cuentas con actividad reciente', { ttl: 1500 });
       }
@@ -1610,7 +1602,7 @@ function hidePanel(){
       var statusColor = isOnline ? 'green' : 'red';
       var statusTitle = isOnline ? 'Activo (actividad reciente)' : 'Inactivo';
       var lastPlayedInfo = isOnline && acc.lastPlayedChar ? 
-          '<div class="wvpd-online-info">🕐 ' + esc(acc.lastPlayedChar) + '</div>' : '';
+          '<div class="wvpd-online-info"><img src="assets/icons/523381.png" width="14" height="14" alt="" style="vertical-align: middle; margin-right: 4px;">' + esc(acc.lastPlayedChar) + '</div>' : '';
       
       var nameHtml = `
         <div class="wvpd-account-cell">
@@ -1659,7 +1651,7 @@ function hidePanel(){
       var deltaNumber = (delta >= 0 ? '+' : '') + fmtInt(delta);
       cells.push('<td class="right"><span class="wvpd-aa-delta"><span class="' + deltaCls + '">' + deltaNumber + '</span>' + (deltaIcon ? '<span class="wvpd-aa-delta-icon ' + deltaCls + '">' + deltaIcon + '</span>' : '') + '</span><\/td>');
 
-      return '                <tr>' + cells.join('') + '<\/tr>';
+      return '                <tr data-token="' + esc(acc.token) + '">' + cells.join('') + '<\/tr>';
     }).join('');
 
     tbody.innerHTML = body || '                <tr><td colspan="'+(1 + pins.length + 3)+'" class="center wvpd-muted">Sin datos para mostrar.<\/td><\/tr>';
