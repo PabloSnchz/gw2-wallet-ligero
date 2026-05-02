@@ -2264,6 +2264,11 @@ SIN defer (temas, al final):
 - **Navegación**: el botón de acceso debe cambiar `location.hash` a `#/wallet/dashboard`
 - **Iconos por tipo**: leer `gw2_keys[].tag` sincronizado desde `accounts-panel.js`
 
+### Arquitectura CSS (3 capas)
+- **main.css** → layout, backgrounds, tipografía (sin bordes ni box-shadows)
+- **theme-polish.css** → borde neutro, glow base suave, hover unificado (`--elev-hover`)
+- **-theme.js** → solo border-left de color semántico
+
 ## 🧾 Historial de decisiones (v6.3)
 
 - **Q4 2025:** eliminación listener Ach → router controla todo

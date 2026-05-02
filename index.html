@@ -1058,8 +1058,19 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', wirePDButton);
+    document.addEventListener('DOMContentLoaded', function () {
+      wirePDButton();
+      // Botón Dashboard de Wallet
+      var dashboardBtn = document.getElementById('walletDashboardBtn');
+      if (dashboardBtn) {
+        dashboardBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          location.hash = '#/wallet/dashboard';
+        });
+      }
+    });
     setTimeout(wirePDButton, 500);
+    
     var moHost = document.getElementById('wvShopToolbarHost');
     if (moHost && 'MutationObserver' in window) {
       var mo = new MutationObserver(function(){ wirePDButton(); });
