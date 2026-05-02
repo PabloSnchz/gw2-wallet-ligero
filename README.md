@@ -4,8 +4,8 @@
 Aplicación liviana para Guild Wars 2 que permite consultar:
 
 - 🪙 Wallet / Divisas de la cuenta
-- 🎭 MetaEventos con horarios, estado y “Hecho hoy”
-- 🪄 Cámara del Brujo Wizard’s Vault (Objetivos y Tienda)
+- 🎭 MetaEventos con horarios, estado y "Hecho hoy"
+- 🪄 Cámara del Brujo Wizard's Vault (Objetivos y Tienda)
 - 🏆 Pantalla de Logros — Nueva vista completa
 - 💱 Conversor Gem ↔ Gold
 - 🏡 Home Nodes — Todos los desbloqueables de Heredad con estado ✅/❌
@@ -13,7 +13,7 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 - 🔐 Gestión completa de API Keys
 - ⭐ Favoritas, filtros avanzados, vista tarjetas/tabla
 - 👥 Panel de Personajes — Lista de personajes, localización y POIs
-- 📊 Detalle de compras Wizard’s Vault — KPIs de Aclamación Astral
+- 📊 Detalle de compras Wizard's Vault — KPIs de Aclamación Astral
 - 🟢 **Estado online basado en actividad reciente** — Detecta cualquier actividad (PvP, PvE, WvW, economía)
 - 📈 **Dashboard de Cartera Multi-Cuenta** — Tabla de todas las cuentas vs divisas seleccionadas, KPIs y ordenamiento dinámico
 - 🎯 **Raid Tracker** — Seguimiento semanal de raids (8 alas, 33 encuentros, marcado automático vía API)
@@ -22,13 +22,114 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 - 💾 **Sistema de Backup/Restaurar** — Exporta/importa toda la configuración entre dispositivos
 - 🔄 **Recarga forzada de temporada WV** — Ícono para restaurar información de temporada manualmente
 - 📈 **Google Analytics integrado** — Seguimiento de visitas y eventos personalizados
+- 🎨 **Interfaz visual unificada** — Diseño consistente en todos los módulos con bordes, glows y animaciones
 
 👉 **Página oficial (Deploy GitHub Pages):**  
 https://pablosnchz.github.io/gw2-wallet-ligero/
 
 ---
 
-## ✨ Novedades principales — v6.2.0
+## ✨ Novedades principales — v6.3.0
+
+### 🎨 Unificación Visual Completa + Desacople de WV + Rediseño de Módulos
+
+**La actualización más grande en la historia del proyecto. 11 módulos rediseñados, arquitectura optimizada y experiencia visual consistente.**
+
+### 🎨 Receta Visual Unificada
+
+Se estableció un estándar visual común para todas las cards de la aplicación:
+
+- **Borde general**: `1px solid rgba(255,255,255,0.08)` — neutro, unificado
+- **Borde izquierdo**: `3px solid` con color semántico (profesión, rareza, tipo de cuenta)
+- **Glow base**: `0 0 8px rgba(90,110,154,0.12)` — suave, unificado
+- **Hover**: `translateY(-3px)` + sombra profunda con el color del tema
+- **Transición**: `0.22s cubic-bezier(0.2, 0.9, 0.4, 1.1)` — suave, con rebote sutil
+
+| Módulo | Color del borde | Archivo de tema |
+|--------|----------------|-----------------|
+| Personajes | Color de profesión (9 colores) | `characters-theme.js` **NUEVO** |
+| Cartera | Color de divisa (gems, coins, karma...) | `wallet-theme.js` v1.4.0 |
+| Meta & Eventos | Color de expansión | `meta-theme.js` v1.4.1 |
+| Logros | Color de categoría | `achievements-theme.js` v1.1.0 |
+| Cámara del Brujo | Color de rareza/modo | `wv-theme.js` **NUEVO** |
+| Cuentas | Color de tipo (main/alter/f2p) | `accounts-panel.js` v1.9.0 |
+| Dashboard Cartera | Color por KPI (Oro/Karma/Laurel/AA) | `wallet-dashboard.js` v2.5.0 |
+
+### 🧩 Cámara del Brujo 100% Desacoplada de Router
+
+**Problema:** `router.js` tenía ~1200 líneas mezclando navegación, estado, renderizado HTML y estilos.  
+**Solución:** Extracción en 3 fases del renderizado a módulos independientes:
+
+| Fase | Archivo | Responsabilidad |
+|:----:|---------|-----------------|
+| 1 | `wv-theme.js` **NUEVO** | Tema visual (bordes, glows) — riesgo cero |
+| 2 | `wv-shop-ui.js` **NUEVO** | Renderizado de Tienda (~400 líneas extraídas) |
+| 3 | `wv-objectives-ui.js` **NUEVO** | Renderizado de Objetivos (~130 líneas extraídas) |
+
+**Resultado:** `router.js` pasó de ~1200 a ~750 líneas. Todos los módulos nuevos tienen fallback al código original.
+
+### 👥 Panel de Personajes — v2.3.0 + characters-theme.js v1.0.0
+
+- **Borde de color por profesión**: Guardian #73b9ff, Warrior #ffd966, Revenant #b19cd9, etc.
+- **Dropdowns personalizados** para POIs: reemplazan los `<select>` nativos (mismo sistema que Logros)
+- **Hover con sombra del color de la profesión**: elevación + glow
+- **Observer** para nuevas cards inyectadas dinámicamente
+
+### 💰 Cartera (Wallet) — Tabla Unificada
+
+- **Vista tabla rediseñada**: mismo estilo que Dashboard de Cartera
+- **Formato de moneda con colores**: oro `#f4c542`, plata `#e0e0e0`, cobre `#b87333`
+- **Categorías como badges** visuales con iconos
+- **Header sticky** con `text-transform: uppercase`
+- **Hover en filas** con transición suave
+
+### 📈 Dashboard de Cartera — Mejoras
+
+- **KPIs con borde izquierdo de color**: Oro, Karma, Laurel, AA
+- **Iconos por tipo de cuenta**: hereda del Panel de Cuentas (⭐ main, 👤 alter, 🆓 f2p)
+- **Sincronización automática**: los tags del Panel de Cuentas se sincronizan con las API Keys
+- **Emoji 📊 reemplazado** por ícono local `578844.png`
+
+### 🔐 Panel de Cuentas — Rediseño de carga
+
+- **Pantalla de carga en 2 columnas**: Asistente + Acceso a cuentas
+- **Texto de seguridad ampliado**: detalles de cifrado AES, sin servidores, Comunidad Gato Negro
+- **Selector de archivo estilizado**: botón que muestra el nombre del archivo en verde
+- **Vista tabla con fila expandible**: click en nombre → muestra GW2 Avanzado, Expansiones, Servicios
+- **Borde izquierdo por tipo**: main (dorado), alter (violeta), f2p (azul)
+
+### 🔑 Modal de API Keys — Rediseño
+
+- **Iconos de tipo de cuenta** en cada key
+- **Badge "✓ En uso"** en la key seleccionada
+- **Botones con iconos**: Usar, Copiar, Renombrar, Eliminar
+- **Botón Eliminar** destacado en rojo
+- **Estado vacío** con icono y mensaje descriptivo
+
+### 🎯 Actividades — Cards Unificadas
+
+- **Ecto**: `border-left` verde (hecho) / ámbar (pendiente)
+- **Fractales T4**: `border-left` verde (normal) / ámbar (CM)
+- **Fractales Recomendados**: `border-left` azul
+- **PSNA**: `border-left` azul unificado
+
+### 🗑️ Limpieza de Código
+
+- **Modo Deluxe eliminado** de Meta & Eventos (no tenía efecto visual real)
+- **`wallet-cur-theme-patch.js` eliminado** (redundante, conflictivo con `wallet-theme.js`)
+
+### 📦 Nuevos Archivos (v6.3.0)
+
+| Archivo | Descripción |
+|---------|-------------|
+| `js/characters-theme.js` | Tema visual de Personajes (borde de profesión, dropdowns POI) |
+| `js/wv-theme.js` | Tema visual de WV (borde de rareza/modo) |
+| `js/wv-shop-ui.js` | UI de Tienda WV (extraído de router.js) |
+| `js/wv-objectives-ui.js` | UI de Objetivos WV (extraído de router.js) |
+
+---
+
+## ✨ Novedades anteriores — v6.2.0
 
 ### 🎯 Raid Tracker — Seguimiento Semanal de Raids (NUEVO)
 
@@ -167,12 +268,7 @@ assets/icons/raids/
 - **Mide**: visitas, usuarios activos, ubicación, dispositivo, navegador, fuente de tráfico y duración de sesión
 - **Eventos personalizados** centralizados en `js/analytics.js` v1.0.0 con API pública `window.Analytics`
 - **Cola de eventos segura**: si gtag no está cargado, los eventos se guardan y se envían cuando esté disponible
-- **Eventos medidos**:
-  - `view_module` — Navegación a cada módulo (10 módulos incluyendo wallet_dashboard y raids)
-  - `export_backup` / `import_backup` — Uso de backup/restaurar
-  - `open_account_wizard`, `download_excel_template`, `enrich_with_api`, `encrypt_accounts_file` — Uso del asistente de cuentas
-  - `force_reload_season` — Recarga forzada de temporada WV
-  - `open_api_keys_modal`, `add_api_key`, `delete_api_key` — Gestión de API Keys
+- **Eventos medidos**: `view_module` (10 módulos), `export_backup`, `import_backup`, `open_account_wizard`, `download_excel_template`, `enrich_with_api`, `encrypt_accounts_file`, `force_reload_season`, `open_api_keys_modal`, `add_api_key`, `delete_api_key`
 - **Debug en consola**: cada evento se loguea con `[Analytics]` prefix
 
 ### 🔄 Recarga forzada de temporada en Wizard's Vault
@@ -315,6 +411,7 @@ assets/icons/raids/
 - **Botón "Horarios" con color dinámico**: 🟢 verde (activo), 🟡 ámbar (próximo ≤20 min), 🔵 azul (más tarde)
 - **Próximo horario resaltado** en la lista de horarios
 - **Barra de horarios unificada** con iconos GW2
+- **Modo Deluxe eliminado**: no tenía efecto visual real
 
 ### 🎨 Unificación visual global
 - **Badges canónicos**: `.badge--success/warning/info/infinite` con efecto hover en toda la app
@@ -328,13 +425,15 @@ assets/icons/raids/
 - Estructura de WV (objetivos + shop) consolidada, con auto-refresh de tienda, toolbar y persistencias por cuenta
 - **Mejora visual**: reemplazo de texto largo por ícono `155018.png` con tooltip junto al título
 - **Recarga forzada de temporada**: ícono `assets/icons/Welcome/834002.png` junto al tooltip para restaurar información de temporada manualmente
+- **Desacople completo**: tienda y objetivos en módulos independientes (`wv-shop-ui.js`, `wv-objectives-ui.js`)
 
 ### 💰 Wallet — Rework de tarjetas
 - Reemplazo de estrella por 📌 pin con persistencia por cuenta y migración automática
-- Tarjetas unificadas con estética “WV”: nuevo grid, jerarquía visual, badges, pills de categorías
+- Tarjetas unificadas con estética "WV": nuevo grid, jerarquía visual, badges, pills de categorías
 - Vista compacta (toggle) persistente por cuenta
 - Delta de cantidades (↑/↓) contra snapshot local, con pill verde/roja
-- Toolbar enriquecida: “Vista compacta” + “Actualizar base”
+- Toolbar enriquecida: "Vista compacta" + "Actualizar base"
+- **Vista tabla unificada** con formato de moneda con colores y categorías como badges
 
 ### 🏆 Logros
 - Pantalla completa con barras de progreso por categoría
@@ -352,7 +451,7 @@ assets/icons/raids/
 
 - Quick‑chips: Gemas (100/400/800/1200) y Oro (10/100/250)
 - Micro‑animaciones (`.updated`) en badges, output y barra
-- Halo dorado reforzado; estado “Actualizado.” en pill
+- Halo dorado reforzado; estado "Actualizado." en pill
 - Barra de conveniencia (ref 400) con sombras por estado
 - **Íconos locales**: gemas y oro desde `assets/icons/`
 
@@ -374,30 +473,41 @@ Definí en `index.html` (antes de router.js):
 
 ---
 
-## 📦 Archivos clave (v6.2.0)
+## 📦 Archivos clave (v6.3.0)
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
-| `js/api-gw2.js` | **v2.12.0** | API Layer. **Nuevas funciones `getAccountInfo` e `isRecentlyActive`. Eliminadas funciones PvP. Nueva función `getAccountRaids`** |
-| `js/wv-purchase-detail.js` | **v1.13.0** | Detalle de compras. **Estado online basado en last_modified (🕐 Actividad hace X min)** |
-| `js/wallet-dashboard.js` | **v2.5.0** | **Dashboard de Cartera Multi-Cuenta: tabla cuentas vs divisas, KPIs, ordenamiento, persistencia** |
-| `js/raid-tracker.js` | **v1.3.1** | **Raid Tracker: 8 alas, 33 encuentros, marcado automático vía API, modal con detalles** |
-| `js/analytics.js` | **v1.0.0** | **Eventos personalizados para Google Analytics. API pública `window.Analytics`. Cola de eventos segura.** |
-| `js/wizards-vault.js` | **v1.3.0** | Módulo Wizard's Vault. **Ícono de recarga forzada de temporada** (`834002.png`) junto al tooltip |
-| `js/accounts-panel.js` | **v1.9.0** | Panel de Cuentas + asistente para crear archivos .enc desde Excel. **Rediseño completo: iconos locales, Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada** |
-| `js/settings-manager.js` | **v1.0.1** | **Sistema de Backup/Restaurar**: exportación/importación completa de configuración (API Keys, WV pins, Wallet, Activities, Characters, Meta, global) |
-| `js/welcome-panel.js` | v1.2.0 | Pantalla de Bienvenida con onboarding, accesos rápidos, comunidad y apoyo (actualizada con Raids) |
-| `js/activities.js` | v3.19.3 | Actividades diarias/semanales. **Detección automática de llave semanal** |
-| `js/activities-theme.js` | v2.5.0 | Home Nodes + barra de horarios unificada con iconos GW2 |
+| `js/api-gw2.js` | **v2.12.0** | API Layer. **Nuevas funciones `getAccountInfo`, `isRecentlyActive` y `getAccountRaids`** |
+| `js/router.js` | **v2.15.0** | **Router desacoplado (~750 líneas). Solo orquesta navegación. Delega renderizado WV a módulos UI** |
+| `js/wv-shop-ui.js` | **v1.0.0** | **NUEVO: UI de Tienda WV (extraído de router.js) — renderizado, filtros, toolbar, skeleton** |
+| `js/wv-objectives-ui.js` | **v1.0.0** | **NUEVO: UI de Objetivos WV (extraído de router.js) — diarias, semanales, especiales** |
+| `js/wv-theme.js` | **v1.0.0** | **NUEVO: Tema visual de WV — borde de rareza/modo + glow unificado** |
+| `js/characters-theme.js` | **v1.0.0** | **NUEVO: Tema visual de Personajes — borde de profesión + dropdowns POI personalizados** |
+| `js/wv-purchase-detail.js` | **v1.13.0** | Detalle de compras. **Estado online basado en last_modified** |
+| `js/wallet-dashboard.js` | **v2.5.0** | **Dashboard de Cartera: KPIs con border-left, iconos por tipo de cuenta** |
+| `js/raid-tracker.js` | **v1.7.0** | **Raid Tracker: 8 alas, 33 encuentros, marcado automático vía API, modal con detalles** |
+| `js/analytics.js` | **v1.0.0** | **Eventos personalizados para Google Analytics** |
+| `js/wizards-vault.js` | **v1.3.0** | Módulo Wizard's Vault. **Ícono de recarga forzada de temporada** |
+| `js/accounts-panel.js` | **v1.9.0** | Panel de Cuentas + asistente. **Carga 2 columnas, fila expandible en tabla** |
+| `js/settings-manager.js` | **v1.0.2** | **Sistema de Backup/Restaurar** |
+| `js/welcome-panel.js` | v1.3.0 | Pantalla de Bienvenida con onboarding y accesos rápidos |
+| `js/activities.js` | v3.19.3 | Actividades diarias/semanales. **Cards unificadas visualmente** |
+| `js/activities-theme.js` | v2.6.0 | Home Nodes + barra de horarios unificada con iconos GW2 |
 | `js/characters.js` | v2.3.0 | Panel de Personajes. **Íconos profesión locales** |
-| `js/meta-theme.js` | v1.3.1 | Barra de horarios unificada + mejora de horarios en tarjetas |
-| `js/router.js` | **v2.14.0** | Router con prefetch, guardas, navegación por hash. **Incluye rutas #/wallet/dashboard y #/account/raids. Barra de progreso e input manual integrados en todas las tarjetas de tienda.** |
-| `js/wallet-theme.js` | v1.3.0 | Badges canónicos + glows preservados |
-| `css/theme-polish.css` | v2.0.0 | Componentes canónicos unificados |
+| `js/meta.js` | **v3.2.1** | MetaEventos. **Modo Deluxe eliminado** |
+| `js/meta-theme.js` | v1.4.1 | Barra de horarios unificada + mejora de horarios en tarjetas |
+| `js/wallet-theme.js` | **v1.4.0** | **Tema visual de Cartera: receta unificada (borde neutro + border-left de color)** |
+| `js/achievements-theme.js` | v1.1.0 | Tema visual de Logros: borde de categoría |
+| `js/app.js` | **v2.6.3** | Keys, wallet, eventos globales. **Modal de API Keys rediseñado** |
+| `css/theme-polish.css` | **v2.1.0** | **Componentes canónicos + hover unificado + tabla unificada extendida** |
+| `css/main.css` | **v2.6.0** | Estilos principales. **Eliminados estilos Deluxe, KPIs con border-left** |
+
+### Archivos eliminados (v6.3.0)
+- `js/wallet-cur-theme-patch.js` — redundante con `wallet-theme.js`, aplicaba `!important` y eliminaba glows
 
 ---
 
-## 🖼️ Assets locales (estructura v6.2.0)
+## 🖼️ Assets locales (estructura v6.3.0)
 
 ```
 assets/icons/
@@ -421,15 +531,11 @@ assets/icons/
 ├── 155033.png                  # Importar (Restaurar)
 ├── 155034.png                  # Exportar (Backup)
 ├── 155018.png                  # Info (tooltip WV)
-├── raids/                      # NUEVO: Raid Tracker
+├── 578844.png                  # TOTAL (Dashboard Cartera)
+├── raids/                      # Raid Tracker
 │   ├── raid-icon.png
 │   ├── wing1.png ... wing8.png
 │   └── bosses/                 # 33 archivos de íconos de encuentros
-│       ├── vale_guardian.png
-│       ├── gorseval.png
-│       ├── sabetha.jpg
-│       ├── ...
-│       └── default.png
 ├── Welcome/
 │   ├── 834002.png              # Recarga forzada de temporada WV
 │   └── ...                     # resto de iconos de bienvenida
@@ -465,7 +571,7 @@ assets/icons/
 │   ├── activities-icon.png
 │   ├── characters-icon.png
 │   ├── accounts-icon.png
-│   ├── raids-icon.png          # NUEVO: Icono de Raids en bienvenida
+│   ├── raids-icon.png
 │   ├── 528726.png               # Ícono ojo (toggle contraseñas)
 │   ├── 156108.png               # Check GeForce Now
 │   └── 3380755.png              # Home (nuevo)
@@ -483,23 +589,13 @@ assets/icons/
 │   └── 2163510.png             # Warrior
 └── Cuentas/
     ├── GW2free.png             # Icono cuenta (todas)
-    ├── candado GW2.png         # Candado
-    ├── gmail.png               # Gmail
-    ├── passgoogle.png          # Google Pass
-    ├── twitchlogo.png          # Twitch
-    ├── gforce.png              # GeForce Now
-    ├── HoT.png                 # Heart of Thorns
-    ├── PoF.png                 # Path of Fire
-    ├── EoD.png                 # End of Dragons
-    ├── SoTO.png                # Secrets of the Obscure
-    ├── JW.png                  # Janthir Wilds
-    ├── VoE.png                 # Visions of Eternity
-    ├── Heroic.png              # Heroic Edition
-    ├── star.png                # Principal (badge)
-    ├── alter.png               # Alternativa (badge)
-    ├── farming.png             # Farming (badge)
-    ├── key.png                 # Llaves (badge)
-    ├── f2p.png                 # F2P (badge)
+    ├── 547827.png              # Principal (badge)
+    ├── 157375.png              # Alternativa (badge)
+    ├── 102538.png              # F2P (badge)
+    ├── 157332.png              # Farming (badge)
+    ├── 1716669.png             # Llaves (badge)
+    ├── 240679.png              # Weekly (badge)
+    ├── 102438.png              # Taxi (badge)
     ├── 733265.png              # Contraseña (campo)
     ├── 733266.png              # Credenciales (título)
     ├── 156409.png              # Chars (campo)
@@ -511,112 +607,79 @@ assets/icons/
 
 ## 🧪 Cómo probar las novedades
 
-### Raid Tracker (NUEVO en v6.2)
-1. Navegar a **Raids** en la barra lateral (debajo de Actividades, antes de Personajes)
-2. Verificar que se muestran las 8 alas con todos los encuentros
-3. Verificar las tarjetas de KPIs (Completados esta semana y Progreso semanal)
-4. Hacer clic en el botón **"Detalle"** de cualquier encuentro para abrir el modal
-5. Verificar que el modal muestra descripción (5+ bullets), estrategia (5+ bullets) y enlace a video
-6. Si la API key tiene permiso `progression`, los encuentros completados se marcan con ✅
-7. Cambiar de API key y verificar que los datos se recargan automáticamente
-8. Verificar el mensaje de error cuando la API key no tiene permiso `progression`
+### Unificación Visual (NUEVO en v6.3)
+1. Navegar por todos los módulos y verificar que las cards tienen **borde izquierdo de color**
+2. Pasar el mouse sobre cualquier card → debe elevarse 3px con sombra profunda
+3. Verificar que los bordes son neutros (`rgba(255,255,255,0.08)`) en todos los módulos
+4. Verificar que el glow base es suave y unificado (`rgba(90,110,154,0.12)`)
 
-### Dashboard de Cartera Multi-Cuenta
-1. Navegar a **Cartera** (`#/cards`)
-2. Hacer clic en el botón **"Dashboard"** (junto a "Vista tabla")
-3. Verificar que se muestran todas las cuentas y las divisas seleccionadas
-4. Seleccionar/deseleccionar divisas en el dropdown para ver la tabla actualizarse
-5. Hacer clic en los encabezados de la tabla para ordenar ascendente/descendente
-6. Verificar las tarjetas de KPIs (Total Oro, Total Karma, Total Laurel, Reconocimiento Astral)
-7. Hacer clic en **"Refrescar"** para recargar los datos
-8. Hacer clic en **"Volver a Cartera"** para regresar al panel de cartera clásico
-9. Recargar la página (F5) en `#/wallet/dashboard` para ver que persiste el estado
+### Personajes + Theme (NUEVO en v6.3)
+1. Navegar a **Personajes** → verificar que cada card tiene borde del color de su profesión
+2. Verificar que los dropdowns de POI son personalizados (no nativos)
+3. Pasar el mouse sobre una card → debe mostrar sombra del color de la profesión
 
-### Estado online basado en last_modified
-1. Navegar a **Cámara del Brujo** → botón de detalle de compras (icono en toolbar)
-2. Verificar que las cuentas con actividad reciente muestran 🕐 "Actividad hace X min"
-3. Hacer clic en el botón **"Online"** (junto a Sincronizar) para actualizar solo el estado
-4. Verificar que el umbral es de 20 minutos (actividad en la última hora se detecta)
+### WV Desacoplado (NUEVO en v6.3)
+1. Navegar a **Cámara del Brujo** → verificar que Tienda y Objetivos cargan normalmente
+2. Verificar que las cards tienen `border-left` del color de rareza (tienda) o modo (objetivos)
+3. Abrir consola (F12) → no debe haber errores de `WVShopUI` o `WVObjectivesUI`
 
-### Google Analytics
-1. **Verificar script**: Abrir consola (F12) → pestaña Network → buscar peticiones a `google-analytics.com`
-2. **Ver eventos en tiempo real**: En GA4 → Informes → Tiempo real → navegar por la app y ver eventos aparecer
-3. **Debug en consola**: Cada evento personalizado se loguea con `[Analytics]` prefix
+### Cartera — Tabla Unificada (NUEVO en v6.3)
+1. Navegar a **Cartera** → hacer clic en "Vista tabla"
+2. Verificar que el oro se muestra con colores (`g` amarillo, `s` gris, `c` cobre)
+3. Verificar que las categorías son badges visuales
+4. Pasar el mouse sobre las filas → debe haber hover con cambio de fondo
 
-### Recarga forzada de temporada WV
-1. Navegar a Cámara del Brujo → hacer clic en el ícono 🔄 junto al tooltip → verificar que se actualiza la información de temporada
+### Dashboard Cartera (NUEVO en v6.3)
+1. Navegar a **Dashboard de Cartera** (`#/wallet/dashboard`)
+2. Verificar que los KPIs tienen borde izquierdo de color (Oro dorado, Karma púrpura, etc.)
+3. Verificar que cada cuenta tiene un icono de tipo (⭐ main, 👤 alter, 🆓 f2p)
+4. Verificar que el emoji 📊 fue reemplazado por el ícono `578844.png`
 
-### Sistema de Backup/Restaurar
-1. Hacer clic en "Backup" → descargar JSON → cambiar algo → "Restaurar" → confirmar → recarga → verificar que se restauró
+### Panel de Cuentas (NUEVO en v6.3)
+1. Navegar a **Cuentas** → verificar que la pantalla de carga tiene 2 columnas
+2. Verificar que el texto de seguridad incluye detalles de cifrado y comunidad
+3. Cambiar a vista tabla → hacer clic en un nombre → debe expandirse con GW2 Avanzado, Expansiones, Servicios
+4. Verificar que cada fila tiene `border-left` del color de su tipo
 
-### Pantalla de Bienvenida
-1. Recargar sin API key o limpiar localStorage (`gn_welcome_seen`) → ver bienvenida (incluye Raids en la lista de funcionalidades)
+### Modal de API Keys (NUEVO en v6.3)
+1. Abrir el modal de API Keys → verificar iconos de tipo, badge "En uso", botones con iconos
+2. Verificar que el botón Eliminar está en rojo
 
-### Botón home
-1. Clic en icono home en utilbar → ir a `#/welcome`
+### Actividades (NUEVO en v6.3)
+1. Navegar a **Actividades** → verificar que Ecto, Fractales y PSNA tienen `border-left` de color
 
-### Header compacto
-1. Verificar que el header ocupa menos espacio, logo + nombre en una línea, botones visibles
+### Raid Tracker (v6.2)
+1. Navegar a **Raids** → verificar 8 alas, KPIs, modal con detalles
 
-### Redes sociales
-1. Verificar que los iconos de Discord, Instagram, YouTube, Twitch y GitHub cargan como imágenes locales
+### Dashboard de Cartera Multi-Cuenta (v6.1)
+1. Navegar a **Cartera** → "Dashboard" → verificar tabla, KPIs, ordenamiento
 
-### Tooltip WV
-1. En Cámara del Brujo, pasar mouse sobre el ícono `ⓘ` junto al título → ver mensaje informativo
+### Estado online (v6.0)
+1. Navegar a **Cámara del Brujo** → botón de detalle de compras → verificar 🕐 "Actividad hace X min"
 
-### Panel de Cuentas
+### Google Analytics (v5.9)
+1. Abrir consola (F12) → pestaña Network → buscar peticiones a `google-analytics.com`
+
+### Recarga forzada de temporada WV (v5.8)
+1. Cámara del Brujo → clic en ícono 🔄 junto al tooltip → verificar actualización
+
+### Sistema de Backup/Restaurar (v5.7)
+1. Clic en "Backup" → descargar JSON → cambiar algo → "Restaurar" → verificar
+
+### Pantalla de Bienvenida (v5.5)
+1. Recargar sin API key → ver bienvenida con todas las secciones
+
+### Panel de Cuentas (v5.4)
 1. Navegar a `#/account/accounts` → usar asistente para crear archivo .enc
 
-### Asistente de Cuentas
-1. Abrir modal → seguir 4 pasos con iconos (plantilla Excel incluye columnas twitch_user, twitch_email, twitch_password)
-
-### Twitch en Cuentas
-1. Cargar archivo .enc con datos Twitch → expandir "Servicios y API" → expandir "Servicios" → ver username (copiable), email (copiable si existe), password (toggle independiente + copiable si existe)
-
-### GeForce Now en Cuentas
-1. Verificar que el texto "Vinculado" usa imagen local en lugar de emoji ✅
-
-### Iconos de secciones en Cuentas
-1. Verificar que Credenciales y GW2 Avanzado tienen nuevos iconos, mientras que Contraseña y Chars mantienen los originales
-
-### Barra de estadísticas en Cuentas
-1. Verificar que los separadores están optimizados y no rompen en zoom 100%
-
-### Detección de llave semanal
+### Detección de llave semanal (v5.5)
 1. Ver panel de actividades → UI de llave con leyenda "misma semana"
 
-### Barra de horarios
-1. Navegar a **Actividades** o **Meta & Eventos** → ver barra con iconos GW2 y resets con segundos
+### Barra de horarios (v5.0)
+1. Navegar a **Actividades** o **Meta & Eventos** → ver barra con iconos GW2
 
-### Home Nodes
+### Home Nodes (v5.0)
 1. Navegar a **Actividades** → sección "Home nodes"
-
-### Personajes
-1. Navegar a **Personajes** → ver lista, filtros, asignación de POIs
-
-### Íconos de profesión
-1. Verificar que se cargan desde `assets/icons/professions/`
-
-### Íconos de fractales
-1. Verificar que todas las tarjetas de fractales usan `2591.png`
-
-### Títulos de paneles
-1. Verificar que cada panel tiene su ícono correspondiente (incluyendo Raids)
-
-### Horarios en Meta
-1. Abrir horarios de una tarjeta → verificar hora local, color del botón y próximo horario resaltado
-
-### Purchase Detail (v1.13.0)
-1. Navegar a **Cámara del Brujo** → botón de detalle de compras → verificar barra de progreso, input manual, botón MAX
-2. Verificar el estado online: 🕐 "Actividad hace X min" en cuentas con actividad reciente
-3. Hacer clic en botón **"Online"** (junto a Sincronizar) para actualizar solo el estado
-
-### Wallet
-1. Verificar que las categorías son badges y los glows especiales se mantienen
-2. Verificar que el botón **"Dashboard"** está presente y funciona
-
-### Conversor
-1. Verificar que los íconos de gemas y oro son locales
 
 ---
 
@@ -625,24 +688,20 @@ assets/icons/
 - **API Key**: Requiere permisos `account` y `wallet`. Para Raids requiere `progression`
 - **Estado online**: Usa `last_modified` de `/v2/account?v=latest` con umbral de 20 minutos
 - **Raid Tracker**: Usa `/v2/account/raids` para obtener encuentros completados. TTL de 5 minutos
-- **Dashboard Cartera**: Usa `getCurrenciesAll()` y `getAccountWallet()`. Persistencia en `localStorage` con claves `wallet_dashboard_selected_currencies` y `wallet_dashboard_sort`
+- **Dashboard Cartera**: Usa `getCurrenciesAll()` y `getAccountWallet()`. Persistencia en `localStorage`
+- **WV Desacoplado**: `router.js` delega renderizado a `wv-shop-ui.js` y `wv-objectives-ui.js` con fallback
+- **Receta visual**: Borde neutro `rgba(255,255,255,0.08)`, border-left de color, glow `rgba(90,110,154,0.12)`, hover `translateY(-3px)`
 - **Rutas assets**: Todas son relativas (`assets/...`) sin barra inicial para compatibilidad con GitHub Pages
-- **Google Analytics**: ID de medición `G-LB782QT9TR`. Los eventos se pueden ver en GA4 → Informes → Eventos
+- **Google Analytics**: ID de medición `G-LB782QT9TR`
 - **LocalStorage** utilizado para:
-  - Favoritos / Pins
-  - Flags "Hecho hoy"
-  - Marcas WV
-  - API Keys (`gw2_keys`, `gw2_selected_key_v1`)
-  - Token seleccionado
-  - `gn_home_nodes_marked` (persistencia diaria de recolección)
-  - `characters:assignments` (POIs por personaje)
-  - `wvpd_icon_url` (ícono de Purchase Detail)
-  - `accounts:lastFile` (último archivo cifrado)
-  - `gn_welcome_seen` (flag de primera visita)
-  - `walletPins:*`, `walletSnapshot:*`, `walletCompact`
-  - `gn_meta_hecho_hoy:*`, `gn_meta_favs:*`
-  - `wallet_dashboard_selected_currencies` (divisas seleccionadas en dashboard)
-  - `wallet_dashboard_sort` (ordenamiento del dashboard)
+  - API Keys (`gw2_keys` con soporte de `tag` para tipo de cuenta, `gw2_selected_key_v1`)
+  - WV: `wv:season:*`, `wv:season:index`
+  - Wallet: `walletPins:*`, `walletSnapshot:*`, `walletCompact`
+  - Activities: `gn_activities_toggles`, `gn_home_nodes_marked`, `psna:*`
+  - Characters: `characters:assignments:*`, `characters:cached:*`, `characters:location_history:*`
+  - Meta: `gn_meta_hecho_hoy:*`, `gn_meta_favs:*`
+  - Dashboard: `wallet_dashboard_selected_currencies`, `wallet_dashboard_sort`
+  - Global: `gn_welcome_seen`, `wvpd_icon_url`, `accounts:lastFile`
 
 ---
 
@@ -650,20 +709,21 @@ assets/icons/
 
 Este proyecto sigue **Semantic Versioning** (SemVer).
 
-- `v6.2.0`: **Raid Tracker** — Nuevo módulo `raid-tracker.js` v1.3.1. 8 alas, 33 encuentros (jefes + eventos), marcado automático vía API `/v2/account/raids`, modal con 5+ bullets de descripción y estrategia, enlace a video. Ruta `#/account/raids`. Enlace en sidebar. API `getAccountRaids` en `api-gw2.js` v2.12.0. Router v2.14.0.
-- `v6.1.0`: **Dashboard de Cartera Multi-Cuenta** — Nuevo módulo `wallet-dashboard.js` v2.5.0. Tabla cuentas vs divisas, selector de divisas dropdown, KPIs resumen (Oro, Karma, Laurel, AA), ordenamiento dinámico, persistencia en localStorage. Ruta `#/wallet/dashboard`. Botón "Dashboard" en panel de Cartera.
-- `v6.0.0`: **Estado online basado en last_modified** — Reemplazo completo de lógica PvP por `last_modified` de `/v2/account`. `api-gw2.js` v2.11.0, `wv-purchase-detail.js` v1.13.0. Detecta cualquier actividad (PvP, PvE, WvW, economía). Ícono 🕐, umbral 20 minutos.
-- `v5.9.0`: **Google Analytics y Eventos Personalizados** — Script GA4 en `<head>`, archivo `analytics.js` v1.0.0 con 11 eventos personalizados en 6 archivos
-- `v5.8.0`: **Recarga forzada de temporada WV + Automatización de compras** — Ícono junto al tooltip para restaurar información de temporada manualmente (`wizards-vault.js` v1.3.0); barra de progreso e input manual en dashboard y tienda
-- `v5.7.0`: **Sistema de Backup/Restaurar + Header compacto + Mejoras WV** — Exportación/importación completa de configuración, header compacto (~60px), iconos de redes sociales locales, tooltip informativo en WV, mejoras visuales generales
-- `v5.6.0`: **Rediseño completo Panel de Cuentas v1.9.0** — Iconos locales (ojo y check GeForce Now como imágenes), Twitch detallado (username, email, password), toggles independientes, subsección Servicios colapsable, barra de estadísticas optimizada, separadores compactos, iconos separados para títulos de secciones vs campos internos
-- `v5.5.0`: **Pantalla de Bienvenida + Panel de Cuentas v1.3.1** — Onboarding, gestión segura de cuentas, asistente Excel → .enc, detección automática de llave semanal con validación de semana actual
-- `v5.4.0`: **Asistente de Cuentas** — Creación de archivos .enc desde Excel, enriquecimiento con API
-- `v5.3.0`: **Migración completa a íconos locales** — Profesiones, fractales, countdowns WV, títulos de paneles, rutas assets
-- `v5.2.0`: **Íconos en títulos de paneles** — Cartera, Meta, Logros, WV, Actividades, Personajes
-- `v5.1.0`: **Migración a íconos locales + fix bucle WV** — Sidebar, barra de tiempos, countdowns WV
-- `v5.0.0`: **Estándar Visual Unificado** — Barra de horarios unificada, Home Nodes rediseño, Purchase Detail v1.8.4
-- `v4.0.0`: Cámara del Brujo (Wizard’s Vault) — Módulo completo, Pantalla de Logros
+- `v6.3.0`: **Unificación Visual + Desacople WV + Rediseño de Módulos** — Receta visual unificada en 11 módulos, desacople de WV en 3 fases (`wv-theme.js`, `wv-shop-ui.js`, `wv-objectives-ui.js`), `characters-theme.js`, rediseño de Cartera (tabla), Dashboard (KPIs, iconos), Panel de Cuentas (carga 2 cols, fila expandible), Modal API Keys, cards de Actividades unificadas, eliminación de Modo Deluxe y `wallet-cur-theme-patch.js`
+- `v6.2.0`: **Raid Tracker** — Nuevo módulo `raid-tracker.js` v1.3.1. 8 alas, 33 encuentros, marcado automático vía API, modal con detalles
+- `v6.1.0`: **Dashboard de Cartera Multi-Cuenta** — Nuevo módulo `wallet-dashboard.js` v2.5.0. Tabla cuentas vs divisas, KPIs, ordenamiento
+- `v6.0.0`: **Estado online basado en last_modified** — Reemplazo de lógica PvP por `last_modified` de `/v2/account`
+- `v5.9.0`: **Google Analytics y Eventos Personalizados** — Script GA4, archivo `analytics.js` v1.0.0
+- `v5.8.0`: **Recarga forzada de temporada WV + Automatización de compras**
+- `v5.7.0`: **Sistema de Backup/Restaurar + Header compacto + Mejoras WV**
+- `v5.6.0`: **Rediseño completo Panel de Cuentas v1.9.0**
+- `v5.5.0`: **Pantalla de Bienvenida + Panel de Cuentas v1.3.1**
+- `v5.4.0`: **Asistente de Cuentas** — Creación de archivos .enc desde Excel
+- `v5.3.0`: **Migración completa a íconos locales**
+- `v5.2.0`: **Íconos en títulos de paneles**
+- `v5.1.0`: **Migración a íconos locales + fix bucle WV**
+- `v5.0.0`: **Estándar Visual Unificado** — Barra de horarios, Home Nodes, Purchase Detail
+- `v4.0.0`: Cámara del Brujo (Wizard's Vault) — Módulo completo, Pantalla de Logros
 - `v3.0.0`: MetaEventos Deluxe
 - `v2.6.2`: Base estable previa a Deluxe
 

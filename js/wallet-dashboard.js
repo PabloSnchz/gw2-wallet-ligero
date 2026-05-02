@@ -62,6 +62,29 @@
   var SORT_STORAGE_KEY = 'wallet_dashboard_sort';
   
   var DEFAULT_CURRENCY_NAMES = ['Gema', 'Moneda', 'Laurel', 'Reconocimiento Astral', 'Karma', 'Esquirla espiritual'];
+    // Iconos por tipo de cuenta (mismos que accounts-panel.js)
+  var ACCOUNT_TYPE_ICONS = {
+    'main':  'assets/icons/Cuentas/547827.png',
+    'alter': 'assets/icons/Cuentas/157375.png',
+    'f2p':   'assets/icons/Cuentas/102538.png'
+  };
+  var DECORATIVE_ICONS = [
+    'assets/icons/Cuentas/1770678.png',
+    'assets/icons/Cuentas/1770679.png',
+    'assets/icons/Cuentas/1770680.png',
+    'assets/icons/Cuentas/1770681.png',
+    'assets/icons/Cuentas/1770682.png',
+    'assets/icons/Cuentas/1770683.png',
+    'assets/icons/Cuentas/1770684.png',
+    'assets/icons/Cuentas/1770685.png',
+    'assets/icons/Cuentas/1770686.png'
+  ];
+
+  function getAccountIcon(tag) {
+    if (tag && ACCOUNT_TYPE_ICONS[tag]) return ACCOUNT_TYPE_ICONS[tag];
+    // Fallback aleatorio si no tiene tag definido
+    return DECORATIVE_ICONS[Math.floor(Math.random() * DECORATIVE_ICONS.length)];
+  }
 
   // ------------------------------ Persistencia ------------------------------
   function loadSelectedCurrencies() {
@@ -456,9 +479,19 @@
     // Renderizar KPIs
     renderKPIs(totals);
 
-    var bodyRows = rowsAcc.map(function(acc) {
-      var cells = [];
-      cells.push('<td><strong>' + esc(acc.label) + '</strong></td>');
+        var bodyRows = rowsAcc.map(function(acc) {
+          var cells = [];
+          // Buscar el tag de esta cuenta en las keys guardadas
+          var keyItem = state.keys.find(function(k) { return k.value === acc.token; });
+          var tag = keyItem ? keyItem.tag : null;
+          var icon = getAccountIcon(tag);
+
+          cells.push(
+            '<td style="display:flex;align-items:center;gap:10px;min-width:160px;">' +
+              '<img src="' + icon + '" width="28" height="28" alt="" style="border-radius:8px;filter:brightness(0.9);flex-shrink:0;" loading="lazy">' +
+              '<strong>' + esc(acc.label) + '</strong>' +
+            '</td>'
+          );
       selectedCurrencies.forEach(function(cur) {
         var value = acc.wallet[cur.id] || 0;
         var displayValue = formatValueForDisplay(cur.id, value);
@@ -468,7 +501,7 @@
     }).join('');
 
     // Fila de totales
-    var totalCells = ['<td class="total-label"><strong>📊 TOTAL</strong></td>'];
+    var totalCells = ['<td class="total-label"><strong><img src="assets/icons/578844.png" width="14" height="14" alt="" style="vertical-align: middle; margin-right: 6px;">TOTAL</strong></td>'];
     selectedCurrencies.forEach(function(cur) {
       var totalValue = totals[cur.id];
       var displayTotal = formatValueForDisplay(cur.id, totalValue);

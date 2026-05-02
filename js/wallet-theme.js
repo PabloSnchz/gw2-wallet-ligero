@@ -134,7 +134,7 @@
     return 'default';
   }
 
-  // --- Aplicar tema (colores y glows) ------------------------------------------
+    // --- Aplicar tema (colores y glows unificados v1.4.0) -----------------------
   function applyCurrencyTheme(card) {
     if (!card) return;
 
@@ -147,10 +147,13 @@
       console.log('[WalletTheme] resolve:', titleDbg, '→', key);
     }
 
-    var bColor = hexToRGBA(isColorful ? hex : '#FFFFFF', isColorful ? 0.28 : 0.18);
-    var gColor = hexToRGBA(isColorful ? hex : '#FFFFFF', isColorful ? 0.34 : 0.26);
+    // Constantes de la receta unificada
+    var bNeutral  = 'rgba(255, 255, 255, 0.08)';          // borde neutro
+    var gNeutral  = 'rgba(90, 110, 154, 0.12)';           // glow suave
+    var bLeft     = hexToRGBA(isColorful ? hex : '#FFFFFF', 0.5);  // borde izq de color
+    var iconColor = hexToRGBA(isColorful ? hex : '#FFFFFF', 0.3);  // marco ícono sutil
 
-    // Título
+    // Título tintado
     try {
       var title =
         card.querySelector('.wv-card__top .wv-card__name') ||
@@ -163,16 +166,15 @@
       if (title) title.style.color = isColorful ? hex : '#FFFFFF';
     } catch (_) {}
 
-    // Contenedor tarjeta
+    // Contenedor tarjeta: borde neutro + glow suave + borde izquierdo de color
     try {
-      if (bColor && gColor) {
-        card.style.border = '1px solid ' + bColor;
-        card.style.boxShadow = '0 0 0 1px ' + bColor + ' inset, 0 0 12px ' + gColor;
-      }
+      card.style.border = '1px solid ' + bNeutral;
+      card.style.boxShadow = '0 0 8px ' + gNeutral;
+      card.style.borderLeft = '3px solid ' + bLeft;
       card.style.borderRadius = '10px';
     } catch (_) {}
 
-    // Marco del ícono
+    // Marco del ícono: sutil, sin glow exagerado
     try {
       var iconWrap =
         card.querySelector('.wv-card__iconWrap') ||
@@ -180,8 +182,8 @@
         card.querySelector('.cur-card__iconWrap') ||
         card.querySelector('.w-card__iconWrap') ||
         card.querySelector('.icon, .icon-wrap');
-      if (iconWrap && bColor && gColor) {
-        iconWrap.style.boxShadow = '0 0 0 2px ' + bColor + ', 0 0 10px ' + gColor;
+      if (iconWrap && iconColor) {
+        iconWrap.style.boxShadow = '0 0 0 2px ' + iconColor;
         iconWrap.style.borderRadius = '6px';
       }
     } catch (_) {}

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="dark light"/>
   <meta name="theme-color" content="#111218"/>
-  <title>Bóveda del Gato Negro — v6.2.0</title>
+  <title>Bóveda del Gato Negro — v6.3.0</title>
 
   <!-- Fuente hero: Cinzel Decorative -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -931,38 +931,71 @@
     </div>
   </div>
 
-  <!-- JS base -->
+    <!-- ======================================================================
+       JS — Bóveda del Gato Negro v6.2.0
+       Orden de carga: APIs → Datos → Módulos (defer) → Temas (sync)
+       ====================================================================== -->
+
+  <!-- JS base (dependencias externas, SIN defer) -->
   <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.js"></script>
-  <!-- SheetJS para manejo de Excel -->
   <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+
+  <!-- API y datos (SIN defer, otros módulos los necesitan al instante) -->
   <script src="js/api-gw2.js?v=2.12.0-modular"></script>
   <script src="js/wizards-vault.js?v=1.3.0"></script>
   <script src="js/wv-season-storage.js?v=1.1.1"></script>
-  
-  <!-- Módulos de vistas que no dependen del router -->
+
+  <!-- ======================================================================
+       MÓDULOS — defer, se ejecutan en orden después del DOM
+       ====================================================================== -->
+
+  <!-- Vistas independientes del router -->
   <script defer src="js/achievements.js?v=3.2.0"></script>
   <script defer src="js/meta.js?v=3.2.1"></script>
   <script defer src="js/sidebar-nav.js?v=1.2"></script>
 
+  <!-- Actividades -->
   <script defer src="js/activities.js?v=3.19.3"></script>
   <script defer src="js/activities-theme.js?v=2.6.0"></script>
+
+  <!-- Personajes -->
   <script defer src="js/characters.js?v=2.3.0"></script>
+  <script defer src="js/characters-theme.js?v=1.0.0"></script>
+
+  <!-- Cuentas + Utilidades -->
   <script defer src="js/accounts-panel.js?v=1.9.0"></script>
   <script defer src="js/settings-manager.js?v=1.0.2"></script>
   <script defer src="js/gist-sync.js?v=1.0.0"></script>
+
+  <!-- Bienvenida -->
   <script defer src="js/welcome-panel.js?v=1.3.0"></script>
-  
-  <!-- NUEVO: Raid Tracker -->
+
+  <!-- Raid Tracker -->
   <script defer src="js/raid-tracker.js?v=1.7.0"></script>
-  
-  <script defer src="js/router.js?v=2.14.0"></script>
-  <script defer src="js/wv-tabs-skin.js?v=1.0.0"></script>
+
+  <!-- Wizard's Vault — UI desacoplada (Fases 1-3) -->
+  <script defer src="js/wv-shop-ui.js?v=1.0.0"></script>
+  <script defer src="js/wv-objectives-ui.js?v=1.0.0"></script>
+  <script defer src="js/wv-theme.js?v=1.0.0"></script>
   <script defer src="js/wv-purchase-detail.js?v=1.13.0"></script>
-  
-  <!-- NUEVO: Módulo Dashboard de Cartera -->
+  <script defer src="js/wv-tabs-skin.js?v=1.0.0"></script>
+
+  <!-- Dashboard de Cartera Multi-Cuenta -->
   <script defer src="js/wallet-dashboard.js?v=2.4.0"></script>
 
-  <!-- Inicialización del icono (solo si no lo definió el usuario antes) -->
+  <!-- ROUTER — orquestador principal -->
+  <script defer src="js/router.js?v=2.14.0"></script>
+
+  <!-- ======================================================================
+       APP — Bootstrap de keys + toasts + conversor
+       ====================================================================== -->
+  <script defer src="js/app.js?v=2.6.3"></script>
+
+  <!-- ======================================================================
+       CONFIGURACIÓN GLOBAL
+       ====================================================================== -->
+
+  <!-- Inicialización del icono de Purchase Detail -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       if (window.WVPurchaseDetail && typeof WVPurchaseDetail.setIcon === 'function') {
@@ -970,7 +1003,6 @@
           WVPurchaseDetail.setIcon('assets/icons/3126787.png');
         }
       }
-      // Conectar botón del dashboard de cartera
       var dashboardBtn = document.getElementById('walletDashboardBtn');
       if (dashboardBtn && window.WalletDashboard && typeof window.WalletDashboard.show === 'function') {
         dashboardBtn.addEventListener('click', function (e) {
@@ -983,10 +1015,8 @@
     });
   </script>
 
-  <script defer src="js/app.js?v=2.6.3"></script>
-
+  <!-- Íconos de modo para pastillas WV -->
   <script>
-    /* Íconos para pastillas de modo en WV (usando render.guildwars2.com) */
     window.WV_MODE_ICONS = {
       pve: 'assets/icons/3240357.png',
       pvp: 'assets/icons/3240358.png',
@@ -994,12 +1024,16 @@
     };
   </script>
 
-  <!-- Temas/UI helpers -->
+  <!-- ======================================================================
+       TEMAS / UI HELPERS — sin defer, se aplican al DOM existente
+       ====================================================================== -->
   <script src="js/wallet-theme.js?v=1.3.0"></script>
   <script src="js/meta-theme.js?v=1.4.1"></script>
   <script src="js/achievements-theme.js?v=1.0.0"></script>
+  <script src="js/characters-theme.js?v=1.0.0"></script>
+  <script src="js/wv-theme.js?v=1.0.0"></script>
   
-  <style id="wvpd-hotfix-ui">
+<style>
   /* --- Botón de acceso al dashboard en toolbar --- */
   .wvpd-iconbtn{
     background: none !important;

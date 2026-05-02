@@ -9,6 +9,115 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [6.3.0] - 2026-05-01
+
+### Added
+- **Receta Visual Unificada (Standard Visual Recipe)**:
+  - Estándar visual común para todas las cards: borde neutro `rgba(255,255,255,0.08)`, border-left de 3px con color semántico, glow suave `rgba(90,110,154,0.12)`
+  - Hover unificado: `translateY(-3px)` + sombra profunda `0 10px 28px rgba(0,0,0,0.45)` + glow intensificado
+  - Transición: `0.22s cubic-bezier(0.2, 0.9, 0.4, 1.1)`
+  - Aplicado en 11 módulos mediante `theme-polish.css`, `wallet-theme.js`, `meta-theme.js`, `achievements-theme.js`, `characters-theme.js`, `wv-theme.js`, `activities.js`, `accounts-panel.js`, `wallet-dashboard.js`
+- **Desacople de Cámara del Brujo (WV) de router.js (Fases 1-3)**:
+  - **Fase 1: `wv-theme.js` v1.0.0**: Tema visual para cards de Tienda y Objetivos WV (borde de rareza/modo, glow unificado). MutationObserver para cards dinámicas. Riesgo cero.
+  - **Fase 2: `wv-shop-ui.js` v1.0.0**: UI de Tienda WV extraída de router.js (~400 líneas). Renderizado de cards/tabla, toolbar, filtros, skeleton loader, marcas, pins, auto-refresh. Con fallback completo.
+  - **Fase 3: `wv-objectives-ui.js` v1.0.0**: UI de Objetivos WV extraída de router.js (~130 líneas). Renderizado de diarias/semanales/especiales, modo zero, hydrate mode pills. Con fallback completo.
+  - `router.js` reducido de ~1200 a ~750 líneas. Solo orquesta navegación y ciclo de vida.
+  - API pública extendida: `__getShopState()`, `__getObjState()`, `__setObjState()` en `window.WV`
+- **`characters-theme.js` v1.0.0**: Tema visual de Personajes con borde de color por profesión (9 colores), hover con sombra de profesión, dropdowns personalizados para POIs (reemplazan `<select>` nativos), MutationObserver para cards dinámicas
+- **Rediseño de Vista Tabla de Cartera (Wallet)**:
+  - Íconos de divisa en cada fila
+  - Formato de moneda con colores: oro `#f4c542`, plata `#e0e0e0`, cobre `#b87333`
+  - Categorías migradas a badges visuales
+  - Header sticky con `text-transform: uppercase` y `letter-spacing`
+  - Hover en filas con `background: #1a1d28`
+  - Estilos unificados con `.table-unified` en `theme-polish.css`
+  - Nueva función `formatCoinValue()` en `app.js`
+- **Rediseño de Dashboard de Cartera Multi-Cuenta**:
+  - KPIs con `border-left` semántico por tipo (Oro `#F4C542`, Karma `#AF63DF`, Laurel `#2BC14E`, AA `#7BC2FF`)
+  - Iconos decorativos por tipo de cuenta (`main`/`alter`/`f2p`) heredados del Panel de Cuentas
+  - Sincronización de tags entre `accounts-panel.js` → `gw2_keys` → `wallet-dashboard.js`
+  - Emoji 📊 de TOTAL reemplazado por ícono local `assets/icons/578844.png`
+  - Nuevas funciones `getAccountIcon(tag)` y `ACCOUNT_TYPE_ICONS` en `wallet-dashboard.js`
+- **Rediseño del Panel de Cuentas**:
+  - Pantalla de carga rediseñada a 2 columnas (Asistente + Acceso a cuentas) con cards del mismo alto
+  - Texto de seguridad ampliado: 4 bullets con iconos (cifrado AES, sin servidores, Comunidad Gato Negro)
+  - Selector de archivo estilizado: botón que muestra nombre del archivo seleccionado en verde
+  - Vista tabla con `border-left` por tipo de cuenta (`main`/`alter`/`f2p`)
+  - Fila expandible al hacer clic (GW2 Avanzado, Expansiones, Servicios y API, Notas)
+  - Corrección de bugs: `<tr>` corrupto (carácter `械`), `renderTableRow()` con `colspan` correcto
+  - Nueva función `getBorderColor(account)` y `syncAccountTagsToKeys(accounts)`
+- **Rediseño del Modal de API Keys**:
+  - Iconos de tipo de cuenta en cada key (hereda de `accounts-panel.js`)
+  - Badge "✓ En uso" en la key seleccionada (verde)
+  - Key ofuscada con icono de candado
+  - Botones con iconos: Usar (⚡), Copiar (📋), Renombrar (✏️), Eliminar (🗑️)
+  - Botón Eliminar destacado en rojo con fondo semitransparente
+  - Estado vacío con icono y mensaje descriptivo
+  - Nuevas constantes `ACCOUNT_TYPE_ICONS` y `CONFIG_ICONS` en `app.js`
+  - Nuevo método `KeyManager.setKeyTag(token, tag)` para persistir tipo de cuenta
+- **Unificación visual de Actividades**:
+  - Cards de Ecto: `border-left` verde `#a0ffc8` (hecho) / ámbar `#ffd36b` (pendiente)
+  - Cards de Fractales T4: `border-left` verde (normal) / ámbar (CM)
+  - Cards de Fractales Recomendados: `border-left` azul `#7bc2ff`
+  - Cards de PSNA: `border-left` azul unificado
+- **Nuevo asset**: `assets/icons/578844.png` para TOTAL del Dashboard
+
+### Changed
+- **router.js v2.14.0 → v2.15.0**:
+  - `ensureLoadTab('shop')` y `onTokenChanged` delegan a `WVShopUI` con fallback
+  - `renderObjectivesTab` y `renderObjectivesZero` delegan a `WVObjectivesUI` con fallback
+  - Reducción de ~450 líneas (de ~1200 a ~750)
+  - API pública extendida con `__getShopState`, `__getObjState`, `__setObjState`
+- **wallet-theme.js v1.3.0 → v1.4.0**:
+  - `applyCurrencyTheme()` actualizada con receta visual unificada
+  - Borde neutro `rgba(255,255,255,0.08)` + `border-left` de color de divisa
+  - Glow unificado `rgba(90,110,154,0.12)` en vez de glow por color
+  - Marco de ícono simplificado (sin glow)
+- **theme-polish.css v2.0.0 → v2.1.0**:
+  - Nueva variable `--elev-hover` para hover unificado
+  - `.card:hover` actualizado: `translateY(-3px)` + sombra profunda + glow intensificado
+  - `.table-unified` extendido con soporte para `#walletTable`, `#accountsList table`
+  - Hover unificado en filas de tabla
+- **main.css v2.5.0 → v2.6.0**:
+  - Agregados estilos para `.wd-kpi-card` con `border-left` semántico por `:nth-child()`
+  - Agregados estilos para tabla de Cuentas (`#accountsList table`)
+  - Eliminados estilos de Modo Deluxe (`body[data-meta-deluxe="on"]`)
+- **meta.js v3.2.1**:
+  - Eliminación de Modo Deluxe: `setDeluxe()`, `LS_META_DELUXE`, `DELUXE_DEFAULT`, botón Deluxe de `injectUIToggles()`
+  - El Modo Compacto se mantiene intacto
+- **accounts-panel.js v1.9.0**:
+  - `renderLoadForm()` rediseñado a 2 columnas
+  - `renderTableRow()` con fila expandible y `getBorderColor()`
+  - Nueva función `syncAccountTagsToKeys()` llamada desde `loadFromFile()` y `loadFromStoredFile()`
+  - Corrección de `<tr>` corrupto en `renderTable()`
+- **app.js v2.6.3**:
+  - `renderKeysList()` rediseñado con iconos, badges, botones con iconos
+  - Nuevo método `KeyManager.setKeyTag(token, tag)`
+  - Nuevas constantes `ACCOUNT_TYPE_ICONS` y `CONFIG_ICONS`
+  - Nueva función `formatCoinValue()` para tabla de Wallet
+- **wallet-dashboard.js v2.5.0**:
+  - `renderTable()` con iconos por tipo de cuenta en cada fila
+  - Nuevas funciones `getAccountIcon(tag)` y constantes `ACCOUNT_TYPE_ICONS`, `DECORATIVE_ICONS`
+- **activities.js v3.19.3**:
+  - `renderEcto()`, `renderFractals()`, `renderPSNA()` con `border-left` semántico y receta visual unificada
+- **index.html**:
+  - Scripts reorganizados por capas con comentarios documentados
+  - Agregados `wv-shop-ui.js`, `wv-objectives-ui.js`, `wv-theme.js`, `characters-theme.js`
+  - Nuevo orden de carga documentado
+- **Documentación**: ONBOARDING.md actualizado a v6.3.0 (~2350 líneas), README.md actualizado a v6.3.0, CHANGELOG.md actualizado
+
+### Removed
+- **Modo Deluxe de Meta & Eventos**: no tenía efecto visual real (`meta-theme.js` ya pisa el `border-left`). Eliminados `setDeluxe()`, `LS_META_DELUXE`, `DELUXE_DEFAULT`, botón Deluxe y estilos CSS asociados
+- **`wallet-cur-theme-patch.js`**: archivo redundante (v2.3.1) que competía con `wallet-theme.js`. Aplicaba `!important`, eliminaba glows, usaba heurísticas frágiles. `wallet-theme.js` v1.4.0 cubre toda la funcionalidad
+
+### Fixed
+- **Vista tabla del Panel de Cuentas**: corregido `<tr>` corrupto (carácter `械`) y `renderTableRow()` con estructura HTML inválida
+- **Vista tabla del Panel de Cuentas**: fila expandible ahora muestra GW2 Avanzado, Expansiones, Servicios y API (antes solo nombre de Twitch)
+- **Dashboard de Cartera**: emoji 📊 reemplazado por ícono local para consistencia visual
+- **Selector de archivo en Panel de Cuentas**: ahora es un botón estilizado en vez del input nativo
+
+---
+
 ## [6.2.0] - 2026-04-21
 
 ### Added
@@ -485,7 +594,7 @@ y el versionado **SemVer** (https://semver.org/).
 
 ### Added
 - **UI Overhaul**: rediseño de tarjetas y layouts de Wallet, Meta & Logros; unificación de barras de progreso.
-- **Conversor v2.0**: quick‑chips (gemas/oro), micro‑animaciones, halo dorado reforzado, estado “Actualizado.” en pill, sombras dinámicas de la barra y layout simétrico.
+- **Conversor v2.0**: quick‑chips (gemas/oro), micro‑animaciones, halo dorado reforzado, estado "Actualizado." en pill, sombras dinámicas de la barra y layout simétrico.
 
 ### Fixed
 - **WV**: pastillas de modo (PvE/PvP/WvW) muestran iconos correctamente. Se incorpora `hydrateWVModePills(scope)` y se llama tras render, cambios de tab y de token. Se añade `MutationObserver` en `#wvPanel`.
@@ -502,12 +611,12 @@ y el versionado **SemVer** (https://semver.org/).
 - Reemplazo de estrella por **📌** con persistencia por cuenta (`LS_WALLET_PINS`) y **migración** desde `LS_FAVS`.
 - **Vista compacta** con persistencia (`LS_WALLET_COMPACT`), toggle inyectado en toolbar.
 - **Delta de cantidades** (↑/↓) contra snapshot por cuenta (`LS_WALLET_SNAPSHOT`), pill verde/roja; en tabla también ±0.
-- Toolbar: botones **“Vista compacta”** y **“Actualizar base”**.
+- Toolbar: botones **"Vista compacta"** y **"Actualizar base"**.
 - Accesibilidad: `aria-pressed` en pins/toggles.
 
 ### UI/Index
 - `#walletCards` ahora usa `wallet-card-grid`.
-- “Favoritas” → “Fijadas”.
+- "Favoritas" → "Fijadas".
 - Encabezado de Tabla (última col) ahora es **📌**.
 
 ### Nuevo módulo completo: Cámara del Brujo (Wizard's Vault)
@@ -609,7 +718,7 @@ y el versionado **SemVer** (https://semver.org/).
 
 ### Corregido
 - **Selects** que se veían con **fondo blanco / texto claro** (ilegible) en algunos navegadores.
-- Flechita (caret) que se superponía en **checkbox chips** (“Activos”, “Próximos”, etc.).
+- Flechita (caret) que se superponía en **checkbox chips** ("Activos", "Próximos", etc.).
 
 ---
 
@@ -632,7 +741,7 @@ y el versionado **SemVer** (https://semver.org/).
 ## [2.6.1] - 2026-02-24
 
 ### Added
-- MetaEventos: cache por API key (TTL 5 min) para “Hecho hoy”.
+- MetaEventos: cache por API key (TTL 5 min) para "Hecho hoy".
 - Botón **Refrescar estado** con bloqueo y toast.
 - **Auto‑refresh** en 00:00 UTC (reset diario).
 - Timestamp visible `Actualizado hh:mm:ss` y tooltip del ✔ con fuente e ID (cuando aplica).
@@ -674,7 +783,7 @@ y el versionado **SemVer** (https://semver.org/).
   - Estado: Activo / Próximo / Más tarde
   - Filtros (tipo, expansión, activos, próximos ≤20m, infusiones)
   - Favoritos (máx. 6)
-  - Sidebar “**Top 3** próximos”
+  - Sidebar "**Top 3** próximos"
   - Tooltips visuales para infusiones (preview + wiki)
   - Botón **copiar waypoint** con icono personalizado
 
@@ -687,7 +796,7 @@ y el versionado **SemVer** (https://semver.org/).
 ### Fixed
 - Tooltips de infusiones ahora se enganchan después del render.
 - Correcciones del layout del hero para evitar el desplazamiento de tabs.
-- Ajuste del reloj y “Próximo reset”.
+- Ajuste del reloj y "Próximo reset".
 
 ---
 
@@ -711,7 +820,7 @@ y el versionado **SemVer** (https://semver.org/).
 
 ## [2.0.0] - 2026-02-21
 
-### 🚀 Rediseño total – “Bóveda del Gato Negro”
+### 🚀 Rediseño total – "Bóveda del Gato Negro"
 Esta versión reemplaza completamente la versión anterior de *gw2-wallet-ligero*, introduciendo una nueva identidad visual, estructura profesional y mejoras profundas en la UI/UX.
 
 #### ✨ Nuevo
@@ -722,7 +831,7 @@ Esta versión reemplaza completamente la versión anterior de *gw2-wallet-ligero
   - Logo + tipografía ornamental
   - Tabs principales flotantes
 - Navegación renovada
-- Dropdown **“Enlaces útiles”** (Efficiency, Timer, ArcDPS, API docs)
+- Dropdown **"Enlaces útiles"** (Efficiency, Timer, ArcDPS, API docs)
 - Redes integradas: Discord, Instagram, YouTube
 - Favicon nuevo (SVG + PNG)
 - Marquita GN para footer

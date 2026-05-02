@@ -700,6 +700,9 @@
       btn.title = 'Detalle de compras (todas las cuentas)';
       btn.setAttribute('aria-label','Detalle de compras');
       btn.innerHTML = accessIconHTML();
+      // Evitar que la imagen bloquee los clics
+      var img = btn.querySelector('img');
+      if (img) img.style.pointerEvents = 'none';
       btn.style.marginLeft = 'auto';
 
       btn.addEventListener('click', function(ev){
@@ -736,19 +739,6 @@
           catch (e) { console.warn('[WV-PD] show error (delegated)', e); }
         }
       });
-    }
-
-    if (!host.__wvpdObs){
-      var scheduled = false;
-      var mo = new MutationObserver(function(){
-        if (scheduled) return;
-        scheduled = true;
-        requestAnimationFrame(function(){
-          scheduled = false;
-          ensureToolbarButton();
-        });
-      });
-      try { mo.observe(host, { childList:true, subtree:true }); host.__wvpdObs = mo; } catch(_){}
     }
 
     ensureToolbarButton();
@@ -920,13 +910,21 @@
   }
 
   function showPanel(){ 
-    var p = ensurePanel(); 
-    if (p) {
-      p.removeAttribute('hidden');
-      void p.offsetWidth;
-    }
+  var p = ensurePanel(); 
+  if (p) {
+    p.hidden = false;
+    p.removeAttribute('hidden');
+    p.style.display = 'block';
   }
-  function hidePanel(){ var p = ensurePanel(); if (p) p.setAttribute('hidden',''); }
+}
+
+function hidePanel(){ 
+  var p = ensurePanel(); 
+  if (p) {
+    p.setAttribute('hidden','');
+    p.style.display = 'none';
+  }
+}
 
   // ------------------------------ Datos ------------------------------------
   function loadKeys(){
@@ -2117,53 +2115,60 @@
   window.enhanceShopCards = enhanceShopCards;
   console.log(LOG, 'enhanceShopCards expuesta globalmente');
 
-  function observeShop() {
-    const shopContainer = document.getElementById('wvTabShop');
-    if (!shopContainer || shopContainer.__wvEnhancedObs) return;
-    
-    shopContainer.__wvEnhancedObs = true;
-    
-    function ensureDataAndEnhance() {
-      if (state.accounts && state.accounts.length > 0) {
-        setTimeout(enhanceShopCards, 50);
-      } else {
-        console.log(LOG, 'Cargando datos antes de mejorar tarjetas...');
-        safeRefresh(false).then(() => {
-          console.log(LOG, 'Datos cargados, mejorando tarjetas...');
-          setTimeout(enhanceShopCards, 100);
-        }).catch(e => {
-          console.warn(LOG, 'Error cargando datos:', e);
+    function observeShop() {
+      const shopContainer = document.getElementById('wvTabShop');
+      if (!shopContainer || shopContainer.__wvEnhancedObs) return;
+      
+      shopContainer.__wvEnhancedObs = true;
+      
+      var _ensuring = false;
+      function ensureDataAndEnhance() {
+        if (_ensuring) return;
+        if (state.accounts && state.accounts.length > 0) {
+          setTimeout(enhanceShopCards, 50);
+        } else {
+          _ensuring = true;
+          console.log(LOG, 'Cargando datos antes de mejorar tarjetas...');
+          safeRefresh(false).then(() => {
+            console.log(LOG, 'Datos cargados, mejorando tarjetas...');
+            setTimeout(enhanceShopCards, 100);
+            _ensuring = false;
+          }).catch(e => {
+            console.warn(LOG, 'Error cargando datos:', e);
+            _ensuring = false;
+          });
+        }
+      }
+      
+      var _observerTimer = null;
+      const observer = new MutationObserver(() => {
+        if (!shopContainer.hidden) {
+          clearTimeout(_observerTimer);
+          _observerTimer = setTimeout(ensureDataAndEnhance, 500);
+        }
+      });
+      observer.observe(shopContainer, { childList: true, subtree: true });
+      
+      const shopTab = document.getElementById('wvTabBtnShop');
+      if (shopTab && !shopTab.__wvpdObsWired) {
+        shopTab.__wvpdObsWired = true;
+        shopTab.addEventListener('click', () => {
+          setTimeout(ensureDataAndEnhance, 100);
         });
       }
-    }
-    
-    const observer = new MutationObserver(() => {
-      if (!shopContainer.hidden) {
+      
+      window.addEventListener('wv:shop:rendered', () => {
         ensureDataAndEnhance();
-      }
-    });
-    observer.observe(shopContainer, { childList: true, subtree: true });
-    
-    const shopTab = document.getElementById('wvTabBtnShop');
-    if (shopTab && !shopTab.__wvpdObsWired) {
-      shopTab.__wvpdObsWired = true;
-      shopTab.addEventListener('click', () => {
-        setTimeout(ensureDataAndEnhance, 100);
       });
-    }
-    
-    window.addEventListener('wv:shop:rendered', () => {
+      
+      window.addEventListener('wv:season-store:mutate', () => {
+        if (!shopContainer.hidden) {
+          safeRefresh(false).then(() => setTimeout(enhanceShopCards, 100));
+        }
+      });
+      
       ensureDataAndEnhance();
-    });
-    
-    window.addEventListener('wv:season-store:mutate', () => {
-      if (!shopContainer.hidden) {
-        safeRefresh(false).then(() => setTimeout(enhanceShopCards, 100));
-      }
-    });
-    
-    ensureDataAndEnhance();
-  }
+    }
 
   // ------------------------------ API pública ---------------------------
   var WVPurchaseDetail = {

@@ -1,24 +1,26 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.14.0 (2026-04-08) — Agregada ruta para Raid Tracker
+ * v2.15.0 (2026-05-02) — Desacople WV Fases 1-3 + Fix objetivos y Purchase Detail
+ *
+ * Cambios v2.15.0:
+ *  - FASE 2: __getShopState expone estado de tienda a wv-shop-ui.js
+ *  - FASE 2: ensureLoadTab('shop') y onTokenChanged delegan a WVShopUI con fallback
+ *  - FASE 3: __getObjState/__setObjState exponen estado de objetivos
+ *  - FASE 3: renderObjectivesTab y renderObjectivesZero delegan a WVObjectivesUI con fallback
+ *  - FIX: observeToolbar y ensureToolbarButton ahora chequean también el toolbar de WVShopUI
+ *  - FIX: hydrateWVModePills exportada como WV.hydrateModePills para wv-objectives-ui.js
  *
  * Cambios v2.14.0:
  *  - Agregada ruta '#/account/raids' para el seguimiento semanal de raids
- *  - Agregado raidTrackerPanel a showPanel()
- *  - Agregado mapeo de raids en setActiveNav()
- *  - Agregado caso en updateSidebarFor()
- *  - Agregado bloque en route() para RaidTracker
- *  - Agregado caso en onKeySelectChange()
  *
  * Cambios v2.13.0:
  *  - Agregada ruta '#/wallet/dashboard' para el dashboard multi-cuenta de wallet
- *  - Agregado walletDashboardPanel a showPanel() para que oculte correctamente walletPanel
  */
 
 (function () {
   'use strict';
 
-  console.info('[WV] router-wv.js v2.14.0 — Barra de progreso + input manual integrados + wallet dashboard + raid tracker');
+  console.info('[WV] router-wv.js v2.15.0 — Fases 1-3 completas + fixes');
 
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -137,9 +139,7 @@
     } catch (e) { console.warn('[router] updateSidebarFor error', e); }
   }
 
-  // ====== FUNCIÓN SHOWPANEL CORREGIDA ======
   function showPanel(idToShow) {
-    // Lista completa de todos los paneles principales, incluyendo walletDashboardPanel y raidTrackerPanel
     ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','charactersPanel','accountsPanel','welcomePanel','walletDashboardPanel','raidTrackerPanel'].forEach(function(id){
       var node=el(id); if (!node) return;
       if (id===idToShow) node.removeAttribute('hidden'); else node.setAttribute('hidden','hidden');
@@ -260,7 +260,6 @@
           els.seasonDates.textContent = start.toLocaleDateString()+' → '+end.toLocaleDateString();
         } else els.seasonDates.textContent='—';
       }
-      console.log('[WV] setWVSeasonHeader ejecutado:', season.title);
     }
 
     function skShopCards(n){
@@ -349,9 +348,14 @@
       });
     }
 
+    // NUEVO FASE 3: Delegar a wv-objectives-ui.js si está disponible
     function renderObjectivesTab(host, data, kind){
+      if (window.WVObjectivesUI) {
+        WVObjectivesUI.renderTab(host, data, kind);
+        return;
+      }
+      // Fallback: código original
       if (!host) return;
-
       if (!data || !Array.isArray(data.objectives)) {
         host.innerHTML='<p class="muted">Sin objetivos para mostrar.</p>';
         if (kind) state.obj[kind] = [];
@@ -406,7 +410,13 @@
       hydrateWVModePills(host);
     }
 
+    // NUEVO FASE 3: Delegar a wv-objectives-ui.js si está disponible
     function renderObjectivesZero(kind){
+      if (window.WVObjectivesUI) {
+        WVObjectivesUI.renderZero(kind);
+        return;
+      }
+      // Fallback: código original
       var host = (kind==='daily')   ? els.tabDaily
                : (kind==='weekly')  ? els.tabWeekly
                : (kind==='special') ? els.tabSpecial : null;
@@ -563,7 +573,6 @@
       return sorted;
     }
 
-    // ====== FUNCIONES PARA MANEJAR MARCAS MANUALES ======
     function saveManualMark(listingId, value) {
       var token = getSelectedToken();
       if (!token || !window.WVSeasonStore || !state.shop.season) return Promise.resolve();
@@ -577,10 +586,8 @@
           currentMarks[listingId] = value;
           await WVSeasonStore.setMarks(season.year, season.seq, fp, currentMarks);
           
-          // Actualizar state.shop.marks
           state.shop.marks = currentMarks;
           
-          // Actualizar el header de AA
           var sums = computeShopNumbers(state.shop.merged);
           setShopHeader(state.shop.aa, sums.spentApi, sums.reservedMarks, state.shop.aaIconUrl);
         } catch(e) {
@@ -607,7 +614,6 @@
       var statusText = isCompleted ? 'Completado' : (limit === null ? 'Ilimitado' : 'Pendiente');
       var statusColor = isCompleted ? '#a0ffc8' : (limit === null ? '#7bc2ff' : '#ffd36b');
       
-      // Actualizar pill de Comprado y Restante
       var rows = card.querySelectorAll('.wv-card__row');
       if (rows.length >= 2) {
         var purchasedPill = rows[0].querySelector('.pill');
@@ -616,7 +622,6 @@
         if (restantePill) restantePill.textContent = leftDisplay;
       }
       
-      // Actualizar barra de progreso
       var progressDiv = card.querySelector('.wvpd-item-progress');
       if (progressDiv) {
         var statusDiv = progressDiv.querySelector('.wvpd-item-progress__status');
@@ -631,7 +636,6 @@
         }
       }
       
-      // Actualizar input manual
       var manualInput = card.querySelector('.wvpd-manual-input-field');
       if (manualInput && manualInput.value != newMarked) {
         manualInput.value = newMarked;
@@ -639,7 +643,6 @@
     }
 
     function setupManualInputEvents(container) {
-      // Inputs numéricos
       var inputs = container.querySelectorAll('.wvpd-manual-input-field');
       inputs.forEach(function(input) {
         if (input.__wired) return;
@@ -656,18 +659,14 @@
           if (newValue < 0) newValue = 0;
           if (input.value != newValue) input.value = newValue;
           
-          // Actualizar marca en el estado
           state.shop.marks[listingId] = newValue;
           
-          // Guardar en almacenamiento persistente
           saveManualMark(listingId, newValue).then(function() {
-            // Actualizar la UI de esta tarjeta
             if (card) updateCardUI(card, listingId, newValue);
           });
         });
       });
       
-      // Botones MAX
       var maxBtns = container.querySelectorAll('.btn-max');
       maxBtns.forEach(function(btn) {
         if (btn.__wired) return;
@@ -683,9 +682,7 @@
             var input = card.querySelector('.wvpd-manual-input-field');
             if (input) {
               input.value = maxLimit;
-              // Actualizar marca en el estado
               state.shop.marks[listingId] = maxLimit;
-              // Guardar en almacenamiento persistente
               saveManualMark(listingId, maxLimit).then(function() {
                 if (card) updateCardUI(card, listingId, maxLimit);
               });
@@ -695,8 +692,15 @@
       });
     }
 
-    // ====== RENDERIZADO DE LA TIENDA ======
+    // ====== RENDERIZADO DE LA TIENDA (FALLBACK - se usa si WVShopUI no está disponible) ======
     function renderShopArea() {
+      // FIX: Si WVShopUI está disponible, delegar
+      if (window.WVShopUI) {
+        WVShopUI.render();
+        return;
+      }
+      
+      // Fallback: código original
       var host = els.tabShop;
       if (!host) return;
 
@@ -728,7 +732,6 @@
       setShopLoading(false);
 
       if (st.view === 'table') {
-        // Vista Tabla (simplificada, sin barra de progreso)
         var trs = rows.map(function(x) {
           var it = (x.item_id != null) ? itemsById.get(x.item_id) : null;
           var icon = it && it.icon ? ('<img class="wv-item-icon" src="' + escapeHtml(it.icon) + '" alt="" loading="lazy"/> ') : '';
@@ -763,11 +766,9 @@
           '<tr><th>Ítem</th><th>Tipo</th><th class="right">Costo (AA)</th><th class="right">Comprado</th><th class="right">Restante</th><th class="right">Marcar</th><th class="right">Fijar</th></tr>' +
           '</thead><tbody>' + trs + '</tbody></table></div>';
         
-        // Configurar eventos para los inputs de la tabla
         setupManualInputEvents(area);
         
       } else {
-        // Vista Tarjetas (con barra de progreso integrada)
         var cards = rows.map(function(x) {
           var it = (x.item_id != null) ? itemsById.get(x.item_id) : null;
           var icon = it && it.icon ? it.icon : '';
@@ -801,7 +802,6 @@
 
           var rowStyle = 'display:flex;justify-content:space-between;align-items:center;gap:8px;';
 
-          // Barra de progreso (siempre visible)
           var progressHtml = '<div class="wvpd-item-progress wvpd-item-progress--compact">' +
             '<div class="wvpd-item-progress__status" style="color: ' + statusColor + '" title="' + (isCompleted ? 'Completado' : (limit === null ? 'Sin límite' : 'Faltan ' + leftVal + ' unidades (' + totalRemainingAA + ' AA)')) + '">' +
             statusIcon + ' ' + statusText + ': ' + (leftDisplay === '∞' ? '∞' : leftDisplay + ' (' + totalRemainingAA + ' AA)') +
@@ -811,7 +811,6 @@
             '</div>' +
             '</div>';
 
-          // Input manual + botón MAX (siempre visible)
           var manualInputHtml = '<div class="wvpd-manual-input" data-id="' + x.id + '">' +
             '<label>Compras manuales:</label>' +
             '<input type="number" class="wvpd-manual-input-field" data-id="' + x.id + '" value="' + marked + '" min="0" max="' + (limit || 999) + '" step="1">' +
@@ -843,11 +842,9 @@
 
         area.innerHTML = '<div class="wv-card-grid">' + cards + '</div>';
         
-        // Configurar eventos para los inputs de las tarjetas
         setupManualInputEvents(area);
       }
 
-      // Event listeners para los botones de fijar/desfijar
       $$('[data-pin]', area).forEach(function(btn) {
         if (btn.__wired) return;
         btn.__wired = true;
@@ -883,6 +880,9 @@
           }
         });
       });
+      
+      // FIX: Inyectar botón de Purchase Detail en el toolbar
+      ensureToolbarButton();
     }
 
     function ensureShopAutoRefresh(on){
@@ -933,7 +933,13 @@
           if (changed){ st.marks=marks; saveMarks(ns, marks); }
         })();
 
-        renderShopArea();
+        // FIX: Si WVShopUI está disponible, delegar renderizado; si no, usar fallback
+        if (window.WVShopUI) {
+          WVShopUI.ensureShopToolbar();
+          WVShopUI.render();
+        } else {
+          renderShopArea();
+        }
       }).catch(function(e){
         console.warn('[WV] refresh shop error:', e);
         setShopLoading(false);
@@ -1009,14 +1015,10 @@
       var token=getSelectedToken();
 
       if (!state.loaded.__season){
-        console.log('[WV] Cargando temporada por primera vez...');
         GW2Api.getWVSeason({ nocache: false }).then(function(season){ 
           state.shop.season = season; 
           setWVSeasonHeader(season);
-          console.log('[WV] Temporada cargada correctamente:', season.title);
-          if (!state.resetTimers.special) {
-            scheduleSeasonReset();
-          }
+          if (!state.resetTimers.special) scheduleSeasonReset();
           state.loaded.__season = true;
         }).catch(function(e){ 
           console.warn('[WV] Error cargando temporada:', e);
@@ -1061,6 +1063,14 @@
 
       if (tab==='shop'){
         state.shop.view=loadView(); state.shop.legacyFilter=loadLegacyFilter();
+        
+        // FASE 2: Delegar a wv-shop-ui.js si está disponible
+        if (window.WVShopUI) {
+          WVShopUI.ensureShopToolbar();
+          return WVShopUI.refresh(false).finally(function(){ state.loaded.shop=true; });
+        }
+        
+        // Fallback: código original
         ensureShopToolbar();
 
         var ns=marksNamespace();
@@ -1152,19 +1162,13 @@
         if (!state._active) return;
         
         var at = nextSeasonResetUTC();
-        if (!at) {
-          console.log('[WV] No hay fecha válida de reset de temporada, no se programa');
-          return;
-        }
+        if (!at) return;
         var ms = msUntil(at);
         if (ms === 0) ms = 500;
         
         if (state.resetTimers.special) clearTimeout(state.resetTimers.special);
         
-        console.log('[WV] Programando reset de temporada en', Math.round(ms/1000/60/60/24), 'días');
-        
         state.resetTimers.special = setTimeout(function(){
-          console.log('[WV] EJECUTANDO RESET DE TEMPORADA');
           renderObjectivesZero('special');
           try{ if (GW2Api && typeof GW2Api.wvInvalidateTargets==='function') GW2Api.wvInvalidateTargets(getSelectedToken()); }catch(_){}
           refreshObjectives(true);
@@ -1172,7 +1176,6 @@
           GW2Api.getWVSeason({ nocache:true }).then(function(season){
             state.shop.season = season;
             setWVSeasonHeader(season);
-            console.log('[WV] Nueva temporada después del reset:', season.title);
           }).catch(function(){
             console.warn('[WV] Error obteniendo nueva temporada después del reset');
           });
@@ -1243,9 +1246,13 @@
 
       if (state.lastTab==='shop' && prev!==state.shop.lastToken){
         state.loaded.shop=false;
-        if (els.tabShop){ var list=els.tabShop.querySelector('#wvShopList'); if (list) list.remove(); }
-        setShopLoading(true, 'Cargando Tienda…');
-        refreshShopData(true);
+        if (window.WVShopUI) {
+          WVShopUI.refresh(true);
+        } else {
+          if (els.tabShop){ var list=els.tabShop.querySelector('#wvShopList'); if (list) list.remove(); }
+          setShopLoading(true, 'Cargando Tienda…');
+          refreshShopData(true);
+        }
       }
     }
 
@@ -1256,11 +1263,83 @@
       scheduleAllResets();
     }
 
+    // FIX: Botón de Purchase Detail — se inyecta en el toolbar
+    function accessIconHTML(){
+      var u = localStorage.getItem('wvpd_icon_url') || 'assets/icons/3126787.png';
+      return '<img src="'+u+'" alt="" loading="lazy" width="32" height="32">';
+    }
+
+    function ensureToolbarButton(){
+      try{
+        var host = document.getElementById('wvShopToolbarHost');
+        if (!host) return;
+        var toolbar = host.querySelector('.wv-shop-toolbar');
+        if (!toolbar) return;
+
+        var group = toolbar.querySelector('.group') || toolbar;
+        var existing = group.querySelector('#wvPDOpenBtn');
+        if (existing) {
+          existing.classList.add('wvpd-iconbtn');
+          existing.setAttribute('data-wvpd-open','1');
+          existing.title = 'Detalle de compras (todas las cuentas)';
+          existing.style.marginLeft = 'auto';
+          existing.innerHTML = accessIconHTML();
+          if (!existing.__wvpdClick){
+            existing.__wvpdClick = true;
+            existing.addEventListener('click', function(ev){
+              ev.preventDefault();
+              try { window.WVPurchaseDetail?.show(); } catch(e){ console.warn('[WV-PD] show error', e); }
+            });
+          }
+          return;
+        }
+
+        var btn = document.createElement('button');
+        btn.id = 'wvPDOpenBtn';
+        btn.setAttribute('data-wvpd-open','1');
+        btn.className = 'wvpd-iconbtn';
+        btn.title = 'Detalle de compras (todas las cuentas)';
+        btn.setAttribute('aria-label','Detalle de compras');
+        btn.innerHTML = accessIconHTML();
+        btn.style.marginLeft = 'auto';
+
+        btn.addEventListener('click', function(ev){
+          ev.preventDefault();
+          try { window.WVPurchaseDetail?.show(); } catch(e){ console.warn('[WV-PD] show error', e); }
+        });
+
+        group.appendChild(btn);
+      }catch(e){ console.warn('[WV-PD] ensureToolbarButton', e); }
+    }
+
+    function observeToolbar(){
+      var host = document.getElementById('wvShopToolbarHost');
+      if (!host) return;
+
+      if (!host.__wvpdDelegated){
+        host.__wvpdDelegated = true;
+        host.addEventListener('click', function(ev){
+          var t = ev.target;
+          while (t && t !== host && !t.hasAttribute('data-wvpd-open')) t = t.parentElement;
+          if (t && t.hasAttribute('data-wvpd-open')) {
+            ev.preventDefault();
+            try { window.WVPurchaseDetail?.show(); } catch (e) { console.warn('[WV-PD] show error (delegated)', e); }
+          }
+        });
+      }
+
+      ensureToolbarButton();
+    }
+
     var api={
       activate:activate, setActiveTab:setActiveTab, ensureLoadTab:ensureLoadTab,
       deactivate:deactivate, onVisibilityChange:onVisibilityChange, onTokenChanged:onTokenChanged,
       refreshObjectives:refreshObjectives, onTargetsRefresh:onTargetsRefresh,
-      hydrateModePills:function(scope){ hydrateWVModePills(scope||el('wvPanel')); }, __debugRows:[]
+      hydrateModePills:function(scope){ hydrateWVModePills(scope||el('wvPanel')); },
+      __getShopState: function() { return state.shop; },
+      __getObjState: function() { return state.obj; },
+      __setObjState: function(kind, data) { state.obj[kind] = data; },
+      __debugRows:[]
     };
     try{ if (typeof window!=='undefined') window.WV=api; }catch(_){}
 
@@ -1271,6 +1350,9 @@
         mo.observe(wvPanel,{childList:true,subtree:true});
       }
     }catch(_){}
+
+    // FIX: Inicializar observer de Purchase Detail
+    observeToolbar();
 
     return api;
   })();
@@ -1307,7 +1389,6 @@
           try { window.Activities.deactivate(); } catch (_) {}
         }
 
-        // Nueva ruta: Dashboard de Cartera
         if (h === '#/wallet/dashboard') {
           try {
             showPanel('walletDashboardPanel');
@@ -1324,7 +1405,6 @@
           return;
         }
 
-        // Nueva ruta: Raid Tracker
         if (h === '#/account/raids') {
           try {
             showPanel('raidTrackerPanel');
@@ -1572,7 +1652,6 @@
     window.addEventListener('hashchange', route);
     document.addEventListener('visibilitychange', function(){ if (WV && typeof WV.onVisibilityChange==='function') WV.onVisibilityChange(document.hidden); });
 
-    // Lógica de redirección inicial a bienvenida si es primera visita o no hay key
     var firstVisit = !localStorage.getItem('gn_welcome_seen');
     var hasKey = !!getSelectedToken();
     

@@ -29,6 +29,16 @@
   const LS_KEYS = 'gw2_keys';
   const LS_FAVS = 'gw2_favs'; // legado → migraremos a pins por cuenta
 
+  // Iconos de tipo de cuenta (mismos que accounts-panel.js)
+  const ACCOUNT_TYPE_ICONS = {
+    main:  'assets/icons/Cuentas/547827.png',
+    alter: 'assets/icons/Cuentas/157375.png',
+    f2p:   'assets/icons/Cuentas/102538.png'
+  };
+  const CONFIG_ICONS = {
+    account: 'assets/icons/Cuentas/GW2free.png'
+  };
+
   const LS_CURR = 'gw2_currencies_cache_v1';
   const CURR_TTL = 1000 * 60 * 60 * 24 * 7;
 
@@ -452,23 +462,60 @@
   }
 
   /* =================== Tabla (columna 📌) ===================== */
+
+  // NUEVO: Formato de moneda con colores (mismo que Dashboard)
+  function formatCoinValue(value) {
+    var copper = Math.abs(Math.floor(value));
+    var gold = Math.floor(copper / 10000);
+    var silver = Math.floor((copper % 10000) / 100);
+    var copperLeft = copper % 100;
+    var parts = [];
+    if (gold > 0) parts.push('<span style="color:#f4c542;font-weight:600;">' + gold.toLocaleString('es-AR') + '</span> <span style="color:#9aa2b8;">g</span>');
+    if (silver > 0) parts.push('<span style="color:#e0e0e0;font-weight:500;">' + silver + '</span> <span style="color:#9aa2b8;">s</span>');
+    parts.push('<span style="color:#b87333;font-weight:500;">' + copperLeft + '</span> <span style="color:#9aa2b8;">c</span>');
+    return parts.join(' ');
+  }
+
+  /* =================== Tabla (columna 📌) ===================== */
+
+  // NUEVO: Formato de moneda con colores (mismo que Dashboard)
+  function formatCoinValue(value) {
+    var copper = Math.abs(Math.floor(value));
+    var gold = Math.floor(copper / 10000);
+    var silver = Math.floor((copper % 10000) / 100);
+    var copperLeft = copper % 100;
+    var parts = [];
+    if (gold > 0) parts.push('<span style="color:#f4c542;font-weight:600;">' + gold.toLocaleString('es-AR') + '</span> <span style="color:#9aa2b8;">g</span>');
+    if (silver > 0) parts.push('<span style="color:#e0e0e0;font-weight:500;">' + silver + '</span> <span style="color:#9aa2b8;">s</span>');
+    parts.push('<span style="color:#b87333;font-weight:500;">' + copperLeft + '</span> <span style="color:#9aa2b8;">c</span>');
+    return parts.join(' ');
+  }
+
   function rowHTML(r) {
     const icon  = iconTag(r._cur?.icon, 22);
-    const cats  = (r.cats && r.cats.length) ? r.cats.join(', ') : '—';
+
+    // Categorías como badges (mismo estilo que Dashboard)
+    const catBadges = (r.cats && r.cats.length)
+      ? r.cats.map(function(c) {
+          return '<span class="badge badge--info" style="font-size:0.65rem;padding:2px 6px;">' + esc(c) + '</span>';
+        }).join(' ')
+      : '<span class="badge badge--muted">—</span>';
+
+    // Moneda con colores
     const amount = isCoins(r._cur)
-      ? (() => { const { g, s, c } = splitCopper(r.amount); return `${g.toLocaleString()} g ${s} s ${c} c`; })()
-      : r.amount.toLocaleString('es-AR');
+      ? formatCoinValue(r.amount)
+      : '<span style="font-weight:600;">' + r.amount.toLocaleString('es-AR') + '</span>';
 
     const pinCls = 'wv-pin' + (r.isPinned ? ' wv-pin--active' : '');
-    const pinBtn = `<button class="${pinCls}" data-wallet-pin="${r.id}" title="${r.isPinned?'Desfijar':'Fijar'}" aria-pressed="${r.isPinned?'true':'false'}">📌</button>`;
+    const pinBtn = '<button class="' + pinCls + '" data-wallet-pin="' + r.id + '" title="' + (r.isPinned ? 'Desfijar' : 'Fijar') + '" aria-pressed="' + (r.isPinned ? 'true' : 'false') + '">📌</button>';
 
-    return `<tr data-id="${r.id}">
-      <td>${icon}</td>
-      <td>${esc(r.name)}</td>
-      <td class="right">${amount}</td>
-      <td>${esc(cats)}</td>
-      <td class="right">${pinBtn}</td>
-    </tr>`;
+    return '<tr data-id="' + r.id + '">' +
+      '<td>' + icon + '</td>' +
+      '<td><strong>' + esc(r.name) + '</strong></td>' +
+      '<td class="right">' + amount + '</td>' +
+      '<td>' + catBadges + '</td>' +
+      '<td class="right">' + pinBtn + '</td>' +
+      '</tr>';
   }
 
   function renderTable(rows) {
@@ -663,18 +710,28 @@
       item.label = newLabel || '';
       this.save(); this.refreshSelects();
     },
-    remove(value) {
+        remove(value) {
       this.list = this.list.filter(k => k.value !== value);
       this.save(); this.refreshSelects();
 
       if (this.selected === value) {
         const next = this.list[0]?.value || null;
-        // Importante: setSelected con notify para que el router se entere (y persiste LS_SELECTED_KEY)
         this.setSelected(next);
         if (next) loadAllForToken(next);
         else { state.wallet = []; render(); }
       }
     },
+
+    // NUEVO: Guarda el tipo de cuenta (main/alter/f2p) asociado a una API key
+    setKeyTag: function(token, tag) {
+      const item = this.list.find(k => k.value === token);
+      if (!item) return;
+      item.tag = tag;
+      this.save();
+      this.refreshSelects();
+      console.info('[KeyManager] Tag actualizado:', item.label || 'Key', '→', tag);
+    },
+
     copy(value) { return navigator.clipboard.writeText(value); }
   };
 
@@ -748,23 +805,48 @@
   function renderKeysList() {
     if (!el.keysList) return;
     if (!KeyManager.list.length) {
-      el.keysList.innerHTML = `<p class="muted">No tenés API Keys guardadas. Agregá una debajo.</p>`;
+      el.keysList.innerHTML = `
+        <div style="text-align:center;padding:24px;color:#9aa2b8;display:flex;flex-direction:column;align-items:center;gap:12px;">
+          <img src="assets/icons/Cuentas/155048.png" width="48" height="48" alt="" style="filter:brightness(0.7);opacity:0.7;">
+          <p class="muted" style="margin:0;">No tenés API Keys guardadas.</p>
+          <p class="muted" style="margin:0;font-size:0.75rem;">Agregá una debajo para empezar.</p>
+        </div>`;
       return;
     }
-    el.keysList.innerHTML = KeyManager.list.map(k => `
-      <div class="keys-row" data-val="${k.value}">
-        <div class="keys-col">
-          <div class="keys-name">${esc(k.label || obfuscate(k.value))}</div>
-          <div class="keys-value muted">${obfuscate(k.value)}</div>
+
+    var selectedToken = KeyManager.selected;
+    el.keysList.innerHTML = KeyManager.list.map(function(k) {
+      var isSelected = (k.value === selectedToken);
+      var tagIcon = '';
+      if (k.tag && ACCOUNT_TYPE_ICONS[k.tag]) {
+        tagIcon = '<img src="' + ACCOUNT_TYPE_ICONS[k.tag] + '" width="20" height="20" alt="' + k.tag + '" title="' + k.tag + '" style="filter:brightness(0.9);flex-shrink:0;">';
+      }
+      var bLeft = isSelected ? 'rgba(160,255,200,0.6)' : 'rgba(255,255,255,0.08)';
+      var bg    = isSelected ? 'rgba(160,255,200,0.04)' : 'transparent';
+
+      return `
+      <div class="keys-row" data-val="${esc(k.value)}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:${bg};border:1px solid rgba(255,255,255,0.06);border-left:3px solid ${bLeft};border-radius:10px;transition:border-color 0.15s ease;">
+        <div style="flex-shrink:0;">
+          ${tagIcon || '<img src="' + CONFIG_ICONS.account + '" width="28" height="28" alt="" style="filter:brightness(0.7);opacity:0.5;border-radius:6px;">'}
         </div>
-        <div class="keys-actions">
-          <button class="btn btn--ghost k-use"    title="Usar esta Key">Usar</button>
-          <button class="btn btn--ghost k-copy"   title="Copiar API Key">Copiar</button>
-          <button class="btn btn--ghost k-rename" title="Renombrar">Renombrar</button>
-          <button class="btn k-del"               title="Eliminar">Eliminar</button>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;color:#e0e4ed;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            ${esc(k.label || obfuscate(k.value))}
+            ${isSelected ? '<span style="font-size:0.65rem;background:#1a3a2a;color:#a0ffc8;padding:2px 8px;border-radius:20px;">✓ En uso</span>' : ''}
+          </div>
+          <div style="font-size:0.75rem;color:#9aa2b8;display:flex;align-items:center;gap:6px;margin-top:4px;">
+            <img src="assets/icons/Cuentas/155048.png" width="12" height="12" alt="" style="filter:brightness(0.7);">
+            ${esc(obfuscate(k.value))}
+          </div>
         </div>
-      </div>
-    `).join('');
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="btn k-use"    title="Usar esta Key" style="display:inline-flex;align-items:center;gap:4px;font-size:0.7rem;padding:4px 8px;"><img src="assets/icons/Welcome/834002.png" width="14" height="14" alt="" style="filter:brightness(0.9);"> Usar</button>
+          <button class="btn k-copy"   title="Copiar API Key" style="display:inline-flex;align-items:center;gap:4px;font-size:0.7rem;padding:4px 8px;"><img src="assets/icons/Welcome/155911.png" width="14" height="14" alt="" style="filter:brightness(0.9);"> Copiar</button>
+          <button class="btn k-rename" title="Renombrar" style="display:inline-flex;align-items:center;gap:4px;font-size:0.7rem;padding:4px 8px;"><img src="assets/icons/Welcome/102353.png" width="14" height="14" alt="" style="filter:brightness(0.9);"> Renombrar</button>
+          <button class="btn k-del"    title="Eliminar" style="display:inline-flex;align-items:center;gap:4px;font-size:0.7rem;padding:4px 8px;background:rgba(255,157,157,0.1);border-color:rgba(255,157,157,0.3);color:#ff9d9d;"><img src="assets/icons/Welcome/156107.png" width="14" height="14" alt="" style="filter:brightness(0.9);"> Eliminar</button>
+        </div>
+      </div>`;
+    }).join('');
 
     el.keysList.querySelectorAll('.k-use').forEach(b => b.addEventListener('click', async ev => {
       const row = ev.target.closest('.keys-row'); const val = row?.dataset?.val; if (!val) return;
