@@ -17,15 +17,123 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 - 🟢 **Estado online basado en actividad reciente** — Detecta cualquier actividad (PvP, PvE, WvW, economía)
 - 📈 **Dashboard de Cartera Multi-Cuenta** — Tabla de todas las cuentas vs divisas seleccionadas, KPIs y ordenamiento dinámico
 - 🎯 **Raid Tracker** — Seguimiento semanal de raids (8 alas, 33 encuentros, marcado automático vía API)
-- 🔐 **Panel de Cuentas** — Gestión segura de múltiples cuentas con cifrado local
+- 🔐 **Panel de Cuentas** — Gestión segura de múltiples cuentas con cifrado local y diseño "Profile Card" premium
 - 🧙 **Pantalla de Bienvenida** — Onboarding y accesos rápidos
 - 💾 **Sistema de Backup/Restaurar** — Exporta/importa toda la configuración entre dispositivos
 - 🔄 **Recarga forzada de temporada WV** — Ícono para restaurar información de temporada manualmente
 - 📈 **Google Analytics integrado** — Seguimiento de visitas y eventos personalizados
 - 🎨 **Interfaz visual unificada** — Diseño consistente en todos los módulos con bordes, glows y animaciones
+- 🏗️ **Arquitectura CSS en 3 capas** — Separación estricta de responsabilidades: layout, piel unificada y color semántico
 
 👉 **Página oficial (Deploy GitHub Pages):**  
 https://pablosnchz.github.io/gw2-wallet-ligero/
+
+---
+
+## ✨ Novedades principales — v6.3.1
+
+### 🏗️ Refactor de Arquitectura CSS + Unificación Visual Completa + Rediseño de Módulos
+
+**La actualización más refinada del proyecto. CSS reorganizado en 3 capas estrictas, 5 theme files corregidos para aplicar solo `borderLeft`, Panel de Cuentas rediseñado como "Profile Card" premium, Meta unificado visualmente con WV/Wallet, y múltiples fixes visuales y funcionales.**
+
+### 🏗️ Arquitectura CSS en 3 Capas
+
+Se implementó una separación estricta de responsabilidades para eliminar conflictos de especificidad y sobrescritura entre `main.css`, `theme-polish.css` y los `*-theme.js`:
+
+| Capa | Archivo | Responsabilidad |
+|------|---------|-----------------|
+| **Layout** | `main.css` | Estructura, fondos, tipografía, espaciados. **Sin bordes ni box-shadows.** |
+| **Piel unificada** | `theme-polish.css` | Bordes neutros `rgba(255,255,255,0.08)`, glow base `rgba(90,110,154,0.12)`, hover unificado `translateY(-3px)` con `--elev-hover`, badges, pills, tablas |
+| **Color semántico** | `*-theme.js` | **Solo `border-left: 3px solid rgba(<color>, 0.5)`**. El resto de bordes y sombras lo hereda de `.card` en `theme-polish.css`. |
+
+**Regla de oro:** Ningún `*-theme.js` puede sobrescribir `border`, `boxShadow`, `borderRadius` ni `transition`. Solo `borderLeft` + `classList.add('card')`.
+
+### 🛠️ Theme Files Corregidos (solo border-left)
+
+Se corrigieron 5 archivos de tema que estaban aplicando bordes y sombras inline, pisando los estilos de `theme-polish.css`:
+
+| Archivo | Versión | Cambio |
+|---------|---------|--------|
+| `meta-theme.js` | v1.4.1 → **v1.4.2** | Eliminado `card.style.border` y `card.style.boxShadow`. Solo `borderLeft`. |
+| `achievements-theme.js` | v1.1.0 → **v1.1.1** | Eliminado `card.style.border` y `card.style.boxShadow`. Agregado `card.classList.add('card')`. Solo `borderLeft`. |
+| `characters-theme.js` | v1.0.0 → **v1.0.1** | Eliminados `card.style.border`, `boxShadow`, `borderRadius`, `transition`. Eliminados event listeners manuales de hover. Solo `borderLeft`. |
+| `wv-theme.js` | v1.0.0 → **v1.0.1** | Eliminado `card.style.borderTop/Right/Bottom` y `boxShadow`. Expone `window.WVTheme` para forzar aplicación post-render. Solo `borderLeft`. |
+| `wallet-theme.js` | v1.3.0 | Agregado glow en ícono de divisa. Ya aplicaba solo `borderLeft`. |
+
+### 🎨 Rediseño de Meta & Eventos (meta.js v3.3.0)
+
+Las tarjetas de Meta ahora siguen el mismo diseño que Cartera y WV Tienda:
+
+- **Ícono de expansión con glow**: 44px, `box-shadow: 0 0 0 2px <color>, 0 0 10px <color>` del color de la expansión
+- **Chips de timing con color semántico**: verde (activo), ámbar (próximo), azul (más tarde), neutro (info)
+- **Tag de infusión celestial**: fondo frío `#1a1e28`, texto `#c8dfff`, glow `rgba(150,190,255,0.4)` — reemplaza al tag ámbar genérico
+- **Fix de preview de infusiones**: ahora lee `data-preview` del DOM en vez de buscar en `meta._extItems`. Eliminado `.inf-prev` duplicado de `theme-polish.css`.
+- **Estructura HTML unificada**: `meta-card__top` con ícono + título + timing debajo, igual que `wallet-card__top`
+
+### 🛒 Rediseño de WV Tienda (wv-shop-ui.js v1.0.2)
+
+- **Glow solo en el ícono de rareza**, no en la tarjeta. El `box-shadow` inline se eliminó de la card y se dejó solo en `iconDeco`.
+- **Fix de border-left**: `wv-theme.js` no detectaba las cards recién renderizadas porque el observer estaba sobre `#wvPanel`. Se agregó un `setTimeout` en `renderShopArea()` que resetea `__wvThemed` y fuerza `WVTheme.themeAllNow(area)`.
+- **Fix de timing**: `wv-theme.js` expone `window.WVTheme` para que `wv-shop-ui.js` pueda forzar la aplicación del tema después de renderizar.
+
+### 💰 Cartera — Glow en Íconos de Divisa (wallet-theme.js v1.3.0)
+
+Cada ícono de divisa ahora tiene un glow del color correspondiente:
+- Gems: `#4BBDF0` (azul celeste)
+- Coins: `#F4C542` (dorado)
+- Karma: `#AF63DF` (púrpura)
+- Laurels: `#2BC14E` (verde)
+- Trade Contracts: `#28C3BB` (turquesa)
+- Elegy Mosaic: `#E2AE43` (bronce)
+
+### 🧪 Actividades v3.19.6 — Glow en Íconos de Ecto
+
+Los íconos de refinamiento de Ecto ahora tienen un contenedor de 44×44px con glow del color de estado: verde si está hecho, ámbar si pendiente.
+
+### 🔐 Panel de Cuentas v2.0.0 — "Profile Card" Premium
+
+Rediseño completo de las tarjetas con jerarquía visual de 3 zonas (identidad → credenciales → progreso):
+
+| Elemento | Antes (v1.9.0) | Ahora (v2.0.0) |
+|----------|----------------|-----------------|
+| **Ícono izquierdo** | Ícono del tipo de cuenta (main/alter/f2p) | Ícono decorativo aleatorio (cat tag) con glow del color del tipo |
+| **Tags** | Badges con texto (main, alter, farming...) | Solo iconitos 18px en fila con tooltip, debajo de nombre y email |
+| **Expansiones** | Siempre visibles en scroll horizontal | **Colapsables** con toggle chevron + barra de progreso |
+| **Twitch/GeForce** | Dentro de sección "Servicios y API" colapsable | **Siempre visibles** con íconos de estado (✅ `156108.png` / ❌ `156107.png`) |
+| **Credenciales** | Apiladas en sección colapsable | Grid 2 columnas con email, contraseña, Gmail, Twitch, GeForce |
+| **Separadores** | `border-top: 1px solid #2a2c35` | Gradiente horizontal del color del tipo de cuenta |
+| **Footer** | Sin acciones rápidas | Botones "Copiar Email" y "Copiar API Key" |
+| **Vista tabla** | Sin zebra, encabezados simples | Zebra striping, hover en filas, encabezados con `text-transform: uppercase` |
+
+### 🩹 Fix de Estado Online en Purchase Detail (wv-purchase-detail.js)
+
+**Bug:** La tabla del Purchase Detail se ordena por delta (Δ), pero `refreshAllOnlineStatus()` usaba el índice `i` del array original `state.accounts` para actualizar la fila. Esto causaba que el estado online se mostrara en la cuenta equivocada.
+
+**Fix:**
+- Se agregó `data-token` a cada `<tr>` en `renderTable()`
+- `updateSingleAccountRow` ahora busca por `tr[data-token="..."]` en vez de por índice
+- `refreshAllOnlineStatus()` y `loadAll()` llaman con `acc.token` en vez de `i`
+- Emoji 🕐 reemplazado por ícono local `assets/icons/523381.png`
+
+### 💱 Conversor Gem ↔ Gold — Rediseño Visual
+
+- Quick-chips (100, 400, 800, 1200 gemas / 10g, 100g, 250g) ahora son badges/pills con clase `conv2-chip`
+- Las dos secciones (Gemas y Oro) tienen borde sutil y sombra con clase `conv2-card`
+- Estado "Actualizado." ahora es un pill con clase `conv2-state`
+
+### 📈 Dashboard de Cartera Multi-Cuenta — KPIs con Glow + Tabla Unificada
+
+- KPIs ahora tienen `border-left` semántico + glow suave: Oro `rgba(244,197,66,0.5)`, Karma `rgba(175,99,223,0.5)`, Laurel `rgba(43,193,78,0.5)`, AA `rgba(123,194,255,0.5)`
+- Tabla con zebra striping (`nth-child(even)`), hover en filas, sticky header con `border-bottom: 2px solid #2a2c35`
+
+### 🔧 Fix de Botón Dashboard de Wallet
+
+El botón "Dashboard" en el panel de Cartera no funcionaba porque el event listener no se enganchaba a tiempo. Se agregó en `DOMContentLoaded`, antes de `wirePDButton()`.
+
+### 🗑️ Limpieza (v6.3.1)
+
+- **`wv-theme.js` duplicado eliminado** de `index.html` (estaba cargado en el bloque `defer` y en el bloque `sync`)
+- **`.inf-prev` duplicado eliminado** de `theme-polish.css` (la regla original está en `main.css`)
 
 ---
 
@@ -454,6 +562,7 @@ assets/icons/raids/
 - Halo dorado reforzado; estado "Actualizado." en pill
 - Barra de conveniencia (ref 400) con sombras por estado
 - **Íconos locales**: gemas y oro desde `assets/icons/`
+- **v6.3.1**: Quick‑chips rediseñados como badges/pills con clase `conv2-chip`. Secciones con borde sutil (`conv2-card`). Estado con pill (`conv2-state`).
 
 ---
 
@@ -473,41 +582,42 @@ Definí en `index.html` (antes de router.js):
 
 ---
 
-## 📦 Archivos clave (v6.3.0)
+## 📦 Archivos clave (v6.3.1)
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
 | `js/api-gw2.js` | **v2.12.0** | API Layer. **Nuevas funciones `getAccountInfo`, `isRecentlyActive` y `getAccountRaids`** |
 | `js/router.js` | **v2.15.0** | **Router desacoplado (~750 líneas). Solo orquesta navegación. Delega renderizado WV a módulos UI** |
-| `js/wv-shop-ui.js` | **v1.0.0** | **NUEVO: UI de Tienda WV (extraído de router.js) — renderizado, filtros, toolbar, skeleton** |
-| `js/wv-objectives-ui.js` | **v1.0.0** | **NUEVO: UI de Objetivos WV (extraído de router.js) — diarias, semanales, especiales** |
-| `js/wv-theme.js` | **v1.0.0** | **NUEVO: Tema visual de WV — borde de rareza/modo + glow unificado** |
-| `js/characters-theme.js` | **v1.0.0** | **NUEVO: Tema visual de Personajes — borde de profesión + dropdowns POI personalizados** |
-| `js/wv-purchase-detail.js` | **v1.13.0** | Detalle de compras. **Estado online basado en last_modified** |
-| `js/wallet-dashboard.js` | **v2.5.0** | **Dashboard de Cartera: KPIs con border-left, iconos por tipo de cuenta** |
+| `js/wv-shop-ui.js` | **v1.0.2** | UI de Tienda WV. **Glow solo en ícono de rareza, fix de timing con wv-theme.js** |
+| `js/wv-objectives-ui.js` | v1.0.0 | UI de Objetivos WV |
+| `js/wv-theme.js` | **v1.0.1** | Tema visual de WV. **Solo border-left, expone window.WVTheme** |
+| `js/characters-theme.js` | **v1.0.1** | Tema visual de Personajes. **Solo border-left, elimina hover manual** |
+| `js/wv-purchase-detail.js` | **v1.13.1** | Detalle de compras. **Fix estado online (data-token), ícono reloj local** |
+| `js/wallet-dashboard.js` | **v2.5.0** | Dashboard de Cartera. **KPIs con border-left + glow, tabla unificada con zebra** |
 | `js/raid-tracker.js` | **v1.7.0** | **Raid Tracker: 8 alas, 33 encuentros, marcado automático vía API, modal con detalles** |
 | `js/analytics.js` | **v1.0.0** | **Eventos personalizados para Google Analytics** |
 | `js/wizards-vault.js` | **v1.3.0** | Módulo Wizard's Vault. **Ícono de recarga forzada de temporada** |
-| `js/accounts-panel.js` | **v1.9.0** | Panel de Cuentas + asistente. **Carga 2 columnas, fila expandible en tabla** |
+| `js/accounts-panel.js` | **v2.0.0** | Panel de Cuentas. **Profile Card premium + tabla zebra** |
 | `js/settings-manager.js` | **v1.0.2** | **Sistema de Backup/Restaurar** |
 | `js/welcome-panel.js` | v1.3.0 | Pantalla de Bienvenida con onboarding y accesos rápidos |
-| `js/activities.js` | v3.19.3 | Actividades diarias/semanales. **Cards unificadas visualmente** |
+| `js/activities.js` | **v3.19.6** | Actividades. **Glow en íconos de Ecto** |
 | `js/activities-theme.js` | v2.6.0 | Home Nodes + barra de horarios unificada con iconos GW2 |
 | `js/characters.js` | v2.3.0 | Panel de Personajes. **Íconos profesión locales** |
-| `js/meta.js` | **v3.2.1** | MetaEventos. **Modo Deluxe eliminado** |
-| `js/meta-theme.js` | v1.4.1 | Barra de horarios unificada + mejora de horarios en tarjetas |
-| `js/wallet-theme.js` | **v1.4.0** | **Tema visual de Cartera: receta unificada (borde neutro + border-left de color)** |
-| `js/achievements-theme.js` | v1.1.0 | Tema visual de Logros: borde de categoría |
+| `js/meta.js` | **v3.3.0** | MetaEventos. **Ícono expansión con glow, chips timing, tag infusión celestial, fix preview infusiones** |
+| `js/meta-theme.js` | **v1.4.2** | Tema visual de Meta. **Solo border-left** |
+| `js/wallet-theme.js` | **v1.3.0** | Tema visual de Cartera. **Glow en ícono de divisa** |
+| `js/achievements-theme.js` | **v1.1.1** | Tema visual de Logros. **Solo border-left** |
 | `js/app.js` | **v2.6.3** | Keys, wallet, eventos globales. **Modal de API Keys rediseñado** |
-| `css/theme-polish.css` | **v2.1.0** | **Componentes canónicos + hover unificado + tabla unificada extendida** |
-| `css/main.css` | **v2.6.0** | Estilos principales. **Eliminados estilos Deluxe, KPIs con border-left** |
+| `css/theme-polish.css` | **v2.1.0** | **Componentes canónicos + hover unificado + conversor** |
+| `css/main.css` | **v2.6.0** | Estilos principales. **Solo layout, sin bordes ni box-shadows. Tag infusión celestial.** |
 
-### Archivos eliminados (v6.3.0)
-- `js/wallet-cur-theme-patch.js` — redundante con `wallet-theme.js`, aplicaba `!important` y eliminaba glows
+### Archivos eliminados
+- `js/wallet-cur-theme-patch.js` — redundante con `wallet-theme.js`, aplicaba `!important` y eliminaba glows (v6.3.0)
+- `wv-theme.js` duplicado en `index.html` — estaba cargado en defer y en sync (v6.3.1)
 
 ---
 
-## 🖼️ Assets locales (estructura v6.3.0)
+## 🖼️ Assets locales (estructura v6.3.1)
 
 ```
 assets/icons/
@@ -573,7 +683,8 @@ assets/icons/
 │   ├── accounts-icon.png
 │   ├── raids-icon.png
 │   ├── 528726.png               # Ícono ojo (toggle contraseñas)
-│   ├── 156108.png               # Check GeForce Now
+│   ├── 156108.png               # Check vinculado
+│   ├── 156107.png               # Check no vinculado
 │   └── 3380755.png              # Home (nuevo)
 ├── Fractal/
 │   └── 2591.png                # Ícono genérico fractales
@@ -600,6 +711,8 @@ assets/icons/
     ├── 733266.png              # Credenciales (título)
     ├── 156409.png              # Chars (campo)
     ├── 358409.png              # GW2 Avanzado (título)
+    ├── 528716.png              # Chevron right (expansiones)
+    ├── 528717.png              # Chevron down (expansiones)
     └── ...
 ```
 
@@ -607,89 +720,69 @@ assets/icons/
 
 ## 🧪 Cómo probar las novedades
 
-### Unificación Visual (NUEVO en v6.3)
+### Arquitectura CSS en 3 capas (NUEVO en v6.3.1)
+1. Inspeccionar cualquier card con F12 → verificar que el `border` y `box-shadow` vienen de `.card` en `theme-polish.css`
+2. Verificar que el `border-left` es inline (puesto por `*-theme.js`) y es el único estilo inline de borde
+3. Verificar que `main.css` no contiene reglas de `border` ni `box-shadow` para cards
+
+### Cuentas — Profile Card (NUEVO en v6.3.1)
+1. Navegar a **Cuentas** → verificar que las tarjetas tienen ícono aleatorio con glow, Twitch/GeForce visibles, expansiones colapsables
+2. Cambiar a vista tabla → verificar zebra striping y hover en filas
+3. Hacer clic en "Expansiones" → debe desplegarse con barra de progreso
+
+### Meta — Infusiones (NUEVO en v6.3.1)
+1. Navegar a **Meta & Eventos** → buscar una card con "Infusión destacada"
+2. Pasar el mouse sobre el nombre de la infusión → debe aparecer el preview (GIF/imagen)
+
+### Estado online (FIX en v6.3.1)
+1. Navegar a **Cámara del Brujo** → botón de detalle de compras
+2. Verificar que el estado online coincide con la cuenta correcta (antes estaba bugueado)
+3. Verificar que el ícono de reloj es local (`523381.png`), no un emoji
+
+### Unificación Visual (v6.3)
 1. Navegar por todos los módulos y verificar que las cards tienen **borde izquierdo de color**
 2. Pasar el mouse sobre cualquier card → debe elevarse 3px con sombra profunda
 3. Verificar que los bordes son neutros (`rgba(255,255,255,0.08)`) en todos los módulos
 4. Verificar que el glow base es suave y unificado (`rgba(90,110,154,0.12)`)
 
-### Personajes + Theme (NUEVO en v6.3)
+### Personajes + Theme (v6.3)
 1. Navegar a **Personajes** → verificar que cada card tiene borde del color de su profesión
 2. Verificar que los dropdowns de POI son personalizados (no nativos)
 3. Pasar el mouse sobre una card → debe mostrar sombra del color de la profesión
 
-### WV Desacoplado (NUEVO en v6.3)
+### WV Desacoplado (v6.3)
 1. Navegar a **Cámara del Brujo** → verificar que Tienda y Objetivos cargan normalmente
 2. Verificar que las cards tienen `border-left` del color de rareza (tienda) o modo (objetivos)
 3. Abrir consola (F12) → no debe haber errores de `WVShopUI` o `WVObjectivesUI`
 
-### Cartera — Tabla Unificada (NUEVO en v6.3)
+### Cartera — Tabla Unificada (v6.3)
 1. Navegar a **Cartera** → hacer clic en "Vista tabla"
 2. Verificar que el oro se muestra con colores (`g` amarillo, `s` gris, `c` cobre)
 3. Verificar que las categorías son badges visuales
 4. Pasar el mouse sobre las filas → debe haber hover con cambio de fondo
 
-### Dashboard Cartera (NUEVO en v6.3)
+### Dashboard Cartera (v6.3)
 1. Navegar a **Dashboard de Cartera** (`#/wallet/dashboard`)
-2. Verificar que los KPIs tienen borde izquierdo de color (Oro dorado, Karma púrpura, etc.)
+2. Verificar que los KPIs tienen borde izquierdo de color con glow suave
 3. Verificar que cada cuenta tiene un icono de tipo (⭐ main, 👤 alter, 🆓 f2p)
-4. Verificar que el emoji 📊 fue reemplazado por el ícono `578844.png`
-
-### Panel de Cuentas (NUEVO en v6.3)
-1. Navegar a **Cuentas** → verificar que la pantalla de carga tiene 2 columnas
-2. Verificar que el texto de seguridad incluye detalles de cifrado y comunidad
-3. Cambiar a vista tabla → hacer clic en un nombre → debe expandirse con GW2 Avanzado, Expansiones, Servicios
-4. Verificar que cada fila tiene `border-left` del color de su tipo
-
-### Modal de API Keys (NUEVO en v6.3)
-1. Abrir el modal de API Keys → verificar iconos de tipo, badge "En uso", botones con iconos
-2. Verificar que el botón Eliminar está en rojo
-
-### Actividades (NUEVO en v6.3)
-1. Navegar a **Actividades** → verificar que Ecto, Fractales y PSNA tienen `border-left` de color
+4. Verificar que la tabla tiene zebra striping y hover
 
 ### Raid Tracker (v6.2)
 1. Navegar a **Raids** → verificar 8 alas, KPIs, modal con detalles
 
-### Dashboard de Cartera Multi-Cuenta (v6.1)
-1. Navegar a **Cartera** → "Dashboard" → verificar tabla, KPIs, ordenamiento
-
-### Estado online (v6.0)
-1. Navegar a **Cámara del Brujo** → botón de detalle de compras → verificar 🕐 "Actividad hace X min"
-
 ### Google Analytics (v5.9)
 1. Abrir consola (F12) → pestaña Network → buscar peticiones a `google-analytics.com`
-
-### Recarga forzada de temporada WV (v5.8)
-1. Cámara del Brujo → clic en ícono 🔄 junto al tooltip → verificar actualización
-
-### Sistema de Backup/Restaurar (v5.7)
-1. Clic en "Backup" → descargar JSON → cambiar algo → "Restaurar" → verificar
-
-### Pantalla de Bienvenida (v5.5)
-1. Recargar sin API key → ver bienvenida con todas las secciones
-
-### Panel de Cuentas (v5.4)
-1. Navegar a `#/account/accounts` → usar asistente para crear archivo .enc
-
-### Detección de llave semanal (v5.5)
-1. Ver panel de actividades → UI de llave con leyenda "misma semana"
-
-### Barra de horarios (v5.0)
-1. Navegar a **Actividades** o **Meta & Eventos** → ver barra con iconos GW2
-
-### Home Nodes (v5.0)
-1. Navegar a **Actividades** → sección "Home nodes"
 
 ---
 
 ## 📌 Notas técnicas
 
 - **API Key**: Requiere permisos `account` y `wallet`. Para Raids requiere `progression`
-- **Estado online**: Usa `last_modified` de `/v2/account?v=latest` con umbral de 20 minutos
+- **Estado online**: Usa `last_modified` de `/v2/account?v=latest` con umbral de 20 minutos. Fix v6.3.1: busca por `data-token`.
 - **Raid Tracker**: Usa `/v2/account/raids` para obtener encuentros completados. TTL de 5 minutos
-- **Dashboard Cartera**: Usa `getCurrenciesAll()` y `getAccountWallet()`. Persistencia en `localStorage`
+- **Dashboard Cartera**: Usa `getCurrenciesAll()` y `getAccountWallet()`. Persistencia en `localStorage`. Zebra + hover unificados.
 - **WV Desacoplado**: `router.js` delega renderizado a `wv-shop-ui.js` y `wv-objectives-ui.js` con fallback
+- **Arquitectura CSS**: 3 capas estrictas — `main.css` (layout), `theme-polish.css` (piel unificada), `*-theme.js` (solo `borderLeft`)
 - **Receta visual**: Borde neutro `rgba(255,255,255,0.08)`, border-left de color, glow `rgba(90,110,154,0.12)`, hover `translateY(-3px)`
 - **Rutas assets**: Todas son relativas (`assets/...`) sin barra inicial para compatibilidad con GitHub Pages
 - **Google Analytics**: ID de medición `G-LB782QT9TR`
@@ -709,6 +802,7 @@ assets/icons/
 
 Este proyecto sigue **Semantic Versioning** (SemVer).
 
+- `v6.3.1`: **Refactor Arquitectura CSS + Unificación Visual Completa** — CSS en 3 capas estrictas, 5 theme files corregidos (solo `borderLeft`), Panel de Cuentas v2.0.0 "Profile Card" premium + tabla zebra, Meta v3.3.0 (ícono expansión con glow, tag infusión celestial, fix preview), WV Tienda v1.0.2 (glow solo en ícono, fix timing), Purchase Detail fix estado online (data-token, ícono reloj local), Activities glow en Ecto, Wallet glow en íconos, Dashboard KPIs con border-left + glow + tabla unificada, Conversor rediseño visual, fix botón Dashboard
 - `v6.3.0`: **Unificación Visual + Desacople WV + Rediseño de Módulos** — Receta visual unificada en 11 módulos, desacople de WV en 3 fases (`wv-theme.js`, `wv-shop-ui.js`, `wv-objectives-ui.js`), `characters-theme.js`, rediseño de Cartera (tabla), Dashboard (KPIs, iconos), Panel de Cuentas (carga 2 cols, fila expandible), Modal API Keys, cards de Actividades unificadas, eliminación de Modo Deluxe y `wallet-cur-theme-patch.js`
 - `v6.2.0`: **Raid Tracker** — Nuevo módulo `raid-tracker.js` v1.3.1. 8 alas, 33 encuentros, marcado automático vía API, modal con detalles
 - `v6.1.0`: **Dashboard de Cartera Multi-Cuenta** — Nuevo módulo `wallet-dashboard.js` v2.5.0. Tabla cuentas vs divisas, KPIs, ordenamiento

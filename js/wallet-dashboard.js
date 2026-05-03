@@ -380,16 +380,24 @@
     var aaId = state.currencies.find(function(c) { return c.name?.includes('Reconocimiento astral') || c.id === 63; })?.id;
 
     if (goldId && totals[goldId] !== undefined) {
-      kpis.push('<div class="wd-kpi-card"><div class="wd-kpi-label"><img src="' + goldIcon + '" width="20" height="20" style="vertical-align:middle; margin-right:6px;"> Total Oro</div><div class="wd-kpi-value gold-glow">' + formatCoinValue(totals[goldId]) + '</div></div>');
+      kpis.push('<div class="wd-kpi-card" style="border-left:3px solid rgba(244,197,66,0.5);box-shadow:0 0 8px rgba(244,197,66,0.15);">' +
+        '<div class="wd-kpi-label"><img src="' + goldIcon + '" width="20" height="20" style="vertical-align:middle;margin-right:6px;"> Total Oro</div>' +
+        '<div class="wd-kpi-value gold-glow">' + formatCoinValue(totals[goldId]) + '</div></div>');
     }
     if (karmaId && totals[karmaId] !== undefined) {
-      kpis.push('<div class="wd-kpi-card"><div class="wd-kpi-label"><img src="' + karmaIcon + '" width="20" height="20" style="vertical-align:middle; margin-right:6px;"> Total Karma</div><div class="wd-kpi-value">' + fmtInt(totals[karmaId]) + '</div></div>');
+      kpis.push('<div class="wd-kpi-card" style="border-left:3px solid rgba(175,99,223,0.5);box-shadow:0 0 8px rgba(175,99,223,0.15);">' +
+        '<div class="wd-kpi-label"><img src="' + karmaIcon + '" width="20" height="20" style="vertical-align:middle;margin-right:6px;"> Total Karma</div>' +
+        '<div class="wd-kpi-value">' + fmtInt(totals[karmaId]) + '</div></div>');
     }
     if (laurelId && totals[laurelId] !== undefined) {
-      kpis.push('<div class="wd-kpi-card"><div class="wd-kpi-label"><img src="' + laurelIcon + '" width="20" height="20" style="vertical-align:middle; margin-right:6px;"> Total Laurel</div><div class="wd-kpi-value">' + fmtInt(totals[laurelId]) + '</div></div>');
+      kpis.push('<div class="wd-kpi-card" style="border-left:3px solid rgba(43,193,78,0.5);box-shadow:0 0 8px rgba(43,193,78,0.15);">' +
+        '<div class="wd-kpi-label"><img src="' + laurelIcon + '" width="20" height="20" style="vertical-align:middle;margin-right:6px;"> Total Laurel</div>' +
+        '<div class="wd-kpi-value">' + fmtInt(totals[laurelId]) + '</div></div>');
     }
     if (aaId && totals[aaId] !== undefined) {
-      kpis.push('<div class="wd-kpi-card"><div class="wd-kpi-label"><img src="' + aaIcon + '" width="20" height="20" style="vertical-align:middle; margin-right:6px;"> Reconocimiento Astral</div><div class="wd-kpi-value">' + fmtInt(totals[aaId]) + '</div></div>');
+      kpis.push('<div class="wd-kpi-card" style="border-left:3px solid rgba(123,194,255,0.5);box-shadow:0 0 8px rgba(123,194,255,0.15);">' +
+        '<div class="wd-kpi-label"><img src="' + aaIcon + '" width="20" height="20" style="vertical-align:middle;margin-right:6px;"> Reconocimiento Astral</div>' +
+        '<div class="wd-kpi-value">' + fmtInt(totals[aaId]) + '</div></div>');
     }
 
     container.innerHTML = kpis.join('');
@@ -521,6 +529,28 @@
       th.__clickHandler = handler;
       th.addEventListener('click', handler);
     });
+
+    // Inyectar estilos de tabla unificada
+    var styleEl = document.getElementById('wdTableStyles');
+    if (styleEl) styleEl.remove();
+    styleEl = document.createElement('style');
+    styleEl.id = 'wdTableStyles';
+    styleEl.textContent = [
+      '#wdTable { border-collapse:separate; border-spacing:0; width:100%; }',
+      '#wdTable th { position:sticky; top:0; background:#0f1118; z-index:2; font-weight:600; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px; color:#9aa2b8; border-bottom:2px solid #2a2c35; padding:10px 12px; }',
+      '#wdTable td { padding:10px 12px; border-bottom:1px solid #1f2026; vertical-align:middle; color:#cfd2d8; }',
+      '#wdTable tbody tr:hover { background:#1a1d28; }',
+      '#wdTable tbody tr:nth-child(even) { background:#0c0e14; }',
+      '#wdTable tbody tr:nth-child(even):hover { background:#1a1d28; }',
+      '#wdTable .total-row { background:#0f1118!important; border-top:2px solid #3a4c7a; font-weight:700; }',
+      '#wdTable .total-row td { padding-top:12px; padding-bottom:12px; }',
+      '#wdTable th:first-child, #wdTable td:first-child { position:sticky; left:0; background:#0e1116; z-index:1; }',
+      '#wdTable tr:hover td:first-child { background:#1a1d28; }',
+      '#wdTable tr:nth-child(even) td:first-child { background:#0c0e14; }',
+      '#wdTable tr:nth-child(even):hover td:first-child { background:#1a1d28; }',
+      '#wdTable .total-row td:first-child { background:#0f1118!important; }'
+    ].join(' ');
+    document.head.appendChild(styleEl);
   }
 
   function updateTimestamp() {
