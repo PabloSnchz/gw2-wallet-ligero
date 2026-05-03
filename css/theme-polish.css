@@ -1097,3 +1097,50 @@ aside.col-side .panel-head img {
   border-color: rgba(123,194,255,0.2);
   color: #7bc2ff;
 }
+/* ===== Conversor Gem ↔ Gold ===== */
+.conv2-card {
+  background: #0f1116;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: 0 0 6px rgba(90,110,154,0.08);
+}
+.conv2-card .conv2-row {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+.conv2-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  border-radius: 14px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: #1a1c24;
+  border: 1px solid #2a2c35;
+  color: #b4bad0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.conv2-chip:hover {
+  border-color: #5276ff;
+  color: #e0e4ed;
+  background: #1f2230;
+  box-shadow: 0 0 6px rgba(82,118,255,0.2);
+}
+.conv2-state {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  background: #1a1c24;
+  color: #9aa2b8;
+  margin: 0;
+}
+.conv2-score__head strong {
+  font-size: 0.75rem;
+  color: #b4bad0;
+}

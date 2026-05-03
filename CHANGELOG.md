@@ -1,4 +1,3 @@
-```markdown
 # 📜 Changelog
 
 Todos los cambios notables de este proyecto serán documentados en este archivo.
@@ -6,6 +5,75 @@ Todos los cambios notables de este proyecto serán documentados en este archivo.
 El formato sigue las recomendaciones de  
 **Keep a Changelog** (https://keepachangelog.com/)  
 y el versionado **SemVer** (https://semver.org/).
+
+---
+
+## [6.3.1] - 2026-05-02
+
+### Refactor
+- **Arquitectura CSS en 3 capas estrictas**:
+  - `main.css` → Layout, fondos, tipografía, espaciados. **Sin bordes ni box-shadows.**
+  - `theme-polish.css` → Piel unificada: bordes neutros `rgba(255,255,255,0.08)`, glow base `rgba(90,110,154,0.12)`, hover unificado `translateY(-3px)` con `--elev-hover`, badges, pills, tablas.
+  - `*-theme.js` → **Solo `border-left: 3px solid rgba(<color>, 0.5)`** vía `card.style.borderLeft`. El resto de bordes y sombras lo hereda de `.card` en `theme-polish.css`.
+- **Regla de oro:** Ningún `*-theme.js` puede sobrescribir `border`, `boxShadow`, `borderRadius` ni `transition`. Solo `borderLeft` + `classList.add('card')`.
+
+### Changed
+- **Meta & Eventos — Rediseño completo (meta.js v3.3.0)**:
+  - Ícono de expansión con glow del color (`box-shadow: 0 0 0 2px <color>, 0 0 10px <color>`)
+  - Chips de timing con color semántico: verde (activo), ámbar (próximo), azul (más tarde), neutro (info)
+  - Tag de infusión celestial: fondo frío `#1a1e28`, texto `#c8dfff`, glow `rgba(150,190,255,0.4)` — reemplaza al tag ámbar genérico
+  - Estructura HTML unificada: `meta-card__top` con ícono + título + timing debajo, igual que `wallet-card__top`
+  - Nuevas funciones: `expIconHTML(meta)`, `chipsForTiming(inst, minsRemaining)`, `footerDropHTML(meta, item)`
+  - Nuevos estilos en `theme-polish.css`: `.meta-card__iconWrap`, `.meta-card__icon`, `.meta-card__timing`, `.meta-chip--active/soon/later/neutral`
+  - Nuevo estilo en `main.css`: `.m-tag--infusion` con gradiente y glow celestial
+- **WV Tienda — Rediseño (wv-shop-ui.js v1.0.2)**:
+  - Glow solo en el ícono de rareza (`iconDeco`), eliminado de la card
+  - `cardDeco` eliminado (glow/borde inline en la card)
+  - `setTimeout` post-render para forzar `wv-theme.js` a aplicar `borderLeft` + `class="card"`
+  - Fix: `borderLeft` ahora se aplica correctamente buscando el color en `wv-card__name`
+- **Cartera — Glow en íconos de divisa (wallet-theme.js v1.3.0)**:
+  - `applyCurrencyTheme()` agrega glow al ícono: `box-shadow: 0 0 0 2px <color>, 0 0 10px <color>`
+  - Colores por divisa: Gems `#4BBDF0`, Coins `#F4C542`, Karma `#AF63DF`, Laurels `#2BC14E`, Trade Contracts `#28C3BB`, Elegy Mosaic `#E2AE43`
+- **Actividades — Glow en íconos de Ecto (activities.js v3.19.6)**:
+  - Contenedor de ícono 44×44px con glow del color de estado: verde si está hecho, ámbar si pendiente
+  - Ícono de 32×32px con `object-fit: contain`
+- **Panel de Cuentas — Rediseño "Profile Card" Premium (accounts-panel.js v2.0.0)**:
+  - Ícono decorativo aleatorio (cat tag) con glow del color del tipo de cuenta — reemplaza al ícono de tipo anterior
+  - Tags mostrados como iconitos 18px en fila con tooltip (sin texto) debajo de nombre y email
+  - Expansiones colapsables con toggle chevron (`528716.png` / `528717.png`) + barra de progreso
+  - Twitch/GeForce siempre visibles con íconos de estado (`156108.png` ✅ / `156107.png` ❌)
+  - Credenciales en grid 2 columnas (email, contraseña, Gmail, Twitch, GeForce)
+  - Separadores con gradiente horizontal del color del tipo de cuenta
+  - Footer con botones "Copiar Email" y "Copiar API Key"
+  - Vista compacta (toggle): reduce cada tarjeta a 4 líneas
+  - Vista tabla rediseñada: zebra striping, hover, `border-left` por tipo, encabezados con `text-transform: uppercase`
+  - Fix: wire de `[data-toggle-section]` para expansiones colapsables
+  - Fix: rutas de íconos chevron corregidas a `assets/icons/Cuentas/528716.png` y `528717.png`
+- **Dashboard de Cartera Multi-Cuenta — KPIs con Glow + Tabla Unificada**:
+  - KPIs con `border-left` semántico + glow: Oro `rgba(244,197,66,0.5)`, Karma `rgba(175,99,223,0.5)`, Laurel `rgba(43,193,78,0.5)`, AA `rgba(123,194,255,0.5)`
+  - Tabla con zebra striping, hover, sticky header con `border-bottom: 2px solid #2a2c35`
+- **Conversor Gem ↔ Gold — Rediseño Visual**:
+  - Quick-chips (100, 400, 800, 1200 / 10g, 100g, 250g) ahora usan clase `conv2-chip` (estilo badge/pill)
+  - Las dos secciones (Gemas y Oro) envueltas en `conv2-card` con borde sutil y sombra
+  - Estado "Actualizado." ahora es un `<span class="conv2-state">` con estilo pill
+- **Purchase Detail — Fix de ícono (wv-purchase-detail.js v1.13.1)**:
+  - Emoji 🕐 reemplazado por ícono local `assets/icons/523381.png`
+
+### Fixed
+- **5 archivos de tema corregidos** (solo `borderLeft`, sin pisar bordes ni sombras):
+  - `meta-theme.js` v1.4.1 → **v1.4.2**: Eliminado `card.style.border` y `card.style.boxShadow`. Solo `borderLeft`.
+  - `achievements-theme.js` v1.1.0 → **v1.1.1**: Eliminado `card.style.border` y `card.style.boxShadow`. Agregado `card.classList.add('card')`. Solo `borderLeft`.
+  - `characters-theme.js` v1.0.0 → **v1.0.1**: Eliminados `card.style.border`, `boxShadow`, `borderRadius`, `transition`. Eliminados event listeners manuales de hover. Solo `borderLeft`.
+  - `wv-theme.js` v1.0.0 → **v1.0.1**: Eliminado `card.style.borderTop/Right/Bottom` y `boxShadow`. Expone `window.WVTheme` para forzar aplicación post-render. Solo `borderLeft`.
+  - `wallet-theme.js` v1.2.0 → **v1.3.0**: Ya aplicaba solo `borderLeft`. Agregado glow en ícono de divisa.
+- **Fix de timing en WV Tienda**: `wv-theme.js` no detectaba las cards recién renderizadas porque el observer estaba sobre `#wvPanel` pero las cards se insertan en `#wvShopList`. Se agregó `setTimeout` en `renderShopArea()` que resetea `__wvThemed` y fuerza `WVTheme.themeAllNow(area)`.
+- **Fix de estado online en Purchase Detail**: `refreshAllOnlineStatus()` usaba el índice del array `state.accounts` para actualizar la fila, pero la tabla estaba ordenada por delta (Δ). Ahora busca por `tr[data-token="..."]`.
+- **Fix de preview de infusiones en Meta**: Ahora lee `data-preview` del DOM en vez de buscar en `meta._extItems`. Eliminado `.inf-prev` duplicado de `theme-polish.css`.
+- **Fix de botón Dashboard de Wallet**: El event listener no se enganchaba a tiempo. Se agregó en `DOMContentLoaded`, antes de `wirePDButton()`.
+
+### Removed
+- **`wv-theme.js` duplicado en index.html**: Estaba cargado en el bloque `defer` y en el bloque `sync`. Eliminada la carga duplicada del bloque `defer`.
+- **`.inf-prev` duplicado en `theme-polish.css`**: La regla original está en `main.css`.
 
 ---
 
@@ -893,4 +961,3 @@ Esta versión reemplaza completamente la versión anterior de *gw2-wallet-ligero
 - Integración con `/v2/account/wallet`
 - Grilla de tarjetas
 - Vista compacta (tabla)
-```

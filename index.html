@@ -745,15 +745,17 @@
               </span>
               <span>Conseguir Gemas</span>
             </h4>
-            <div class="conv2-row">
-              <input id="cvGems" class="conv2-entry" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Gemas"/>
-              <div id="cvGemsOut" class="coin-badges coin-badges--lg">—</div>
-            </div>
-            <div class="conv2-quick" id="cvGemsQuick" aria-label="Atajos de gemas">
-              <button type="button" data-gems="100" class="btn btn--ghost">100</button>
-              <button type="button" data-gems="400" class="btn btn--ghost">400</button>
-              <button type="button" data-gems="800" class="btn btn--ghost">800</button>
-              <button type="button" data-gems="1200" class="btn btn--ghost">1200</button>
+            <div class="conv2-card">
+              <div class="conv2-row">
+                <input id="cvGems" class="conv2-entry" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Gemas"/>
+                <div id="cvGemsOut" class="coin-badges coin-badges--lg">—</div>
+              </div>
+              <div class="conv2-quick" id="cvGemsQuick" aria-label="Atajos de gemas">
+                <button type="button" data-gems="100" class="conv2-chip">100</button>
+                <button type="button" data-gems="400" class="conv2-chip">400</button>
+                <button type="button" data-gems="800" class="conv2-chip">800</button>
+                <button type="button" data-gems="1200" class="conv2-chip">1200</button>
+              </div>
             </div>
 
             <!-- CONSEGUIR ORO -->
@@ -763,19 +765,21 @@
               </span>
               <span>Conseguir Oro</span>
             </h4>
-            <div class="conv2-row">
-              <input id="cvGold" class="conv2-entry conv2-gold" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Oro (g)"/>
-              <output id="cvGoldOut" class="conv2-gems">—</output>
-            </div>
-            <div class="conv2-quick" id="cvGoldQuick" aria-label="Atajos de oro">
-              <button type="button" data-gold="10" class="btn btn--ghost">10 g</button>
-              <button type="button" data-gold="100" class="btn btn--ghost">100 g</button>
-              <button type="button" data-gold="250" class="btn btn--ghost">250 g</button>
+            <div class="conv2-card">
+              <div class="conv2-row">
+                <input id="cvGold" class="conv2-entry conv2-gold" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Oro (g)"/>
+                <output id="cvGoldOut" class="conv2-gems">—</output>
+              </div>
+              <div class="conv2-quick" id="cvGoldQuick" aria-label="Atajos de oro">
+                <button type="button" data-gold="10" class="conv2-chip">10 g</button>
+                <button type="button" data-gold="100" class="conv2-chip">100 g</button>
+                <button type="button" data-gold="250" class="conv2-chip">250 g</button>
+              </div>
             </div>
 
             <div class="conv2-actions">
               <button id="cvRefresh" class="btn" title="Actualizar cotización">Actualizar</button>
-              <p id="cvState" class="conv2-state muted">Listo.</p>
+              <span id="cvState" class="conv2-state">Listo.</span>
             </div>
 
             <hr class="hr-hairline">
@@ -963,7 +967,7 @@
   <script defer src="js/characters-theme.js?v=1.0.1"></script>
 
   <!-- Cuentas + Utilidades -->
-  <script defer src="js/accounts-panel.js?v=1.9.0"></script>
+  <script defer src="js/accounts-panel.js?v=2.0.0"></script>
   <script defer src="js/settings-manager.js?v=1.0.2"></script>
   <script defer src="js/gist-sync.js?v=1.0.0"></script>
 
@@ -1070,7 +1074,7 @@
       }
     });
     setTimeout(wirePDButton, 500);
-    
+
     var moHost = document.getElementById('wvShopToolbarHost');
     if (moHost && 'MutationObserver' in window) {
       var mo = new MutationObserver(function(){ wirePDButton(); });

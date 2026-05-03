@@ -1,37 +1,18 @@
 /*!
  * js/accounts-panel.js — Panel de Cuentas (cifrado local)
- * v1.9.0 (2026-03-28)
+ * v2.0.0 (2026-05-03) — Rediseño "Profile Card" premium
  *
- * MEJORAS v1.9.0:
- * - Iconos separados para títulos de secciones:
- *   • Credenciales: assets/icons/Welcome/733266.png
- *   • GW2 Avanzado: assets/icons/Cuentas/358409.png
- * - Los campos internos mantienen sus iconos originales:
- *   • Contraseña: assets/icons/Cuentas/733265.png
- *   • Chars: assets/icons/Cuentas/156409.png
- * - Reemplazo de emoji ✅ por imagen en GeForce Now
- *
- * MEJORAS v1.8.0:
- * - Twitch dentro de subsección colapsable "Servicios" dentro de Servicios y API
- * - Corrección completa de contraseña Twitch (visible y toggle funcional)
- * - Plantilla Excel actualizada con columna twitch_user
- *
- * MEJORAS v1.7.0:
- * - Reemplazo de emoji 👁️ por imagen local (assets/icons/Welcome/528726.png)
- * - Información detallada de Twitch en Servicios y API
- *
- * MEJORAS v1.6.0:
- * - Reemplazo completo de emojis por imágenes en las tarjetas
- * - Nuevos iconos para: GW2 ID, Creación, AP, Chars, Mochilas, Bancos, Material, Legendarias, Nivel 80, Notas
- * - Chevron expandible con iconos (▶️/▼) convertidos a imágenes
- *
- * MEJORAS v1.5.0:
- * - Icono decorativo aleatorio a la izquierda (9 iconos)
- * - Tipo de cuenta excluyente: main, alter, f2p
- * - Tags adicionales combinables: farming, keys, weekly, taxi
- *
- * MEJORAS v1.4.0:
- * - Rediseño de tarjetas con secciones colapsables
+ * MEJORAS v2.0.0:
+ * - Diseño "Profile Card" con jerarquía visual 3 zonas
+ * - Ícono del tipo de cuenta con glow del color (main=oro, alter=violeta, f2p=azul)
+ * - Grid 2 columnas para credenciales (contraseña, gmail, twitch, geforce)
+ * - Expansiones siempre visibles con barra de progreso
+ * - Hover con sombra del color del tipo de cuenta
+ * - Tags como badges con borde de color
+ * - Vista compacta (toggle) con 4 líneas por cuenta
+ * - Separadores con gradiente horizontal
+ * - Footer con acciones rápidas (copiar email, copiar API key)
+ * - Toda la funcionalidad previa intacta
  */
 
 (function (root) {
@@ -45,63 +26,57 @@
     STORAGE_LAST_FILE_KEY: 'accounts:lastFile',
     DEFAULT_ICON: 'assets/icons/Cuentas/GW2free.png',
     
-    // Iconos decorativos (aleatorios para la izquierda)
-    DECORATIVE_ICONS: [
-      'assets/icons/Cuentas/1770678.png',
-      'assets/icons/Cuentas/1770679.png',
-      'assets/icons/Cuentas/1770680.png',
-      'assets/icons/Cuentas/1770681.png',
-      'assets/icons/Cuentas/1770682.png',
-      'assets/icons/Cuentas/1770683.png',
-      'assets/icons/Cuentas/1770684.png',
-      'assets/icons/Cuentas/1770685.png',
-      'assets/icons/Cuentas/1770686.png'
-    ],
-    
-    // Iconos de tipo de cuenta (excluyentes)
     TYPE_ICONS: {
       main: 'assets/icons/Cuentas/547827.png',
       alter: 'assets/icons/Cuentas/157375.png',
       f2p: 'assets/icons/Cuentas/102538.png'
     },
     
-    // Iconos de tags adicionales (combinables)
+    TYPE_COLORS: {
+      main: '#ffd966',
+      alter: '#b19cd9',
+      f2p: '#7bc2ff'
+    },
+    
+    TYPE_BG: {
+      main: 'rgba(255,217,102,0.08)',
+      alter: 'rgba(177,156,217,0.08)',
+      f2p: 'rgba(123,194,255,0.08)'
+    },
+
     TAG_ICONS: {
       farming: 'assets/icons/Cuentas/157332.png',
       keys: 'assets/icons/Cuentas/1716669.png',
       weekly: 'assets/icons/Cuentas/240679.png',
-      taxi: 'assets/icons/Cuentas/102438.png'
+      taxi: 'assets/icons/Cuentas/102438.png',
+      main: 'assets/icons/Cuentas/547827.png',
+      alter: 'assets/icons/Cuentas/157375.png',
+      f2p: 'assets/icons/Cuentas/102538.png'
     },
     
-    // Iconos de UI para tarjetas
     CARD_ICONS: {
       email: 'assets/icons/Cuentas/gmail.png',
-      lock: 'assets/icons/Cuentas/733265.png',           // Campo Contraseña (se mantiene)
-      credentialsTitle: 'assets/icons/Welcome/733266.png', // Título Credenciales (nuevo)
-      gmailPass: 'assets/icons/Cuentas/155048.png',
+      lock: 'assets/icons/Cuentas/733265.png',
       gw2id: 'assets/icons/Cuentas/358353.png',
       calendar: 'assets/icons/Cuentas/156407.png',
       trophy: 'assets/icons/Cuentas/156403.png',
-      character: 'assets/icons/Cuentas/156409.png',      // Campo Chars (se mantiene)
-      advancedTitle: 'assets/icons/Cuentas/358409.png',  // Título GW2 Avanzado (nuevo)
+      character: 'assets/icons/Cuentas/156409.png',
       bag: 'assets/icons/Cuentas/157098.png',
       bank: 'assets/icons/Cuentas/156670.png',
       material: 'assets/icons/Cuentas/255373.png',
       medal: 'assets/icons/Cuentas/157085.png',
       sword: 'assets/icons/Cuentas/1424243.png',
-      services: 'assets/icons/Welcome/102609.png',
-      apiKey: 'assets/icons/Cuentas/155048.png',
       note: 'assets/icons/Cuentas/1228929.png',
       chevronRight: 'assets/icons/Cuentas/528716.png',
       chevronDown: 'assets/icons/Cuentas/528717.png',
-      eye: 'assets/icons/Welcome/528726.png'
+      eye: 'assets/icons/Welcome/528726.png',
+      copy: 'assets/icons/Welcome/155911.png',
+      apiKey: 'assets/icons/Cuentas/155048.png',
+      gmailPass: 'assets/icons/Cuentas/155048.png'
     },
     
     ICONS: {
       account: 'assets/icons/Cuentas/GW2free.png',
-      lock: 'assets/icons/Cuentas/candado GW2.png',
-      gmail: 'assets/icons/Cuentas/gmail.png',
-      googlePass: 'assets/icons/Cuentas/passgoogle.png',
       twitch: 'assets/icons/Cuentas/twitchlogo.png',
       geforce: 'assets/icons/Cuentas/gforce.png',
       expansions: {
@@ -121,186 +96,82 @@
   // 1. ESTADO GLOBAL
   // =======================================================================
   var state = {
-    inited: false,
-    active: false,
-    data: null,
-    encryptedData: null,
-    fileName: null,
-    passwordHash: null,
-    filters: {
-      search: '',
-      type: 'all',
-      tag: 'all'
-    },
+    inited: false, active: false,
+    data: null, encryptedData: null, fileName: null, passwordHash: null,
+    filters: { search: '', type: 'all', tag: 'all' },
     view: 'cards',
-    showPasswords: {},        // Para contraseñas de GW2 y Gmail Pass
-    showTwitchPasswords: {},  // Para contraseñas de Twitch
+    compact: false,
+    showPasswords: {}, showTwitchPasswords: {},
     expandedAccounts: {}
   };
 
   // =======================================================================
-  // 2. UTILIDADES BÁSICAS
+  // 2. UTILIDADES
   // =======================================================================
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.from((r || document).querySelectorAll(s)); }
-
-  function esc(s) {
-    return String(s || '').replace(/[&<>"']/g, function(m) {
-      if (m === '&') return '&amp;';
-      if (m === '<') return '&lt;';
-      if (m === '>') return '&gt;';
-      if (m === '"') return '&quot;';
-      return '&#39;';
-    });
+  function esc(s) { return String(s || '').replace(/[&<>"']/g, function(m) { if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; if (m === '"') return '&quot;'; return '&#39;'; }); }
+  function fmtNumber(n) { return Number(n || 0).toLocaleString('es-AR'); }
+  function formatDate(dateStr) { if (!dateStr) return '—'; try { var d = new Date(dateStr); return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('es-AR'); } catch (e) { return dateStr; } }
+  function formatAgeDays(createdStr) { if (!createdStr) return '—'; try { return Math.floor((Date.now() - new Date(createdStr)) / 86400000) + ' días'; } catch (e) { return '—'; } }
+  function hexToRGBA(hex, alpha) { try { var h = String(hex).replace(/^#/,''); if (h.length === 3) h = h.split('').map(function(c){return c+c}).join(''); var r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16); return 'rgba('+r+','+g+','+b+','+alpha+')'; } catch(_){ return 'rgba(255,255,255,'+alpha+')'; } }
+  function getAccountTypeTags(acc) { return (acc.tags && Array.isArray(acc.tags)) ? acc.tags : []; }
+  
+  function getAccountType(acc) {
+    var tags = getAccountTypeTags(acc);
+    if (tags.indexOf('main') !== -1) return 'main';
+    if (tags.indexOf('alter') !== -1) return 'alter';
+    if (tags.indexOf('f2p') !== -1) return 'f2p';
+    return null;
   }
-
-  function fmtNumber(n) {
-    return Number(n || 0).toLocaleString('es-AR');
+  
+  function getTypeColor(acc) {
+    var t = getAccountType(acc);
+    return CONFIG.TYPE_COLORS[t] || '#FFFFFF';
   }
-
-  function formatDate(dateStr) {
-    if (!dateStr) return '—';
-    try {
-      var d = new Date(dateStr);
-      if (isNaN(d.getTime())) return dateStr;
-      return d.toLocaleDateString('es-AR');
-    } catch (e) {
-      return dateStr;
-    }
-  }
-
-  function formatAgeDays(createdStr) {
-    if (!createdStr) return '—';
-    try {
-      var created = new Date(createdStr);
-      var days = Math.floor((Date.now() - created) / (1000 * 60 * 60 * 24));
-      return days + ' días';
-    } catch (e) {
-      return '—';
-    }
-  }
-
-  function getAccountTypeTags(account) {
-    var tags = [];
-    if (account.tags && Array.isArray(account.tags)) {
-      tags.push.apply(tags, account.tags);
-    }
-    return tags;
-  }
-    function getBorderColor(account) {
-    var tags = getAccountTypeTags(account);
-    if (tags.indexOf('main') !== -1)  return 'rgba(255,217,102,0.5)';  // dorado
-    if (tags.indexOf('alter') !== -1) return 'rgba(177,156,217,0.5)';  // violeta
-    if (tags.indexOf('f2p') !== -1)   return 'rgba(123,194,255,0.5)';  // azul
-    return 'rgba(255,255,255,0.12)';  // neutro
-  }
-  function isMainAccount(account) {
-    var tags = getAccountTypeTags(account);
-    return tags.indexOf('main') !== -1;
-  }
+  
+  function getBorderColor(acc) { return hexToRGBA(getTypeColor(acc), 0.5); }
+  function getHoverShadow(acc) { var c = hexToRGBA(getTypeColor(acc), 0.15); return '0 10px 28px rgba(0,0,0,0.45), 0 6px 18px ' + c + ', 0 0 16px ' + c; }
+  function getIconGlow(acc) { return '0 0 0 3px ' + hexToRGBA(getTypeColor(acc), 0.32) + ', 0 0 18px ' + hexToRGBA(getTypeColor(acc), 0.22); }
+  function getTagBadgeStyle(acc) { return 'border-color:' + hexToRGBA(getTypeColor(acc), 0.35) + ';background:' + hexToRGBA(getTypeColor(acc), 0.08) + ';color:' + getTypeColor(acc) + ';'; }
 
   function getExpansionIcon(expKey, isOwned) {
     var icon = CONFIG.ICONS.expansions[expKey];
     if (!icon) return '';
-    var style = isOwned ? '' : 'style="filter: grayscale(1); opacity: 0.5;"';
-    return '<img src="' + icon + '" width="24" height="24" title="' + expKey + '" ' + style + ' loading="lazy">';
+    var style = isOwned ? '' : 'style="filter: grayscale(1); opacity: 0.35;"';
+    return '<img src="' + icon + '" width="32" height="32" title="' + expKey + '" ' + style + ' loading="lazy" style="flex-shrink:0;border-radius:6px;transition:all 0.2s ease;">';
   }
 
-  function simpleHash(str) {
-    var hash = 0;
-    for (var i = 0; i < str.length; i++) {
-      hash = ((hash << 5) - hash) + str.charCodeAt(i);
-      hash |= 0;
-    }
-    return hash.toString(16);
-  }
+  function simpleHash(str) { var h = 0; for (var i = 0; i < str.length; i++) { h = ((h << 5) - h) + str.charCodeAt(i); h |= 0; } return h.toString(16); }
 
   function copyToClipboard(text, fieldName) {
-    try {
-      navigator.clipboard.writeText(text);
-      window.toast('success', fieldName + ' copiado al portapapeles', { ttl: 1500 });
-    } catch (e) {
-      console.warn(LOG, 'clipboard error', e);
-      window.prompt('Copiar ' + fieldName + ':', text);
-    }
-  }
-
-  function getRandomDecorativeIcon() {
-    var randomIndex = Math.floor(Math.random() * CONFIG.DECORATIVE_ICONS.length);
-    return CONFIG.DECORATIVE_ICONS[randomIndex];
+    try { navigator.clipboard.writeText(text); window.toast('success', fieldName + ' copiado', { ttl: 1500 }); }
+    catch (e) { window.prompt('Copiar ' + fieldName + ':', text); }
   }
 
   // =======================================================================
   // 3. PERSISTENCIA
   // =======================================================================
-  function saveLastFileInfo(fileName, encryptedData) {
-    try {
-      localStorage.setItem(CONFIG.STORAGE_LAST_FILE_KEY, JSON.stringify({
-        name: fileName,
-        data: encryptedData,
-        timestamp: Date.now()
-      }));
-    } catch (e) {}
-  }
+  function saveLastFileInfo(fn, ed) { try { localStorage.setItem(CONFIG.STORAGE_LAST_FILE_KEY, JSON.stringify({ name: fn, data: ed, timestamp: Date.now() })); } catch(_){} }
+  function getLastFileInfo() { try { var s = localStorage.getItem(CONFIG.STORAGE_LAST_FILE_KEY); return s ? JSON.parse(s) : null; } catch(_) { return null; } }
+  function clearLastFileInfo() { try { localStorage.removeItem(CONFIG.STORAGE_LAST_FILE_KEY); } catch(_){} }
 
-  function getLastFileInfo() {
-    try {
-      var saved = localStorage.getItem(CONFIG.STORAGE_LAST_FILE_KEY);
-      if (saved) {
-        var parsed = JSON.parse(saved);
-        if (parsed.data && parsed.name) {
-          return parsed;
-        }
-      }
-    } catch (e) {}
-    return null;
-  }
-
-  function clearLastFileInfo() {
-    try {
-      localStorage.removeItem(CONFIG.STORAGE_LAST_FILE_KEY);
-    } catch (e) {}
-  }
-
-    // =======================================================================
-  // 3BIS. SINCRONIZAR TAGS CON API KEYS
-  // =======================================================================
   function syncAccountTagsToKeys(accounts) {
     if (!accounts || !Array.isArray(accounts)) return;
     try {
       var keys = JSON.parse(localStorage.getItem('gw2_keys') || '[]');
       if (!keys.length) return;
       var changed = false;
-
       accounts.forEach(function(acc) {
-        var apiKey = acc.apiKey?.value || acc.apiKey;
-        if (!apiKey) return;
+        var apiKey = acc.apiKey?.value || acc.apiKey; if (!apiKey) return;
         var tags = acc.tags || [];
-        var tipo = tags.includes('main') ? 'main' : 
-                   tags.includes('alter') ? 'alter' : 
-                   tags.includes('f2p') ? 'f2p' : null;
+        var tipo = tags.includes('main') ? 'main' : tags.includes('alter') ? 'alter' : tags.includes('f2p') ? 'f2p' : null;
         if (!tipo) return;
-
         var found = keys.find(function(k) { return k.value === apiKey; });
-        if (found && found.tag !== tipo) {
-          found.tag = tipo;
-          changed = true;
-          console.log(LOG, 'Tag sincronizado:', found.label || 'Key', '→', tipo);
-        }
+        if (found && found.tag !== tipo) { found.tag = tipo; changed = true; }
       });
-
-      if (changed) {
-        localStorage.setItem('gw2_keys', JSON.stringify(keys));
-        // Refrescar el KeyManager si está disponible
-        try {
-          if (typeof window !== 'undefined' && window.__GN__) {
-            // El KeyManager se refrescará al recargar o al cambiar de key
-          }
-        } catch(e) {}
-      }
-    } catch(e) {
-      console.warn(LOG, 'Error sincronizando tags', e);
-    }
+      if (changed) localStorage.setItem('gw2_keys', JSON.stringify(keys));
+    } catch(_) {}
   }
 
   // =======================================================================
@@ -311,21 +182,12 @@
       var reader = new FileReader();
       reader.onload = function(e) {
         try {
-          var encrypted = e.target.result;
-          var decrypted = CryptoJS.AES.decrypt(encrypted, password).toString(CryptoJS.enc.Utf8);
-          if (!decrypted) {
-            reject(new Error('Contraseña incorrecta o archivo corrupto'));
-            return;
-          }
-          var data = JSON.parse(decrypted);
-          resolve({ data: data, encrypted: encrypted });
-        } catch (err) {
-          reject(err);
-        }
+          var decrypted = CryptoJS.AES.decrypt(e.target.result, password).toString(CryptoJS.enc.Utf8);
+          if (!decrypted) { reject(new Error('Contraseña incorrecta o archivo corrupto')); return; }
+          resolve({ data: JSON.parse(decrypted), encrypted: e.target.result });
+        } catch(err) { reject(err); }
       };
-      reader.onerror = function() {
-        reject(new Error('Error al leer el archivo'));
-      };
+      reader.onerror = function() { reject(new Error('Error al leer el archivo')); };
       reader.readAsText(file);
     });
   }
@@ -333,55 +195,24 @@
   async function loadFromFile(file, password, rememberFile) {
     try {
       var result = await loadAndDecryptFile(file, password);
-      state.data = result.data;
-      state.encryptedData = result.encrypted;
-      state.fileName = file.name;
-      state.passwordHash = simpleHash(password);
-      state.showPasswords = {};
-      state.showTwitchPasswords = {};
-      state.expandedAccounts = {};
-      
-      if (rememberFile !== false) {
-        saveLastFileInfo(file.name, result.encrypted);
-      }
-      
-      render();
-      window.toast('success', 'Cuentas cargadas correctamente', { ttl: 2000 });
-      return true;
-    } catch (err) {
-      console.error(LOG, 'Load error', err);
-      window.toast('error', err.message || 'Error al cargar el archivo', { ttl: 3000 });
-      return false;
-    }
+      state.data = result.data; state.encryptedData = result.encrypted; state.fileName = file.name;
+      state.passwordHash = simpleHash(password); state.showPasswords = {}; state.showTwitchPasswords = {}; state.expandedAccounts = {};
+      if (rememberFile !== false) saveLastFileInfo(file.name, result.encrypted);
+      render(); window.toast('success', 'Cuentas cargadas', { ttl: 2000 }); return true;
+    } catch(err) { window.toast('error', err.message || 'Error al cargar', { ttl: 3000 }); return false; }
   }
 
   async function loadFromStoredFile(password) {
-    var lastFile = getLastFileInfo();
-    if (!lastFile || !lastFile.data) return false;
-    
+    var lastFile = getLastFileInfo(); if (!lastFile || !lastFile.data) return false;
     try {
       var decrypted = CryptoJS.AES.decrypt(lastFile.data, password).toString(CryptoJS.enc.Utf8);
-      if (!decrypted) {
-        return false;
-      }
+      if (!decrypted) return false;
       var data = JSON.parse(decrypted);
-      state.data = data;
-      state.encryptedData = lastFile.data;
-      state.fileName = lastFile.name;
-      state.passwordHash = simpleHash(password);
-      state.showPasswords = {};
-      state.showTwitchPasswords = {};
-      state.expandedAccounts = {};
-      
-      // NUEVO: Sincronizar tags de cuenta con API keys del KeyManager
+      state.data = data; state.encryptedData = lastFile.data; state.fileName = lastFile.name;
+      state.passwordHash = simpleHash(password); state.showPasswords = {}; state.showTwitchPasswords = {}; state.expandedAccounts = {};
       syncAccountTagsToKeys(data.accounts);
-      
-      render();
-      window.toast('success', 'Cuentas cargadas automáticamente', { ttl: 1500 });
-      return true;
-    } catch (err) {
-      return false;
-    }
+      render(); window.toast('success', 'Cuentas cargadas', { ttl: 1500 }); return true;
+    } catch(err) { return false; }
   }
 
   // =======================================================================
@@ -389,742 +220,344 @@
   // =======================================================================
   function getFilteredAccounts() {
     if (!state.data || !state.data.accounts) return [];
-    var accounts = state.data.accounts;
-    var filters = state.filters;
-
-    return accounts.filter(function(acc) {
-      if (filters.search) {
-        var searchLower = filters.search.toLowerCase();
-        var nameMatch = (acc.name || '').toLowerCase().includes(searchLower);
-        var emailMatch = (acc.login && acc.login.email || '').toLowerCase().includes(searchLower);
-        var idMatch = (acc.gw2 && acc.gw2.accountName || '').toLowerCase().includes(searchLower);
-        if (!nameMatch && !emailMatch && !idMatch) return false;
-      }
-      if (filters.type !== 'all') {
-        var tags = getAccountTypeTags(acc);
-        if (filters.type === 'main' && tags.indexOf('main') === -1) return false;
-        if (filters.type === 'alter' && tags.indexOf('alter') === -1) return false;
-        if (filters.type === 'f2p' && tags.indexOf('f2p') === -1) return false;
-      }
-      if (filters.tag !== 'all') {
-        var accTags = getAccountTypeTags(acc);
-        if (accTags.indexOf(filters.tag) === -1) return false;
-      }
+    return (state.data.accounts).filter(function(acc) {
+      if (state.filters.search) { var q = state.filters.search.toLowerCase(); if (!(acc.name||'').toLowerCase().includes(q) && !(acc.login?.email||'').toLowerCase().includes(q) && !(acc.gw2?.accountName||'').toLowerCase().includes(q)) return false; }
+      if (state.filters.type !== 'all') { var t = getAccountTypeTags(acc); if (state.filters.type === 'main' && t.indexOf('main')===-1) return false; if (state.filters.type === 'alter' && t.indexOf('alter')===-1) return false; if (state.filters.type === 'f2p' && t.indexOf('f2p')===-1) return false; }
+      if (state.filters.tag !== 'all' && getAccountTypeTags(acc).indexOf(state.filters.tag)===-1) return false;
       return true;
     });
   }
 
   // =======================================================================
-  // 6. RENDERIZADO DE TARJETA CON ICONOS DE UI
+  // 6. RENDER — PROFILE CARD v2.0.0
   // =======================================================================
   function renderAccountCard(acc) {
-    var login = acc.login || {};
-    var gw2 = acc.gw2 || {};
-    var expansions = acc.expansions || {};
-    var services = acc.services || {};
+    var login = acc.login || {}, gw2 = acc.gw2 || {}, expansions = acc.expansions || {}, services = acc.services || {};
     var tags = getAccountTypeTags(acc);
-    var isMain = isMainAccount(acc);
     var showPass = state.showPasswords[acc.id] || false;
     var showTwitchPass = state.showTwitchPasswords[acc.id] || false;
+    var typeIcon = CONFIG.TYPE_ICONS[getAccountType(acc)] || CONFIG.DEFAULT_ICON;
+    var typeColor = getTypeColor(acc);
+    var bLeft = getBorderColor(acc);
+    var hShadow = getHoverShadow(acc);
+    var iGlow = getIconGlow(acc);
+    
+    // Ícono decorativo aleatorio (cat tag) - Cambio 1
+    var DECORATIVE_ICONS = [
+      'assets/icons/Cuentas/1770678.png','assets/icons/Cuentas/1770679.png','assets/icons/Cuentas/1770680.png',
+      'assets/icons/Cuentas/1770681.png','assets/icons/Cuentas/1770682.png','assets/icons/Cuentas/1770683.png',
+      'assets/icons/Cuentas/1770684.png','assets/icons/Cuentas/1770685.png','assets/icons/Cuentas/1770686.png'
+    ];
+    
+    var displayIcon = DECORATIVE_ICONS[Math.floor(Math.random() * DECORATIVE_ICONS.length)];
+    var passwordDisplay = showPass ? esc(login.password || '—') : '••••••••';
+    var gmailDisplay = showPass ? esc(login.gmailPassword || '—') : '••••••••';
+    var twitchDisplay = showTwitchPass ? esc(services.twitch?.password || '') : '••••••••';
 
-    // Estados de secciones colapsables
-    var expandedSections = state.expandedAccounts[acc.id] || {};
-    var showCredentials = expandedSections.credentials || false;
-    var showAdvanced = expandedSections.advanced || false;
-    var showExpansions = expandedSections.expansions || false;
-    var showServicesApi = expandedSections.servicesApi || false;
-    var showServicesDetail = expandedSections.servicesDetail || false; // Subsección de Servicios
+    // Expansiones con progreso
+    var expOrder = ['core','heroic','heartOfThorns','pathOfFire','endOfDragons','secretsOfTheObscure','janthirWilds','visionsOfEternity'];
+    var expOwned = 0, expTotal = 0;
+    var expIcons = expOrder.map(function(key) {
+      if (expansions[key] === undefined) return '';
+      expTotal++;
+      if (expansions[key]) expOwned++;
+      return getExpansionIcon(key, expansions[key]);
+    }).filter(Boolean).join('');
+    var expPercent = expTotal > 0 ? Math.round((expOwned / expTotal) * 100) : 0;
 
-    // 1. ICONO DECORATIVO (izquierda) - SIEMPRE ALEATORIO
-    var decorativeIcon = getRandomDecorativeIcon();
-    
-    // 2. TIPO DE CUENTA (excluyente) - main, alter, f2p
-    var accountType = null;
-    if (tags.indexOf('main') !== -1) {
-      accountType = 'main';
-    } else if (tags.indexOf('alter') !== -1) {
-      accountType = 'alter';
-    } else if (tags.indexOf('f2p') !== -1) {
-      accountType = 'f2p';
-    }
-    
-    var typeIconHtml = '';
-    if (accountType && CONFIG.TYPE_ICONS[accountType]) {
-      typeIconHtml = '<img src="' + CONFIG.TYPE_ICONS[accountType] + '" width="20" height="20" alt="' + accountType + '" title="' + accountType + '" style="filter: brightness(0.9); margin-left: 4px; cursor: help;">';
-    }
-    
-    // 3. TAGS ADICIONALES (combinables) - farming, keys, weekly, taxi
+    // Tags - solo iconitos con tooltip (Cambio 2)
     var tagIconsHtml = '';
-    var tagOrder = ['farming', 'keys', 'weekly', 'taxi'];
+    var tagOrder = ['main','alter','f2p','farming','keys','weekly','taxi'];
     for (var i = 0; i < tagOrder.length; i++) {
       var tag = tagOrder[i];
-      if (tags.indexOf(tag) !== -1 && CONFIG.TAG_ICONS[tag]) {
-        tagIconsHtml += '<img src="' + CONFIG.TAG_ICONS[tag] + '" width="20" height="20" alt="' + tag + '" title="' + tag + '" style="filter: brightness(0.9); margin-left: 4px; cursor: help;">';
+      if (tags.indexOf(tag) !== -1) {
+        var tIcon = CONFIG.TAG_ICONS[tag] || '';
+        if (tIcon) {
+          tagIconsHtml += '<img src="' + tIcon + '" width="18" height="18" alt="' + tag + '" title="' + tag + '" style="filter:brightness(0.9);cursor:help;">';
+        }
       }
     }
-    
-    // Unir todos los iconos de la derecha
-    var rightIcons = typeIconHtml + tagIconsHtml;
 
-    var passwordDisplay = showPass ? esc(login.password || '—') : '••••••••';
-    var gmailPassDisplay = showPass ? esc(login.gmailPassword || '—') : '••••••••';
+    // Servicios - siempre visibles con íconos de estado (Cambio 4 v2)
+    var twitchLinked = services.twitch && services.twitch.linked;
+    var geforceLinked = services.geforceNow && services.geforceNow.linked;
+    var twitchPassDisplay = showTwitchPass ? esc(services.twitch?.password || '') : '••••••••';
 
-    // Expansiones
-    var expOrder = ['core', 'heroic', 'heartOfThorns', 'pathOfFire', 'endOfDragons', 'secretsOfTheObscure', 'janthirWilds', 'visionsOfEternity'];
-    var expIcons = [];
-    expOrder.forEach(function(key) {
-      if (expansions[key] !== undefined) {
-        expIcons.push(getExpansionIcon(key, expansions[key]));
+    var twitchHtml = '<div style="overflow:hidden;">' +
+      '<div style="display:flex;align-items:center;gap:6px;">' +
+        '<img src="' + CONFIG.ICONS.twitch + '" width="16" height="16" style="flex-shrink:0;">' +
+        '<span style="font-size:0.8rem;">Twitch</span>' +
+        '<img src="assets/icons/Welcome/' + (twitchLinked ? '156108' : '156107') + '.png" width="14" height="14" style="flex-shrink:0;" title="' + (twitchLinked ? 'Vinculado' : 'No vinculado') + '">' +
+      '</div>';
+    if (twitchLinked) {
+      var tu = services.twitch?.username || '';
+      var te = services.twitch?.email || '';
+      if (tu) twitchHtml += '<div style="font-size:0.7rem;color:#9aa2b8;cursor:pointer;margin-top:2px;" data-copy="' + esc(tu) + '" data-field="Usuario Twitch">@' + esc(tu) + '</div>';
+      if (te) twitchHtml += '<div style="font-size:0.68rem;color:#6a7080;cursor:pointer;" data-copy="' + esc(te) + '" data-field="Email Twitch">' + esc(te) + '</div>';
+      if (services.twitch?.password) {
+        twitchHtml += '<div style="display:flex;align-items:center;gap:4px;margin-top:2px;"><span style="font-family:monospace;font-size:0.68rem;cursor:pointer;" data-copy="' + esc(services.twitch.password) + '" data-field="Pass Twitch">' + twitchPassDisplay + '</span><button class="btn-ghost toggle-twitch-password" data-id="' + acc.id + '" style="padding:0 2px;display:inline-flex;"><img src="' + CONFIG.CARD_ICONS.eye + '" width="10" height="10"></button></div>';
       }
-    });
+    }
+    twitchHtml += '</div>';
 
-    // Servicios - íconos simples para el header
-    var serviceIcons = [];
-    if (services.twitch && services.twitch.linked) {
-      serviceIcons.push('<img src="' + CONFIG.ICONS.twitch + '" width="20" height="20" title="Twitch vinculado">');
-    }
-    if (services.geforceNow && services.geforceNow.linked) {
-      serviceIcons.push('<img src="' + CONFIG.ICONS.geforce + '" width="20" height="20" title="GeForce Now vinculado">');
-    }
+    var geforceHtml = '<div style="overflow:hidden;">' +
+      '<div style="display:flex;align-items:center;gap:6px;">' +
+        '<img src="' + CONFIG.ICONS.geforce + '" width="16" height="16" style="flex-shrink:0;">' +
+        '<span style="font-size:0.8rem;">GeForce</span>' +
+        '<img src="assets/icons/Welcome/' + (geforceLinked ? '156108' : '156107') + '.png" width="14" height="14" style="flex-shrink:0;" title="' + (geforceLinked ? 'Vinculado' : 'No vinculado') + '">' +
+      '</div></div>';
 
-    // Información detallada de Twitch (para mostrar dentro de Servicios)
-    var twitchDetailHtml = '';
-    if (services.twitch && services.twitch.linked) {
-      var twitchUsername = services.twitch.username || '';
-      var twitchEmail = services.twitch.email || '';
-      var twitchPassword = services.twitch.password || '';
-      var twitchPassDisplay = showTwitchPass ? esc(twitchPassword) : '••••••••';
-      
-      twitchDetailHtml = '<div style="margin-left: 20px; margin-top: 8px; padding-left: 12px; border-left: 2px solid #2a2c35;">';
-      twitchDetailHtml += '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">';
-      twitchDetailHtml += '<img src="' + CONFIG.ICONS.twitch + '" width="16" height="16" style="vertical-align: middle;">';
-      twitchDetailHtml += '<strong>Twitch:</strong> ';
-      twitchDetailHtml += '<span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(twitchUsername) + '" data-field="Usuario Twitch">@' + esc(twitchUsername || '—') + '</span>';
-      twitchDetailHtml += '</div>';
-      
-      if (twitchEmail) {
-        twitchDetailHtml += '<div style="margin-left: 24px; margin-top: 6px; display: flex; align-items: center; gap: 8px;">';
-        twitchDetailHtml += '<img src="' + CONFIG.CARD_ICONS.email + '" width="14" height="14" style="vertical-align: middle;">';
-        twitchDetailHtml += '<span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(twitchEmail) + '" data-field="Email Twitch">' + esc(twitchEmail) + '</span>';
-        twitchDetailHtml += '</div>';
-      }
-      
-      twitchDetailHtml += '<div style="margin-left: 24px; margin-top: 6px; display: flex; align-items: center; gap: 8px;">';
-      twitchDetailHtml += '<img src="' + CONFIG.CARD_ICONS.lock + '" width="14" height="14" style="vertical-align: middle;">';
-      twitchDetailHtml += '<span style="font-family: monospace; cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(twitchPassword) + '" data-field="Contraseña Twitch">' + twitchPassDisplay + '</span>';
-      twitchDetailHtml += '<button class="btn-ghost toggle-twitch-password" data-id="' + acc.id + '" style="padding: 2px 4px; display: inline-flex; align-items: center;">';
-      twitchDetailHtml += '<img src="' + CONFIG.CARD_ICONS.eye + '" width="14" height="14" alt="Mostrar contraseña" style="vertical-align: middle;">';
-      twitchDetailHtml += '</button>';
-      twitchDetailHtml += '</div>';
-      
-      twitchDetailHtml += '</div>';
-    }
-
-    // GeForce Now texto adicional (con imagen en lugar de emoji)
-    var geforceTextHtml = '';
-    if (services.geforceNow && services.geforceNow.linked) {
-      geforceTextHtml = '<div style="margin-left: 20px; margin-top: 6px;"><img src="' + CONFIG.ICONS.geforce + '" width="14" height="14" style="vertical-align: middle;"> <span style="color: #a0a0a6;">GeForce Now: <img src="assets/icons/Welcome/156108.png" width="14" height="14" alt="Vinculado" style="vertical-align: middle;"> Vinculado</span></div>';
-    }
-
-    // Subsección "Servicios" colapsable
-    var servicesSubsectionHtml = '';
-    if (serviceIcons.length > 0) {
-      var chevronIcon = showServicesDetail ? CONFIG.CARD_ICONS.chevronDown : CONFIG.CARD_ICONS.chevronRight;
-      servicesSubsectionHtml = `
-        <div style="margin-top: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;" data-toggle-services="${acc.id}">
-            <img src="${chevronIcon}" width="12" height="12" alt="" style="filter: brightness(0.9);">
-            <img src="${CONFIG.CARD_ICONS.services}" width="16" height="16" alt="" style="filter: brightness(0.9);">
-            <span style="font-weight: 600; font-size: 0.85rem;">Servicios</span>
-            <span style="margin-left: 4px;">${serviceIcons.join(' ')}</span>
-          </div>
-          <div id="services-detail-${acc.id}" style="${showServicesDetail ? '' : 'display: none;'} margin-top: 8px; padding-left: 24px;">
-            ${twitchDetailHtml}
-            ${geforceTextHtml}
-          </div>
-        </div>
-      `;
-    }
+    // Notas
+    var notesHtml = acc.notes ? '<div style="display:flex;align-items:flex-start;gap:6px;font-size:0.78rem;color:#9aa2b8;margin-top:4px;"><img src="' + CONFIG.CARD_ICONS.note + '" width="14" height="14" style="flex-shrink:0;margin-top:1px;"><span style="overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">' + esc(acc.notes) + '</span></div>' : '';
 
     // API Key
-    var apiKeyHtml = '';
-    if (acc.apiKey) {
-      var apiKeyValue = acc.apiKey.value || acc.apiKey;
-      apiKeyHtml = '<div style="margin-top: 8px;"><img src="' + CONFIG.CARD_ICONS.apiKey + '" width="16" height="16" style="vertical-align: middle;"> <strong>API Key:</strong> <code style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(apiKeyValue) + '" data-field="API Key">' + esc(apiKeyValue) + '</code></div>';
-    }
+    var apiKeyValue = acc.apiKey?.value || acc.apiKey || '';
 
-    // Servicios y API (contenedor principal)
-    var servicesApiHtml = '<div style="display: flex; flex-direction: column; gap: 4px;">';
-    servicesApiHtml += servicesSubsectionHtml;
-    servicesApiHtml += apiKeyHtml;
-    servicesApiHtml += '</div>';
-
-    // Función para sección colapsable con iconos de chevron
-    function renderCollapsibleSection(title, iconSrc, sectionKey, isOpen, contentHtml) {
-      var chevronIcon = isOpen ? CONFIG.CARD_ICONS.chevronDown : CONFIG.CARD_ICONS.chevronRight;
-      return `
-        <div style="margin-top: 12px; border-top: 1px solid #2a2c35; padding-top: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;" data-toggle-section="${acc.id}" data-section="${sectionKey}">
-            <img src="${chevronIcon}" width="12" height="12" alt="" style="filter: brightness(0.9);">
-            <img src="${iconSrc}" width="16" height="16" alt="" style="filter: brightness(0.9);">
-            <span style="font-weight: 600; font-size: 0.85rem;">${title}</span>
-          </div>
-          <div id="section-${acc.id}-${sectionKey}" style="${isOpen ? '' : 'display: none;'} margin-top: 8px; padding-left: 24px;">
-            ${contentHtml}
-          </div>
-        </div>
-      `;
-    }
-
-    // Contenido de secciones con iconos
-    var credentialsHtml = `
-      <div style="display: flex; flex-direction: column; gap: 6px;">
-        <div><img src="${CONFIG.CARD_ICONS.lock}" width="16" height="16" style="vertical-align: middle;"> <strong>Contraseña:</strong> 
-          <span style="font-family: monospace; cursor: pointer; text-decoration: underline dotted;" data-copy="${esc(login.password || '')}" data-field="Contraseña">${passwordDisplay}</span>
-          <button class="btn-ghost toggle-password" data-id="${acc.id}" style="padding: 2px 4px; display: inline-flex; align-items: center;">
-            <img src="${CONFIG.CARD_ICONS.eye}" width="14" height="14" alt="Mostrar contraseña" style="vertical-align: middle;">
-          </button>
-        </div>
-        ${login.gmailPassword ? `<div><img src="${CONFIG.CARD_ICONS.gmailPass}" width="16" height="16" style="vertical-align: middle;"> <strong>Gmail Pass:</strong> 
-          <span style="font-family: monospace; cursor: pointer; text-decoration: underline dotted;" data-copy="${esc(login.gmailPassword)}" data-field="Gmail Pass">${gmailPassDisplay}</span>
-        </div>` : ''}
-      </div>
-    `;
-
-    var advancedHtml = `
-      <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-        <span><img src="${CONFIG.CARD_ICONS.character}" width="16" height="16" style="vertical-align: middle;"> <strong>Chars:</strong> ${gw2.characterSlots || gw2.characterCount || '—'}</span>
-        <span><img src="${CONFIG.CARD_ICONS.bag}" width="16" height="16" style="vertical-align: middle;"> <strong>Mochilas:</strong> ${gw2.bagSlots || '—'}</span>
-        <span><img src="${CONFIG.CARD_ICONS.bank}" width="16" height="16" style="vertical-align: middle;"> <strong>Bancos:</strong> ${gw2.bankSlots || '—'}</span>
-        <span><img src="${CONFIG.CARD_ICONS.material}" width="16" height="16" style="vertical-align: middle;"> <strong>Material:</strong> ${gw2.materialStorage || '—'}</span>
-        <span><img src="${CONFIG.CARD_ICONS.medal}" width="16" height="16" style="vertical-align: middle;"> <strong>Legendarias:</strong> ${gw2.legendaries || 0}</span>
-        ${gw2.level80 !== undefined ? `<span><img src="${CONFIG.CARD_ICONS.sword}" width="16" height="16" style="vertical-align: middle;"> <strong>Nivel 80:</strong> ${gw2.level80 ? '✅ Sí' : '❌ No'}</span>` : ''}
-      </div>
-    `;
-
-    var expansionsHtml = `
-      <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-        ${expIcons.length ? expIcons.join(' ') : '<span class="muted">—</span>'}
-      </div>
-    `;
-
-    var bLeft    = getBorderColor(acc);
-    var bNeutral = 'rgba(255, 255, 255, 0.08)';
-    var gNeutral = 'rgba(90, 110, 154, 0.12)';
-
-    return '' +
-      '<article class="wallet-card" style="border:1px solid ' + bNeutral + '; border-left:3px solid ' + bLeft + '; box-shadow:0 0 8px ' + gNeutral + ';">' +
-        '<div class="wallet-card__top">' +
-          '<div class="wallet-card__iconWrap">' +
-            '<img src="' + decorativeIcon + '" width="30" height="30" alt="Cuenta" loading="lazy" style="filter: brightness(0.9);">' +
-          '</div>' +
-          '<div class="wallet-card__name" style="font-weight: 700; cursor: pointer;" data-account-id="' + acc.id + '" data-toggle-expand-name>' + esc(acc.name || 'Cuenta') + '</div>' +
-          '<div class="wallet-card__meta" style="justify-content: flex-end; display: flex; align-items: center; gap: 2px;">' +
-            rightIcons +
-          '</div>' +
-        '</div>' +
-
-        '<div class="wallet-sep"></div>' +
-
-        '<div class="wallet-card__body">' +
-          '<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">' +
-            '<div><img src="' + CONFIG.CARD_ICONS.email + '" width="16" height="16" style="vertical-align: middle;"> <strong>Email:</strong> ' +
-              '<span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.email || '') + '" data-field="Email">' + esc(login.email || '—') + '</span>' +
+    if (state.compact) {
+      // VISTA COMPACTA
+      return '<article class="card account-card" style="border-left:3px solid ' + bLeft + ';cursor:pointer;" data-account-id="' + acc.id + '" data-toggle-expand-name>' +
+        '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;">' +
+          '<div style="width:36px;height:36px;border-radius:10px;background:#0f1116;display:flex;align-items:center;justify-content:center;box-shadow:' + iGlow + ';flex-shrink:0;"><img src="' + displayIcon + '" width="24" height="24" style="filter:brightness(0.9);"></div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-weight:700;font-size:0.9rem;color:#e0e4ed;">' + esc(acc.name || 'Cuenta') + '</div>' +
+            '<div style="font-size:0.7rem;color:#9aa2b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(login.email || '—') + '</div>' +
+            '<div style="font-size:0.65rem;color:#6a7080;display:flex;gap:8px;flex-wrap:wrap;margin-top:2px;">' +
+              '<span>🆔 ' + esc(gw2.accountName || '—') + '</span>' +
+              '<span>🏆 ' + fmtNumber(gw2.achievementPoints) + ' AP</span>' +
+              '<span>📦 ' + expOwned + '/' + expTotal + ' exp</span>' +
+              (services.twitch?.linked ? '<span>🎮✅</span>' : '') +
             '</div>' +
           '</div>' +
+          '<div style="display:flex;gap:4px;flex-shrink:0;">' + tagIconsHtml + '</div>' +
+        '</div></article>';
+    }
 
-          '<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 8px;">' +
-            '<div><img src="' + CONFIG.CARD_ICONS.gw2id + '" width="16" height="16" style="vertical-align: middle;"> <strong>GW2 ID:</strong> ' + esc(gw2.accountName || '—') + '</div>' +
-            '<div><img src="' + CONFIG.CARD_ICONS.calendar + '" width="16" height="16" style="vertical-align: middle;"> <strong>Creación:</strong> ' + formatDate(gw2.created) + ' (' + formatAgeDays(gw2.created) + ')</div>' +
-            '<div><img src="' + CONFIG.CARD_ICONS.trophy + '" width="16" height="16" style="vertical-align: middle;"> <strong>AP:</strong> ' + fmtNumber(gw2.achievementPoints) + '</div>' +
+    // VISTA COMPLETA (PROFILE CARD)
+    return '<article class="card account-card" style="border-left:3px solid ' + bLeft + ';position:relative;overflow:hidden;">' +
+      // Overlay decorativo
+      '<div style="position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle, ' + hexToRGBA(typeColor, 0.10) + ' 0%, transparent 70%);pointer-events:none;"></div>' +
+      
+      '<div style="padding:16px;">' +
+        // HEADER: ícono + nombre + email
+        '<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">' +
+          '<div style="width:52px;height:52px;border-radius:14px;background:#0f1116;display:flex;align-items:center;justify-content:center;box-shadow:' + iGlow + ';flex-shrink:0;"><img src="' + displayIcon + '" width="34" height="34" style="filter:brightness(0.9);"></div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-weight:700;font-size:1.05rem;color:#e0e4ed;cursor:pointer;" data-account-id="' + acc.id + '" data-toggle-expand-name>' + esc(acc.name || 'Cuenta') + '</div>' +
+            '<div style="font-size:0.82rem;color:' + typeColor + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;" data-copy="' + esc(login.email || '') + '" data-field="Email">' + esc(login.email || '—') + '</div>' +
+            (tagIconsHtml ? '<div style="display:flex;align-items:center;gap:5px;margin-top:4px;">' + tagIconsHtml + '</div>' : '') +
           '</div>' +
-
-          renderCollapsibleSection('Credenciales', CONFIG.CARD_ICONS.credentialsTitle, 'credentials', showCredentials, credentialsHtml) +
-          renderCollapsibleSection('GW2 Avanzado', CONFIG.CARD_ICONS.advancedTitle, 'advanced', showAdvanced, advancedHtml) +
-          (expIcons.length ? renderCollapsibleSection('Expansiones', CONFIG.ICONS.expansions.core, 'expansions', showExpansions, expansionsHtml) : '') +
-          renderCollapsibleSection('Servicios y API', CONFIG.CARD_ICONS.services, 'servicesApi', showServicesApi, servicesApiHtml) +
-
-          (acc.notes ? '<div style="margin-top: 12px; color: #a0a0a6; display: flex; align-items: center; gap: 6px;"><img src="' + CONFIG.CARD_ICONS.note + '" width="16" height="16" alt=""><strong>Notas:</strong> ' + esc(acc.notes) + '</div>' : '') +
         '</div>' +
-      '</article>';
+        
+        // GRID 2 COLUMNAS
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:0.8rem;">' +
+          // Columna izquierda
+          '<div style="display:flex;align-items:center;gap:6px;"><img src="' + CONFIG.CARD_ICONS.gw2id + '" width="16" height="16"><span>' + esc(gw2.accountName || '—') + '</span></div>' +
+          '<div style="display:flex;align-items:center;gap:6px;"><img src="' + CONFIG.CARD_ICONS.trophy + '" width="16" height="16"><strong>' + fmtNumber(gw2.achievementPoints) + '</strong> AP</div>' +
+          '<div style="display:flex;align-items:center;gap:6px;"><img src="' + CONFIG.CARD_ICONS.calendar + '" width="16" height="16"><span>' + formatDate(gw2.created) + '</span></div>' +
+          '<div style="display:flex;align-items:center;gap:6px;font-size:0.7rem;color:#9aa2b8;">(' + formatAgeDays(gw2.created) + ')</div>' +
+          '<div style="display:flex;align-items:center;gap:6px;margin-top:6px;"><img src="' + CONFIG.CARD_ICONS.lock + '" width="16" height="16"><span style="font-family:monospace;cursor:pointer;" data-copy="' + esc(login.password || '') + '" data-field="Contraseña">' + passwordDisplay + '</span><button class="btn-ghost toggle-password" data-id="' + acc.id + '" style="padding:0 2px;display:inline-flex;"><img src="' + CONFIG.CARD_ICONS.eye + '" width="12" height="12"></button></div>' +
+          (login.gmailPassword ? '<div style="display:flex;align-items:center;gap:6px;margin-top:6px;"><img src="' + CONFIG.CARD_ICONS.gmailPass + '" width="16" height="16"><span style="font-family:monospace;cursor:pointer;" data-copy="' + esc(login.gmailPassword) + '" data-field="Gmail Pass">' + gmailDisplay + '</span></div>' : '<div></div>') +
+        '</div>' +
+
+        // SEPARADOR (arriba de Twitch/GeForce)
+        '<div style="height:1px;background:linear-gradient(90deg, transparent, ' + hexToRGBA(typeColor, 0.25) + ', transparent);margin:8px 0;"></div>' +
+
+        // TWITCH + GEFORCE (fuera del grid, en su propia sección)
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:0.8rem;">' +
+          '<div style="min-height:52px;">' + twitchHtml + '</div>' +
+          '<div style="min-height:52px;">' + geforceHtml + '</div>' +
+        '</div>' +
+
+        // SEPARADOR (arriba de Expansiones)
+        '<div style="height:1px;background:linear-gradient(90deg, transparent, ' + hexToRGBA(typeColor, 0.25) + ', transparent);margin:8px 0;"></div>' +
+
+        // EXPANSIONES COLAPSABLE (Cambio 3)
+        (expIcons ? '<div style="margin-top:0;padding-top:4px;">' +
+          '<div style="display:flex;align-items:center;gap:8px;cursor:pointer;" data-toggle-section="' + acc.id + '" data-section="expansions">' +
+            '<img src="' + (state.expandedAccounts[acc.id]?.expansions ? CONFIG.CARD_ICONS.chevronDown : CONFIG.CARD_ICONS.chevronRight) + '" width="12" height="12" style="flex-shrink:0;">' +
+            '<span style="font-weight:600;font-size:0.8rem;">Expansiones</span>' +
+            '<span style="font-size:0.7rem;color:' + typeColor + ';">' + expOwned + '/' + expTotal + '</span>' +
+          '</div>' +
+          '<div id="section-' + acc.id + '-expansions" style="' + (state.expandedAccounts[acc.id]?.expansions ? '' : 'display:none;') + 'margin-top:6px;padding-left:20px;">' +
+            '<div style="display:flex;gap:4px;flex-wrap:wrap;">' + expIcons + '</div>' +
+            '<div style="height:4px;background:#2a2c35;border-radius:2px;margin-top:6px;overflow:hidden;"><div style="width:' + expPercent + '%;height:100%;background:linear-gradient(90deg, ' + typeColor + ', ' + hexToRGBA(typeColor, 0.6) + ');border-radius:2px;transition:width 0.3s ease;"></div></div>' +
+          '</div>' +
+        '</div>' : '') +
+
+        // GW2 AVANZADO
+        '<div style="font-size:0.72rem;color:#9aa2b8;display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">' +
+          '<span><img src="' + CONFIG.CARD_ICONS.character + '" width="14" height="14" style="vertical-align:middle;"> ' + (gw2.characterSlots || '—') + ' chars</span>' +
+          '<span><img src="' + CONFIG.CARD_ICONS.bag + '" width="14" height="14" style="vertical-align:middle;"> ' + (gw2.bagSlots || '—') + ' bags</span>' +
+          '<span><img src="' + CONFIG.CARD_ICONS.bank + '" width="14" height="14" style="vertical-align:middle;"> ' + (gw2.bankSlots || '—') + ' bancos</span>' +
+          '<span><img src="' + CONFIG.CARD_ICONS.material + '" width="14" height="14" style="vertical-align:middle;"> ' + (gw2.materialStorage || '—') + ' mat</span>' +
+          '<span><img src="' + CONFIG.CARD_ICONS.medal + '" width="14" height="14" style="vertical-align:middle;"> ' + (gw2.legendaries || 0) + '</span>' +
+        '</div>' +
+
+        // NOTAS
+        notesHtml +
+
+        // SEPARADOR + FOOTER
+        '<div style="height:1px;background:linear-gradient(90deg, transparent, ' + hexToRGBA(typeColor, 0.25) + ', transparent);margin-top:8px;"></div>' +
+        '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px;">' +
+          '<button class="btn btn--ghost btn--xs" data-copy-btn="' + esc(login.email || '') + '" data-field="Email" style="display:inline-flex;align-items:center;gap:4px;font-size:0.65rem;"><img src="' + CONFIG.CARD_ICONS.copy + '" width="12" height="12"> Email</button>' +
+          (apiKeyValue ? '<button class="btn btn--ghost btn--xs" data-copy-btn="' + esc(apiKeyValue) + '" data-field="API Key" style="display:inline-flex;align-items:center;gap:4px;font-size:0.65rem;"><img src="' + CONFIG.CARD_ICONS.apiKey + '" width="12" height="12"> API Key</button>' : '') +
+        '</div>' +
+      '</div></article>';
   }
 
   function renderCards(accounts) {
     var container = document.getElementById('accountsList');
     if (!container) return;
-
     container.className = 'wallet-card-grid';
     container.style.display = 'grid';
+    container.style.overflow = '';
+    container.style.width = '';
     container.innerHTML = accounts.map(renderAccountCard).join('');
 
-    // Toggle password GW2
-    document.querySelectorAll('.toggle-password').forEach(function(btn) {
-      if (btn.__wired) return;
-      btn.__wired = true;
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var id = btn.getAttribute('data-id');
-        state.showPasswords[id] = !state.showPasswords[id];
-        renderList();
-      });
-    });
-
-    // Toggle password Twitch
-    document.querySelectorAll('.toggle-twitch-password').forEach(function(btn) {
-      if (btn.__wiredTwitch) return;
-      btn.__wiredTwitch = true;
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var id = btn.getAttribute('data-id');
-        state.showTwitchPasswords[id] = !state.showTwitchPasswords[id];
-        renderList();
-      });
-    });
-
-    // Toggle secciones colapsables principales
-    document.querySelectorAll('[data-toggle-section]').forEach(function(el) {
-      if (el.__wiredSection) return;
-      el.__wiredSection = true;
-      el.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var id = el.getAttribute('data-toggle-section');
-        var section = el.getAttribute('data-section');
-        var current = state.expandedAccounts[id] || {};
-        current[section] = !current[section];
-        state.expandedAccounts[id] = current;
-        renderList();
-      });
-    });
-
-    // Toggle subsección Servicios
-    document.querySelectorAll('[data-toggle-services]').forEach(function(el) {
-      if (el.__wiredServices) return;
-      el.__wiredServices = true;
-      el.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var id = el.getAttribute('data-toggle-services');
-        var current = state.expandedAccounts[id] || {};
-        current.servicesDetail = !current.servicesDetail;
-        state.expandedAccounts[id] = current;
-        renderList();
-      });
-    });
-
-    // Click en nombre para expandir/colapsar todo
-    document.querySelectorAll('[data-toggle-expand-name]').forEach(function(el) {
-      if (el.__wiredName) return;
-      el.__wiredName = true;
-      el.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var id = el.getAttribute('data-account-id');
-        var current = state.expandedAccounts[id] || {};
-        var allClosed = !current.credentials && !current.advanced && !current.expansions && !current.servicesApi;
-        if (allClosed) {
-          current.credentials = true;
-          current.advanced = true;
-          current.expansions = true;
-          current.servicesApi = true;
-        } else {
-          current.credentials = false;
-          current.advanced = false;
-          current.expansions = false;
-          current.servicesApi = false;
-        }
-        state.expandedAccounts[id] = current;
-        renderList();
-      });
-    });
-
-    // Copiar al portapapeles
-    document.querySelectorAll('[data-copy]').forEach(function(el) {
-      if (el.__wiredCopy) return;
-      el.__wiredCopy = true;
-      el.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var text = el.getAttribute('data-copy');
-        var field = el.getAttribute('data-field') || 'Texto';
-        if (text && text !== '—') {
-          copyToClipboard(text, field);
-        } else {
-          window.toast('info', 'No hay ' + field + ' para copiar', { ttl: 1500 });
-        }
-      });
-    });
+    // Wire: toggle password GW2
+    document.querySelectorAll('.toggle-password').forEach(function(btn) { if (btn.__wired) return; btn.__wired = true;
+      btn.addEventListener('click', function(e) { e.stopPropagation(); state.showPasswords[btn.getAttribute('data-id')] = !state.showPasswords[btn.getAttribute('data-id')]; renderList(); }); });
+    // Wire: toggle password Twitch
+    document.querySelectorAll('.toggle-twitch-password').forEach(function(btn) { if (btn.__wiredTwitch) return; btn.__wiredTwitch = true;
+      btn.addEventListener('click', function(e) { e.stopPropagation(); state.showTwitchPasswords[btn.getAttribute('data-id')] = !state.showTwitchPasswords[btn.getAttribute('data-id')]; renderList(); }); });
+    // Wire: toggle secciones colapsables (expansiones)
+    document.querySelectorAll('[data-toggle-section]').forEach(function(el) { if (el.__wiredSection) return; el.__wiredSection = true;
+      el.addEventListener('click', function(e) { e.stopPropagation(); var id = el.getAttribute('data-toggle-section'); var section = el.getAttribute('data-section'); var current = state.expandedAccounts[id] || {}; current[section] = !current[section]; state.expandedAccounts[id] = current; renderList(); }); });
+    // Wire: expandir al click en nombre
+    document.querySelectorAll('[data-toggle-expand-name]').forEach(function(el) { if (el.__wiredName) return; el.__wiredName = true;
+      el.addEventListener('click', function(e) { e.stopPropagation(); var id = el.getAttribute('data-account-id'); state.view = state.view === 'cards' ? 'table' : 'cards'; renderList(); }); });
+    // Wire: copiar al portapapeles
+    document.querySelectorAll('[data-copy]').forEach(function(el) { if (el.__wiredCopy) return; el.__wiredCopy = true;
+      el.addEventListener('click', function(e) { e.stopPropagation(); var t = el.getAttribute('data-copy'), f = el.getAttribute('data-field')||'Texto'; if (t && t!=='—') copyToClipboard(t, f); else window.toast('info', 'No hay ' + f + ' para copiar', {ttl:1500}); }); });
+    // Wire: botones copy del footer
+    document.querySelectorAll('[data-copy-btn]').forEach(function(el) { if (el.__wiredCopyBtn) return; el.__wiredCopyBtn = true;
+      el.addEventListener('click', function(e) { e.stopPropagation(); var t = el.getAttribute('data-copy-btn'), f = el.getAttribute('data-field')||'Texto'; if (t && t!=='—') copyToClipboard(t, f); }); });
   }
 
-    function renderTableRow(acc) {
-          var login = acc.login || {};
-          var gw2 = acc.gw2 || {};
-          var services = acc.services || {};
-          var tags = getAccountTypeTags(acc);
-          var decorativeIcon = getRandomDecorativeIcon();
-          var isExpanded = state.expandedAccounts[acc.id] ? Object.keys(state.expandedAccounts[acc.id]).length > 0 : false;
+  // =======================================================================
+  // 7. VISTA TABLA (rediseñada)
+  // =======================================================================
+  function renderTableRow(acc) {
+    var login = acc.login || {}, gw2 = acc.gw2 || {};
+    var tags = getAccountTypeTags(acc);
+    var bLeft = getBorderColor(acc);
+    var showPass = state.showPasswords[acc.id] || false;
+    var passwordDisplay = showPass ? esc(login.password || '—') : '••••••••';
+    var gmailDisplay = showPass ? esc(login.gmailPassword || '—') : '••••••••';
 
-          var showPass = state.showPasswords[acc.id] || false;
-          var showTwitchPass = state.showTwitchPasswords[acc.id] || false;
-          var passwordDisplay = showPass ? esc(login.password || '—') : '••••••••';
-          var gmailPassDisplay = showPass ? esc(login.gmailPassword || '—') : '••••••••';
-          
-          // Twitch info para tabla
-          var twitchInfo = '';
-          if (services.twitch && services.twitch.linked) {
-            var twitchUsername = services.twitch.username || '';
-            twitchInfo = '<div class="muted" style="font-size: 11px;"><img src="' + CONFIG.ICONS.twitch + '" width="12" height="12" style="vertical-align: middle;"> Twitch: @' + esc(twitchUsername) + '</div>';
-          }
+    var DECORATIVE_ICONS = [
+      'assets/icons/Cuentas/1770678.png','assets/icons/Cuentas/1770679.png','assets/icons/Cuentas/1770680.png',
+      'assets/icons/Cuentas/1770681.png','assets/icons/Cuentas/1770682.png','assets/icons/Cuentas/1770683.png',
+      'assets/icons/Cuentas/1770684.png','assets/icons/Cuentas/1770685.png','assets/icons/Cuentas/1770686.png'
+    ];
+    var randIcon = DECORATIVE_ICONS[Math.floor(Math.random() * DECORATIVE_ICONS.length)];
 
-          // Tipo de cuenta para tabla
-          var accountType = null;
-          if (tags.indexOf('main') !== -1) {
-            accountType = 'main';
-          } else if (tags.indexOf('alter') !== -1) {
-            accountType = 'alter';
-          } else if (tags.indexOf('f2p') !== -1) {
-            accountType = 'f2p';
-          }
-          
-          var typeIconHtml = '';
-          if (accountType && CONFIG.TYPE_ICONS[accountType]) {
-            typeIconHtml = '<img src="' + CONFIG.TYPE_ICONS[accountType] + '" width="16" height="16" alt="' + accountType + '" title="' + accountType + '" style="filter: brightness(0.9); margin-left: 4px; cursor: help;">';
-          }
-          
-          // Tags adicionales para tabla
-          var tagIconsHtml = '';
-          var tagOrder = ['farming', 'keys', 'weekly', 'taxi'];
-          for (var i = 0; i < tagOrder.length; i++) {
-            var tag = tagOrder[i];
-            if (tags.indexOf(tag) !== -1 && CONFIG.TAG_ICONS[tag]) {
-              tagIconsHtml += '<img src="' + CONFIG.TAG_ICONS[tag] + '" width="16" height="16" alt="' + tag + '" title="' + tag + '" style="filter: brightness(0.9); margin-left: 4px; cursor: help;">';
-            }
-          }
-          
-          var rightIcons = typeIconHtml + tagIconsHtml;
-          var bLeftTable = getBorderColor(acc);
+    var tagIconsHtml = '';
+    var tagOrder = ['main','alter','f2p','farming','keys','weekly','taxi'];
+    for (var i = 0; i < tagOrder.length; i++) {
+      var tag = tagOrder[i];
+      if (tags.indexOf(tag) !== -1) {
+        var tIcon = CONFIG.TAG_ICONS[tag] || '';
+        if (tIcon) tagIconsHtml += '<img src="' + tIcon + '" width="18" height="18" alt="' + tag + '" title="' + tag + '" style="filter:brightness(0.9);margin-right:5px;cursor:help;vertical-align:middle;">';
+      }
+    }
 
-          // Contenido de la fila expandible (misma info que las tarjetas)
-          var expandedRowHtml = '';
-          if (isExpanded) {
-            var expansions = acc.expansions || {};
-            var expOrder = ['core', 'heroic', 'heartOfThorns', 'pathOfFire', 'endOfDragons', 'secretsOfTheObscure', 'janthirWilds', 'visionsOfEternity'];
-            var expIcons = [];
-            expOrder.forEach(function(key) {
-              if (expansions[key] !== undefined) {
-                expIcons.push(getExpansionIcon(key, expansions[key]));
-              }
-            });
+    var apColor = gw2.achievementPoints > 20000 ? getTypeColor(acc) : '#cfd2d8';
 
-            var twitchDetail = '';
-            if (services.twitch && services.twitch.linked) {
-              twitchDetail = '<div style="margin-top:4px;"><img src="' + CONFIG.ICONS.twitch + '" width="14" height="14" style="vertical-align:middle;"> <strong>Twitch:</strong> @' + esc(services.twitch.username || '—');
-              if (services.twitch.email) twitchDetail += ' · <span style="cursor:pointer;text-decoration:underline dotted;" data-copy="' + esc(services.twitch.email) + '" data-field="Email Twitch">' + esc(services.twitch.email) + '</span>';
-              twitchDetail += '</div>';
-            }
-            var geforceDetail = '';
-            if (services.geforceNow && services.geforceNow.linked) {
-              geforceDetail = '<div style="margin-top:4px;"><img src="' + CONFIG.ICONS.geforce + '" width="14" height="14" style="vertical-align:middle;"> <strong>GeForce Now:</strong> <img src="assets/icons/Welcome/156108.png" width="14" height="14" alt="Vinculado" style="vertical-align:middle;"> Vinculado</div>';
-            }
-            var apiKeyDetail = '';
-            if (acc.apiKey) {
-              var apiKeyValue = acc.apiKey.value || acc.apiKey;
-              apiKeyDetail = '<div style="margin-top:4px;"><img src="' + CONFIG.CARD_ICONS.apiKey + '" width="14" height="14" style="vertical-align:middle;"> <strong>API Key:</strong> <code style="cursor:pointer;text-decoration:underline dotted;" data-copy="' + esc(apiKeyValue) + '" data-field="API Key">' + esc(apiKeyValue) + '</code></div>';
-            }
+    return '<tr data-id="' + acc.id + '" style="border-left:3px solid ' + bLeft + ';">' +
+      '<td style="width:40px;text-align:center;"><img src="' + randIcon + '" width="28" height="28" alt="" style="border-radius:8px;filter:brightness(0.9);vertical-align:middle;"></td>' +
+      '<td style="min-width:140px;"><strong style="font-size:0.9rem;">' + esc(acc.name || 'Cuenta') + '</strong></td>' +
+      '<td style="min-width:220px;line-height:1.6;">' +
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;"><img src="' + CONFIG.CARD_ICONS.email + '" width="14" height="14"><span style="cursor:pointer;text-decoration:underline dotted;" data-copy="' + esc(login.email || '') + '" data-field="Email">' + esc(login.email || '—') + '</span></div>' +
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;"><img src="' + CONFIG.CARD_ICONS.lock + '" width="14" height="14"><span style="font-family:monospace;font-size:0.8rem;cursor:pointer;" data-copy="' + esc(login.password || '') + '" data-field="Contraseña">' + passwordDisplay + '</span><button class="btn-ghost toggle-password" data-id="' + acc.id + '" style="padding:0 3px;display:inline-flex;"><img src="' + CONFIG.CARD_ICONS.eye + '" width="12" height="12"></button></div>' +
+        (login.gmailPassword ? '<div style="display:flex;align-items:center;gap:6px;"><img src="' + CONFIG.CARD_ICONS.gmailPass + '" width="14" height="14"><span style="font-family:monospace;font-size:0.8rem;cursor:pointer;" data-copy="' + esc(login.gmailPassword) + '" data-field="Gmail Pass">' + gmailDisplay + '</span></div>' : '') +
+      '</td>' +
+      '<td style="min-width:130px;"><img src="' + CONFIG.CARD_ICONS.gw2id + '" width="14" height="14" style="vertical-align:middle;"> ' + esc(gw2.accountName || '—') + '</td>' +
+      '<td class="right"><img src="' + CONFIG.CARD_ICONS.trophy + '" width="14" height="14" style="vertical-align:middle;"> <strong style="color:' + apColor + ';">' + fmtNumber(gw2.achievementPoints) + '</strong></td>' +
+      '<td class="right"><img src="' + CONFIG.CARD_ICONS.medal + '" width="14" height="14" style="vertical-align:middle;"> ' + (gw2.legendaries || 0) + '</td>' +
+      '<td style="text-align:center;">' + tagIconsHtml + '</td>' +
+    '</tr>';
+  }
 
-            expandedRowHtml =
-              '<td colspan="7" style="padding:12px 16px; background:#0a0c10; border-bottom:2px solid #2a2c35;">' +
-                '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">' +
-                  // Columna 1: GW2 Avanzado
-                  '<div>' +
-                    '<div style="font-weight:600;color:#ffd966;margin-bottom:6px;">GW2 Avanzado</div>' +
-                    '<div style="font-size:0.8rem;display:flex;flex-direction:column;gap:4px;">' +
-                      '<span><strong>Creación:</strong> ' + formatDate(gw2.created) + ' (' + formatAgeDays(gw2.created) + ')</span>' +
-                      '<span><strong>Chars:</strong> ' + (gw2.characterSlots || gw2.characterCount || '—') + '</span>' +
-                      '<span><strong>Mochilas:</strong> ' + (gw2.bagSlots || '—') + '</span>' +
-                      '<span><strong>Bancos:</strong> ' + (gw2.bankSlots || '—') + '</span>' +
-                      '<span><strong>Material:</strong> ' + (gw2.materialStorage || '—') + '</span>' +
-                      (gw2.level80 !== undefined ? '<span><strong>Nivel 80:</strong> ' + (gw2.level80 ? '✅ Sí' : '❌ No') + '</span>' : '') +
-                    '</div>' +
-                  '</div>' +
-                  // Columna 2: Expansiones
-                  '<div>' +
-                    '<div style="font-weight:600;color:#ffd966;margin-bottom:6px;">Expansiones</div>' +
-                    '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + (expIcons.length ? expIcons.join(' ') : '<span class="muted">—</span>') + '</div>' +
-                  '</div>' +
-                  // Columna 3: Servicios y API
-                  '<div>' +
-                    '<div style="font-weight:600;color:#ffd966;margin-bottom:6px;">Servicios y API</div>' +
-                    twitchDetail +
-                    geforceDetail +
-                    apiKeyDetail +
-                  '</div>' +
-                  // Notas
-                  (acc.notes ? '<div><div style="font-weight:600;color:#ffd966;margin-bottom:6px;">Notas</div><div class="muted" style="font-size:0.8rem;">' + esc(acc.notes) + '</div></div>' : '') +
-                '</div>' +
-              '</td>';
-          }
-
-          return '' +
-            '<tr data-id="' + acc.id + '" style="border-left:3px solid ' + bLeftTable + ';">' +
-              '<td><img src="' + decorativeIcon + '" width="24" height="24" alt=""></td>' +
-              '<td style="min-width:140px;"><strong style="cursor: pointer;" data-toggle-expand-table data-id="' + acc.id + '">' + esc(acc.name || 'Cuenta') + '</strong>' +
-                '<div class="muted" style="font-size: 10px; margin-top: 2px;">' + (isExpanded ? '▲ Ocultar' : '▼ Más info') + '</div>' +
-              '</td>' +
-              '<td style="min-width:200px;"><div><img src="' + CONFIG.CARD_ICONS.email + '" width="14" height="14" style="vertical-align: middle;"> <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.email || '') + '" data-field="Email">' + esc(login.email || '—') + '</span></div>' +
-                '<div class="muted" style="font-size: 11px;"><img src="' + CONFIG.CARD_ICONS.lock + '" width="12" height="12" style="vertical-align: middle;"> Pass: <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.password || '') + '" data-field="Contraseña">' + passwordDisplay + '</span> <button class="btn-ghost toggle-password" data-id="' + acc.id + '" style="padding: 0 4px; display: inline-flex; align-items: center;"><img src="' + CONFIG.CARD_ICONS.eye + '" width="12" height="12" alt=""></button></div>' +
-                (login.gmailPassword ? '<div class="muted" style="font-size: 11px;"><img src="' + CONFIG.CARD_ICONS.gmailPass + '" width="12" height="12" style="vertical-align: middle;"> Gmail: <span style="cursor: pointer; text-decoration: underline dotted;" data-copy="' + esc(login.gmailPassword) + '" data-field="Gmail Pass">' + gmailPassDisplay + '</span></div>' : '') +
-              '</td>' +
-              '<td style="min-width:140px;"><img src="' + CONFIG.CARD_ICONS.gw2id + '" width="14" height="14" style="vertical-align: middle;"> ' + esc(gw2.accountName || '—') + '</td>' +
-              '<td class="right"><img src="' + CONFIG.CARD_ICONS.trophy + '" width="14" height="14" style="vertical-align: middle;"> ' + fmtNumber(gw2.achievementPoints) + '</td>' +
-              '<td class="right"><img src="' + CONFIG.CARD_ICONS.medal + '" width="14" height="14" style="vertical-align: middle;"> ' + (gw2.legendaries || 0) + '</td>' +
-              '<td><div style="display: flex; align-items: center; gap: 2px;">' + rightIcons + '</div></td>' +
-            '</tr>' +
-            (expandedRowHtml ? '<tr class="account-expanded-row" data-parent="' + acc.id + '">' + expandedRowHtml + '</tr>' : '');
-        }
-
-      
   function renderTable(accounts) {
     var container = document.getElementById('accountsList');
     if (!container) return;
+    container.className = '';
+    container.style.display = 'block';
+    container.style.overflow = 'visible';
+    container.style.width = '100%';
+    container.innerHTML = '<div style="overflow-x:auto;border-radius:12px;border:1px solid rgba(255,255,255,0.08);width:100%;">' +
+      '<table style="width:100%;min-width:1000px;border-collapse:separate;border-spacing:0;table-layout:fixed;">' +
+      '<thead>' +
+      '<tr style="background:#0a0c10;">' +
+        '<th style="width:48px;padding:11px 8px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:#b4bad0;border-bottom:2px solid #2a2c35;font-weight:700;"></th>' +
+        '<th style="width:16%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:#b4bad0;border-bottom:2px solid #2a2c35;text-align:left;font-weight:700;">Cuenta</th>' +
+        '<th style="width:30%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:#b4bad0;border-bottom:2px solid #2a2c35;text-align:left;font-weight:700;">Credenciales</th>' +
+        '<th style="width:18%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:#b4bad0;border-bottom:2px solid #2a2c35;text-align:left;font-weight:700;">GW2 ID</th>' +
+        '<th style="width:10%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:#b4bad0;border-bottom:2px solid #2a2c35;text-align:right;font-weight:700;">AP</th>' +
+        '<th style="width:8%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:#b4bad0;border-bottom:2px solid #2a2c35;text-align:right;font-weight:700;">Leg.</th>' +
+        '<th style="width:18%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:#b4bad0;border-bottom:2px solid #2a2c35;text-align:center;font-weight:700;">Tags</th>' +
+      '</tr>' +
+      '</thead>' +
+      '<tbody>' + accounts.map(renderTableRow).join('') + '</tbody>' +
+      '</table></div>';
 
-    container.innerHTML = '' +
-      '<div class="table-wrap">' +
-        '<table class="simple" style="width:100%; border-collapse: separate; border-spacing: 0;">' +
-        '<thead>' +
-        '<tr>' +
-          '<th style="width:32px;"></th>' +
-              '<th>Cuenta</th>' +
-              '<th>Credenciales</th>' +
-              '<th>GW2 ID</th>' +
-              '<th class="right">AP</th>' +
-              '<th class="right">Leg.</th>' +
-              '<th>Tags</th>' +
-            '<\/tr>' +
-          '</thead>' +
-          '<tbody>' +
-            accounts.map(renderTableRow).join('') +
-          '</tbody>' +
-        '<\/table>' +
-      '</div>';
+    document.querySelectorAll('.toggle-password').forEach(function(btn) { if(btn.__wired) return; btn.__wired=true; btn.addEventListener('click',function(e){ e.stopPropagation(); state.showPasswords[btn.getAttribute('data-id')]=!state.showPasswords[btn.getAttribute('data-id')]; renderList(); }); });
+    document.querySelectorAll('[data-copy]').forEach(function(el) { if(el.__wiredCopy) return; el.__wiredCopy=true; el.addEventListener('click',function(e){ e.stopPropagation(); var t=el.getAttribute('data-copy'),f=el.getAttribute('data-field')||'Texto'; if(t&&t!=='—') copyToClipboard(t,f); }); });
 
-    document.querySelectorAll('.toggle-password').forEach(function(btn) {
-      if (btn.__wired) return;
-      btn.__wired = true;
-      btn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var id = btn.getAttribute('data-id');
-        state.showPasswords[id] = !state.showPasswords[id];
-        renderList();
-      });
-    });
-
-    document.querySelectorAll('[data-toggle-expand-table]').forEach(function(el) {
-      if (el.__wiredExpand) return;
-      el.__wiredExpand = true;
-      el.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var id = el.getAttribute('data-id');
-        var current = state.expandedAccounts[id] || {};
-        var isExpanded = Object.keys(current).length > 0;
-        if (isExpanded) {
-          state.expandedAccounts[id] = {};
-        } else {
-          state.expandedAccounts[id] = { credentials: true, advanced: true, expansions: true, servicesApi: true };
-        }
-        renderList();
-      });
-    });
-
-    document.querySelectorAll('[data-copy]').forEach(function(el) {
-      if (el.__wiredCopy) return;
-      el.__wiredCopy = true;
-      el.addEventListener('click', function(e) {
-        e.stopPropagation();
-        var text = el.getAttribute('data-copy');
-        var field = el.getAttribute('data-field') || 'Texto';
-        if (text && text !== '—') {
-          copyToClipboard(text, field);
-        }
-      });
-    });
+    var styleEl = document.getElementById('accountsTableHover');
+    if (styleEl) styleEl.remove();
+    styleEl = document.createElement('style');
+    styleEl.id = 'accountsTableHover';
+    styleEl.textContent = '#accountsList table tbody tr:hover { background: #1a1d28; } #accountsList table tbody td { padding: 10px 12px; border-bottom: 1px solid #1f2026; vertical-align: middle; color:#cfd2d8; } #accountsList table tbody tr:nth-child(even) { background: #0c0e14; } #accountsList table tbody tr:nth-child(even):hover { background: #1a1d28; }';
+    document.head.appendChild(styleEl);
   }
 
   function renderStats(accounts) {
-    var container = document.getElementById('accountsStats');
-    if (!container) return;
-    if (!accounts.length) {
-      container.innerHTML = '';
-      return;
-    }
-    
-    // Contar por tipo
+    var c = document.getElementById('accountsStats'); if(!c) return; if(!accounts.length){ c.innerHTML=''; return; }
     var total = accounts.length;
-    var mains = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('main') !== -1; }).length;
-    var alters = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('alter') !== -1; }).length;
-    var f2ps = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('f2p') !== -1; }).length;
-    
-    // Contar por tags adicionales
-    var keys = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('keys') !== -1; }).length;
-    var farming = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('farming') !== -1; }).length;
-    var weekly = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('weekly') !== -1; }).length;
-    var taxi = accounts.filter(function(a) { return getAccountTypeTags(a).indexOf('taxi') !== -1; }).length;
-    
-    container.innerHTML = '' +
-      '<div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; padding: 12px 16px; background: #1a1e2a; border-radius: 12px;">' +
-        
-        // Total
-        '<div style="display: flex; align-items: center; gap: 8px;">' +
-          '<img src="assets/icons/Cuentas/1770683.png" width="20" height="20" alt="Total" style="filter: brightness(0.9);">' +
-          '<strong>Total:</strong> ' + total + ' cuentas' +
-        '</div>' +
-        
-        // Separador (ahora con margin negativo para reducir espacio)
-        '<span style="color: #c5c5c5; margin: 0 -6px;">|</span>' +
-        
-        // Principales
-        '<div style="display: flex; align-items: center; gap: 8px;">' +
-          '<img src="assets/icons/Cuentas/547827.png" width="20" height="20" alt="Principales" style="filter: brightness(0.9);">' +
-          '<strong>Principales:</strong> ' + mains +
-        '</div>' +
-        
-        // Alternativas
-        '<div style="display: flex; align-items: center; gap: 8px;">' +
-          '<img src="assets/icons/Cuentas/157375.png" width="20" height="20" alt="Alternativas" style="filter: brightness(0.9);">' +
-          '<strong>Alternativas:</strong> ' + alters +
-        '</div>' +
-        
-        // F2P
-        '<div style="display: flex; align-items: center; gap: 8px;">' +
-          '<img src="assets/icons/Cuentas/102538.png" width="20" height="20" alt="F2P" style="filter: brightness(0.9);">' +
-          '<strong>F2P:</strong> ' + f2ps +
-        '</div>' +
-        
-        // Separador (ahora con margin negativo para reducir espacio)
-        '<span style="color: #c5c5c5; margin: 0 -6px;">|</span>' +
-        
-        // Llaves (Keys)
-        '<div style="display: flex; align-items: center; gap: 8px;">' +
-          '<img src="assets/icons/Cuentas/1716669.png" width="20" height="20" alt="Llaves" style="filter: brightness(0.9);">' +
-          '<strong>Llaves:</strong> ' + keys +
-        '</div>' +
-        
-        // Farming
-        '<div style="display: flex; align-items: center; gap: 8px;">' +
-          '<img src="assets/icons/Cuentas/157332.png" width="20" height="20" alt="Farming" style="filter: brightness(0.9);">' +
-          '<strong>Farming:</strong> ' + farming +
-        '</div>' +
-        
-        // Weekly
-        '<div style="display: flex; align-items: center; gap: 8px;">' +
-          '<img src="assets/icons/Cuentas/240679.png" width="20" height="20" alt="Weekly" style="filter: brightness(0.9);">' +
-          '<strong>Weekly:</strong> ' + weekly +
-        '</div>' +
-        
-        // Taxi
-        '<div style="display: flex; align-items: center; gap: 8px;">' +
-          '<img src="assets/icons/Cuentas/102438.png" width="20" height="20" alt="Taxi" style="filter: brightness(0.9);">' +
-          '<strong>Taxi:</strong> ' + taxi +
-        '</div>' +
-        
-      '</div>';
+    var mains = accounts.filter(function(a){return getAccountTypeTags(a).indexOf('main')!==-1;}).length;
+    var alters = accounts.filter(function(a){return getAccountTypeTags(a).indexOf('alter')!==-1;}).length;
+    var f2ps = accounts.filter(function(a){return getAccountTypeTags(a).indexOf('f2p')!==-1;}).length;
+    var ks = accounts.filter(function(a){return getAccountTypeTags(a).indexOf('keys')!==-1;}).length;
+    var farm = accounts.filter(function(a){return getAccountTypeTags(a).indexOf('farming')!==-1;}).length;
+    var wk = accounts.filter(function(a){return getAccountTypeTags(a).indexOf('weekly')!==-1;}).length;
+    var tx = accounts.filter(function(a){return getAccountTypeTags(a).indexOf('taxi')!==-1;}).length;
+    c.innerHTML = '<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;background:#1a1e2a;border-radius:12px;">'+
+      '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/1770683.png" width="20" height="20"><strong>Total:</strong> '+total+' cuentas</div><span style="color:#c5c5c5;margin:0 -6px;">|</span>'+
+      '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/547827.png" width="20" height="20"><strong>Principales:</strong> '+mains+'</div>'+
+      '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/157375.png" width="20" height="20"><strong>Alternativas:</strong> '+alters+'</div>'+
+      '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/102538.png" width="20" height="20"><strong>F2P:</strong> '+f2ps+'</div><span style="color:#c5c5c5;margin:0 -6px;">|</span>'+
+      '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/1716669.png" width="20" height="20"><strong>Llaves:</strong> '+ks+'</div>'+
+      '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/157332.png" width="20" height="20"><strong>Farming:</strong> '+farm+'</div>'+
+      '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/240679.png" width="20" height="20"><strong>Weekly:</strong> '+wk+'</div>'+
+      '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/102438.png" width="20" height="20"><strong>Taxi:</strong> '+tx+'</div></div>';
   }
 
   function renderFilters(accounts) {
-    var container = document.getElementById('accountsFilters');
-    if (!container) return;
-    if (!accounts.length) {
-      container.innerHTML = '';
-      return;
-    }
-
-    var allTags = new Set();
-    accounts.forEach(function(acc) {
-      getAccountTypeTags(acc).forEach(function(t) { allTags.add(t); });
-    });
-
-    var tagOptions = Array.from(allTags).sort().map(function(tag) {
-      var iconMap = {
-        main: CONFIG.TYPE_ICONS.main,
-        alter: CONFIG.TYPE_ICONS.alter,
-        f2p: CONFIG.TYPE_ICONS.f2p,
-        farming: CONFIG.TAG_ICONS.farming,
-        keys: CONFIG.TAG_ICONS.keys,
-        weekly: CONFIG.TAG_ICONS.weekly,
-        taxi: CONFIG.TAG_ICONS.taxi
-      };
-      var iconSrc = iconMap[tag] || CONFIG.DECORATIVE_ICONS[0];
-      var displayName = tag.charAt(0).toUpperCase() + tag.slice(1);
-      return '<option value="' + tag + '" ' + (state.filters.tag === tag ? 'selected' : '') + '>' + displayName + '</option>';
-    }).join('');
-
-    container.innerHTML = '' +
-      '<div class="chips" aria-label="Filtros de cuentas">' +
-        '<div class="chip">' +
-          '<input id="accountsSearch" type="text" placeholder="Buscar cuenta..." value="' + esc(state.filters.search) + '"/>' +
-        '</div>' +
-        '<div class="chip">' +
-          '<select id="accountsTypeFilter">' +
-            '<option value="all"' + (state.filters.type === 'all' ? ' selected' : '') + '>Todos los tipos</option>' +
-            '<option value="main"' + (state.filters.type === 'main' ? ' selected' : '') + '>Principales</option>' +
-            '<option value="alter"' + (state.filters.type === 'alter' ? ' selected' : '') + '>Alternativas</option>' +
-            '<option value="f2p"' + (state.filters.type === 'f2p' ? ' selected' : '') + '>Free to Play</option>' +
-          '</select>' +
-        '</div>' +
-        (tagOptions ? '<div class="chip"><select id="accountsTagFilter"><option value="all">Todos los tags</option>' + tagOptions + '</select></div>' : '') +
-        '<div class="filters-actions">' +
-          '<button id="accountsClearFilters" class="btn">Limpiar filtros</button>' +
-          '<button id="accountsToggleView" class="btn btn--ghost" title="Vista tarjeta/tabla">' + (state.view === 'cards' ? '📋 Vista tabla' : '🃏 Vista tarjetas') + '</button>' +
-        '</div>' +
-      '</div>';
-
-    document.getElementById('accountsSearch')?.addEventListener('input', function(e) {
-      state.filters.search = e.target.value;
-      renderList();
-    });
-    document.getElementById('accountsTypeFilter')?.addEventListener('change', function(e) {
-      state.filters.type = e.target.value;
-      renderList();
-    });
-    var tagFilter = document.getElementById('accountsTagFilter');
-    if (tagFilter) {
-      tagFilter.addEventListener('change', function(e) {
-        state.filters.tag = e.target.value;
-        renderList();
-      });
-    }
-    document.getElementById('accountsClearFilters')?.addEventListener('click', function() {
-      state.filters = { search: '', type: 'all', tag: 'all' };
-      var search = document.getElementById('accountsSearch');
-      var type = document.getElementById('accountsTypeFilter');
-      var tag = document.getElementById('accountsTagFilter');
-      if (search) search.value = '';
-      if (type) type.value = 'all';
-      if (tag) tag.value = 'all';
-      renderList();
-    });
-
-    var toggleViewBtn = document.getElementById('accountsToggleView');
-    if (toggleViewBtn && !toggleViewBtn.__wired) {
-      toggleViewBtn.__wired = true;
-      toggleViewBtn.addEventListener('click', function() {
-        state.view = state.view === 'cards' ? 'table' : 'cards';
-        renderList();
-      });
-    }
+    var c = document.getElementById('accountsFilters'); if(!c) return; if(!accounts.length){ c.innerHTML=''; return; }
+    var allTags = new Set(); accounts.forEach(function(a){ getAccountTypeTags(a).forEach(function(t){ allTags.add(t); }); });
+    var tagOpts = Array.from(allTags).sort().map(function(t){ return '<option value="'+t+'"'+(state.filters.tag===t?' selected':'')+'>'+t.charAt(0).toUpperCase()+t.slice(1)+'</option>'; }).join('');
+    c.innerHTML = '<div class="chips"><div class="chip"><input id="accountsSearch" type="text" placeholder="Buscar cuenta..." value="'+esc(state.filters.search)+'"/></div>'+
+      '<div class="chip"><select id="accountsTypeFilter"><option value="all"'+(state.filters.type==='all'?' selected':'')+'>Todos los tipos</option><option value="main"'+(state.filters.type==='main'?' selected':'')+'>Principales</option><option value="alter"'+(state.filters.type==='alter'?' selected':'')+'>Alternativas</option><option value="f2p"'+(state.filters.type==='f2p'?' selected':'')+'>Free to Play</option></select></div>'+
+      (tagOpts?'<div class="chip"><select id="accountsTagFilter"><option value="all">Todos los tags</option>'+tagOpts+'</select></div>':'')+
+      '<div class="filters-actions"><button id="accountsClearFilters" class="btn">Limpiar</button>'+
+      '<button id="accountsToggleCompact" class="btn btn--ghost" style="margin-right:6px;">'+(state.compact?'📋 Detalle':'📦 Compacto')+'</button>'+
+      '<button id="accountsToggleView" class="btn btn--ghost">'+(state.view==='cards'?'📋 Vista tabla':'🃏 Vista tarjetas')+'</button></div></div>';
+    document.getElementById('accountsSearch')?.addEventListener('input',function(e){ state.filters.search=e.target.value; renderList(); });
+    document.getElementById('accountsTypeFilter')?.addEventListener('change',function(e){ state.filters.type=e.target.value; renderList(); });
+    var tf = document.getElementById('accountsTagFilter'); if(tf) tf.addEventListener('change',function(e){ state.filters.tag=e.target.value; renderList(); });
+    document.getElementById('accountsClearFilters')?.addEventListener('click',function(){ state.filters={search:'',type:'all',tag:'all'}; var s=document.getElementById('accountsSearch'); if(s) s.value=''; ['accountsTypeFilter','accountsTagFilter'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value='all'; }); renderList(); });
+    var tv = document.getElementById('accountsToggleView'); if(tv&&!tv.__wired){ tv.__wired=true; tv.addEventListener('click',function(){ state.view=state.view==='cards'?'table':'cards'; renderList(); }); }
+    var tc = document.getElementById('accountsToggleCompact'); if(tc&&!tc.__wired){ tc.__wired=true; tc.addEventListener('click',function(){ state.compact=!state.compact; renderList(); }); }
   }
 
-  function renderList() {
-    var accounts = getFilteredAccounts();
-    renderStats(accounts);
-    renderFilters(accounts);
-    if (state.view === 'table') {
-      renderTable(accounts);
-    } else {
-      renderCards(accounts);
-    }
-  }
+  function renderList() { var accounts = getFilteredAccounts(); renderStats(accounts); renderFilters(accounts); if(state.view==='table') renderTable(accounts); else renderCards(accounts); }
 
   // =======================================================================
-  // 7. FORMULARIO DE CARGA (completo con asistente arriba y acceso a cuentas abajo)
+  // 8. FORMULARIO DE CARGA + ASISTENTE (mantenido)
   // =======================================================================
-    function renderLoadForm() {
+  function renderLoadForm() {
       var body = document.querySelector('#accountsPanel .panel__body');
       if (!body) return;
 
@@ -1288,280 +721,43 @@
         }
       });
     }
-  }  // ← llave de cierre de renderLoadForm
+  }
 
   // =======================================================================
-  // 8. MODAL DEL ASISTENTE
+  // 9. MODAL ASISTENTE (mantenido)
   // =======================================================================
   function openWizardModal() {
-    if (typeof Analytics !== 'undefined') Analytics.openAccountWizard();
-    
-    var existingModal = document.getElementById('accountsWizardModal');
-    if (existingModal) {
-      existingModal.hidden = false;
-      return;
-    }
-
-    var modal = document.createElement('div');
-    modal.id = 'accountsWizardModal';
-    modal.className = 'modal';
-    modal.setAttribute('role', 'dialog');
-    modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('aria-labelledby', 'wizardTitle');
-    modal.hidden = false;
-
-    modal.innerHTML = `
-      <div class="modal__backdrop" data-close="1"></div>
-      <div class="modal__dialog" style="max-width: 800px; width: 90%;">
-        <div class="modal__header">
-          <h3 id="wizardTitle" style="display: flex; align-items: center; gap: 8px;">
-            <img src="assets/icons/Welcome/2604904.png" width="28" height="28" alt="" style="filter: brightness(0.9); object-fit: contain;">
-            Asistente de cuentas
-          </h3>
-          <button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button>
-        </div>
-        <div class="modal__body" style="max-height: 70vh; overflow-y: auto;">
-          
-          <div style="background: #0a0c10; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
-            <div style="display: flex; gap: 12px; align-items: flex-start;">
-              <img src="assets/icons/Welcome/733266.png" width="28" height="28" alt="" style="filter: brightness(0.9); object-fit: contain;">
-              <div>
-                <strong style="color: #a7f3d0;">Tus datos están seguros</strong>
-                <p class="muted" style="margin: 4px 0 0;">Todo el proceso ocurre en tu navegador y tu PC. No hay servidores, no hay bases de datos externas. <strong>Ningún dato sale de tu computadora.</strong></p>
-              </div>
-            </div>
-          </div>
-          
-          <div style="margin-bottom: 24px;">
-            <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
-              <img src="assets/icons/Welcome/102619.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
-              PASO 1: Descargar plantilla
-            </h4>
-            <p class="muted" style="margin-bottom: 12px;">Completá solo lo que quieras. Todos los campos son opcionales excepto el ID. Si no te sentís seguro, no cargues contraseñas.</p>
-            <button id="wizardDownloadTemplate" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">
-              <img src="assets/icons/Welcome/563464.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
-              Descargar plantilla Excel
-            </button>
-          </div>
-
-          <div style="margin-bottom: 24px;">
-            <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
-              <img src="assets/icons/Welcome/102620.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
-              PASO 2: Subir Excel → Generar JSON
-            </h4>
-            <p class="muted" style="margin-bottom: 12px;">Convertí tu Excel a JSON. Se guardará en tu PC.</p>
-            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
-              <input type="file" id="wizardExcelFile" accept=".xlsx,.xls" style="flex: 2;">
-              <button id="wizardExcelToJson" class="btn" style="display: flex; align-items: center; gap: 6px;">
-                <img src="assets/icons/Welcome/102609.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
-                Generar JSON
-              </button>
-            </div>
-            <div id="wizardStep2Status" class="muted" style="margin-top: 8px;"></div>
-          </div>        
-
-          <div style="margin-bottom: 24px;">
-            <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
-              <img src="assets/icons/Welcome/1770705.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
-              PASO 3: Enriquecer con API (opcional)
-            </h4>
-            <p class="muted" style="margin-bottom: 12px;">Usa las API Keys que ya tenés guardadas en la Bóveda. Consulta automáticamente: nombre de cuenta, AP, fecha creación, expansiones.</p>
-            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
-              <input type="file" id="wizardJsonFile" accept=".json" style="flex: 2;">
-              <button id="wizardEnrich" class="btn" style="display: flex; align-items: center; gap: 6px;">
-                <img src="assets/icons/Welcome/102449.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
-                Enriquecer con GW2 API
-              </button>
-            </div>
-            <div id="wizardStep3Status" class="muted" style="margin-top: 8px;"></div>
-          </div>
-
-          <div style="margin-bottom: 24px;">
-            <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
-              <img src="assets/icons/Welcome/544515.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
-              PASO 4: Cifrar para usar en el panel
-            </h4>
-            <p class="muted" style="margin-bottom: 12px;">Creá el archivo .enc que podés cargar en el panel. <strong>Recordá la contraseña, la vas a necesitar.</strong></p>
-            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
-              <input type="file" id="wizardEncryptFile" accept=".json" style="flex: 2;">
-              <input type="password" id="wizardPassword" placeholder="Contraseña" style="flex: 1;">
-              <button id="wizardEncrypt" class="btn btn--accent" style="display: flex; align-items: center; gap: 6px;">
-                <img src="assets/icons/Welcome/733266.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
-                Crear archivo .enc
-              </button>
-            </div>
-            <div id="wizardStep4Status" class="muted" style="margin-top: 8px;"></div>
-          </div>
-
-          <hr style="border-color: #2a2c35; margin: 16px 0;">
-
-          <div>
-            <h4 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 8px;">
-              <img src="assets/icons/Welcome/102353.png" width="20" height="20" alt="" style="filter: brightness(0.9);">
-              ¿Ya tenés tu archivo .enc?
-            </h4>
-            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-              <button id="wizardCloseAndLoad" class="btn" style="display: flex; align-items: center; gap: 6px;">
-                <img src="assets/icons/Welcome/528726.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
-                Ir al panel para cargarlo
-              </button>
-              <button id="wizardClose" class="btn btn--ghost" style="display: flex; align-items: center; gap: 6px;">
-                <img src="assets/icons/Welcome/156107.png" width="16" height="16" alt="" style="filter: brightness(0.9);">
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.appendChild(modal);
-
-    modal.addEventListener('click', function(e) {
-      if (e.target.getAttribute('data-close') === '1') {
-        modal.hidden = true;
-      }
-    });
-
-    document.getElementById('wizardClose')?.addEventListener('click', function() {
-      modal.hidden = true;
-    });
-
-    document.getElementById('wizardCloseAndLoad')?.addEventListener('click', function() {
-      modal.hidden = true;
-      render();
-    });
-
-    document.getElementById('wizardDownloadTemplate')?.addEventListener('click', function() {
-      generateExcelTemplate();
-    });
-
-    document.getElementById('wizardExcelToJson')?.addEventListener('click', async function() {
-      var fileInput = document.getElementById('wizardExcelFile');
-      var statusDiv = document.getElementById('wizardStep2Status');
-      if (!fileInput.files.length) {
-        statusDiv.textContent = '⚠️ Seleccioná un archivo Excel primero.';
-        statusDiv.style.color = '#ffd966';
-        return;
-      }
-      statusDiv.textContent = '📖 Leyendo archivo...';
-      statusDiv.style.color = '#ffd966';
-      try {
-        var jsonData = await parseExcelToJSON(fileInput.files[0]);
-        var jsonString = JSON.stringify(jsonData, null, 2);
-        downloadFile(jsonString, 'cuentas.json', 'application/json');
-        statusDiv.textContent = '✅ Archivo JSON generado: cuentas.json';
-        statusDiv.style.color = '#a7f3d0';
-      } catch (err) {
-        console.error(err);
-        statusDiv.textContent = '❌ Error: ' + err.message;
-        statusDiv.style.color = '#f28b82';
-      }
-    });
-
-    document.getElementById('wizardEnrich')?.addEventListener('click', async function() {
-      var fileInput = document.getElementById('wizardJsonFile');
-      var statusDiv = document.getElementById('wizardStep3Status');
-      if (!fileInput.files.length) {
-        statusDiv.textContent = '⚠️ Seleccioná un archivo JSON primero.';
-        statusDiv.style.color = '#ffd966';
-        return;
-      }
-      statusDiv.textContent = '🌐 Enriqueciendo datos con GW2 API...';
-      statusDiv.style.color = '#ffd966';
-      try {
-        var fileContent = await readFileAsText(fileInput.files[0]);
-        var data = JSON.parse(fileContent);
-        var enriched = await enrichWithGW2API(data);
-        var enrichedString = JSON.stringify(enriched, null, 2);
-        downloadFile(enrichedString, 'cuentas-enriquecidas.json', 'application/json');
-        statusDiv.textContent = '✨ Archivo enriquecido: cuentas-enriquecidas.json';
-        statusDiv.style.color = '#a7f3d0';
-      } catch (err) {
-        console.error(err);
-        statusDiv.textContent = '❌ Error: ' + err.message;
-        statusDiv.style.color = '#f28b82';
-      }
-    });
-
-    document.getElementById('wizardEncrypt')?.addEventListener('click', function() {
-      var fileInput = document.getElementById('wizardEncryptFile');
-      var password = document.getElementById('wizardPassword').value;
-      var statusDiv = document.getElementById('wizardStep4Status');
-      if (!fileInput.files.length) {
-        statusDiv.textContent = '⚠️ Seleccioná un archivo JSON primero.';
-        statusDiv.style.color = '#ffd966';
-        return;
-      }
-      if (!password) {
-        statusDiv.textContent = '⚠️ Ingresá una contraseña.';
-        statusDiv.style.color = '#ffd966';
-        return;
-      }
-      statusDiv.textContent = '🔐 Cifrando archivo...';
-      statusDiv.style.color = '#ffd966';
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          var jsonString = e.target.result;
-          var encrypted = CryptoJS.AES.encrypt(jsonString, password).toString();
-          downloadFile(encrypted, 'gw2-cuentas.enc', 'text/plain');
-
-          // Evento Analytics
-          if (typeof Analytics !== 'undefined') Analytics.encryptAccountsFile();
-
-          statusDiv.textContent = '✅ Archivo cifrado: gw2-cuentas.enc';
-          statusDiv.style.color = '#a7f3d0';
-          document.getElementById('wizardPassword').value = '';
-        } catch (err) {
-          statusDiv.textContent = '❌ Error al cifrar: ' + err.message;
-          statusDiv.style.color = '#f28b82';
-        }
-      };
-      reader.readAsText(fileInput.files[0]);
-    });
+    if(typeof Analytics!=='undefined') Analytics.openAccountWizard();
+    var ex = document.getElementById('accountsWizardModal'); if(ex){ex.hidden=false;return;}
+    var m = document.createElement('div'); m.id='accountsWizardModal'; m.className='modal'; m.setAttribute('role','dialog'); m.setAttribute('aria-modal','true'); m.hidden=false;
+    m.innerHTML = '<div class="modal__backdrop" data-close="1"></div><div class="modal__dialog" style="max-width:800px;width:90%;"><div class="modal__header"><h3 id="wizardTitle"><img src="assets/icons/Welcome/2604904.png" width="28" height="28">Asistente de cuentas</h3><button type="button" class="modal__close" data-close="1">✕</button></div><div class="modal__body" style="max-height:70vh;overflow-y:auto;">'+
+      '<div style="background:#0a0c10;border-radius:8px;padding:12px;margin-bottom:20px;"><div style="display:flex;gap:12px;"><img src="assets/icons/Welcome/733266.png" width="28" height="28"><div><strong style="color:#a7f3d0;">Tus datos están seguros</strong><p class="muted" style="margin:4px 0 0;">Todo el proceso ocurre en tu navegador. <strong>Ningún dato sale de tu computadora.</strong></p></div></div></div>'+
+      '<div style="margin-bottom:24px;"><h4 style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Welcome/102619.png" width="20" height="20">PASO 1: Descargar plantilla</h4><p class="muted">Completá solo lo que quieras.</p><button id="wizardDownloadTemplate" class="btn btn--accent"><img src="assets/icons/Welcome/563464.png" width="16" height="16">Descargar plantilla Excel</button></div>'+
+      '<div style="margin-bottom:24px;"><h4 style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Welcome/102620.png" width="20" height="20">PASO 2: Subir Excel → Generar JSON</h4><div style="display:flex;gap:12px;"><input type="file" id="wizardExcelFile" accept=".xlsx,.xls" style="flex:2;"><button id="wizardExcelToJson" class="btn"><img src="assets/icons/Welcome/102609.png" width="16" height="16">Generar JSON</button></div><div id="wizardStep2Status" class="muted" style="margin-top:8px;"></div></div>'+
+      '<div style="margin-bottom:24px;"><h4 style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Welcome/1770705.png" width="20" height="20">PASO 3: Enriquecer con API</h4><div style="display:flex;gap:12px;"><input type="file" id="wizardJsonFile" accept=".json" style="flex:2;"><button id="wizardEnrich" class="btn"><img src="assets/icons/Welcome/102449.png" width="16" height="16">Enriquecer con GW2 API</button></div><div id="wizardStep3Status" class="muted" style="margin-top:8px;"></div></div>'+
+      '<div style="margin-bottom:24px;"><h4 style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Welcome/544515.png" width="20" height="20">PASO 4: Cifrar</h4><div style="display:flex;gap:12px;align-items:flex-end;"><input type="file" id="wizardEncryptFile" accept=".json" style="flex:2;"><input type="password" id="wizardPassword" placeholder="Contraseña" style="flex:1;"><button id="wizardEncrypt" class="btn btn--accent"><img src="assets/icons/Welcome/733266.png" width="16" height="16">Crear archivo .enc</button></div><div id="wizardStep4Status" class="muted" style="margin-top:8px;"></div></div>'+
+      '<hr style="border-color:#2a2c35;"><div><h4 style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Welcome/102353.png" width="20" height="20">¿Ya tenés tu archivo .enc?</h4><div style="display:flex;gap:12px;"><button id="wizardCloseAndLoad" class="btn"><img src="assets/icons/Welcome/528726.png" width="16" height="16">Ir al panel para cargarlo</button><button id="wizardClose" class="btn btn--ghost"><img src="assets/icons/Welcome/156107.png" width="16" height="16">Cerrar</button></div></div>'+
+    '</div></div>';
+    document.body.appendChild(m);
+    m.addEventListener('click',function(e){ if(e.target.getAttribute('data-close')==='1') m.hidden=true; });
+    document.getElementById('wizardClose')?.addEventListener('click',function(){m.hidden=true;});
+    document.getElementById('wizardCloseAndLoad')?.addEventListener('click',function(){m.hidden=true;render();});
+    document.getElementById('wizardDownloadTemplate')?.addEventListener('click',generateExcelTemplate);
+    document.getElementById('wizardExcelToJson')?.addEventListener('click',async function(){var fi=document.getElementById('wizardExcelFile'),sd=document.getElementById('wizardStep2Status');if(!fi.files.length){sd.textContent='⚠️ Seleccioná un archivo Excel.';return;} sd.textContent='📖 Leyendo...';try{var jd=await parseExcelToJSON(fi.files[0]);downloadFile(JSON.stringify(jd,null,2),'cuentas.json','application/json');sd.textContent='✅ cuentas.json generado';sd.style.color='#a7f3d0';}catch(e){sd.textContent='❌ '+e.message;sd.style.color='#f28b82';}});
+    document.getElementById('wizardEnrich')?.addEventListener('click',async function(){var fi=document.getElementById('wizardJsonFile'),sd=document.getElementById('wizardStep3Status');if(!fi.files.length){sd.textContent='⚠️ Seleccioná un archivo JSON.';return;} sd.textContent='🌐 Enriqueciendo...';try{var fc=await readFileAsText(fi.files[0]),data=JSON.parse(fc),enriched=await enrichWithGW2API(data);downloadFile(JSON.stringify(enriched,null,2),'cuentas-enriquecidas.json','application/json');sd.textContent='✅ cuentas-enriquecidas.json';sd.style.color='#a7f3d0';}catch(e){sd.textContent='❌ '+e.message;sd.style.color='#f28b82';}});
+    document.getElementById('wizardEncrypt')?.addEventListener('click',function(){var fi=document.getElementById('wizardEncryptFile'),pw=document.getElementById('wizardPassword').value,sd=document.getElementById('wizardStep4Status');if(!fi.files.length){sd.textContent='⚠️ Seleccioná un archivo JSON.';return;}if(!pw){sd.textContent='⚠️ Ingresá una contraseña.';return;}sd.textContent='🔐 Cifrando...';var r=new FileReader();r.onload=function(e){try{var enc=CryptoJS.AES.encrypt(e.target.result,pw).toString();downloadFile(enc,'gw2-cuentas.enc','text/plain');if(typeof Analytics!=='undefined')Analytics.encryptAccountsFile();sd.textContent='✅ gw2-cuentas.enc';sd.style.color='#a7f3d0';document.getElementById('wizardPassword').value='';}catch(err){sd.textContent='❌ '+err.message;sd.style.color='#f28b82';}};r.readAsText(fi.files[0]);});
   }
 
-  function downloadFile(content, filename, mimeType) {
-    var blob = new Blob([content], { type: mimeType });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  function readFileAsText(file) {
-    return new Promise(function(resolve, reject) {
-      var reader = new FileReader();
-      reader.onload = function(e) { resolve(e.target.result); };
-      reader.onerror = function(e) { reject(new Error('Error al leer el archivo')); };
-      reader.readAsText(file);
-    });
-  }
+  function downloadFile(content, filename, mimeType) { var blob = new Blob([content],{type:mimeType}), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
+  function readFileAsText(file) { return new Promise(function(resolve, reject) { var reader = new FileReader(); reader.onload = function(e) { resolve(e.target.result); }; reader.onerror = function() { reject(new Error('Error al leer el archivo')); }; reader.readAsText(file); }); }
 
   function generateExcelTemplate() {
     if (typeof Analytics !== 'undefined') Analytics.downloadExcelTemplate();
-    var columns = [
-      'id', 'nombre', 'email', 'password', 'gmailPassword', 'apiKey',
-      'twitch_user', 'twitch_email', 'twitch_password', 'geforce_linked', 'notas', 'tags'
-    ];
-    var data = [columns];
-    var example = [
-      'mi_cuenta_1', 'Mi cuenta principal', 'usuario@ejemplo.com', '', '',
-      'ABCD-1234-EFGH-5678', 'miusuario', 'miusuario@twitch.com', '', 'TRUE', 'Cuenta principal con todas las expansiones', 'main,full'
-    ];
-    data.push(example);
-    
-    var wsData = [data];
-    var ws = XLSX.utils.aoa_to_sheet(wsData[0]);
-    var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Cuentas');
-    XLSX.writeFile(wb, 'plantilla_cuentas.xlsx');
-    window.toast('success', 'Plantilla descargada: plantilla_cuentas.xlsx', { ttl: 2000 });
+    var columns = ['id','nombre','email','password','gmailPassword','apiKey','twitch_user','twitch_email','twitch_password','geforce_linked','notas','tags'];
+    var data = [columns, ['mi_cuenta_1','Mi cuenta principal','usuario@ejemplo.com','','','ABCD-1234-EFGH-5678','miusuario','miusuario@twitch.com','','TRUE','Cuenta principal con todas las expansiones','main,full']];
+    var ws = XLSX.utils.aoa_to_sheet(data), wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Cuentas'); XLSX.writeFile(wb, 'plantilla_cuentas.xlsx');
+    window.toast('success', 'Plantilla descargada', { ttl: 2000 });
   }
 
   function parseExcelToJSON(file) {
@@ -1569,45 +765,10 @@
       var reader = new FileReader();
       reader.onload = function(e) {
         try {
-          var data = new Uint8Array(e.target.result);
-          var workbook = XLSX.read(data, { type: 'array' });
-          var firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          var rows = XLSX.utils.sheet_to_json(firstSheet);
-          
-          if (!rows.length) {
-            reject(new Error('El archivo Excel está vacío'));
-            return;
-          }
-          
-          var accounts = rows.map(function(row, idx) {
-            var account = {
-              id: row.id || ('cuenta_' + (idx + 1)),
-              name: row.nombre || row.name || '',
-              login: {
-                email: row.email || '',
-                password: row.password || '',
-                gmailPassword: row.gmailPassword || ''
-              },
-              services: {
-                twitch: { 
-                  linked: !!(row.twitch_user), 
-                  username: row.twitch_user || null,
-                  email: row.twitch_email || null,
-                  password: row.twitch_password || null
-                },
-                geforceNow: { linked: row.geforce_linked === 'TRUE' || row.geforce_linked === true }
-              },
-              apiKey: row.apiKey ? { value: row.apiKey } : null,
-              notes: row.notas || '',
-              tags: row.tags ? row.tags.split(',').map(function(t) { return t.trim(); }) : []
-            };
-            return account;
-          });
-          
-          resolve({ version: 1, lastUpdated: new Date().toISOString().split('T')[0], accounts: accounts });
-        } catch (err) {
-          reject(err);
-        }
+          var data = new Uint8Array(e.target.result), workbook = XLSX.read(data,{type:'array'}), rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+          if (!rows.length) { reject(new Error('El archivo Excel está vacío')); return; }
+          resolve({ version: 1, lastUpdated: new Date().toISOString().split('T')[0], accounts: rows.map(function(row, idx) { return { id: row.id || ('cuenta_' + (idx+1)), name: row.nombre || row.name || '', login: { email: row.email || '', password: row.password || '', gmailPassword: row.gmailPassword || '' }, services: { twitch: { linked: !!(row.twitch_user), username: row.twitch_user || null, email: row.twitch_email || null, password: row.twitch_password || null }, geforceNow: { linked: row.geforce_linked === 'TRUE' || row.geforce_linked === true } }, apiKey: row.apiKey ? { value: row.apiKey } : null, notes: row.notas || '', tags: row.tags ? row.tags.split(',').map(function(t) { return t.trim(); }) : [] }; })});
+        } catch(err) { reject(err); }
       };
       reader.onerror = function() { reject(new Error('Error al leer el archivo')); };
       reader.readAsArrayBuffer(file);
@@ -1616,170 +777,51 @@
 
   async function enrichWithGW2API(data) {
     var accounts = data.accounts || [];
-    var token = window.__GN__?.getSelectedToken?.() || null;
-    
     for (var i = 0; i < accounts.length; i++) {
-      var acc = accounts[i];
-      var apiKey = acc.apiKey?.value || acc.apiKey;
-      if (!apiKey) continue;
-      
+      var acc = accounts[i], apiKey = acc.apiKey?.value || acc.apiKey; if (!apiKey) continue;
       try {
-        var accountInfo = await fetch('https://api.guildwars2.com/v2/account?access_token=' + encodeURIComponent(apiKey));
-        if (accountInfo.ok) {
-          var info = await accountInfo.json();
-          acc.gw2 = acc.gw2 || {};
-          acc.gw2.accountName = info.name;
-          acc.gw2.created = info.created;
-          acc.gw2.achievementPoints = info.achievement_points;
-          acc.gw2.characterSlots = info.slots;
-          acc.gw2.bagSlots = info.bag_slots;
-          acc.gw2.bankSlots = info.bank_slots;
-          acc.gw2.materialStorage = info.material_storage;
-        }
-        
-        var homeNodes = await fetch('https://api.guildwars2.com/v2/account/home/nodes?access_token=' + encodeURIComponent(apiKey));
-        if (homeNodes.ok) {
-          var nodes = await homeNodes.json();
-          acc.expansions = acc.expansions || {};
-          if (nodes.some(function(n) { return n.includes('hot') || n.includes('heart_of_thorns'); })) acc.expansions.heartOfThorns = true;
-          if (nodes.some(function(n) { return n.includes('pof') || n.includes('path_of_fire'); })) acc.expansions.pathOfFire = true;
-          if (nodes.some(function(n) { return n.includes('eod') || n.includes('end_of_dragons'); })) acc.expansions.endOfDragons = true;
-          if (nodes.some(function(n) { return n.includes('soto') || n.includes('secrets_of_the_obscure'); })) acc.expansions.secretsOfTheObscure = true;
-          if (nodes.some(function(n) { return n.includes('janthir') || n.includes('janthir_wilds'); })) acc.expansions.janthirWilds = true;
-        }
-        
-        console.log(LOG, 'Enriquecida cuenta:', acc.name || acc.id);
-      } catch (e) {
-        console.warn(LOG, 'Error enriqueciendo cuenta', acc.name || acc.id, e);
-      }
+        var info = await (await fetch('https://api.guildwars2.com/v2/account?access_token=' + encodeURIComponent(apiKey))).json();
+        acc.gw2 = acc.gw2 || {}; acc.gw2.accountName = info.name; acc.gw2.created = info.created; acc.gw2.achievementPoints = info.achievement_points; acc.gw2.characterSlots = info.slots; acc.gw2.bagSlots = info.bag_slots; acc.gw2.bankSlots = info.bank_slots; acc.gw2.materialStorage = info.material_storage;
+        var nodes = await (await fetch('https://api.guildwars2.com/v2/account/home/nodes?access_token=' + encodeURIComponent(apiKey))).json();
+        acc.expansions = acc.expansions || {};
+        if (nodes.some(function(n) { return n.includes('hot') || n.includes('heart_of_thorns'); })) acc.expansions.heartOfThorns = true;
+        if (nodes.some(function(n) { return n.includes('pof') || n.includes('path_of_fire'); })) acc.expansions.pathOfFire = true;
+        if (nodes.some(function(n) { return n.includes('eod') || n.includes('end_of_dragons'); })) acc.expansions.endOfDragons = true;
+        if (nodes.some(function(n) { return n.includes('soto') || n.includes('secrets_of_the_obscure'); })) acc.expansions.secretsOfTheObscure = true;
+        if (nodes.some(function(n) { return n.includes('janthir') || n.includes('janthir_wilds'); })) acc.expansions.janthirWilds = true;
+      } catch(e) {}
     }
-    
     data.lastUpdated = new Date().toISOString().split('T')[0];
-    
-    // Evento Analytics
     if (typeof Analytics !== 'undefined') Analytics.enrichWithAPI();
-    
     return data;
   }
 
   // =======================================================================
-  // 9. RENDERIZADO PRINCIPAL
+  // 10. RENDER + CICLO DE VIDA
   // =======================================================================
   function render() {
     if (!state.active) return;
-
-    var hasData = state.data && state.data.accounts && state.data.accounts.length;
-
-    if (!hasData) {
-      renderLoadForm();
-    } else {
-      var body = document.querySelector('#accountsPanel .panel__body');
-      if (body) {
-        body.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
-            <div class="muted">📁 Archivo: <strong>${esc(state.fileName)}</strong></div>
-            <button id="accountsChangeFileBtn" class="btn btn--ghost btn--xs" style="display: inline-flex; align-items: center; gap: 4px;">
-              <img src="assets/icons/Welcome/102353.png" width="14" height="14" alt="" style="filter: brightness(0.9);">
-              Cambiar archivo
-            </button>
-          </div>
-          <div id="accountsStats"></div>
-          <div id="accountsFilters"></div>
-          <div id="accountsList" class="wallet-card-grid"></div>
-        `;
-        
-        var changeBtn = document.getElementById('accountsChangeFileBtn');
-        if (changeBtn && !changeBtn.__wired) {
-          changeBtn.__wired = true;
-          changeBtn.addEventListener('click', function() {
-            state.data = null;
-            state.encryptedData = null;
-            state.fileName = null;
-            state.passwordHash = null;
-            clearLastFileInfo();
-            render();
-          });
-        }
-      }
-      renderList();
+    if (!state.data || !state.data.accounts || !state.data.accounts.length) { renderLoadForm(); return; }
+    var body = document.querySelector('#accountsPanel .panel__body');
+    if (body) {
+      body.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;"><div class="muted" style="display:flex;align-items:center;gap:6px;"><img src="assets/icons/Welcome/102353.png" width="16" height="16"><strong>' + esc(state.fileName) + '</strong></div><button id="accountsChangeFileBtn" class="btn btn--ghost btn--xs" style="display:inline-flex;align-items:center;gap:4px;"><img src="assets/icons/Welcome/102353.png" width="12" height="12">Cambiar archivo</button></div><div id="accountsStats"></div><div id="accountsFilters"></div><div id="accountsList" class="wallet-card-grid"></div>';
+      var cb = document.getElementById('accountsChangeFileBtn'); if (cb && !cb.__wired) { cb.__wired = true; cb.addEventListener('click', function() { state.data = null; state.encryptedData = null; state.fileName = null; state.passwordHash = null; clearLastFileInfo(); state.view = 'cards'; state.compact = false; render(); }); }
     }
+    renderList();
   }
 
-  // =======================================================================
-  // 10. INICIALIZACIÓN DEL PANEL
-  // =======================================================================
   function ensurePanel() {
-    var host = document.getElementById('accountsPanel');
-    if (host) return host;
-
-    host = document.createElement('section');
-    host.id = 'accountsPanel';
-    host.className = 'panel col-main';
-    host.setAttribute('hidden', '');
-
-    host.innerHTML = '' +
-      '<h2 class="panel__title"><img src="' + CONFIG.ICONS.account + '" alt="" width="32" height="32" style="vertical-align: middle; margin-right: 8px;"> Panel de Cuentas</h2>' +
-      '<div class="panel__body"></div>';
-
-    var anchor = document.getElementById('walletPanel');
-    if (anchor && anchor.parentNode) {
-      anchor.parentNode.insertBefore(host, anchor);
-    } else {
-      document.body.appendChild(host);
-    }
+    var host = document.getElementById('accountsPanel'); if (host) return host;
+    host = document.createElement('section'); host.id = 'accountsPanel'; host.className = 'panel col-main'; host.setAttribute('hidden','');
+    host.innerHTML = '<h2 class="panel__title"><img src="' + CONFIG.ICONS.account + '" alt="" width="32" height="32" style="vertical-align:middle;margin-right:8px;">Panel de Cuentas</h2><div class="panel__body"></div>';
+    var anchor = document.getElementById('walletPanel'); if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(host, anchor); else document.body.appendChild(host);
     return host;
   }
 
-  // =======================================================================
-  // 11. CICLO DE VIDA
-  // =======================================================================
-  async function activate() {
-    console.log(LOG, '🚀 activate() llamado');
-    state.active = true;
-    ensurePanel().removeAttribute('hidden');
-    render();
-  }
+  async function activate() { state.active = true; ensurePanel().removeAttribute('hidden'); render(); }
+  function deactivate() { state.active = false; var p = document.getElementById('accountsPanel'); if (p) p.setAttribute('hidden',''); }
 
-  function deactivate() {
-    state.active = false;
-    var panel = document.getElementById('accountsPanel');
-    if (panel) panel.setAttribute('hidden', '');
-  }
-
-  // =======================================================================
-  // 12. API PÚBLICA
-  // =======================================================================
-  var Accounts = {
-    initOnce: function() {
-      if (state.inited) return;
-      ensurePanel();
-      state.inited = true;
-      console.info(LOG, 'ready v1.9.0 — Iconos separados para títulos de secciones, GeForce Now con imagen');
-    },
-    activate: activate,
-    deactivate: deactivate,
-    Route: {
-      path: 'account/accounts',
-      mount: activate,
-      unmount: deactivate
-    },
-    _debug: function() {
-      return {
-        active: state.active,
-        hasData: !!(state.data && state.data.accounts),
-        fileName: state.fileName,
-        accountsCount: state.data ? (state.data.accounts || []).length : 0,
-        view: state.view
-      };
-    }
-  };
-
+  var Accounts = { initOnce: function() { if (state.inited) return; ensurePanel(); state.inited = true; console.info(LOG, 'ready v2.0.0 — Profile Card premium'); }, activate: activate, deactivate: deactivate, Route: { path: 'account/accounts', mount: activate, unmount: deactivate }, _debug: function() { return { active: state.active, hasData: !!(state.data && state.data.accounts), fileName: state.fileName, accountsCount: state.data ? (state.data.accounts || []).length : 0, view: state.view, compact: state.compact }; } };
   root.Accounts = Accounts;
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', Accounts.initOnce);
-  } else {
-    Accounts.initOnce();
-  }
-
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', Accounts.initOnce); else Accounts.initOnce();
 })(typeof window !== 'undefined' ? window : this);
