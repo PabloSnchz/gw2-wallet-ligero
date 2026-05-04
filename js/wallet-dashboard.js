@@ -1,7 +1,7 @@
 /*!
  * js/wallet-dashboard.js — Dashboard de Cartera Multi-Cuenta
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 2.4.0 (2026-04-08)
+ * Versión: 2.5.0 (2026-04-08)
  *
  * Características:
  *  - Tabla de cuentas vs divisas seleccionadas

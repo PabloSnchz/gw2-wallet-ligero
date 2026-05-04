@@ -1,4 +1,3 @@
-```markdown
 # 🐈‍⬛ Bóveda del Gato Negro — GW2 Wallet & MetaEventos
 
 Aplicación liviana para Guild Wars 2 que permite consultar:
@@ -24,9 +23,80 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 - 📈 **Google Analytics integrado** — Seguimiento de visitas y eventos personalizados
 - 🎨 **Interfaz visual unificada** — Diseño consistente en todos los módulos con bordes, glows y animaciones
 - 🏗️ **Arquitectura CSS en 3 capas** — Separación estricta de responsabilidades: layout, piel unificada y color semántico
+- 🎒 **Inventario y Personajes** — Buscador de objetos en toda la cuenta (banco, materiales, armería legendaria)
 
 👉 **Página oficial (Deploy GitHub Pages):**  
 https://pablosnchz.github.io/gw2-wallet-ligero/
+
+---
+
+## ✨ Novedades principales — v6.4.0
+
+### 🎒 Inventory Hub — Buscador de Objetos en toda la Cuenta (inventory-hub.js v1.3.1)
+
+**Nuevo módulo que reemplaza a Personajes como pantalla principal de `#/account/characters`. Permite buscar cualquier objeto en el banco, materiales y armería legendaria de la cuenta.**
+
+**Características principales:**
+
+| Característica | Descripción |
+|----------------|-------------|
+| **KPIs rápidos** | Materiales, Banco, Legendarios, Personajes, y acceso a "Ver Personajes" |
+| **Buscador unificado** | Busca en Materiales, Banco y Armería simultáneamente |
+| **Filtros** | Por rareza (dropdown + chips clickeables) y búsqueda por texto |
+| **Resultados agrupados** | Mini-cards por rareza + cards de ítems compactas (5 por fila) |
+| **Vistas de sección** | Materiales, Banco y Armería con navegación independiente |
+| **Modal de ítem** | Stats reales de API con formato de monedas oro-plata-cobre, atributos, ranuras de infusión, bonificaciones |
+| **Wiki en español** | Links a `wiki-es.guildwars2.com` |
+| **Sin localStorage** | Solo caché en memoria con TTL de 2-5 minutos |
+
+**Búsqueda inteligente:**
+
+| Estado | Comportamiento |
+|--------|----------------|
+| **Barra vacía** | Muestra 5 ítems de mayor rareza por sección |
+| **Con texto** | Filtra por coincidencia parcial en nombre y descripción, hasta 25 resultados |
+
+**Vistas de sección:**
+
+| Sección | Visualización | Características |
+|---------|---------------|-----------------|
+| **Materiales** | 10 categorías como en el juego | Básicos, intermedios, avanzados, ascendidos, gemas y joyas, cocina, ingredientes, recetas (escribas), festivos, otros |
+| **Banco** | Grid de 10×3 slots con paginación cada 30 | Íconos al 80% de la celda, resaltado de búsqueda, slots vacíos visibles |
+| **Armería** | Grid de 5 columnas por tipo | Armas, armaduras, espaldares, abalorios/baratijas, otros |
+
+**APIs consumidas (nuevas en api-gw2.js v2.13.0):**
+
+| Función | Endpoint | TTL |
+|---------|----------|-----|
+| `getAccountBank(token, opts)` | `/v2/account/bank` | 2 min |
+| `getAccountMaterials(token, opts)` | `/v2/account/materials` | 2 min |
+| `getAccountLegendaryArmory(token, opts)` | `/v2/account/legendaryarmory` | 5 min |
+
+**Navegación:**
+
+- Cada sección (Materiales, Banco, Armería) es clickeable → vista detallada
+- Botón "← Volver al inventario" en vistas de sección
+- Card "Ver Personajes" en los KPIs → navega a `characters.js`
+- Desde `characters.js`, botón "← Volver al Inventario" → regresa al Hub
+
+**Cambios en `api-gw2.js` (v2.12.0 → v2.13.0):**
+
+| Función | Descripción |
+|---------|-------------|
+| `getAccountBank(token, opts)` | Obtiene el contenido del banco. TTL: 2 min |
+| `getAccountMaterials(token, opts)` | Obtiene almacenamiento de materiales. TTL: 2 min |
+| `getAccountLegendaryArmory(token, opts)` | Obtiene armería legendaria. TTL: 5 min |
+
+**Íconos del módulo:**
+
+| Uso | Asset |
+|-----|-------|
+| Sidebar y título | `assets/icons/Welcome/358409.png` |
+| Materiales | `assets/icons/Cuentas/255373.png` |
+| Banco | `assets/icons/Cuentas/156670.png` |
+| Legendarios | `assets/icons/Cuentas/157085.png` |
+| Personajes | `assets/icons/156678.png` |
+| Búsqueda | `assets/icons/Welcome/3124974.png` |
 
 ---
 
@@ -458,6 +528,7 @@ assets/icons/raids/
 | Bienvenida | `assets/icons/Welcome/3380755.png` |
 | Dashboard Cartera | `assets/icons/733322.png` (reutiliza ícono de cartera) |
 | **Raids** | `assets/icons/raids/raid-icon.png` |
+| **Inventario y Personajes** | `assets/icons/Welcome/358409.png` |
 
 ### 🧭 Header Compacto
 - **Altura reducida**: ~60px (vs ~140px anterior)
@@ -582,12 +653,13 @@ Definí en `index.html` (antes de router.js):
 
 ---
 
-## 📦 Archivos clave (v6.3.1)
+## 📦 Archivos clave (v6.4.0)
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
-| `js/api-gw2.js` | **v2.12.0** | API Layer. **Nuevas funciones `getAccountInfo`, `isRecentlyActive` y `getAccountRaids`** |
-| `js/router.js` | **v2.15.0** | **Router desacoplado (~750 líneas). Solo orquesta navegación. Delega renderizado WV a módulos UI** |
+| `js/api-gw2.js` | **v2.13.0** | API Layer. **Nuevas funciones `getAccountBank`, `getAccountMaterials` y `getAccountLegendaryArmory`** |
+| `js/router.js` | **v2.15.0** | **Router desacoplado (~750 líneas). Soporta InventoryHub como pantalla principal** |
+| `js/inventory-hub.js` | **v1.3.1** | **Inventario y Personajes — Buscador de objetos, KPIs, vistas de sección, modal de ítem** |
 | `js/wv-shop-ui.js` | **v1.0.2** | UI de Tienda WV. **Glow solo en ícono de rareza, fix de timing con wv-theme.js** |
 | `js/wv-objectives-ui.js` | v1.0.0 | UI de Objetivos WV |
 | `js/wv-theme.js` | **v1.0.1** | Tema visual de WV. **Solo border-left, expone window.WVTheme** |
@@ -602,8 +674,8 @@ Definí en `index.html` (antes de router.js):
 | `js/welcome-panel.js` | v1.3.0 | Pantalla de Bienvenida con onboarding y accesos rápidos |
 | `js/activities.js` | **v3.19.6** | Actividades. **Glow en íconos de Ecto** |
 | `js/activities-theme.js` | v2.6.0 | Home Nodes + barra de horarios unificada con iconos GW2 |
-| `js/characters.js` | v2.3.0 | Panel de Personajes. **Íconos profesión locales** |
-| `js/meta.js` | **v3.3.0** | MetaEventos. **Ícono expansión con glow, chips timing, tag infusión celestial, fix preview infusiones** |
+| `js/characters.js` | v2.3.0 | Panel de Personajes. **Íconos profesión locales. Subvista del InventoryHub** |
+| `js/meta.js` | **v3.3.1** | MetaEventos. **Sin marcado manual (solo API). Ícono expansión con glow, chips timing, tag infusión celestial** |
 | `js/meta-theme.js` | **v1.4.2** | Tema visual de Meta. **Solo border-left** |
 | `js/wallet-theme.js` | **v1.3.0** | Tema visual de Cartera. **Glow en ícono de divisa** |
 | `js/achievements-theme.js` | **v1.1.1** | Tema visual de Logros. **Solo border-left** |
@@ -615,9 +687,12 @@ Definí en `index.html` (antes de router.js):
 - `js/wallet-cur-theme-patch.js` — redundante con `wallet-theme.js`, aplicaba `!important` y eliminaba glows (v6.3.0)
 - `wv-theme.js` duplicado en `index.html` — estaba cargado en defer y en sync (v6.3.1)
 
+### Archivos nuevos (v6.4.0)
+- `js/inventory-hub.js` — Módulo de Inventario y Personajes (buscador de objetos, KPIs, vistas de sección, modal de ítem)
+
 ---
 
-## 🖼️ Assets locales (estructura v6.3.1)
+## 🖼️ Assets locales (estructura v6.4.0)
 
 ```
 assets/icons/
@@ -648,6 +723,8 @@ assets/icons/
 │   └── bosses/                 # 33 archivos de íconos de encuentros
 ├── Welcome/
 │   ├── 834002.png              # Recarga forzada de temporada WV
+│   ├── 358409.png              # Inventario y Personajes (NUEVO)
+│   ├── 3124974.png             # Búsqueda (NUEVO)
 │   └── ...                     # resto de iconos de bienvenida
 ├── ui/
 │   ├── home.png                # Home (utilbar y bienvenida)
@@ -713,12 +790,24 @@ assets/icons/
     ├── 358409.png              # GW2 Avanzado (título)
     ├── 528716.png              # Chevron right (expansiones)
     ├── 528717.png              # Chevron down (expansiones)
+    ├── 156670.png              # Banco (NUEVO)
+    ├── 255373.png              # Materiales (NUEVO)
+    ├── 157085.png              # Legendarios (NUEVO)
     └── ...
 ```
 
 ---
 
 ## 🧪 Cómo probar las novedades
+
+### Inventory Hub (NUEVO en v6.4.0)
+1. Navegar a **Inventario y Personajes** desde el sidebar
+2. Verificar que los KPIs muestran Materiales, Banco, Legendarios, Personajes y acceso a "Ver Personajes"
+3. Usar el buscador para encontrar objetos por nombre en banco, materiales y armería
+4. Hacer clic en un KPI o encabezado de sección → debe abrir la vista detallada
+5. En la vista de Banco, verificar que los slots se muestran en grid de 10 columnas con paginación
+6. Hacer clic en cualquier ítem → debe abrir un modal con stats completos, valor NPC en oro-plata-cobre y enlace a Wiki en español
+7. Hacer clic en "Ver Personajes" → debe navegar a la lista de personajes con botón "Volver al Inventario"
 
 ### Arquitectura CSS en 3 capas (NUEVO en v6.3.1)
 1. Inspeccionar cualquier card con F12 → verificar que el `border` y `box-shadow` vienen de `.card` en `theme-polish.css`
@@ -777,10 +866,11 @@ assets/icons/
 
 ## 📌 Notas técnicas
 
-- **API Key**: Requiere permisos `account` y `wallet`. Para Raids requiere `progression`
+- **API Key**: Requiere permisos `account` y `wallet`. Para Raids requiere `progression`. Para Inventario requiere `account`
 - **Estado online**: Usa `last_modified` de `/v2/account?v=latest` con umbral de 20 minutos. Fix v6.3.1: busca por `data-token`.
 - **Raid Tracker**: Usa `/v2/account/raids` para obtener encuentros completados. TTL de 5 minutos
 - **Dashboard Cartera**: Usa `getCurrenciesAll()` y `getAccountWallet()`. Persistencia en `localStorage`. Zebra + hover unificados.
+- **Inventory Hub**: Usa `getAccountBank()`, `getAccountMaterials()` y `getAccountLegendaryArmory()`. Sin localStorage adicional. Caché en memoria con TTL de 2-5 minutos.
 - **WV Desacoplado**: `router.js` delega renderizado a `wv-shop-ui.js` y `wv-objectives-ui.js` con fallback
 - **Arquitectura CSS**: 3 capas estrictas — `main.css` (layout), `theme-polish.css` (piel unificada), `*-theme.js` (solo `borderLeft`)
 - **Receta visual**: Borde neutro `rgba(255,255,255,0.08)`, border-left de color, glow `rgba(90,110,154,0.12)`, hover `translateY(-3px)`
@@ -802,6 +892,7 @@ assets/icons/
 
 Este proyecto sigue **Semantic Versioning** (SemVer).
 
+- `v6.4.0`: **Inventory Hub — Buscador de Objetos** — Nuevo módulo `inventory-hub.js` v1.3.1, 3 nuevos endpoints en api-gw2.js v2.13.0, vistas de sección (Materiales 10 categorías, Banco grid 10×3, Armería por tipo), modal con stats, wiki en español, characters.js como subvista
 - `v6.3.1`: **Refactor Arquitectura CSS + Unificación Visual Completa** — CSS en 3 capas estrictas, 5 theme files corregidos (solo `borderLeft`), Panel de Cuentas v2.0.0 "Profile Card" premium + tabla zebra, Meta v3.3.0 (ícono expansión con glow, tag infusión celestial, fix preview), WV Tienda v1.0.2 (glow solo en ícono, fix timing), Purchase Detail fix estado online (data-token, ícono reloj local), Activities glow en Ecto, Wallet glow en íconos, Dashboard KPIs con border-left + glow + tabla unificada, Conversor rediseño visual, fix botón Dashboard
 - `v6.3.0`: **Unificación Visual + Desacople WV + Rediseño de Módulos** — Receta visual unificada en 11 módulos, desacople de WV en 3 fases (`wv-theme.js`, `wv-shop-ui.js`, `wv-objectives-ui.js`), `characters-theme.js`, rediseño de Cartera (tabla), Dashboard (KPIs, iconos), Panel de Cuentas (carga 2 cols, fila expandible), Modal API Keys, cards de Actividades unificadas, eliminación de Modo Deluxe y `wallet-cur-theme-patch.js`
 - `v6.2.0`: **Raid Tracker** — Nuevo módulo `raid-tracker.js` v1.3.1. 8 alas, 33 encuentros, marcado automático vía API, modal con detalles
@@ -840,4 +931,3 @@ Ver [`CHANGELOG.md`](CHANGELOG.md) para detalles completos.
 ## 📄 Licencia
 
 © Comunidad Gato Negro. Uso interno / comunitario. Contacto por Discord para acuerdos de distribución o forks.
-```

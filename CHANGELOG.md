@@ -8,6 +8,73 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [6.4.0] - 2026-05-04
+
+### Added
+- **Inventory Hub — Buscador de Objetos en toda la Cuenta (inventory-hub.js v1.3.1)**:
+  - Nuevo módulo que reemplaza a Personajes como pantalla principal de `#/account/characters`
+  - KPIs rápidos: Materiales, Banco, Legendarios, Personajes, y acceso a "Ver Personajes"
+  - Buscador unificado que busca en Materiales, Banco y Armería simultáneamente
+  - Filtros por rareza (dropdown + chips clickeables) y búsqueda por texto
+  - Resultados agrupados por ubicación + rareza con mini-cards en una fila horizontal
+  - Ítems en grid de 5 columnas con `border-left` del color de rareza
+  - Vistas de sección independientes con navegación Hub ↔ Sección:
+    - **Materiales:** 10 categorías como en el juego (básicos, intermedios, avanzados, ascendidos, gemas y joyas, cocina, ingredientes, recetas, festivos, otros)
+    - **Banco:** Grid de 10×3 slots con paginación cada 30, íconos al 80% de la celda, resaltado de búsqueda
+    - **Armería:** Grid de 5 columnas por tipo (armas, armaduras, espaldares, abalorios/baratijas, otros)
+  - Modal de ítem con stats reales de API:
+    - Nombre, ícono, descripción, rareza, tipo, nivel requerido
+    - Daño (armas): min_power - max_power (tipo de daño)
+    - Defensa + peso (armaduras)
+    - Atributos (Potencia, Precisión, Dureza, Vitalidad, Daño de condición, Curación, Ferocidad, Concentración, Pericia, Resistencia a la agonía)
+    - Stats disponibles, ranuras de infusión con flags
+    - Bonificaciones (runas) con niveles, sufijo
+    - Valor NPC en formato oro-plata-cobre
+    - Flags (Ligado a cuenta, Se liga al usar, Único, etc.)
+    - Botón para copiar código de chat
+    - Enlace a Wiki en español (`wiki-es.guildwars2.com`)
+  - Búsqueda inteligente: barra vacía = 5 ítems de mayor rareza; con texto = coincidencia parcial hasta 25 resultados
+  - Sin localStorage adicional — solo caché en memoria con TTL de 2-5 minutos
+- **Nuevas funciones en api-gw2.js v2.13.0**:
+  - `getAccountBank(token, opts)` — Endpoint: `/v2/account/bank`. TTL: 2 min
+  - `getAccountMaterials(token, opts)` — Endpoint: `/v2/account/materials`. TTL: 2 min
+  - `getAccountLegendaryArmory(token, opts)` — Endpoint: `/v2/account/legendaryarmory`. TTL: 5 min
+- **Nuevo archivo**: `js/inventory-hub.js` v1.3.1
+- **Nuevos assets**:
+  - `assets/icons/Welcome/358409.png` — Ícono del módulo (sidebar y título)
+  - `assets/icons/Welcome/3124974.png` — Ícono de búsqueda
+  - `assets/icons/Cuentas/156670.png` — Ícono de banco
+  - `assets/icons/Cuentas/255373.png` — Ícono de materiales
+  - `assets/icons/Cuentas/157085.png` — Ícono de legendarios
+
+### Changed
+- **router.js v2.15.0**:
+  - Ruta `#/account/characters` ahora apunta a `InventoryHub.activate()` como pantalla principal
+  - `Characters.activate()` se llama desde el Hub como subvista
+  - Panel `inventoryPanel` agregado a `showPanel()`
+  - Mapeo de navegación: `'#/account/characters':'inventory'`
+  - `updateSidebarFor('inventory')` sin panel específico
+  - Evento Analytics: `view_module` con `module_name: 'inventory'`
+- **characters.js v2.3.0**:
+  - Nuevo método `getCharacterList()` que expone la lista de personajes al InventoryHub
+  - Nueva función `renderBackToInventoryButton()` con botón "← Volver al Inventario" en el título del panel
+  - Funciona como subvista del InventoryHub
+- **api-gw2.js v2.12.0 → v2.13.0**:
+  - Agregadas funciones `getAccountBank`, `getAccountMaterials`, `getAccountLegendaryArmory`
+  - Agregados TTL.BANK, TTL.MATERIALS, TTL.ARMORY
+- **index.html**:
+  - Nuevo panel `<section id="inventoryPanel">`
+  - Sidebar: ícono cambiado a `assets/icons/Welcome/358409.png`, texto "Inventario y Personajes"
+  - Script `js/inventory-hub.js` cargado antes de `characters.js`
+- **Documentación**: ONBOARDING.md actualizado a v6.4.0, README.md actualizado a v6.4.0, CHANGELOG.md actualizado
+- **Receta visual unificada**: `inventory-hub.js` implementa cards de ítems con `border-left` por rareza (Legendary #974EFF, Ascended #FB3E8D, etc.)
+
+### Fixed
+- **KPIs en columna al volver de una sección**: `renderHubKPIs()` ahora fuerza `display:grid` con `grid-template-columns` en el contenedor
+- **Banco**: Íconos con `width:80%; height:80%; object-fit:contain` para ocupar el 80% de la celda manteniendo la plantilla 10×3
+
+---
+
 ## [6.3.1] - 2026-05-02
 
 ### Refactor

@@ -112,7 +112,7 @@
           '#/account/achievements':'achievements',
           '#/account/wizards-vault':'wv',
           '#/activities':'activities',
-          '#/account/characters':'characters',
+          '#/account/characters':'inventory',
           '#/account/accounts':'accounts',
           '#/welcome':'welcome',
           '#/wallet/dashboard':'walletDashboard',
@@ -136,11 +136,12 @@
       else if (view==='welcome'){ /* no sidebar específico para bienvenida */ }
       else if (view==='walletDashboard'){ /* no sidebar específico */ }
       else if (view==='raids'){ /* no sidebar específico para raids */ }
+      else if (view==='inventory'){ /* no sidebar específico para inventario */ }
     } catch (e) { console.warn('[router] updateSidebarFor error', e); }
   }
 
   function showPanel(idToShow) {
-    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','charactersPanel','accountsPanel','welcomePanel','walletDashboardPanel','raidTrackerPanel'].forEach(function(id){
+    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','inventoryPanel','charactersPanel','accountsPanel','welcomePanel','walletDashboardPanel','raidTrackerPanel'].forEach(function(id){
       var node=el(id); if (!node) return;
       if (id===idToShow) node.removeAttribute('hidden'); else node.setAttribute('hidden','hidden');
     });
@@ -1493,13 +1494,15 @@
 
         if (h === '#/account/characters') {
           try {
-            showPanel('charactersPanel');
-            if (typeof Analytics !== 'undefined') Analytics.viewModule('characters');
-            window.Characters?.activate?.();
+            showPanel('inventoryPanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('inventory');
+            if (window.InventoryHub && typeof window.InventoryHub.activate === 'function') {
+              window.InventoryHub.activate();
+            }
           } catch (e) {
-            console.warn('[router] Characters.activate error', e);
+            console.warn('[router] InventoryHub.activate error', e);
           } finally {
-            updateSidebarFor('characters');
+            updateSidebarFor('inventory');
             setActiveNav(h);
           }
           return;
@@ -1580,6 +1583,11 @@
         }
 
       } else if (h === '#/account/characters') {
+        // Activar el InventoryHub
+        if (window.InventoryHub && typeof window.InventoryHub.refresh === 'function') {
+          window.InventoryHub.refresh(true);
+        }
+        // Si Characters está visible como subvista, también actualizarlo
         var pChar = document.getElementById('charactersPanel');
         if (pChar && !pChar.hasAttribute('hidden')) {
           try {
