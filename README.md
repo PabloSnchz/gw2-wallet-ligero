@@ -6,7 +6,7 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 - 🎭 MetaEventos con horarios, estado y "Hecho hoy"
 - 🪄 Cámara del Brujo Wizard's Vault (Objetivos y Tienda)
 - 🏆 Pantalla de Logros — Nueva vista completa
-- 💱 Conversor Gem ↔ Gold
+- 💱 Conversor Gem ↔ Gold con tabs de Transacciones y Mercado
 - 🏡 Home Nodes — Todos los desbloqueables de Heredad con estado ✅/❌
 - 🕒 Barra de horarios unificada con iconos GW2 (Activities + Meta)
 - 🔐 Gestión completa de API Keys
@@ -27,6 +27,42 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 
 👉 **Página oficial (Deploy GitHub Pages):**  
 https://pablosnchz.github.io/gw2-wallet-ligero/
+
+---
+
+## ✨ Novedades principales — v6.5.0
+
+### 💱 Conversor Gem ↔ Gold — Modal + Comercio (converter-modal.js v1.0.0)
+
+**El conversor migró de la sidebar a un modal accesible desde el botón 💎 en el panel de Cartera.**
+
+**Tabs del modal:**
+
+| Tab | Funcionalidad | APIs |
+|-----|---------------|------|
+| **💎 Cambio** | Conversor Gem ↔ Gold con índice de conveniencia | `/v2/commerce/exchange` |
+| **📋 Transacciones** | Tus órdenes activas de compra/venta en el TP con KPIs de totales | `/v2/commerce/transactions/current/*` |
+| **📊 Populares** | Ítems con mayor volumen en el Trading Post, filtro por rareza | `/v2/commerce/listings`, `/v2/commerce/prices` |
+| **📈 Historial** | Placeholder para tendencia de gemas | — |
+
+**KPIs de Transacciones:** Total en compras (rojo), Total en ventas (verde), Balance con glow semántico.
+
+### 🔧 Mejoras en Cartera
+
+**Glow neutro en íconos:** Las divisas sin color asignado ahora reciben un glow blanco sutil para mantener consistencia visual.
+
+### 🗜️ Optimización de caché
+
+**Cap de 500 entradas** en `items_cache_v1:es`. Si se supera, elimina las 100 más viejas. Elimina el riesgo de cuota de localStorage.
+
+### 📦 Nuevas funciones en api-gw2.js (v2.15.0)
+
+| Función | Endpoint |
+|---------|----------|
+| `getCommerceListings(opts)` | `/v2/commerce/listings` |
+| `getCommercePrices(ids, opts)` | `/v2/commerce/prices` |
+| `getCommerceTransactionsBuys(token, opts)` | `/v2/commerce/transactions/current/buys` |
+| `getCommerceTransactionsSells(token, opts)` | `/v2/commerce/transactions/current/sells` |
 
 ---
 
@@ -657,8 +693,9 @@ Definí en `index.html` (antes de router.js):
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
-| `js/api-gw2.js` | **v2.13.0** | API Layer. **Nuevas funciones `getAccountBank`, `getAccountMaterials` y `getAccountLegendaryArmory`** |
-| `js/router.js` | **v2.15.0** | **Router desacoplado (~750 líneas). Soporta InventoryHub como pantalla principal** |
+| `js/api-gw2.js` | **v2.15.0** | API Layer. **Inventory + Commerce (listings, prices, transactions)** |
+| `js/converter-modal.js` | **v1.0.0** | **NUEVO: Modal del Conversor con 3 tabs (Cambio, Transacciones, Populares)** |
+| `js/router.js` | **v2.16.0** | **Router desacoplado (~740 líneas). Sidebar sin conversor.** |
 | `js/inventory-hub.js` | **v1.3.1** | **Inventario y Personajes — Buscador de objetos, KPIs, vistas de sección, modal de ítem** |
 | `js/wv-shop-ui.js` | **v1.0.2** | UI de Tienda WV. **Glow solo en ícono de rareza, fix de timing con wv-theme.js** |
 | `js/wv-objectives-ui.js` | v1.0.0 | UI de Objetivos WV |
@@ -677,11 +714,17 @@ Definí en `index.html` (antes de router.js):
 | `js/characters.js` | v2.3.0 | Panel de Personajes. **Íconos profesión locales. Subvista del InventoryHub** |
 | `js/meta.js` | **v3.3.1** | MetaEventos. **Sin marcado manual (solo API). Ícono expansión con glow, chips timing, tag infusión celestial** |
 | `js/meta-theme.js` | **v1.4.2** | Tema visual de Meta. **Solo border-left** |
-| `js/wallet-theme.js` | **v1.3.0** | Tema visual de Cartera. **Glow en ícono de divisa** |
+| `js/wallet-theme.js` | **v1.3.1** | Tema visual de Cartera. **Glow en ícono + glow neutro para divisas sin color** |
 | `js/achievements-theme.js` | **v1.1.1** | Tema visual de Logros. **Solo border-left** |
-| `js/app.js` | **v2.6.3** | Keys, wallet, eventos globales. **Modal de API Keys rediseñado** |
+| `js/app.js` | **v2.7.0** | Keys, wallet, eventos globales. **Conversor extraído a converter-modal.js** |
 | `css/theme-polish.css` | **v2.1.0** | **Componentes canónicos + hover unificado + conversor** |
 | `css/main.css` | **v2.6.0** | Estilos principales. **Solo layout, sin bordes ni box-shadows. Tag infusión celestial.** |
+
+### Archivos nuevos (v6.5.0)
+- `js/converter-modal.js` — Modal del Conversor con 3 tabs funcionales + placeholder
+
+### Archivos eliminados (v6.5.0)
+- `assets/data/gemstore-items.json` — Datos estáticos de Gem Store (reemplazado por datos reales de API)
 
 ### Archivos eliminados
 - `js/wallet-cur-theme-patch.js` — redundante con `wallet-theme.js`, aplicaba `!important` y eliminaba glows (v6.3.0)
@@ -689,6 +732,12 @@ Definí en `index.html` (antes de router.js):
 
 ### Archivos nuevos (v6.4.0)
 - `js/inventory-hub.js` — Módulo de Inventario y Personajes (buscador de objetos, KPIs, vistas de sección, modal de ítem)
+
+### Archivos nuevos (v6.5.0)
+- `js/converter-modal.js` — Modal del Conversor Gem ↔ Gold con 3 tabs (Cambio, Transacciones, Populares)
+
+### Archivos eliminados (v6.5.0)
+- `assets/data/gemstore-items.json` — Datos estáticos de Gem Store (reemplazado por datos reales de API)
 
 ---
 
@@ -892,6 +941,7 @@ assets/icons/
 
 Este proyecto sigue **Semantic Versioning** (SemVer).
 
+- `v6.5.0`: **Conversor Modal + Comercio** — Conversor en modal con 3 tabs (Cambio, Transacciones, Populares), 4 nuevas funciones de commerce en api-gw2.js, glow neutro en divisas sin color, cap de caché de items
 - `v6.4.0`: **Inventory Hub — Buscador de Objetos** — Nuevo módulo `inventory-hub.js` v1.3.1, 3 nuevos endpoints en api-gw2.js v2.13.0, vistas de sección (Materiales 10 categorías, Banco grid 10×3, Armería por tipo), modal con stats, wiki en español, characters.js como subvista
 - `v6.3.1`: **Refactor Arquitectura CSS + Unificación Visual Completa** — CSS en 3 capas estrictas, 5 theme files corregidos (solo `borderLeft`), Panel de Cuentas v2.0.0 "Profile Card" premium + tabla zebra, Meta v3.3.0 (ícono expansión con glow, tag infusión celestial, fix preview), WV Tienda v1.0.2 (glow solo en ícono, fix timing), Purchase Detail fix estado online (data-token, ícono reloj local), Activities glow en Ecto, Wallet glow en íconos, Dashboard KPIs con border-left + glow + tabla unificada, Conversor rediseño visual, fix botón Dashboard
 - `v6.3.0`: **Unificación Visual + Desacople WV + Rediseño de Módulos** — Receta visual unificada en 11 módulos, desacople de WV en 3 fases (`wv-theme.js`, `wv-shop-ui.js`, `wv-objectives-ui.js`), `characters-theme.js`, rediseño de Cartera (tabla), Dashboard (KPIs, iconos), Panel de Cuentas (carga 2 cols, fila expandible), Modal API Keys, cards de Actividades unificadas, eliminación de Modo Deluxe y `wallet-cur-theme-patch.js`

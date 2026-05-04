@@ -427,6 +427,10 @@
           <div class="filters-actions">
             <button id="clearFiltersBtn" class="btn" title="Reiniciar filtros">Limpiar filtros</button>
             <button id="toggleViewBtn" class="btn btn--ghost" title="Vista tarjeta/tabla" aria-pressed="false" aria-controls="walletCards walletTableWrap">Vista tabla</button>
+            <!-- Botón para abrir el Conversor Gem ↔ Gold -->
+            <button id="walletConverterBtn" class="btn btn--ghost" title="Abrir Conversor de divisas" style="display: inline-flex; align-items: center; gap: 6px;">
+              <img src="assets/icons/502065.png" width="14" height="14" alt="Conversor"> Conversor
+            </button>
             <!-- Botón para abrir el Dashboard de Cartera -->
             <button id="walletDashboardBtn" class="btn btn--ghost" title="Abrir Dashboard de Cartera (todas las cuentas)" style="display: inline-flex; align-items: center; gap: 6px;">
               <img src="assets/icons/733322.png" width="14" height="14" alt="Dashboard"> Dashboard
@@ -730,87 +734,7 @@
         </nav>
       </section>
     
-      <!-- Conversor -->
-      <section class="panel" aria-labelledby="convTitle" id="asideConvSection">
-        <div class="panel-head">
-          <h3 class="panel-head__title" id="convTitle" style="display:flex;align-items:center;gap:12px;">
-            Cambio de Divisas
-            <span style="display:inline-flex;align-items:center;gap:6px;margin-left:4px;">
-              <img src="assets/icons/502065.png" width="20" height="20" alt="Gem">
-              <img src="assets/icons/784280.png" width="16" height="16" alt="↔">
-              <img src="assets/icons/619316.png" width="20" height="20" alt="Gold">
-            </span>
-          </h3>
-        </div>
-        <hr class="hr-hairline"/>
-
-        <div class="panel__body">
-          <div id="convWrap" class="conv2 conv2--clean" aria-live="polite">
-
-            <!-- CONSEGUIR GEMAS -->
-            <h4 class="conv2-label conv2-label--gems">
-              <span class="conv2-label__icon" aria-hidden="true">
-                <img src="assets/icons/502065.png" width="24" height="24" alt="Gemas" style="display: block;">
-              </span>
-              <span>Conseguir Gemas</span>
-            </h4>
-            <div class="conv2-card">
-              <div class="conv2-row">
-                <input id="cvGems" class="conv2-entry" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Gemas"/>
-                <div id="cvGemsOut" class="coin-badges coin-badges--lg">—</div>
-              </div>
-              <div class="conv2-quick" id="cvGemsQuick" aria-label="Atajos de gemas">
-                <button type="button" data-gems="100" class="conv2-chip">100</button>
-                <button type="button" data-gems="400" class="conv2-chip">400</button>
-                <button type="button" data-gems="800" class="conv2-chip">800</button>
-                <button type="button" data-gems="1200" class="conv2-chip">1200</button>
-              </div>
-            </div>
-
-            <!-- CONSEGUIR ORO -->
-            <h4 class="conv2-label conv2-label--gold">
-              <span class="conv2-label__icon" aria-hidden="true">
-                <img src="assets/icons/619316.png" width="24" height="24" alt="Oro" style="display: block;">
-              </span>
-              <span>Conseguir Oro</span>
-            </h4>
-            <div class="conv2-card">
-              <div class="conv2-row">
-                <input id="cvGold" class="conv2-entry conv2-gold" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Oro (g)"/>
-                <output id="cvGoldOut" class="conv2-gems">—</output>
-              </div>
-              <div class="conv2-quick" id="cvGoldQuick" aria-label="Atajos de oro">
-                <button type="button" data-gold="10" class="conv2-chip">10 g</button>
-                <button type="button" data-gold="100" class="conv2-chip">100 g</button>
-                <button type="button" data-gold="250" class="conv2-chip">250 g</button>
-              </div>
-            </div>
-
-            <div class="conv2-actions">
-              <button id="cvRefresh" class="btn" title="Actualizar cotización">Actualizar</button>
-              <span id="cvState" class="conv2-state">Listo.</span>
-            </div>
-
-            <hr class="hr-hairline">
-            <div class="conv2-refline">
-              <span id="cvRef400" class="coin-badges coin-badges--lg">—</span>
-            </div>
-
-            <hr class="hr-hairline">
-            <div id="convScore" class="conv2-score" aria-live="polite">
-              <div class="conv2-score__head">
-                <strong>Índice de conveniencia (400 gemas)</strong>
-                <span id="convScoreLabel" class="conv2-score__label">—</span>
-              </div>
-              <div class="conv2-meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Conveniencia para comprar gemas">
-                <div id="convScoreBar" class="conv2-meter__fill" style="width:0%"></div>
-              </div>
-              <p id="convScoreHint" class="muted" style="margin:6px 0 0">Calculando…</p>
-            </div>
-
-          </div>
-        </div>
-      </section>
+      <!-- Conversor movido a modal (converter-modal.js) -->
 
       <!-- Próximas funciones -->
       <section class="panel" id="asideNextFeatures">
@@ -970,6 +894,9 @@
   <!-- Actividades -->
   <script defer src="js/activities.js?v=3.19.3"></script>
   <script defer src="js/activities-theme.js?v=2.6.0"></script>
+
+  <!-- Conversor (modal) -->
+  <script defer src="js/converter-modal.js?v=1.0.0"></script>
 
   <!-- Inventario y Personajes -->
   <script defer src="js/inventory-hub.js?v=1.3.1"></script>

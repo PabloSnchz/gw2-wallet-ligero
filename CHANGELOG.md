@@ -8,6 +8,51 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [6.5.0] - 2026-05-04
+
+### Added
+- **Conversor Gem ↔ Gold — Migración a Modal (converter-modal.js v1.0.0)**:
+  - Extraído de `app.js` como módulo independiente con 4 tabs
+  - **Tab Cambio**: Conversor completo con índice de conveniencia (igual que antes, ahora en modal)
+  - **Tab Transacciones**: Órdenes activas de compra/venta del jugador en el TP con KPIs de totales (compras, ventas, balance)
+  - **Tab Populares**: Ítems con mayor volumen de transacciones en el TP, filtro por rareza y ordenamiento especial para legendarias
+  - **Tab Historial**: Placeholder para tendencia de gemas (Fase 3)
+  - KPIs con glow semántico: Total en compras (rojo), Total en ventas (verde), Balance (verde/rojo)
+  - Formato de monedas unificado `3 g 17 s 88 c` en todas las tabs
+  - Embellecimiento visual: título con glow dorado, labels con glow de color, outputs con fondo, botones con íconos, estado verde
+- **Nuevas funciones en api-gw2.js v2.15.0**:
+  - `getCommerceListings(opts)` — Endpoint: `/v2/commerce/listings`. TTL: 5 min
+  - `getCommercePrices(ids, opts)` — Endpoint: `/v2/commerce/prices`. TTL: 2 min
+  - `getCommerceTransactionsBuys(token, opts)` — Endpoint: `/v2/commerce/transactions/current/buys`. TTL: 1 min
+  - `getCommerceTransactionsSells(token, opts)` — Endpoint: `/v2/commerce/transactions/current/sells`. TTL: 1 min
+- **Nuevo archivo**: `js/converter-modal.js` v1.0.0
+- **Glow neutro en íconos de divisas sin color (wallet-theme.js v1.3.1)**:
+  - Las divisas que no matchean con ningún color reciben glow blanco sutil (`rgba(255,255,255,0.12)`)
+
+### Changed
+- **api-gw2.js v2.13.0 → v2.15.0**:
+  - Agregadas funciones `getCommerceListings`, `getCommercePrices`, `getCommerceTransactionsBuys`, `getCommerceTransactionsSells`
+  - Agregado cap de 500 entradas en `items_cache_v1:es` (elimina las 100 más viejas al superar el límite)
+- **app.js v2.6.3 → v2.7.0**:
+  - Extraídas ~246 líneas del conversor a `converter-modal.js`
+  - Agregado wire del botón `walletConverterBtn` para abrir el modal
+  - Eliminadas referencias a `#asideConvSection` y variables del conversor
+- **router.js v2.15.0 → v2.16.0**:
+  - Eliminada referencia a `asideConvSection` en `updateSidebarFor`
+  - Sidebar liberada (~80 líneas menos en index.html)
+- **index.html**:
+  - Eliminado `#asideConvSection` de la sidebar
+  - Agregado botón `[💎 Conversor]` en toolbar de Wallet (antes de Dashboard)
+  - Agregado script `converter-modal.js` en el bloque defer
+- **wallet-theme.js v1.3.0 → v1.3.1**:
+  - Glow en ícono aplicado también a divisas sin color (glow neutro)
+- **Documentación**: ONBOARDING.md, README.md, CHANGELOG.md actualizados a v6.5.0
+
+### Removed
+- `assets/data/gemstore-items.json` — Datos estáticos de Gem Store (reemplazado por datos reales de API en tabs Populares y Transacciones)
+
+---
+
 ## [6.4.0] - 2026-05-04
 
 ### Added

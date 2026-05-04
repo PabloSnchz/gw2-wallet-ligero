@@ -382,12 +382,12 @@
     container.innerHTML =
       '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
         '<div style="position:relative;flex:1;min-width:200px;">' +
-          '<img src="' + CONFIG.ICONS.search + '" width="16" height="16" alt="" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:0.5;">' +
-          '<input type="text" id="invSearchInput" placeholder="Buscar objeto..." value="' + esc(state.filters.q) + '" style="width:100%;padding:8px 12px 8px 32px;background:#1a1c24;border:1px solid #2a2c35;border-radius:20px;color:#e0e4ed;font-size:0.85rem;">' +
+          '<img src="' + CONFIG.ICONS.search + '" width="14" height="14" alt="" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:0.4;pointer-events:none;">' +
+          '<input type="text" id="invSearchInput" placeholder="Buscar en inventario..." value="' + esc(state.filters.q) + '" style="width:100%;padding:9px 12px 9px 34px;background:#1a1c24;border:1px solid #2a2c35;border-radius:20px;color:#e0e4ed;font-size:0.82rem;transition:border-color 0.15s ease,box-shadow 0.15s ease;" onfocus="this.style.borderColor=\'#5276ff\';this.style.boxShadow=\'0 0 0 2px rgba(82,118,255,0.15)\'" onblur="this.style.borderColor=\'#2a2c35\';this.style.boxShadow=\'none\'">' +
         '</div>' +
-        '<select id="invRarityFilter" style="background:#1a1c24;border:1px solid #2a2c35;border-radius:20px;color:#e0e4ed;padding:8px 12px;font-size:0.8rem;"><option value="">Todas las rarezas</option>' + rarityOptions + '</select>' +
-        '<button id="invRefreshBtn" class="btn btn--ghost" title="Refrescar" style="display:inline-flex;align-items:center;gap:6px;padding:8px 12px;">' +
-          '<img src="' + CONFIG.ICONS.refresh + '" width="14" height="14" alt=""> Refrescar' +
+        '<select id="invRarityFilter" style="background:#1a1c24;border:1px solid #2a2c35;border-radius:20px;color:#e0e4ed;padding:8px 32px 8px 12px;font-size:0.78rem;cursor:pointer;transition:border-color 0.15s ease;appearance:none;background-image:url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="%239aa2b8"/></svg>\');background-repeat:no-repeat;background-position:right 10px center;"><option value="">Todas las rarezas</option>' + rarityOptions + '</select>' +
+        '<button id="invRefreshBtn" class="btn btn--ghost" title="Refrescar datos" style="display:inline-flex;align-items:center;gap:5px;padding:8px 14px;font-size:0.78rem;transition:all 0.15s ease;">' +
+          '<img src="' + CONFIG.ICONS.refresh + '" width="14" height="14" alt="" style="opacity:0.7;"> Refrescar' +
         '</button>' +
       '</div>';
   }
@@ -397,8 +397,23 @@
     if (!container) return;
 
     if (state.loading) {
-      container.innerHTML = '<div style="display:grid;gap:12px;">' +
-        Array(3).fill('<div style="height:120px;background:linear-gradient(90deg,#1a1c24 25%,#252830 50%,#1a1c24 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:12px;"></div>').join('') +
+      container.innerHTML = '<div style="display:flex;flex-direction:column;gap:16px;">' +
+        // Skeleton KPIs
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:8px;">' +
+          Array(5).fill('<div style="height:64px;background:linear-gradient(90deg,#1a1c24 25%,#252830 50%,#1a1c24 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:10px;border-left:3px solid #2a2c35;"></div>').join('') +
+        '</div>' +
+        // Skeleton secciones
+        Array(3).fill(
+          '<div>' +
+            '<div style="height:20px;width:120px;background:linear-gradient(90deg,#1a1c24 25%,#252830 50%,#1a1c24 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:6px;margin-bottom:8px;"></div>' +
+            '<div style="display:flex;gap:8px;margin-bottom:8px;">' +
+              Array(4).fill('<div style="height:22px;width:70px;background:linear-gradient(90deg,#1a1c24 25%,#252830 50%,#1a1c24 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:12px;"></div>').join('') +
+            '</div>' +
+            '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">' +
+              Array(5).fill('<div style="height:40px;background:linear-gradient(90deg,#1a1c24 25%,#252830 50%,#1a1c24 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:8px;border-left:3px solid #2a2c35;"></div>').join('') +
+            '</div>' +
+          '</div>'
+        ).join('<div style="height:1px;background:#1f2026;margin:4px 0;"></div>') +
       '</div>';
       return;
     }
@@ -434,10 +449,15 @@
       if (!sec) return;
       if (loc === 'armory' && sec.allItems.length === 0 && Object.keys(sec.groups).length === 0) return;
 
-      html += '<div class="inv-section-header" data-section="' + loc + '" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:8px;transition:background 0.15s ease;">' +
-        '<img src="' + (locIcons[loc] || '') + '" width="20" height="20" alt="">' +
-        '<strong style="font-size:0.9rem;">' + esc(sec.label) + '</strong>' +
-        '<span style="margin-left:auto;color:#9aa2b8;font-size:0.75rem;">Ver todo →</span>' +
+      html += '<div class="inv-section-header" data-section="' + loc + '" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;border-radius:10px;transition:all 0.15s ease;background:#0a0c10;border:1px solid #1a1c24;margin-top:4px;">' +
+        '<div style="width:32px;height:32px;border-radius:8px;background:#0f1116;display:flex;align-items:center;justify-content:center;border:1px solid #1f2026;">' +
+          '<img src="' + (locIcons[loc] || '') + '" width="18" height="18" alt="">' +
+        '</div>' +
+        '<div style="flex:1;">' +
+          '<strong style="font-size:0.85rem;color:#e0e4ed;">' + esc(sec.label) + '</strong>' +
+          '<div style="font-size:0.65rem;color:#9aa2b8;">' + esc(Object.keys(sec.groups).length + ' rarezas') + '</div>' +
+        '</div>' +
+        '<span style="color:#5276ff;font-size:0.7rem;font-weight:600;">Explorar →</span>' +
       '</div>';
 
       var groupKeys = Object.keys(sec.groups);
@@ -1228,6 +1248,11 @@
     var mySeq = ++_refreshSeq;
     state.view = 'hub';
     state.activeSection = null;
+
+    // Mostrar skeleton inmediatamente
+    state.loading = true;
+    render();
+
     _refreshInFlight = loadAllData(!!forceNoCache);
     try { await _refreshInFlight; if (mySeq === _refreshSeq) render(); }
     finally { if (mySeq === _refreshSeq) _refreshInFlight = null; }

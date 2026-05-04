@@ -1,7 +1,7 @@
 /* =======================================================================
  * js/api-gw2.js  —  Capa API con fallbacks + caché persistente (mejorada)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 2.13.0-modular (2026-05-03) — Inventory: Bank, Materials, Legendary Armory
+ * Versión: 2.14.0-modular (2026-05-04) — Commerce: Listings + Prices para Ofertas TP
  *
  * Cobertura de este archivo:
  *  - Token / permisos (tokeninfo)
@@ -40,6 +40,8 @@
     BANK:          2 * 60 * 1000,            // 2 min (inventario cambia poco)
     MATERIALS:     2 * 60 * 1000,            // 2 min
     ARMORY:        5 * 60 * 1000,            // 5 min (legendarios no cambian seguido)
+    COMM_LISTINGS: 5 * 60 * 1000,            // 5 min (listado de items en TP)
+    COMM_PRICES:   2 * 60 * 1000,            // 2 min (precios fluctúan rápido)
     WV_SEASON:     6 * 60 * 60 * 1000,       // 6 h
     WV_LISTINGS:  30 * 60 * 1000,            // 30 min
     WV_ACCOUNT:    5 * 60 * 1000,            // 5 min
@@ -248,6 +250,138 @@
         return [];
       });
     });
+  }
+
+  // ========================================================================
+  // COMMERCE: Listings, Prices y Transactions del Trading Post (v2.15.0)
+  // ========================================================================
+
+  /**
+   * Obtiene las órdenes de compra activas del jugador
+   * @param {string} token - API Key con permiso tradingpost
+   * @param {Object} opts - Opciones (nocache, etc.)
+   * @returns {Promise<Array>}
+   */
+  function getCommerceTransactionsBuys(token, opts) {
+    opts = opts || {};
+    if (!token) return Promise.reject(new Error('Falta access_token'));
+
+    var key = 'commerce_transactions_buys';
+    var ttl = 60 * 1000; // 1 minuto
+
+    var cached = getCache(key, ttl, token, opts.nocache);
+    if (cached) return Promise.resolve(cached);
+
+    var url = withToken(CFG.API_BASE + '/v2/commerce/transactions/current/buys', token);
+    var ikey = 'if:commerce_transactions_buys:' + fpToken(token);
+
+    return inflightOnce(ikey, function () {
+      return fetchWithRetry(url, opts).then(function (data) {
+        var tx = Array.isArray(data) ? data : [];
+        putCache(key, tx, token, ttl);
+        return tx;
+      }).catch(function (error) {
+        console.warn(LOGP, 'Error getting commerce transactions (buys):', error);
+        return [];
+      });
+    });
+  }
+
+  /**
+   * Obtiene las órdenes de venta activas del jugador
+   * @param {string} token - API Key con permiso tradingpost
+   * @param {Object} opts - Opciones (nocache, etc.)
+   * @returns {Promise<Array>}
+   */
+  function getCommerceTransactionsSells(token, opts) {
+    opts = opts || {};
+    if (!token) return Promise.reject(new Error('Falta access_token'));
+
+    var key = 'commerce_transactions_sells';
+    var ttl = 60 * 1000; // 1 minuto
+
+    var cached = getCache(key, ttl, token, opts.nocache);
+    if (cached) return Promise.resolve(cached);
+
+    var url = withToken(CFG.API_BASE + '/v2/commerce/transactions/current/sells', token);
+    var ikey = 'if:commerce_transactions_sells:' + fpToken(token);
+
+    return inflightOnce(ikey, function () {
+      return fetchWithRetry(url, opts).then(function (data) {
+        var tx = Array.isArray(data) ? data : [];
+        putCache(key, tx, token, ttl);
+        return tx;
+      }).catch(function (error) {
+        console.warn(LOGP, 'Error getting commerce transactions (sells):', error);
+        return [];
+      });
+    });
+  }
+
+  /**
+   * Obtiene la lista de IDs de items disponibles en la Compañía de Comercio
+   * @param {Object} opts - Opciones (nocache, etc.)
+   * @returns {Promise<Array>} - Array de IDs
+   */
+  function getCommerceListings(opts) {
+    opts = opts || {};
+    var key = 'commerce_listings';
+    var cached = getCache(key, TTL.COMM_LISTINGS, null, opts.nocache);
+    if (cached) return Promise.resolve(cached);
+
+    var url = CFG.API_BASE + '/v2/commerce/listings';
+    var ikey = 'if:commerce_listings';
+
+    return inflightOnce(ikey, function () {
+      return fetchWithRetry(url, opts).then(function (data) {
+        var ids = Array.isArray(data) ? data : [];
+        putCache(key, ids, null, TTL.COMM_LISTINGS);
+        return ids;
+      }).catch(function (error) {
+        console.warn(LOGP, 'Error getting commerce listings:', error);
+        return [];
+      });
+    });
+  }
+
+  /**
+   * Obtiene precios de compra/venta para items específicos
+   * @param {Array} ids - Array de IDs de items
+   * @param {Object} opts - Opciones (nocache, etc.)
+   * @returns {Promise<Array>} - Array de { id, buys: { quantity, unit_price }, sells: { quantity, unit_price } }
+   */
+  function getCommercePrices(ids, opts) {
+    opts = opts || {};
+    ids = Array.isArray(ids) ? Array.from(new Set(ids)).filter(function (x) { return x != null; }) : [];
+    if (!ids.length) return Promise.resolve([]);
+
+    var out = [];
+    var chunk = 200;
+    var chain = Promise.resolve();
+
+    for (var i = 0; i < ids.length; i += chunk) {
+      (function (slice) {
+        chain = chain.then(function () {
+          var key = 'commerce_prices:' + slice.join(',');
+          var cached = getCache(key, TTL.COMM_PRICES, null, opts.nocache);
+          if (cached) { out = out.concat(cached || []); return; }
+
+          var url = CFG.API_BASE + '/v2/commerce/prices?ids=' + slice.join(',');
+          var ikey = 'if:' + key;
+
+          return inflightOnce(ikey, function () {
+            return fetchWithRetry(url, opts).then(function (data) {
+              var prices = Array.isArray(data) ? data : [];
+              putCache(key, prices, null, TTL.COMM_PRICES);
+              out = out.concat(prices);
+            }).catch(function (error) {
+              console.warn(LOGP, 'Error getting commerce prices:', error);
+            });
+          });
+        });
+      })(ids.slice(i, i + chunk));
+    }
+    return chain.then(function () { return out; });
   }
 
   // ========================================================================
@@ -497,6 +631,14 @@
     }
 
     return chain.then(function () {
+      // Cap de 500 entradas: eliminar los 100 más viejos si se excede
+      var keys = Object.keys(per);
+      if (keys.length > 500) {
+        var sorted = keys.sort(function(a, b) {
+          return (per[a]?.ts || 0) - (per[b]?.ts || 0);
+        });
+        sorted.slice(0, keys.length - 400).forEach(function(k) { delete per[k]; });
+      }
       lsSet(lkey, { ts: now(), data: per });
       return out;
     });
@@ -549,6 +691,12 @@
 
     // Raids
     getAccountRaids: getAccountRaids,
+
+    // Commerce (v2.15.0)
+    getCommerceListings: getCommerceListings,
+    getCommercePrices: getCommercePrices,
+    getCommerceTransactionsBuys: getCommerceTransactionsBuys,
+    getCommerceTransactionsSells: getCommerceTransactionsSells,
 
     // Inventory (NUEVO v2.13.0)
     getAccountBank: getAccountBank,
