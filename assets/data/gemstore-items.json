@@ -1,0 +1,16 @@
+{
+  "updated": "2026-05-04",
+  "patch": "Mayo 2026",
+  "items": [
+    { "id": 108961, "source": "Gem Store", "isNew": true },
+    { "id": 108960, "source": "Black Lion Chest", "isNew": true },
+    { "id": 108959, "source": "Black Lion Chest", "isNew": true },
+    { "id": 108958, "source": "Black Lion Chest", "isNew": true },
+    { "id": 108957, "source": "Gem Store", "isNew": true },
+    { "id": 108956, "source": "Gem Store", "isNew": false },
+    { "id": 108955, "source": "Black Lion Chest", "isNew": true },
+    { "id": 108953, "source": "Gem Store", "isNew": false },
+    { "id": 108952, "source": "Gem Store", "isNew": false },
+    { "id": 108951, "source": "Gem Store", "isNew": false }
+  ]
+}

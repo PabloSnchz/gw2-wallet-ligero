@@ -1,8 +1,8 @@
 ```markdown
-# 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v6.4.0)
+# 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v6.5.0)
 
 Fecha: 2026-05-04
-Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `wv-shop-ui.js`, `wv-objectives-ui.js`, `wv-theme.js`, `wallet-dashboard.js`, `raid-tracker.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `characters-theme.js`, `accounts-panel.js`, `welcome-panel.js`, `settings-manager.js`, `analytics.js`, `gist-sync.js`, `sidebar-nav.js`, `inventory-hub.js`, `*-theme.js`, `main.css`, `theme-polish.css`
+Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `wv-shop-ui.js`, `wv-objectives-ui.js`, `wv-theme.js`, `wallet-dashboard.js`, `raid-tracker.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `characters-theme.js`, `accounts-panel.js`, `welcome-panel.js`, `settings-manager.js`, `analytics.js`, `gist-sync.js`, `sidebar-nav.js`, `inventory-hub.js`, `converter-modal.js`, `*-theme.js`, `main.css`, `theme-polish.css`
 
 ## 📌 BAI — Bloque de Alineamiento Instantáneo
 
@@ -56,6 +56,89 @@ Bóveda del Gato Negro es una web app vanilla JS modular, sin framework, con foc
 - ☐ ¿Impacto en performance/UI?
 
 Si hay riesgo → advertir antes de generar código.
+
+---
+
+## 🚀 Novedades v6.5.0 (MAYO 2026) — Modal del Conversor + Comercio + Mejoras
+
+### 💱 Conversor Gem ↔ Gold — Migración a Modal (converter-modal.js v1.0.0)
+
+**Objetivo:** Extraer el conversor de la sidebar a un modal independiente con tabs para Cambio, Transacciones, Populares y Historial.
+
+**Arquitectura del modal:**
+
+💎 Cambio │ 📋 Transacciones │ 📊 Populares │ 📈 Historial
+
+
+**Tabs implementadas:**
+
+| Tab | Funcionalidad | APIs |
+|-----|---------------|------|
+| **Cambio** | Conversor Gem ↔ Gold con índice de conveniencia | `/v2/commerce/exchange/coins`, `/v2/commerce/exchange/gems` |
+| **Transacciones** | Órdenes activas de compra/venta del jugador | `/v2/commerce/transactions/current/buys`, `/v2/commerce/transactions/current/sells` |
+| **Populares** | Ítems con mayor volumen en el Trading Post | `/v2/commerce/listings`, `/v2/commerce/prices`, `/v2/items` |
+| **Historial** | Placeholder para Fase 3 | — |
+
+**KPIs de Transacciones:**
+- Total en compras (rojo), Total en ventas (verde), Balance (verde/rojo)
+- Formato de monedas unificado: `3 g 17 s 88 c`
+
+**Embellecimiento visual:**
+- Título con glow dorado
+- Labels de Gemas y Oro con glow de color + contenedor
+- Outputs con fondo oscuro y borde
+- Botones con íconos
+- Estado con color semántico
+- Referencia 400 con contenedor destacado
+- KPIs de Transacciones con glow
+- Tabs con hover y estado activo mejorado
+
+### 🔧 Mejoras en `wallet-theme.js`
+
+**Glow neutro en íconos:** Las divisas sin color asignado ahora reciben un glow blanco sutil (`rgba(255,255,255,0.12)`) para mantener consistencia visual.
+
+### 🗜️ Cap de caché de items
+
+**`api-gw2.js`:** Se agregó un límite de 500 entradas en `items_cache_v1:es`. Si se supera, se eliminan las 100 más viejas y se mantienen 400. Elimina el único riesgo real de cuota de localStorage.
+
+### 📦 Nuevas funciones en `api-gw2.js` (v2.15.0)
+
+| Función | Endpoint | TTL |
+|---------|----------|-----|
+| `getCommerceListings(opts)` | `/v2/commerce/listings` | 5 min |
+| `getCommercePrices(ids, opts)` | `/v2/commerce/prices` | 2 min |
+| `getCommerceTransactionsBuys(token, opts)` | `/v2/commerce/transactions/current/buys` | 1 min |
+| `getCommerceTransactionsSells(token, opts)` | `/v2/commerce/transactions/current/sells` | 1 min |
+
+### 🗑️ Cambios en `index.html`
+
+- **Eliminado** `#asideConvSection` de la sidebar
+- **Agregado** botón `[💎 Conversor]` en el toolbar de Wallet (antes de Dashboard)
+- **Agregado** script `converter-modal.js` en orden de carga
+
+### 🔧 Cambios en `app.js`
+
+- **Extraídas** ~246 líneas del conversor a `converter-modal.js`
+- **Agregado** wire del botón `walletConverterBtn`
+
+### 🔧 Cambios en `router.js`
+
+- **Eliminada** referencia a `asideConvSection` en `updateSidebarFor`
+
+### 📋 Tabla de Versiones Actualizada
+
+| Archivo | Versión Anterior | Versión Nueva |
+|---------|:---:|:---:|
+| `api-gw2.js` | v2.13.0-modular | **v2.15.0-modular** |
+| `wallet-theme.js` | v1.3.0 | **v1.3.1** |
+| `app.js` | v2.6.3 | **v2.7.0** |
+| `router.js` | v2.15.0 | **v2.16.0** |
+
+### Archivos nuevos (v6.5.0)
+- `js/converter-modal.js` — Modal del Conversor con 3 tabs funcionales + placeholder
+
+### Archivos eliminados
+- `assets/data/gemstore-items.json` — Eliminado (reemplazado por tabs con datos reales de API)
 
 ---
 
@@ -1269,7 +1352,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
-| `js/api-gw2.js` | **v2.13.0** | API Layer con fetchWithRetry, cachés, WV, achievements, items, account info con last_modified, **getAccountRaids**, **getAccountBank**, **getAccountMaterials**, **getAccountLegendaryArmory** |
+| `js/api-gw2.js` | **v2.15.0** | API Layer con fetchWithRetry, cachés, WV, achievements, items, account info con last_modified, **getAccountRaids**, **getAccountBank**, **getAccountMaterials**, **getAccountLegendaryArmory**, **getCommerceListings**, **getCommercePrices**, **getCommerceTransactionsBuys**, **getCommerceTransactionsSells** |
 | `js/wv-season-storage.js` | v1.1.1 | Almacenamiento por temporada (JSON por temporada en localStorage) |
 | `js/wizards-vault.js` | v1.3.0 | WV: objetivos, tienda, integración con SeasonStore. Recarga forzada de temporada |
 | `js/wv-shop-ui.js` | **v1.0.2** | UI de Tienda WV — **Glow solo en ícono de rareza, fix de timing con wv-theme.js** |
@@ -1290,10 +1373,10 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/welcome-panel.js` | v1.3.0 | Pantalla de Bienvenida |
 | `js/raid-tracker.js` | v1.7.0 | Seguimiento de Raids Semanales |
 | `js/wallet-dashboard.js` | **v2.5.0** | Dashboard de Cartera — **KPIs con border-left semántico + glow, tabla unificada** |
-| `js/router.js` | **v2.15.0** | Router desacoplado (~750 líneas). **Soporta InventoryHub como pantalla principal de #/account/characters** |
-| `js/app.js` | **v2.6.3** | Keys, wallet, eventos globales |
+| `js/router.js` | **v2.16.0** | Router desacoplado (~740 líneas). **Soporta InventoryHub como pantalla principal. Sidebar sin conversor.** |
+| `js/app.js` | **v2.7.0** | Keys, wallet, eventos globales. **Conversor extraído a converter-modal.js** |
 | `js/analytics.js` | v1.0.0 | Eventos personalizados para Google Analytics |
-| `js/wallet-theme.js` | **v1.3.0** | Tema visual de Cartera — **Glow en ícono de divisa** |
+| `js/wallet-theme.js` | **v1.3.1** | Tema visual de Cartera — **Glow en ícono de divisa + glow neutro para divisas sin color** |
 | `js/meta-theme.js` | **v1.4.2** | Tema visual de Meta — **Solo border-left** |
 | `js/achievements-theme.js` | **v1.1.1** | Tema visual de Logros — **Solo border-left** |
 | `js/wv-theme.js` | **v1.0.1** | Tema visual de WV — **Solo border-left, expone window.WVTheme** |
@@ -1305,6 +1388,12 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 
 ### Archivos nuevos (v6.4.0)
 - `js/inventory-hub.js` — Módulo de Inventario y Personajes (buscador de objetos, KPIs, vistas de sección, modal de ítem)
+
+### Archivos nuevos (v6.5.0)
+- `js/converter-modal.js` — Modal del Conversor Gem ↔ Gold con 3 tabs (Cambio, Transacciones, Populares)
+
+### Archivos eliminados (v6.5.0)
+- `assets/data/gemstore-items.json` — Datos estáticos de Gem Store (reemplazado por datos reales de API)
 
 ---
 
@@ -2508,6 +2597,18 @@ SIN defer (temas, al final):
   - **Dashboard Cartera**: KPIs con border-left semántico + glow, tabla unificada
   - **Fix botón Dashboard Wallet** en index.html
   - **Limpieza**: eliminado `wv-theme.js` duplicado, `.inf-prev` duplicado de `theme-polish.css`
+- **May 2026:** **Modal del Conversor + Comercio + Mejoras (v6.5.0)**:
+  - Conversor extraído de `app.js` a `converter-modal.js` como modal con 4 tabs
+  - Tab Cambio: conversor Gem ↔ Gold con glow e índice de conveniencia
+  - Tab Transacciones: órdenes activas de compra/venta del jugador con KPIs de totales
+  - Tab Populares: ítems con mayor volumen en el Trading Post, filtro por rareza y legendarias
+  - Tab Historial: placeholder para Fase 3
+  - Nuevas funciones en `api-gw2.js` v2.15.0: `getCommerceListings`, `getCommercePrices`, `getCommerceTransactionsBuys`, `getCommerceTransactionsSells`
+  - Cap de 500 entradas en `items_cache_v1:es` para prevenir cuota de localStorage
+  - Glow neutro en íconos de divisas sin color asignado (`wallet-theme.js` v1.3.1)
+  - Formato de monedas unificado `3 g 17 s 88 c` en todo el modal
+  - Embellecimiento visual completo: glows, contenedores, KPIs con iconos
+  - Sidebar liberada del conversor (~80 líneas menos en `index.html`)
 - **May 2026:** **Módulo de Inventario y Personajes (v6.4.0)**:
   - Nuevo módulo `inventory-hub.js` v1.3.1 como pantalla principal de `#/account/characters`
   - Buscador unificado en banco, materiales y armería legendaria
@@ -2519,7 +2620,7 @@ SIN defer (temas, al final):
   - Sin localStorage adicional — solo caché en memoria con TTL
   - `characters.js` como subvista con botón "Volver al Inventario"
 
-## 🎉 Estado actual del proyecto (v6.4.0)
+## 🎉 Estado actual del proyecto (v6.5.0)
 
 - ✅ Navegación estable y desacoplada
 - ✅ **Router reducido a ~750 líneas** (solo orquestación, sin renderizado HTML)
@@ -2544,10 +2645,13 @@ SIN defer (temas, al final):
 - ✅ Google Analytics integrado con eventos en 11 módulos
 - ✅ Estado online basado en last_modified: umbral 20 minutos, ícono local
 - ✅ Dashboard de Cartera Multi-Cuenta: KPIs con border-left + glow, tabla unificada
-- ✅ Conversor: quick-chips como badges, tarjetas con borde
+- ✅ **Conversor Modal v1.0.0**: 3 tabs funcionales (Cambio, Transacciones, Populares), KPIs con glow, formato unificado
+- ✅ **api-gw2.js v2.15.0**: 4 nuevas funciones de commerce + cap de caché de items
 - ✅ Raid Tracker: 8 alas, 33 encuentros, modal con detalles
 - ✅ **Cámara del Brujo 100% desacoplada de router.js**
 - ✅ **Cero código redundante** (Modo Deluxe y wallet-cur-theme-patch eliminados)
 - ✅ **Sistema de iconos por tipo de cuenta** sincronizado entre Accounts y Dashboard
 - ✅ **Inventory Hub sin localStorage adicional** — solo caché en memoria
+- ✅ **Caché de items con cap de 500 entradas** — sin riesgo de cuota
+- ✅ **Sidebar liberada** — conversor movido a modal, ~80 líneas menos en index.html
 ```

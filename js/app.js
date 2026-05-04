@@ -42,8 +42,7 @@
   const LS_CURR = 'gw2_currencies_cache_v1';
   const CURR_TTL = 1000 * 60 * 60 * 24 * 7;
 
-  const LS_CONV = 'gw2_conv_cache_v3';
-  const CONV_TTL = 1000 * 60 * 30;
+  // (Conversor movido a converter-modal.js)
 
   // NUEVO: persistencia de la key seleccionada (para restaurar tras F5)
   const LS_SELECTED_KEY = 'gw2_selected_key_v1';
@@ -117,15 +116,7 @@
     walletCards: $('#walletCards'), favBlock: $('#favBlock'), favCards: $('#favCards'),
     tableWrap: $('#walletTableWrap'), tableBody: $('#walletTable tbody'),
 
-    // Conversor
-    cvGems: $('#cvGems'), cvGemsOut: $('#cvGemsOut'),
-    cvGold: $('#cvGold'), cvGoldOut: $('#cvGoldOut'),
-    cvRefresh: $('#cvRefresh'),
-    cvState: $('#cvState'), cvRef400: $('#cvRef400'),
-
-    // NUEVO: quick‑chips
-    cvGemsQuick: $('#cvGemsQuick'),
-    cvGoldQuick: $('#cvGoldQuick')
+  // (Conversor movido a converter-modal.js)
   };
 
   /* ========================= Utils ========================= */
@@ -982,31 +973,14 @@
       render();
     });
 
-    // Conversor (debounce para tipeo)
-    if ($('#convWrap')) {
-      let t = null; const deb = (fn, ms = 300) => (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
-      el.cvGems?.addEventListener('input', deb(onTopInput));
-      el.cvGold?.addEventListener('input', deb(onBottomInput));
-      el.cvRefresh?.addEventListener('click', () => { updateRef400().catch(() => { }); onTopInput(); onBottomInput(); });
-
-      // NUEVO: quick‑chips
-      el.cvGemsQuick?.querySelectorAll('[data-gems]')?.forEach(btn => {
-        if (btn.__wired) return; btn.__wired = true;
-        btn.addEventListener('click', () => {
-          const n = Number(btn.getAttribute('data-gems')) || 0;
-          if (el.cvGems) el.cvGems.value = String(n);
-          // cálculo inmediato sin debounce
-          onTopInput();
-        });
-      });
-      el.cvGoldQuick?.querySelectorAll('[data-gold]')?.forEach(btn => {
-        if (btn.__wired) return; btn.__wired = true;
-        btn.addEventListener('click', () => {
-          const n = Number(btn.getAttribute('data-gold')) || 0;
-          if (el.cvGold) el.cvGold.value = String(n);
-          // cálculo inmediato sin debounce
-          onBottomInput();
-        });
+    // Botón para abrir el modal del Conversor (movido a converter-modal.js)
+    var convBtn = document.getElementById('walletConverterBtn');
+    if (convBtn) {
+      convBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (window.ConverterModal && typeof window.ConverterModal.open === 'function') {
+          window.ConverterModal.open();
+        }
       });
     }
   }
@@ -1057,7 +1031,7 @@
     setViewTogglePressed();           // según state.view
 
     wireEvents();
-    updateRef400().catch(() => {});
+  // (Conversor movido a converter-modal.js)
     runIconChecks();
 
     // Avisar token inicial a otros módulos (compat)
@@ -1067,243 +1041,7 @@
   }
   boot();
 
-  /* ===================== Conversor ========================= */
-  function convGet() { try { return JSON.parse(localStorage.getItem(LS_CONV) || '{}'); } catch { return {}; } }
-  function convPut(k, v) { try { const m = convGet(); m[k] = { v, ts: Date.now() }; localStorage.setItem(LS_CONV, JSON.stringify(m)); } catch {} }
-  function convVal(k) { const m = convGet(); if (!m[k]) return null; if ((Date.now() - m[k].ts) > CONV_TTL) return null; return m[k].v; }
-
-  async function gemsForCoins(copper) {
-    const k = `coins2gems_${copper}`; let v = convVal(k);
-    if (v != null) return v;
-    const o = await API.coinsRaw(copper);
-    let gems = Number.isFinite(+o?.quantity) ? +o.quantity
-      : Number.isFinite(+o?.gems) ? +o.gems
-      : (Number.isFinite(+o?.coins_per_gem) ? Math.floor(+copper / +o.coins_per_gem) : NaN);
-    if (!Number.isFinite(gems)) throw new Error('Respuesta inválida coins->gems');
-    convPut(k, gems); return gems;
-  }
-  async function coinsForGems(gems) {
-    const k = `gems2coins_${gems}`; let v = convVal(k);
-    if (v != null) return v;
-    const o = await API.gemsRaw(gems);
-    let copper = Number.isFinite(+o?.quantity) ? +o.quantity
-      : Number.isFinite(+o?.coins) ? +o.coins
-      : (Number.isFinite(+o?.coins_per_gem) ? Math.floor(+gems * +o.coins_per_gem) : NaN);
-    if (!Number.isFinite(copper)) throw new Error('Respuesta inválida gems->coins');
-    convPut(k, copper); return copper;
-  }
-  async function costToBuyGems_coinsMarket(targetGems) {
-  if (targetGems <= 0) return 0;
-  
-  // Buscamos la cantidad de ORO (en cobre) necesaria para obtener targetGems gemas
-  let lo = 0;  // cobre
-  let hi = 10000 * 10000; // empezamos con 10,000 de oro en cobre (100,000,000 cobre)
-  
-  // Aumentamos hi hasta que consigamos suficientes gemas
-  while (await gemsForCoins(hi) < targetGems) {  // ← USAMOS gemsForCoins (oro → gemas)
-    hi = Math.min(hi * 2, 5e11);
-    if (hi >= 5e11) break;
-  }
-  
-  // Búsqueda binaria sobre ORO (cobre)
-  while (lo < hi) {
-    const mid = Math.floor((lo + hi) / 2);
-    const g = await gemsForCoins(mid);  // ← gemsForCoins devuelve GEMAS
-    if (g >= targetGems) {
-      hi = mid;  // podemos conseguir las gemas con menos oro
-    } else {
-      lo = mid + 1;  // necesitamos más oro
-    }
-  }
-  
-  return lo;  // devolvemos la cantidad de ORO (en cobre) necesaria
-}
-  async function gemsToBuyGold_gemsMarket(targetCopper) {
-    if (targetCopper <= 0) return 0;
-    let lo = 0, hi = 100;
-    while (await coinsForGems(hi) < targetCopper) { hi = Math.min(hi * 2, 3e6); if (hi >= 3e6) break; }
-    while (lo < hi) {
-      const mid = Math.floor((lo + hi) / 2);
-      const c = await coinsForGems(mid);
-      if (c >= targetCopper) hi = mid; else lo = mid + 1;
-    }
-    return lo;
-  }
-
-  function setConvState(msg, kind = 'info') {
-    if (!el.cvState) return;
-    el.cvState.textContent = msg;
-    el.cvState.style.color = (kind === 'error') ? '#f28b82' : '#a0a0a6';
-    console.info('[conv:state]', msg);
-  }
-  function setGemsOut(val) {
-    if (!Number.isFinite(val) || val <= 0) { el.cvGoldOut && (el.cvGoldOut.textContent = '—'); return; }
-    el.cvGoldOut.textContent = String(Math.floor(val));
-    markUpdated(el.cvGoldOut);
-  }
-  function setBadges(container, copper) {
-    if (!container) return;
-    if (!Number.isFinite(copper) || copper <= 0) { container.innerHTML = '—'; return; }
-    container.innerHTML = badgesHTMLFromCopper(copper);
-    markUpdated(container);
-  }
-
-  /* ===== NUEVO: Conveniencia (400 gemas) ======================
-     Mapea el precio (en ORO) de 400 gemas a un score 0..1 según referencias:
-       - Excelente: <=108 oro
-       - Bueno: 120–130 oro (meseta alta fija)
-       - Actual poco conveniente: ~160 oro (score bajo)
-  */
-  function scoreFromPrice400(priceGold) {
-    const p = Number(priceGold || 0);
-    if (!Number.isFinite(p) || p <= 0) return { score: 0, tier: 'bad' };
-
-    if (p <= 108)            return { score: 1.00, tier: 'exc' };
-    if (p > 108 && p < 120)  return { score: 1.00 - ((p - 108) / (120 - 108)) * 0.15, tier: 'good' }; // 1.00→0.85
-    if (p >= 120 && p <=130) return { score: 0.85, tier: 'good' };                                     // meseta alta
-    if (p > 130 && p < 160)  return { score: 0.85 - ((p - 130) / (160 - 130)) * 0.65, tier: 'mid' };   // 0.85→0.20
-    return { score: 0.05, tier: 'bad' }; // 160+
-  }
-  function labelForScore(score){
-    if (score >= 0.95) return 'Excelente';
-    if (score >= 0.80) return 'Muy conveniente';
-    if (score >= 0.65) return 'Bueno';
-    if (score >= 0.45) return 'Normal';
-    if (score >= 0.25) return 'Bajo';
-    return 'Muy bajo';
-  }
-  function classForScore(score){
-    if (score >= 0.95) return 'is-exc';
-    if (score >= 0.80) return 'is-good';
-    if (score >= 0.65) return 'is-good';
-    if (score >= 0.45) return 'is-mid';
-    if (score >= 0.25) return 'is-low';
-    return 'is-bad';
-  }
-  function renderConvenience(priceCopperFor400){
-    try{
-      const elBar  = document.getElementById('convScoreBar');
-      const elLbl  = document.getElementById('convScoreLabel');
-      const elHint = document.getElementById('convScoreHint');
-      const meter  = document.querySelector('.conv2-meter');
-      if (!elBar || !elLbl || !elHint || !meter) return;
-
-      const gold = Number(priceCopperFor400 || 0) / 10000; // cobre -> oro
-      if (!Number.isFinite(gold) || gold <= 0){
-        elBar.style.width = '0%';
-        elBar.className = 'conv2-meter__fill';
-        elLbl.textContent = '—';
-        elHint.textContent = 'Sin datos de referencia aún.';
-        meter.setAttribute('aria-valuenow', '0');
-        return;
-      }
-
-      const { score } = scoreFromPrice400(gold);
-      const pct = Math.round(score * 100);
-      const cls = classForScore(score);
-      const lbl = labelForScore(score);
-
-      elBar.className = 'conv2-meter__fill ' + cls;
-      elBar.style.width = pct + '%';
-      elLbl.textContent = `${lbl} (${gold.toFixed(2)} o / 400)`;
-      elHint.textContent = (score >= 0.65)
-        ? 'Es un buen momento según la referencia definida (120–130 o/400).'
-        : (score >= 0.45)
-          ? 'En línea con valores normales.'
-          : 'Poco conveniente frente a la referencia (120–130 o/400).';
-
-      meter.setAttribute('aria-valuenow', String(pct));
-
-      // micro-anim en la barra
-      markUpdated(elBar);
-    }catch(_){}
-  }
-
-  async function onTopInput() {
-    try {
-      let gs = String(el.cvGems?.value || '').trim();
-      if (gs === '' || Number(gs) <= 0) {
-        el.cvGems.value = '';
-        setBadges(el.cvGemsOut, 0);
-        setConvState('Ingresá gemas.');
-        // Reinicia barra si el input queda vacío
-        renderConvenience(0);
-        return;
-      }
-      const gems = Math.max(0, Math.floor(Number(gs)));
-      el.cvGems.value = String(gems);
-      setConvState('Calculando costo (coins→gems)…');
-      const copper = await costToBuyGems_coinsMarket(gems);
-      setBadges(el.cvGemsOut, copper);
-      setConvState('Actualizado.');
-
-      // normalizar a referencia /400 para evaluar conveniencia
-      if (gems > 0) {
-        const copperFor400 = Math.round((copper / gems) * 400);
-        renderConvenience(copperFor400);
-      }
-    } catch (e) {
-      console.error('[conv] top', e);
-      setBadges(el.cvGemsOut, 0);
-      setConvState('No se pudo calcular costo.', 'error');
-      renderConvenience(0);
-    }
-  }
-
-  async function onBottomInput() {
-    try {
-      let g = String(el.cvGold?.value || '').trim();
-      if (g === '' || Number(g) <= 0) {
-        el.cvGold.value = '';
-        setGemsOut(0);
-        setConvState('Ingresá oro.');
-        return;
-      }
-      const gold = Math.max(0, Math.floor(Number(g)));
-      el.cvGold.value = String(gold);
-      const copper = gold * 10000;
-      setConvState('Calculando gemas (gems→coins)…');
-      const gems = await gemsToBuyGold_gemsMarket(copper);
-      setGemsOut(gems);
-      setConvState('Actualizado.');
-      // Nota: la barra refleja conveniencia de COMPRAR gemas con oro (coins->gems),
-      // por eso no la actualizamos aquí (dirección inversa). La referencia /400 se cubre en updateRef400 y onTopInput.
-    } catch (e) {
-      console.error('[conv] bottom', e);
-      setGemsOut(0);
-      setConvState('No se pudo calcular gemas.', 'error');
-    }
-  }
-
-  async function updateRef400() {
-    try {
-      const k = 'ref_400_v3';
-      let copper = convVal(k);
-      if (copper == null) {
-        copper = await costToBuyGems_coinsMarket(400);
-        convPut(k, copper);
-      }
-      const iconGem =
-        `<img src="assets/icons/502065.png" width="24" height="24" style="vertical-align:-2px" alt="">`;
-      if (el.cvRef400) {
-        el.cvRef400.innerHTML =
-          `<span style="display:inline-flex;gap:6px;align-items:center;margin-right:8px">
-            ${iconGem}<strong>400</strong>
-          </span> ${badgesHTMLFromCopper(copper)}`;
-        markUpdated(el.cvRef400);
-      }
-
-      // pintar barra de conveniencia con la referencia real /400
-      renderConvenience(copper);
-
-      window.toast?.('success','Referencia 400 actualizada', { ttl: 1500 });
-    } catch (e) {
-      console.warn('[conv] ref400', e);
-      if (el.cvRef400) el.cvRef400.textContent = '—';
-      renderConvenience(0);
-      window.toast?.('warn','No se pudo actualizar la referencia 400', { ttl: 2000 });
-    }
-  }
+  // (Conversor movido a converter-modal.js)
 
   // Hooks públicos (MetaEventos los usa)
   window.__GN__ = {

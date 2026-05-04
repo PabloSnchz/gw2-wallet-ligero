@@ -127,9 +127,9 @@
 
   function updateSidebarFor(view) {
     try {
-      var conv=el('asideConvSection'), next=el('asideNextFeatures'), metaNext=el('metaAsideNext'), ach=el('achAsidePanel');
+      var next=el('asideNextFeatures'), metaNext=el('metaAsideNext'), ach=el('achAsidePanel');
       if (conv) conv.hidden = true; if (next) next.hidden = true; if (metaNext) metaNext.hidden = true; if (ach) ach.hidden = true;
-      if (view==='cards'){ if (conv) conv.hidden=false; if (next) next.hidden=false; }
+      if (view==='cards'){ if (next) next.hidden=false; }
       else if (view==='meta'){ if (metaNext) metaNext.hidden=false; }
       else if (view==='achievements'){ if (ach) ach.hidden=false; }
       else if (view==='accounts'){ /* no sidebar específico por ahora */ }

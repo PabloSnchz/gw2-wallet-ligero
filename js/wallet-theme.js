@@ -161,17 +161,20 @@
         if (title) title.style.color = isColorful ? hex : '#FFFFFF';
       } catch (_) {}
           // Glow en el ícono (mismo patrón que WV Tienda)
-    if (isColorful) {
-      try {
-        var iconWrap = card.querySelector('.wallet-card__iconWrap');
-        if (iconWrap) {
+    try {
+      var iconWrap = card.querySelector('.wallet-card__iconWrap');
+      if (iconWrap) {
+        if (isColorful) {
           var iconGlow = hexToRGBA(hex, 0.36);
           var iconBorder = hexToRGBA(hex, 0.32);
           iconWrap.style.boxShadow = '0 0 0 2px ' + iconBorder + ', 0 0 10px ' + iconGlow;
-          iconWrap.style.borderRadius = '10px';
+        } else {
+          // Glow neutro para divisas sin color asignado
+          iconWrap.style.boxShadow = '0 0 0 2px rgba(255,255,255,0.12), 0 0 8px rgba(255,255,255,0.06)';
         }
-      } catch (_) {}
-    }
+        iconWrap.style.borderRadius = '10px';
+      }
+    } catch (_) {}
     }
 
   // --- Migración de categorías a badges ----------------------------------------
