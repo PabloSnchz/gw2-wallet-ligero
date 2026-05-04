@@ -5,7 +5,7 @@
   const $  = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => Array.from((r||document).querySelectorAll(s));
 
-  console.info('%cMetaEventos meta.js v3.3.0 — Rediseño unificado de tarjetas (ícono con glow + border-left)',
+  console.info('%cMetaEventos meta.js v3.3.1 — Sin marcado manual (solo API)',
     'color:#7dd3fc; font-weight:700');
 
   // --------- Elementos del DOM ----------
@@ -33,7 +33,6 @@
 
   const LS_FLAGS      = 'gw2_meta_flags_v1';
   const FLAGS_TTL_MS  = 5 * 60 * 1000;
-  const LS_MANUAL     = 'gw2_meta_manual_v1';
 
   const LS_META_COMPACT = 'gw2_meta_compact';
 
@@ -213,48 +212,18 @@
     try{ localStorage.setItem(LS_FAVS, JSON.stringify([...favs])); }catch{}
   }
 
-  // --------- Hecho HOY (MANUAL) ----------
-  function tokenFingerprint(){
-    const t = window.__GN__?.getSelectedToken?.() ?? null;
-    if(!t) return null;
-    return `${t.slice(0,4)}…${t.slice(-4)}`;
-  }
-  function tokenFingerprintFrom(t){
-    if(!t) return null;
-    return `${t.slice(0,4)}…${t.slice(-4)}`;
-  }
+  // --------- Hecho HOY (SOLO API - v3.3.1) ----------
   function todayUTCKey(){
     const d = new Date();
     return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth()+1)}-${pad2(d.getUTCDate())}`;
   }
-  function manualKeyNamespace(){
-    return `${LS_MANUAL}:${tokenFingerprint() || 'anon'}:${todayUTCKey()}`;
-  }
-  function loadManualDone(){
-    try{
-      const all = JSON.parse(localStorage.getItem(manualKeyNamespace()) || '[]');
-      return new Set(Array.isArray(all) ? all : []);
-    }catch{
-      return new Set();
-    }
-  }
-  function saveManualDone(set){
-    try{ localStorage.setItem(manualKeyNamespace(), JSON.stringify([...set])); }catch{}
-  }
-  let manualDoneSet = loadManualDone();
 
   function isManualEligible(meta){
-    const hasAPI = !!(meta?.api?.worldBossId || meta?.api?.mapChestId);
-    return !!meta?.manualCheck && !hasAPI;
+    // v3.3.1: Marcado manual eliminado. Solo API.
+    return false;
   }
-  function isManualDone(meta){ return isManualEligible(meta) && manualDoneSet.has(meta.id); }
-  function toggleManual(meta){
-    if(!isManualEligible(meta)) return false;
-    if(manualDoneSet.has(meta.id)) manualDoneSet.delete(meta.id);
-    else manualDoneSet.add(meta.id);
-    saveManualDone(manualDoneSet);
-    return manualDoneSet.has(meta.id);
-  }
+  function isManualDone(meta){ return false; }
+  function toggleManual(meta){ return false; }
 
   // --------- API GW2: banderas de cuenta ----------
   async function fetchWorldBosses(token, opts = {}){
@@ -275,6 +244,10 @@
   }
 
   // --------- Cache por Key (TTL 5min) ----------
+  function tokenFingerprintFrom(t){
+    if(!t) return null;
+    return `${t.slice(0,4)}…${t.slice(-4)}`;
+  }
   function loadFlagsFromCache(tokenOpt){
     try{
       const all = JSON.parse(localStorage.getItem(LS_FLAGS) || '{}');
@@ -401,7 +374,6 @@
       return { done:true, src:'worldbosses' };
     if(meta.api?.mapChestId && accountFlags.mapchests.has(meta.api.mapChestId))
       return { done:true, src:'mapchests' };
-    if(isManualDone(meta)) return { done:true, src:'manual' };
     return { done:false, src:null };
   }
   const doneToday = (meta) => doneTodayDetail(meta).done;
@@ -424,11 +396,6 @@
     const n = String(name ?? '').toLowerCase();
     return n.includes('infusión') || n.includes('infusion') || INFUSION_WHITELIST.has(n);
   };
-  function labelByItemOrName(item, fallbackName){
-    if(isInfusionItemObj(item)) return 'Infusión destacada';
-    if(isInfusionNameOrWhitelist(fallbackName)) return 'Infusión destacada';
-    return 'Drop destacado';
-  }
   function isInfusionMeta(meta){
     if (meta.highlightItemId && itemCache.has(meta.highlightItemId)) {
       return isInfusionItemObj(itemCache.get(meta.highlightItemId));
@@ -498,7 +465,7 @@
     `;
   }
 
-  // ========== NUEVO v3.3.0: Ícono de expansión con glow (como Cartera/WV) ==========
+  // ========== Ícono de expansión con glow (como Cartera/WV) ==========
   function expKeyOf(meta){
     const raw = String(meta.expansion ?? '').toLowerCase().trim();
     return EXP_MAP[raw] ?? raw.replace(/\s+/g,'');
@@ -542,7 +509,7 @@
     return chips;
   }
 
-  // ========== NUEVO v3.3.0: cardHTML rediseñada (estructura unificada) ==========
+  // ========== cardHTML (estructura unificada, sin marcado manual) ==========
   function cardHTML(meta, inst, item, isFav){
     const now = nowLocal();
     const minsRemaining = inst?.nextAt ? Math.max(1, Math.floor((inst.nextAt - now)/60000)) : null;
@@ -550,19 +517,12 @@
     const dt = doneTodayDetail(meta);
     const when = accountFlags.lastHuman || '—';
     const srcTxt = dt.src
-      ? (dt.src === 'worldbosses' ? 'worldbosses' : (dt.src === 'mapchests' ? 'mapchests' : 'manual'))
+      ? (dt.src === 'worldbosses' ? 'worldbosses' : (dt.src === 'mapchests' ? 'mapchests' : '—'))
       : '—';
-    const manualEligible = isManualEligible(meta);
 
     const doneTitle = dt.done
-      ? `Hecho hoy (fuente: ${srcTxt}; actualizado ${when})${manualEligible ? ' — Click para desmarcar' : ''}`
-      : manualEligible
-        ? `No hecho hoy (fuente: ${srcTxt}) — Click para marcar manualmente`
-        : `No hecho hoy (fuente: ${srcTxt}; actualizado ${when})`;
-
-    const doneAttrs = manualEligible
-      ? `data-manual="1" data-id="${meta.id}" role="button" tabindex="0" aria-pressed="${dt.done?'true':'false'}"`
-      : '';
+      ? `Hecho hoy (fuente: ${srcTxt}; actualizado ${when})`
+      : `No hecho hoy (fuente: ${srcTxt}; actualizado ${when})`;
 
     // Estado
     var statusCls = dt.done ? 'meta-status--done' : 'meta-status--pending';
@@ -593,7 +553,7 @@
     const tint = expTintColor(meta);
     const styleTint = tint ? ` style="--meta-title-color:${tint}"` : '';
 
-    // ===== CHIPS DE TIMING (más sutiles, solo color en borde izquierdo del chip) =====
+    // ===== CHIPS DE TIMING =====
     var timingHtml = '';
     if (inst.state === 'active') {
       timingHtml = '<span class="meta-chip meta-chip--active">Activo</span>' +
@@ -605,10 +565,10 @@
       timingHtml = '<span class="meta-chip meta-chip--neutral">Más tarde</span>';
     }
 
-    // ===== FOOTER CON DROP (infusión con glow dorado) =====
+    // ===== FOOTER CON DROP =====
     const foot = footerDropHTML(meta, item);
 
-    // ===== NUEVA ESTRUCTURA UNIFICADA =====
+    // ===== ESTRUCTURA UNIFICADA (sin data-manual, sin role=button) =====
     return `
       <article class="m-card meta-card meta-card--tint-title" data-id="${meta.id}" data-type="${esc(meta.type)}" data-exp="${esc(meta.expansion)}"${styleTint}>
         <div class="meta-card__top">
@@ -624,7 +584,7 @@
           <div class="meta-tags">
             <span class="meta-pill">${meta.map ? esc(meta.map) : '—'}</span>
             <span class="meta-pill">${esc(meta.type)}</span>
-            <span class="meta-status ${statusCls}" ${doneAttrs} title="${esc(doneTitle)}">${statusText}</span>
+            <span class="meta-status ${statusCls}" title="${esc(doneTitle)}">${statusText}</span>
           </div>
           ${ctx ? `<div class="m-context">${esc(ctx)}</div>` : ''}
           <div class="meta-linkbar">
@@ -715,7 +675,7 @@
       .map(r=>cardHTML(r.meta, r.inst, itemCache.get(r.meta.highlightItemId), false))
       .join('');
 
-    // ===== v3.3.0: Tooltips de infusión PRIMERO (antes de listeners) =====
+    // Tooltips de infusión
     bindInfusionPreviews();
 
     // Acciones de tarjeta
@@ -750,22 +710,7 @@
       });
     });
 
-    // ✔ manual
-    $$('.m-done[data-manual="1"], .meta-status[data-manual="1"]', el.panel).forEach(x=>{
-      const id = x.getAttribute('data-id');
-      if(!id) return;
-      x.addEventListener('click', ()=>{
-        const meta = seed.find(m => m.id===id);
-        if(!meta) return;
-        const state = toggleManual(meta);
-        x.setAttribute('aria-pressed', String(state));
-        setStatus(state ? 'Marcado como "Hecho hoy" (manual).' : 'Desmarcado (manual).','ok');
-        render();
-      });
-      x.addEventListener('keydown', (e)=>{
-        if(e.key==='Enter' || e.key===' ') { e.preventDefault(); x.click(); }
-      });
-    });
+    // v3.3.1: Eliminados listeners de marcado manual
 
     // Compartir
     $$('.m-share', el.panel).forEach(btn=>{
@@ -809,6 +754,21 @@
     }
   }
 
+  function renderMiniNext(rowsRaw){
+    if(!el.miniNext) return;
+    const next = rowsRaw
+      .filter(r => r.inst.state==='active' || r.inst.state==='soon')
+      .sort((a,b) => {
+        const an = a.inst.nextAt ? a.inst.nextAt.getTime() : Infinity;
+        const bn = b.inst.nextAt ? b.inst.nextAt.getTime() : Infinity;
+        return an - bn;
+      })
+      .slice(0, 3);
+    el.miniNext.innerHTML = next.length
+      ? next.map(r => `<div class="mini-next-item">• <strong>${esc(r.meta.name)}</strong> ${r.inst.state==='active' ? '— Activo' : '— Próximo'}</div>`).join('')
+      : '<div class="mini-next-item muted">Sin eventos próximos</div>';
+  }
+
   // ---------- Reloj + Auto-refresh UTC ----------
   let clockT = null;
   let midnightTimer = null;
@@ -819,7 +779,6 @@
     if(delta > 0 && delta < 36*3600*1000){
       midnightTimer = setTimeout(async ()=>{
         await window.Meta.refresh({ token: window.__GN__?.getSelectedToken?.() ?? null, nocache: true });
-        manualDoneSet = loadManualDone();
         render();
         scheduleMidnightAutoRefresh();
       }, delta + 1200);
@@ -878,7 +837,7 @@
     }
   }
 
-  // ---------- Deluxe toggles ----------
+  // ---------- Compact toggle ----------
   function setCompact(on){ BODY.setAttribute('data-meta-compact', on ? 'on' : 'off'); }
   function injectUIToggles(){
     const actions = $('#metaPanel .filters-actions');
@@ -905,7 +864,6 @@
 
   // ---------- Tooltips de infusiones ----------
   function bindInfusionPreviews(){
-    // Limpiar previos
     document.querySelectorAll('.inf-prev').forEach(n=>n.remove());
 
     var cards = document.querySelectorAll('.m-card');
@@ -914,7 +872,6 @@
       var target = card.querySelector('.m-foot .m-item');
       if (!target) continue;
 
-      // Leer URL del preview directamente del DOM
       var preview = target.getAttribute('data-preview') || '';
       if (!preview) continue;
 
@@ -965,7 +922,6 @@
 
       await refreshAccountFlags(false, { token: window.__GN__?.getSelectedToken?.() ?? null });
 
-      manualDoneSet = loadManualDone();
       setCompact(COMPACT_DEFAULT);
       injectUIToggles();
 
@@ -998,7 +954,6 @@
   window.Meta.refresh = async function metaRefresh({ token, nocache = false } = {}){
     try {
       await refreshAccountFlags(!!nocache, { token: token ?? (window.__GN__?.getSelectedToken?.() ?? null) });
-      manualDoneSet = loadManualDone();
       await render();
     } catch (e) {
       if (e?.name === 'AbortError') return;

@@ -916,6 +916,10 @@
   function render() {
     if (!state.active) return;
     ensurePanel();
+    
+    // NUEVO: Botón para volver al Inventory Hub
+    renderBackToInventoryButton();
+    
     renderAccountHeader();
     renderFilters();
     renderList();
@@ -924,6 +928,43 @@
       count: state.characters.length,
       filtered: getFilteredCount()
     });
+  }
+
+  // NUEVO: Función para el botón "Volver al Inventario"
+  function renderBackToInventoryButton() {
+    var panel = document.getElementById('charactersPanel');
+    if (!panel) return;
+    
+    var title = panel.querySelector('.panel__title');
+    if (!title) return;
+    
+    // Solo agregar si no existe ya
+    var existingBtn = title.querySelector('#charBackToInventory');
+    if (existingBtn) return;
+    
+    var backBtn = document.createElement('button');
+    backBtn.id = 'charBackToInventory';
+    backBtn.className = 'btn btn--ghost';
+    backBtn.type = 'button';
+    backBtn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;margin-left:12px;font-size:0.8rem;';
+    backBtn.innerHTML = '<img src="assets/icons/Welcome/358409.png" width="16" height="16" alt="" style="vertical-align:middle;">← Volver al Inventario';
+    backBtn.title = 'Volver a la búsqueda de inventario';
+    
+    backBtn.addEventListener('click', function() {
+      // Desactivar Characters
+      root.Characters.deactivate();
+      
+      // Activar InventoryHub
+      if (root.InventoryHub && typeof root.InventoryHub.activate === 'function') {
+        root.InventoryHub.activate();
+      } else {
+        // Fallback: recargar la ruta
+        location.hash = '#/account/characters';
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      }
+    });
+    
+    title.appendChild(backBtn);
   }
 
   function getFilteredCount() {
@@ -1437,6 +1478,10 @@
         localStorage.removeItem(cacheKey);
         console.log(LOG, 'Caché de personajes eliminada');
       }
+    },
+    // NUEVO: Exponer lista de personajes para InventoryHub
+    getCharacterList: function() {
+      return state.characters.slice();
     },
     _debug: function() {
       return {

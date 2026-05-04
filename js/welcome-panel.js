@@ -1,6 +1,9 @@
 /*!
  * js/welcome-panel.js — Pantalla de Bienvenida
- * v1.3.0 (2026-04-27)
+ * v1.4.0 (2026-05-04)
+ * 
+ * MEJORAS v1.4.0:
+ * - Agregado Inventario y Personajes en funcionalidades y acceso rápido
  * 
  * MEJORAS v1.3.0:
  * - Rediseño completo de todas las secciones con tarjetas y glows
@@ -38,6 +41,7 @@
       achievements: 'assets/icons/Welcome/605001.png',
       wv: 'assets/icons/Welcome/3126786.png',
       activities: 'assets/icons/Welcome/961368.png',
+      inventory: 'assets/icons/Welcome/358409.png',
       characters: 'assets/icons/Welcome/784388.png',
       accounts: 'assets/icons/Welcome/733266.png'
     },
@@ -48,6 +52,7 @@
       wv: 'assets/icons/3172791.png',
       activities: 'assets/icons/1302773.png',
       raids: 'assets/icons/raids/raid-icon.png',
+      inventory: 'assets/icons/Welcome/358409.png',
       characters: 'assets/icons/156678.png',
       accounts: 'assets/icons/3601748.png'
     },
@@ -124,12 +129,12 @@
                       <span style="color: #c8cdd8; font-weight: 500; font-size: 0.85rem;">Gestionar actividades semanales (llave del León Negro, Leivas)</span>
                     </li>
                     <li style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: #0a0c10; border-radius: 10px; border: 1px solid #1e2028;">
-                      <img src="assets/icons/Welcome/102338.png" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain; flex-shrink: 0;">
-                      <span style="color: #c8cdd8; font-weight: 500; font-size: 0.85rem;">Seguimiento semanal de raids: alas, encuentros, drops y mecánicas</span>
+                      <img src="${CONFIG.FEATURE_ICONS.characters}" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain; flex-shrink: 0;">
+                      <span style="color: #c8cdd8; font-weight: 500; font-size: 0.85rem;">Buscar objetos en tu inventario, banco y materiales. Administrar personajes y POIs</span>
                     </li>
                     <li style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: #0a0c10; border-radius: 10px; border: 1px solid #1e2028;">
-                      <img src="${CONFIG.FEATURE_ICONS.characters}" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain; flex-shrink: 0;">
-                      <span style="color: #c8cdd8; font-weight: 500; font-size: 0.85rem;">Administrar tus personajes y sus POIs</span>
+                      <img src="assets/icons/Welcome/102338.png" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain; flex-shrink: 0;">
+                      <span style="color: #c8cdd8; font-weight: 500; font-size: 0.85rem;">Seguimiento semanal de raids: alas, encuentros, drops y mecánicas</span>
                     </li>
                     <li style="display: flex; align-items: center; gap: 14px; padding: 10px 12px; background: #0a0c10; border-radius: 10px; border: 1px solid #1e2028;">
                       <img src="${CONFIG.FEATURE_ICONS.accounts}" width="32" height="32" alt="" style="filter: brightness(0.9); object-fit: contain; flex-shrink: 0;">
@@ -219,8 +224,8 @@
               <span style="color: #e0e4ed; font-weight: 600; font-size: 0.8rem;">Raids</span>
             </a>
             <a href="#/account/characters" style="${CARD_BASE}"${HOVER_ATTRS}>
-              <img src="${CONFIG.QUICK_ICONS.characters}" width="40" height="40" alt="" style="filter: brightness(0.9);">
-              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.8rem;">Personajes</span>
+              <img src="${CONFIG.QUICK_ICONS.inventory}" width="40" height="40" alt="" style="filter: brightness(0.9);">
+              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.75rem;">Inventario y Personajes</span>
             </a>
             <a href="#/account/accounts" style="${CARD_BASE}"${HOVER_ATTRS}>
               <img src="${CONFIG.QUICK_ICONS.accounts}" width="40" height="40" alt="" style="filter: brightness(0.9);">
@@ -387,7 +392,7 @@
       if (state.inited) return;
       ensurePanel();
       state.inited = true;
-      console.info(LOG, 'ready v1.3.0 — Rediseño completo con tarjetas y glow');
+      console.info(LOG, 'ready v1.4.0 — Agregado Inventario y Personajes');
     },
     activate: activate,
     deactivate: deactivate,
