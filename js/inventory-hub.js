@@ -545,6 +545,37 @@
   }
 
   function wireHubItemCards(container) {
+    // Wire armor weight filter chips
+    var armorFilters = container.querySelectorAll('.inv-armor-chip');
+    armorFilters.forEach(function(chip) {
+      if (chip.__wiredArmor) return;
+      chip.__wiredArmor = true;
+      chip.addEventListener('click', function() {
+        var weight = chip.getAttribute('data-weight');
+
+        // Actualizar estilo de chips
+        armorFilters.forEach(function(c) {
+          var isActive = c.getAttribute('data-weight') === weight;
+          c.style.background = isActive ? 'rgba(123,194,255,0.12)' : '#1a1c24';
+          c.style.borderColor = isActive ? 'rgba(123,194,255,0.3)' : '#2a2c35';
+          c.style.color = isActive ? '#7bc2ff' : '#b4bad0';
+        });
+
+        // Filtrar items en la misma categoría
+        var catDiv = chip.closest('.inv-armory-cat');
+        if (!catDiv) return;
+        var itemCards = catDiv.querySelectorAll('.inv-item-card');
+        itemCards.forEach(function(card) {
+          var itemWeight = card.getAttribute('data-weight') || '';
+          if (weight === 'all' || itemWeight === weight) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    });
+
     $$('.inv-item-card', container).forEach(function(card) {
       if (card.__wiredHubItem) return;
       card.__wiredHubItem = true;
@@ -622,7 +653,8 @@
           '<img src="' + CONFIG.ICONS.search + '" width="14" height="14" alt="" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);opacity:0.5;">' +
           '<input type="text" id="invSectionSearch" placeholder="Buscar en ' + esc(label.toLowerCase()) + '..." style="padding:6px 10px 6px 28px;background:#1a1c24;border:1px solid #2a2c35;border-radius:20px;color:#e0e4ed;font-size:0.8rem;width:200px;">' +
         '</div>' +
-      '</div>';
+      '</div>' +
+      '<div id="invSectionContent"></div>';
 
     if (state.activeSection === 'materials') renderMaterialsDetail();
     else if (state.activeSection === 'bank') renderBankDetail();
@@ -724,7 +756,39 @@
       html = '<div class="muted" style="text-align:center;padding:40px;">🔍 No se encontraron materiales.</div>';
     }
 
-    container.innerHTML += '<div style="margin-top:12px;">' + html + '</div>';
+    var content = document.getElementById('invSectionContent');
+    if (content) content.innerHTML = '<div style="margin-top:12px;">' + html + '</div>';
+
+    // Wire armor weight filter chips
+    var armorFilters = container.querySelectorAll('.inv-armor-chip');
+    armorFilters.forEach(function(chip) {
+      if (chip.__wiredArmor) return;
+      chip.__wiredArmor = true;
+      chip.addEventListener('click', function() {
+        var weight = chip.getAttribute('data-weight');
+
+        // Actualizar estilo de chips
+        armorFilters.forEach(function(c) {
+          var isActive = c.getAttribute('data-weight') === weight;
+          c.style.background = isActive ? 'rgba(123,194,255,0.12)' : '#1a1c24';
+          c.style.borderColor = isActive ? 'rgba(123,194,255,0.3)' : '#2a2c35';
+          c.style.color = isActive ? '#7bc2ff' : '#b4bad0';
+        });
+
+        // Filtrar items en la misma categoría
+        var catDiv = chip.closest('.inv-armory-cat');
+        if (!catDiv) return;
+        var itemCards = catDiv.querySelectorAll('.inv-item-card');
+        itemCards.forEach(function(card) {
+          var itemWeight = card.getAttribute('data-weight') || '';
+          if (weight === 'all' || itemWeight === weight) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    });
 
     $$('.inv-item-card', container).forEach(function(card) {
       if (card.__wiredSectionItem) return;
@@ -746,42 +810,53 @@
 
     var searchQ = (document.getElementById('invSectionSearch')?.value || '').toLowerCase();
 
-    var totalPages = Math.ceil(state.bank.length / CONFIG.BANK_SLOTS_PER_PAGE);
+    // Si hay búsqueda, filtrar sobre todo el banco sin nulls
+    var allBankItems = state.bank;
+    var bankIndices = [];
+    for (var i = 0; i < state.bank.length; i++) { bankIndices.push(i); }
+
+    if (searchQ) {
+      var filtered = [];
+      var filteredIndices = [];
+      for (var j = 0; j < state.bank.length; j++) {
+        var item = state.bank[j];
+        if (!item || !item.id) continue;
+        var meta = state.itemsById.get(item.id);
+        var name = getItemName(meta).toLowerCase();
+        if (name.includes(searchQ)) {
+          filtered.push(item);
+          filteredIndices.push(j);
+        }
+      }
+      allBankItems = filtered;
+      bankIndices = filteredIndices;
+    }
+
+    var totalPages = Math.ceil(allBankItems.length / CONFIG.BANK_SLOTS_PER_PAGE);
     if (state.bankPage >= totalPages) state.bankPage = 0;
     if (state.bankPage < 0) state.bankPage = 0;
 
     var start = state.bankPage * CONFIG.BANK_SLOTS_PER_PAGE;
-    var end = Math.min(start + CONFIG.BANK_SLOTS_PER_PAGE, state.bank.length);
-    var pageItems = state.bank.slice(start, end);
-
-    // Filtrar items por búsqueda si hay
-    var filteredItems = pageItems;
-    if (searchQ) {
-      filteredItems = pageItems.map(function(item) {
-        if (!item || !item.id) return null;
-        var meta = state.itemsById.get(item.id);
-        var name = getItemName(meta).toLowerCase();
-        if (name.includes(searchQ)) return item;
-        return null;
-      });
-    }
+    var end = Math.min(start + CONFIG.BANK_SLOTS_PER_PAGE, allBankItems.length);
+    var pageItems = allBankItems.slice(start, end);
 
     var html = '';
 
     if (totalPages > 1) {
       html += '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px;">' +
         '<button id="invBankPrev" class="btn btn--ghost btn--xs" ' + (state.bankPage === 0 ? 'disabled' : '') + '>← Anterior</button>' +
-        '<span class="muted" style="font-size:0.75rem;">Slots ' + (start + 1) + '-' + end + ' de ' + state.bank.length + '</span>' +
+        '<span class="muted" style="font-size:0.75rem;">Slots ' + (start + 1) + '-' + end + ' de ' + allBankItems.length + (searchQ ? ' (filtrados)' : '') + '</span>' +
         '<button id="invBankNext" class="btn btn--ghost btn--xs" ' + (state.bankPage >= totalPages - 1 ? 'disabled' : '') + '>Siguiente →</button>' +
       '</div>';
     } else {
-      html += '<div class="muted" style="text-align:center;font-size:0.75rem;margin-bottom:8px;">' + state.bank.length + ' slots totales · ' + state.kpis.bankUsed + ' ocupados</div>';
+      var displayTotal = searchQ ? allBankItems.length : state.bank.length;
+      html += '<div class="muted" style="text-align:center;font-size:0.75rem;margin-bottom:8px;">' + displayTotal + ' slots' + (searchQ ? ' (' + state.bank.length + ' totales)' : '') + ' · ' + state.kpis.bankUsed + ' ocupados</div>';
     }
 
     html += '<div style="display:grid;grid-template-columns:repeat(10, 1fr);gap:4px;">';
 
     pageItems.forEach(function(item, idx) {
-      var slotNum = start + idx + 1;
+      var slotNum = (bankIndices[idx] != null ? bankIndices[idx] : start + idx) + 1;
       var slotStyle = 'aspect-ratio:1;background:#0a0c10;border:1px solid #1f2026;border-radius:8px;display:flex;align-items:center;justify-content:center;';
 
       if (item && item.id) {
@@ -812,7 +887,8 @@
 
     html += '</div>';
 
-    container.innerHTML += '<div style="margin-top:12px;">' + html + '</div>';
+    var content = document.getElementById('invSectionContent');
+    if (content) content.innerHTML = '<div style="margin-top:12px;">' + html + '</div>';
 
     $$('.inv-bank-slot', container).forEach(function(slot) {
       if (slot.__wiredBankSlot) return;
@@ -825,6 +901,37 @@
         } catch(err) {}
       });
     });
+
+    // Wirear botones de paginación cada vez que se renderiza
+    var prevBtn = document.getElementById('invBankPrev');
+    var nextBtn = document.getElementById('invBankNext');
+    if (prevBtn) {
+      prevBtn.__wiredPrev = false;
+      prevBtn.addEventListener('click', function handler() {
+        if (state.bankPage > 0) {
+          state.bankPage--;
+          renderBankDetail();
+        }
+      });
+    }
+    if (nextBtn) {
+      nextBtn.__wiredNext = false;
+      nextBtn.addEventListener('click', function handler() {
+        var searchQ = (document.getElementById('invSectionSearch')?.value || '').toLowerCase();
+        var count = searchQ ? 
+          state.bank.filter(function(item) { 
+            if (!item || !item.id) return false;
+            var meta = state.itemsById.get(item.id);
+            return getItemName(meta).toLowerCase().includes(searchQ);
+          }).length : 
+          state.bank.length;
+        var totalPages = Math.ceil(count / CONFIG.BANK_SLOTS_PER_PAGE);
+        if (state.bankPage < totalPages - 1) {
+          state.bankPage++;
+          renderBankDetail();
+        }
+      });
+    }
   }
 
   // ============ DETALLE: ARMERÍA (POR TIPO) ============
@@ -886,9 +993,16 @@
 
         if (catItems.length === 0) return;
 
-        html += '<div style="margin-bottom:16px;">' +
-          '<div style="font-size:0.8rem;font-weight:600;color:#b4bad0;margin-bottom:8px;padding:4px 0;border-bottom:1px solid #1f2026;">' +
-            esc(cat.label) + ' (' + catItems.length + ')' +
+        html += '<div class="inv-armory-cat" data-cat-key="' + cat.key + '" style="margin-bottom:16px;">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:4px 0;border-bottom:1px solid #1f2026;flex-wrap:wrap;gap:8px;">' +
+            '<span style="font-size:0.8rem;font-weight:600;color:#b4bad0;">' + esc(cat.label) + ' (' + catItems.length + ')</span>' +
+            (cat.key === 'armors' ?
+              '<div class="inv-armor-filters" style="display:flex;gap:6px;">' +
+                '<button class="inv-armor-chip active" data-weight="all" style="padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;background:rgba(123,194,255,0.12);border:1px solid rgba(123,194,255,0.3);color:#7bc2ff;cursor:pointer;transition:all 0.15s ease;">Todas</button>' +
+                '<button class="inv-armor-chip" data-weight="Heavy" style="padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;background:#1a1c24;border:1px solid #2a2c35;color:#b4bad0;cursor:pointer;transition:all 0.15s ease;">Pesada</button>' +
+                '<button class="inv-armor-chip" data-weight="Medium" style="padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;background:#1a1c24;border:1px solid #2a2c35;color:#b4bad0;cursor:pointer;transition:all 0.15s ease;">Media</button>' +
+                '<button class="inv-armor-chip" data-weight="Light" style="padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;background:#1a1c24;border:1px solid #2a2c35;color:#b4bad0;cursor:pointer;transition:all 0.15s ease;">Ligera</button>' +
+              '</div>' : '') +
           '</div>' +
           '<div class="inv-items-grid">';
 
@@ -899,7 +1013,8 @@
           var rarityColor = getRarityColor('Legendario');
           var type = getTypeLabel(meta ? meta.type : '');
 
-          html += '<div class="inv-item-card" data-entry="' + esc(JSON.stringify({ location: 'armory', itemId: entry.item.id })) + '" style="' +
+          var weightClass = (meta && meta.details && meta.details.weight_class) ? meta.details.weight_class : '';
+          html += '<div class="inv-item-card" data-entry="' + esc(JSON.stringify({ location: 'armory', itemId: entry.item.id })) + '" data-weight="' + weightClass + '" style="' +
             'display:flex;align-items:center;gap:6px;padding:6px 10px;min-width:0;' +
             'background:#0f1116;border:1px solid rgba(255,255,255,0.08);border-radius:8px;' +
             'border-left:3px solid ' + rarityColor + ';cursor:pointer;' +
@@ -914,11 +1029,47 @@
           '</div>';
         });
 
+        // Wire armor filter chips after render
+        if (cat.key === 'armors') {
+          html += '<script>document.addEventListener("DOMContentLoaded",function(){})</scr' + 'ipt>';
+        }
         html += '</div></div>';
       });
     }
 
-    container.innerHTML += '<div style="margin-top:12px;">' + html + '</div>';
+    var content = document.getElementById('invSectionContent');
+    if (content) content.innerHTML = '<div style="margin-top:12px;">' + html + '</div>';
+
+    // Wire armor weight filter chips
+    var armorFilters = container.querySelectorAll('.inv-armor-chip');
+    armorFilters.forEach(function(chip) {
+      if (chip.__wiredArmor) return;
+      chip.__wiredArmor = true;
+      chip.addEventListener('click', function() {
+        var weight = chip.getAttribute('data-weight');
+
+        // Actualizar estilo de chips
+        armorFilters.forEach(function(c) {
+          var isActive = c.getAttribute('data-weight') === weight;
+          c.style.background = isActive ? 'rgba(123,194,255,0.12)' : '#1a1c24';
+          c.style.borderColor = isActive ? 'rgba(123,194,255,0.3)' : '#2a2c35';
+          c.style.color = isActive ? '#7bc2ff' : '#b4bad0';
+        });
+
+        // Filtrar items en la misma categoría
+        var catDiv = chip.closest('.inv-armory-cat');
+        if (!catDiv) return;
+        var itemCards = catDiv.querySelectorAll('.inv-item-card');
+        itemCards.forEach(function(card) {
+          var itemWeight = card.getAttribute('data-weight') || '';
+          if (weight === 'all' || itemWeight === weight) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    });
 
     $$('.inv-item-card', container).forEach(function(card) {
       if (card.__wiredSectionItem) return;
@@ -960,32 +1111,22 @@
       searchInput.addEventListener('input', function() {
         clearTimeout(t);
         t = setTimeout(function() {
-          renderSectionView();
+          state.bankPage = 0;
+          var currentView = state.activeSection;
+          if (currentView === 'materials') {
+            renderMaterialsDetail();
+          } else if (currentView === 'bank') {
+            renderBankDetail();
+          } else if (currentView === 'armory') {
+            renderArmoryDetail();
+          }
         }, 200);
       });
     }
 
-    if (prevBtn && !prevBtn.__wiredPrev) {
-      prevBtn.__wiredPrev = true;
-      prevBtn.addEventListener('click', function() {
-        if (state.bankPage > 0) {
-          state.bankPage--;
-          renderSectionView();
-        }
-      });
-    }
-
-    if (nextBtn && !nextBtn.__wiredNext) {
-      nextBtn.__wiredNext = true;
-      nextBtn.addEventListener('click', function() {
-        var totalPages = Math.ceil(state.bank.length / CONFIG.BANK_SLOTS_PER_PAGE);
-        if (state.bankPage < totalPages - 1) {
-          state.bankPage++;
-          renderSectionView();
-        }
-      });
-    }
+    // Botones de paginación del banco se wirean en renderBankDetail()
   }
+  
 
   // =======================================================================
   // MODAL DE ÍTEM (MEJORADO — WIKI EN ESPAÑOL)
