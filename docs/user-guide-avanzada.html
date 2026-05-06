@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bóveda del Gato Negro — Guía de Usuario Avanzada v6.5.0</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background:#0e0e10; color:#e9e9ee;
+      font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+      line-height:1.5; padding:40px 20px;
+    }
+    .container {
+      max-width:1000px; margin:0 auto;
+      background:#141418; border-radius:24px; padding:40px;
+      box-shadow:0 0 0 1px #1d1d20 inset,0 8px 24px rgba(0,0,0,0.3);
+    }
+    h1 {
+      font-size:2rem; margin-bottom:8px;
+      display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    }
+    h1 img { width:48px; height:48px; }
+    .version { color:#a0a0a6; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid #242428; }
+    h2 {
+      font-size:1.5rem; margin:32px 0 16px 0; padding-bottom:8px;
+      border-bottom:2px solid #ffd966; display:inline-block;
+    }
+    h3 { font-size:1.25rem; margin:24px 0 12px 0; color:#ffd966; }
+    h4 { font-size:1.1rem; margin:16px 0 8px 0; color:#bcd0ff; }
+    p, li { margin:6px 0; }
+    ul, ol { padding-left:24px; margin:12px 0; }
+    a { color:#ffd966; text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    code {
+      background:#0a0c10; padding:2px 6px; border-radius:6px;
+      font-family:monospace;
+    }
+    hr { border-color:#2a2c35; margin:24px 0; }
+    .footer-note {
+      text-align:center; margin-top:32px; padding-top:16px;
+      border-top:1px solid #2a2c35; color:#a0a0a6; font-size:0.85rem;
+    }
+    table {
+      border-collapse:collapse; width:100%; margin:16px 0;
+      font-size:0.85rem;
+    }
+    th, td {
+      padding:8px 12px; border:1px solid #2a2c35; text-align:left;
+    }
+    th { background:#0f1116; color:#ffd966; }
+    td { background:#0a0c10; }
+    .toc { margin:20px 0; }
+    .toc li { margin:4px 0; }
+    @media (max-width:600px) {
+      .container { padding:20px; }
+      h1 { font-size:1.6rem; }
+      h2 { font-size:1.3rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+<h1>
+  <img src="../assets/logo-gato-negro.png" alt="Logo">
+  Bóveda del Gato Negro
+</h1>
+<div class="version">📘 Guía de Usuario Avanzada — v6.5.0 — Mayo 2026</div>
+
+<p>Esta guía cubre cada módulo en detalle con tres preguntas clave: <strong>¿Qué es? ¿Cómo se usa? ¿Para qué sirve?</strong></p>
+
+<h2>📋 Índice</h2>
+<ol class="toc">
+  <li><a href="#wallet">Cartera (Wallet)</a></li>
+  <li><a href="#meta">Meta & Eventos</a></li>
+  <li><a href="#logros">Logros</a></li>
+  <li><a href="#wv">Cámara del Brujo</a></li>
+  <li><a href="#actividades">Actividades</a></li>
+  <li><a href="#inventario">Inventario y Personajes</a></li>
+  <li><a href="#conversor">Conversor de Divisas</a></li>
+  <li><a href="#raids">Raid Tracker</a></li>
+  <li><a href="#dashboard">Dashboard de Cartera Multi-Cuenta</a></li>
+  <li><a href="#cuentas">Panel de Cuentas</a></li>
+  <li><a href="#pd">Purchase Detail</a></li>
+  <li><a href="#backup">Backup y Restaurar</a></li>
+  <li><a href="#gist">Sincronización con GitHub Gist</a></li>
+  <li><a href="#apikeys">API Keys</a></li>
+</ol>
+
+<!-- ========== CARTERA ========== -->
+<h2 id="wallet">1. Cartera (Wallet)</h2>
+<h3>¿Qué es?</h3>
+<p>El panel principal que muestra <strong>todas tus divisas</strong>: oro, gemas, karma, laureles, contratos comerciales, mosaicos de elegía, y cualquier otra moneda del juego.</p>
+<h3>¿Cómo se usa?</h3>
+<ol>
+  <li>Seleccioná tu <strong>API Key</strong> en el selector superior</li>
+  <li>Las divisas se muestran como <strong>tarjetas</strong> con ícono, nombre y cantidad</li>
+  <li>Usá los <strong>filtros</strong> para buscar por nombre, categoría, o ver solo las principales</li>
+  <li>Alterná entre <strong>vista tarjetas</strong> y <strong>vista tabla</strong> con el botón correspondiente</li>
+  <li>Hacé clic en el <strong>📌</strong> para fijar una divisa arriba de todo</li>
+</ol>
+<h3>¿Para qué sirve?</h3>
+<ul>
+  <li>Ver de un vistazo cuánto oro, gemas y karma tenés</li>
+  <li>Comparar divisas entre cuentas (con el Dashboard multi-cuenta)</li>
+  <li>Fijar las divisas que más te interesan para acceso rápido</li>
+</ul>
+
+<!-- ========== META ========== -->
+<h2 id="meta">2. Meta & Eventos</h2>
+<h3>¿Qué es?</h3>
+<p>Un panel que muestra <strong>todos los meta eventos y world bosses</strong> con sus horarios en tu zona horaria local, estado (activo/próximo/más tarde), y si ya los completaste hoy.</p>
+<h3>¿Cómo se usa?</h3>
+<ol>
+  <li>Las tarjetas muestran nombre, mapa, tipo, y horarios</li>
+  <li><strong>🟢 Activo</strong> = está ocurriendo ahora. <strong>🟡 Próximo</strong> = empieza en ≤20 min. <strong>🔵 Más tarde</strong> = después.</li>
+  <li>Clic en <strong>📌</strong> para fijar hasta 6 favoritos</li>
+  <li>Clic en <strong>Horarios</strong> para ver todas las ventanas del día</li>
+  <li>El botón <strong>Refrescar estado</strong> consulta si ya lo hiciste hoy</li>
+</ol>
+<h3>¿Para qué sirve?</h3>
+<ul>
+  <li>Saber qué world boss o meta evento está por empezar</li>
+  <li>Planificar tu sesión de juego alrededor de los eventos que te interesan</li>
+  <li>Ver de un vistazo qué eventos ya completaste hoy</li>
+</ul>
+
+<!-- ========== LOGROS ========== -->
+<h2 id="logros">3. Logros</h2>
+<h3>¿Qué es?</h3>
+<p>Un panel que muestra tus <strong>logros más cercanos a completar</strong>, ordenados por porcentaje de progreso, con filtros por categoría, rareza y tipo de recompensa.</p>
+<h3>¿Cómo se usa?</h3>
+<ol>
+  <li>Usá los <strong>dropdowns de filtro</strong> para elegir umbral, categoría, y tipo de recompensa</li>
+  <li>Cada tarjeta muestra nombre del logro, categoría, progreso, y recompensa</li>
+  <li>Clic en <strong>Wiki</strong> para abrir la página oficial del logro</li>
+</ol>
+<h3>¿Para qué sirve?</h3>
+<ul>
+  <li>Identificar logros que están a punto de completarse</li>
+  <li>Filtrar por tipo de recompensa (items, títulos, maestrías)</li>
+  <li>Ver el AP total y el AP potencial que podés ganar</li>
+</ul>
+
+<!-- ========== WV ========== -->
+<h2 id="wv">4. Cámara del Brujo</h2>
+<h3>¿Qué es?</h3>
+<p>El módulo del <strong>Wizard's Vault</strong> con cuatro secciones: objetivos diarios, semanales, especiales, y la tienda de Aclamación Astral.</p>
+<h3>¿Cómo se usa?</h3>
+<h4>Objetivos</h4>
+<ol>
+  <li>Seleccioná la pestaña correspondiente (Diarias/Semanales/Especiales)</li>
+  <li>Cada tarjeta muestra objetivo, progreso, recompensa en AA, y estado</li>
+  <li>Los objetivos tienen un modo (PvE, PvP, WvW) indicado con un ícono</li>
+</ol>
+<h4>Tienda</h4>
+<ol>
+  <li>Seleccioná la pestaña <strong>Tienda</strong></li>
+  <li>Usá filtros para buscar items por nombre, ordenar por costo, o filtrar por tipo</li>
+  <li>Cada tarjeta muestra el item, costo en AA, y cuántas veces lo compraste</li>
+  <li>Clic en <strong>📌</strong> para fijar items que querés comprar</li>
+  <li>Usá los inputs manuales para marcar compras hechas fuera de la API</li>
+</ol>
+<h3>¿Para qué sirve?</h3>
+<ul>
+  <li>Hacer el seguimiento diario/semanal de objetivos del Wizard's Vault</li>
+  <li>Planificar tus compras de AA (Aclamación Astral)</li>
+</ul>
+
+<!-- ========== ACTIVIDADES ========== -->
+<h2 id="actividades">5. Actividades</h2>
+<h3>¿Qué es?</h3>
+<p>Un panel que agrupa <strong>actividades diarias y semanales</strong>: PSNA, refinamiento de Ecto, fractales, llave del León Negro, Piedras de Invocación Vetustas (Leivas), y Home Nodes.</p>
+<h3>¿Cómo se usa?</h3>
+<h4>PSNA</h4>
+<ul>
+  <li>Muestra los 6 agentes del día con sus waypoints. Clic para copiar al portapapeles.</li>
+</ul>
+<h4>Ecto</h4>
+<ul>
+  <li>✅ = ya lo hiciste hoy. ⏳ = pendiente.</li>
+</ul>
+<h4>Fractales</h4>
+<ul>
+  <li>Muestra los fractales T4 y recomendados del día.</li>
+</ul>
+<h4>Llave del León Negro</h4>
+<ul>
+  <li>Detecta automáticamente si ya reclamaste la llave esta semana.</li>
+</ul>
+<h4>Leivas</h4>
+<ul>
+  <li>Contador manual de 0 a 5 con botones + y −.</li>
+</ul>
+<h4>Home Nodes</h4>
+<ul>
+  <li>74 nodos de heredad con filtros por categoría, tipo y estado.</li>
+</ul>
+<h3>¿Para qué sirve?</h3>
+<ul>
+  <li>Centralizar todas las tareas diarias/semanales en un solo panel</li>
+  <li>No olvidarte de la llave semanal ni de las Leivas</li>
+  <li>Hacer la ruta de PSNA sin buscar waypoints a mano</li>
+</ul>
+
+<!-- ========== INVENTARIO ========== -->
+<h2 id="inventario">6. Inventario y Personajes</h2>
+<h3>¿Qué es?</h3>
+<p>Un buscador unificado que indexa tu <strong>banco, almacenamiento de materiales y armería legendaria</strong>.</p>
+<h3>¿Cómo se usa?</h3>
+<ol>
+  <li>Navegá a <strong>Inventario y Personajes</strong> desde la sidebar</li>
+  <li>Los KPIs muestran cuántos items tenés en cada sección</li>
+  <li>Usá el buscador para encontrar objetos por nombre</li>
+  <li>Filtrá por rareza con el dropdown o los chips</li>
+  <li>Clic en un KPI o encabezado para ir a la vista detallada</li>
+</ol>
+<h3>¿Para qué sirve?</h3>
+<ul>
+  <li>Encontrar cualquier objeto sin tener que abrir el juego</li>
+  <li>Saber cuánto espacio ocupás en el banco</li>
+  <li>Ver tus legendarios en la armería</li>
+</ul>
+
+<!-- ========== CONVERSOR ========== -->
+<h2 id="conversor">7. Conversor de Divisas</h2>
+<h3>¿Qué es?</h3>
+<p>Una herramienta para <strong>calcular el costo de gemas en oro y viceversa</strong>, con tabs adicionales para transacciones activas e items populares del TP.</p>
+<h3>¿Cómo se usa?</h3>
+<h4>Tab Cambio</h4>
+<ol>
+  <li>Abrí el conversor desde Cartera → botón <strong>💎 Conversor</strong></li>
+  <li>Ingresá gemas u oro, o usá los atajos rápidos</li>
+  <li>El índice de conveniencia te dice si es buen momento para comprar</li>
+</ol>
+<h4>Tab Transacciones</h4>
+<ol>
+  <li>Requiere API Key con permiso <strong>tradingpost</strong></li>
+  <li>Muestra tus órdenes activas de compra/venta con KPIs de totales</li>
+</ol>
+<h4>Tab Populares</h4>
+<ol>
+  <li>Items con mayor volumen en el TP, filtrables por rareza</li>
+  <li>Ideal para ver qué legendarias se venden más rápido</li>
+</ol>
+
+<!-- ========== RAIDS ========== -->
+<h2 id="raids">8. Raid Tracker</h2>
+<h3>¿Qué es?</h3>
+<p>Un panel que muestra las <strong>8 alas de raid</strong> con sus 33 encuentros, marcando automáticamente los completados esta semana.</p>
+<h3>¿Cómo se usa?</h3>
+<ol>
+  <li>Navegá a <strong>Raids</strong> desde la sidebar</li>
+  <li>Cada ala muestra sus encuentros con ✅ o ❌</li>
+  <li>Clic en <strong>Detalle</strong> para ver estrategia, recompensas y video</li>
+  <li>KPIs superiores muestran progreso semanal y LI disponibles</li>
+</ol>
+
+<!-- ========== DASHBOARD ========== -->
+<h2 id="dashboard">9. Dashboard de Cartera Multi-Cuenta</h2>
+<h3>¿Qué es?</h3>
+<p>Una tabla que compara <strong>todas tus cuentas</strong> mostrando los saldos de las divisas seleccionadas.</p>
+<h3>¿Cómo se usa?</h3>
+<ol>
+  <li>Andá a <strong>Cartera</strong> → botón <strong>📊 Dashboard</strong></li>
+  <li>Seleccioná divisas y ordená por columna</li>
+  <li>Los KPIs superiores muestran totales acumulados</li>
+</ol>
+
+<!-- ========== CUENTAS ========== -->
+<h2 id="cuentas">10. Panel de Cuentas</h2>
+<h3>¿Qué es?</h3>
+<p>Un gestor seguro de <strong>múltiples cuentas de GW2</strong> con cifrado local.</p>
+<h3>¿Cómo se usa?</h3>
+<ol>
+  <li>Usá el <strong>Asistente</strong> (4 pasos) para crear tu archivo .enc desde Excel</li>
+  <li>O cargá directamente un archivo .enc con tu contraseña</li>
+  <li>Alterná entre vista tarjetas y tabla</li>
+  <li>Clic en cualquier campo para copiarlo al portapapeles</li>
+</ol>
+
+<!-- ========== PD ========== -->
+<h2 id="pd">11. Purchase Detail</h2>
+<h3>¿Qué es?</h3>
+<p>Un panel de <strong>seguimiento de compras del Wizard's Vault</strong> que muestra tus cuentas, items fijados, y progreso.</p>
+<h3>¿Cómo se usa?</h3>
+<ol>
+  <li>Accedé desde la Tienda WV → botón <strong>Detalle de compras</strong></li>
+  <li>La tabla muestra cada cuenta como fila y cada item fijado como columna</li>
+  <li>KPIs superiores: AA disponible, necesaria, y delta</li>
+</ol>
+
+<!-- ========== BACKUP ========== -->
+<h2 id="backup">12. Backup y Restaurar</h2>
+<h3>¿Qué es?</h3>
+<p>Un sistema para exportar/importar toda tu configuración entre navegadores.</p>
+<h3>¿Cómo se usa?</h3>
+<ol>
+  <li>Clic en <strong>Backup</strong> → descarga un archivo JSON</li>
+  <li>En otro navegador, clic en <strong>Restaurar</strong> → seleccioná el archivo</li>
+</ol>
+
+<!-- ========== GIST ========== -->
+<h2 id="gist">13. Sincronización con GitHub Gist</h2>
+<h3>¿Qué es?</h3>
+<p>Sincronización opcional de configuración en la nube con GitHub Gist.</p>
+<h3>¿Cómo se usa?</h3>
+<ol>
+  <li>Generá un token de GitHub con permiso <code>gist</code></li>
+  <li>En la Bóveda: <strong>Sincronizar</strong> → pegar token → Guardar</li>
+  <li>Usá <strong>Subir</strong> y <strong>Sincronizar desde la nube</strong></li>
+</ol>
+
+<!-- ========== API KEYS ========== -->
+<h2 id="apikeys">14. API Keys</h2>
+<h3>¿Qué son?</h3>
+<p>Claves de acceso para consultar tus datos de GW2.</p>
+<h3>Permisos necesarios</h3>
+<table>
+  <thead><tr><th>Módulo</th><th>Permisos requeridos</th></tr></thead>
+  <tbody>
+    <tr><td>Cartera, Dashboard</td><td><code>account</code>, <code>wallet</code></td></tr>
+    <tr><td>Meta & Eventos</td><td><code>account</code></td></tr>
+    <tr><td>Logros</td><td><code>account</code>, <code>progression</code></td></tr>
+    <tr><td>Cámara del Brujo</td><td><code>account</code>, <code>wizardsvault</code></td></tr>
+    <tr><td>Actividades</td><td><code>account</code>, <code>progression</code></td></tr>
+    <tr><td>Inventario</td><td><code>account</code>, <code>inventories</code></td></tr>
+    <tr><td>Conversor (Transacciones)</td><td><code>account</code>, <code>tradingpost</code></td></tr>
+    <tr><td>Raid Tracker</td><td><code>account</code>, <code>progression</code></td></tr>
+    <tr><td>Purchase Detail</td><td><code>account</code>, <code>wizardsvault</code></td></tr>
+  </tbody>
+</table>
+
+<hr>
+<div class="footer-note">
+  🐈‍⬛ <strong>Bóveda del Gato Negro</strong> — v6.5.0<br>
+  © Comunidad Gato Negro — Herramientas para GW2<br>
+  <br>
+  Discord: <a href="https://discord.gg/ZGNsfsqyKe">discord.gg/ZGNsfsqyKe</a><br>
+  GitHub: <a href="https://github.com/PabloSnchz/gw2-wallet-ligero">github.com/PabloSnchz/gw2-wallet-ligero</a>
+</div>
+
+</div>
+</body>
+</html>

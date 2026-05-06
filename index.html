@@ -291,15 +291,15 @@
         
         <span class="an-sep">|</span>
         
-        <!-- Guía de usuario -->
-        <a class="an-util-link" href="docs/user-guide.html" target="_blank" title="Guía de usuario" style="display: inline-flex; align-items: center; gap: 4px;">
+        <!-- Guía de usuario (modal) -->
+        <a class="an-util-link" href="#" id="guideLink" title="Guías de usuario" style="display: inline-flex; align-items: center; gap: 4px;">
           <img src="assets/icons/Welcome/102353.png" width="16" height="16" alt="Guía" style="vertical-align: middle;">
           Guía
         </a>
         
         <span class="an-sep">|</span>
         
-        <a class="an-util-link" href="https://wiki.guildwars2.com/wiki/Main_Page" target="_blank" rel="noopener">Wiki GW2</a>
+        <a class="an-util-link" href="https://wiki-es.guildwars2.com/wiki/P%C3%A1gina_principal" target="_blank" rel="noopener">Wiki GW2</a>
         <a class="an-util-link" href="https://en-forum.guildwars2.com/" target="_blank" rel="noopener">Foros</a>
         <a class="an-util-link" href="https://help.guildwars2.com/hc" target="_blank" rel="noopener">Ayuda</a>
         <a class="an-util-link" href="https://www.guildwars2.com/" target="_blank" rel="noopener">Sitio oficial</a>
@@ -1335,5 +1335,58 @@
   })();
 </script>
 
+<!-- Modal: Guías de usuario -->
+<div id="guideModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="guideModalTitle" hidden>
+  <div class="modal__backdrop" data-close="1"></div>
+  <div class="modal__dialog" style="max-width:500px;">
+    <header class="modal__header">
+      <h3 id="guideModalTitle" style="display:flex;align-items:center;gap:8px;">
+        <img src="assets/icons/Welcome/102353.png" width="24" height="24" alt="">Guías de usuario
+      </h3>
+      <button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button>
+    </header>
+    <div class="modal__body" style="display:flex;flex-direction:column;gap:16px;">
+      <p class="muted" style="margin:0;">Elegí la guía que mejor se adapte a lo que necesitás:</p>
+      <a href="docs/user-guide.html" target="_blank" style="display:flex;align-items:center;gap:14px;padding:16px;background:#0f1116;border:1px solid #2a2c35;border-radius:12px;text-decoration:none;transition:all 0.15s ease;" onmouseover="this.style.borderColor='#5276ff';this.style.boxShadow='0 0 12px rgba(82,118,255,0.15)'" onmouseout="this.style.borderColor='#2a2c35';this.style.boxShadow='none'">
+        <img src="assets/icons/Welcome/102353.png" width="32" height="32" alt="" style="flex-shrink:0;">
+        <div>
+          <div style="font-weight:600;color:#e0e4ed;font-size:0.95rem;">Guía básica</div>
+          <div class="muted" style="font-size:0.75rem;">Primeros pasos, cómo empezar, funcionalidades principales</div>
+        </div>
+      </a>
+      <a href="docs/user-guide-avanzado.html" target="_blank" style="display:flex;align-items:center;gap:14px;padding:16px;background:#0f1116;border:1px solid #2a2c35;border-radius:12px;text-decoration:none;transition:all 0.15s ease;" onmouseover="this.style.borderColor='#5276ff';this.style.boxShadow='0 0 12px rgba(82,118,255,0.15)'" onmouseout="this.style.borderColor='#2a2c35';this.style.boxShadow='none'">
+        <img src="assets/icons/Welcome/222580.png" width="32" height="32" alt="" style="flex-shrink:0;">
+        <div>
+          <div style="font-weight:600;color:#e0e4ed;font-size:0.95rem;">Guía avanzada</div>
+          <div class="muted" style="font-size:0.75rem;">Qué es, cómo se usa y para qué sirve cada módulo en detalle</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Script para abrir/cerrar el modal de guías -->
+<script>
+  (function() {
+    var modal = document.getElementById('guideModal');
+    var link = document.getElementById('guideLink');
+    
+    if (link) {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (modal) modal.hidden = false;
+      });
+    }
+    
+    if (modal) {
+      modal.addEventListener('click', function(e) {
+        if (e.target.getAttribute('data-close') === '1') modal.hidden = true;
+      });
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !modal.hidden) modal.hidden = true;
+      });
+    }
+  })();
+</script>
 </body>
 </html>
