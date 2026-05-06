@@ -1280,11 +1280,15 @@
         var group = toolbar.querySelector('.group') || toolbar;
         var existing = group.querySelector('#wvPDOpenBtn');
         if (existing) {
-          existing.classList.add('wvpd-iconbtn');
-          existing.setAttribute('data-wvpd-open','1');
-          existing.title = 'Detalle de compras (todas las cuentas)';
-          existing.style.marginLeft = 'auto';
-          existing.innerHTML = accessIconHTML();
+          // El botón ya lo crea wv-shop-ui.js. No sobrescribir.
+          if (!existing.__wvpdClick) {
+            existing.__wvpdClick = true;
+            existing.addEventListener('click', function(ev){
+              ev.preventDefault();
+              try { window.WVPurchaseDetail?.show(); } catch(e){ console.warn('[WV-PD] show error', e); }
+            });
+          }
+          return;
           if (!existing.__wvpdClick){
             existing.__wvpdClick = true;
             existing.addEventListener('click', function(ev){

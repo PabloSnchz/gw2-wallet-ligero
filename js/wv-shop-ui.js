@@ -208,7 +208,9 @@
             '<option value="hide"' + (legacyVis === 'hide' ? ' selected' : '') + '>Ocultar</option>',
           '</select>',
           '<button id="wvClearSynced" class="btn btn--ghost" title="Borrar o recortar marcas ya cubiertas por el API">Limpiar sincronizados</button>',
-          '<button id="wvPDOpenBtn" class="wvpd-iconbtn" title="Detalle de compras (todas las cuentas)" style="margin-left: auto;"><img src="' + (localStorage.getItem('wvpd_icon_url') || 'assets/icons/3126787.png') + '" alt="" loading="lazy" width="40" height="40"></button>',
+          '<button id="wvPDOpenBtn" class="btn btn--ghost" title="Detalle de compras (todas las cuentas)" style="display:inline-flex;align-items:center;gap:6px;margin-left:auto;padding:6px 12px;font-size:0.78rem;">' +
+  '<img src="' + (localStorage.getItem('wvpd_icon_url') || 'assets/icons/3126787.png') + '" alt="" loading="lazy" width="18" height="18">Detalle de compras' +
+'</button>',
         '</div>',
         shopSyncLine(),
         '<div id="wvShopHeader" class="muted" style="margin-top:4px">—</div>',
@@ -352,6 +354,9 @@
     var host = el('wvTabShop');
     if (!host) return;
 
+    // Margen interior como Wallet y Meta
+    host.style.padding = '0 12px 12px 12px';
+
     ensureShopToolbar();
     syncShopToggleLabel();
 
@@ -363,6 +368,7 @@
     if (!area) {
       area = document.createElement('div');
       area.id = areaId;
+      area.style.padding = '0 6px'; // Margen horizontal como Wallet
       host.appendChild(area);
     }
 

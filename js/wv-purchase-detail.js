@@ -676,12 +676,7 @@
 
       var existing = group.querySelector('#wvPDOpenBtn');
       if (existing) {
-        existing.classList.add('wvpd-iconbtn');
-        existing.setAttribute('data-wvpd-open','1');
-        existing.title = 'Detalle de compras (todas las cuentas)';
-        existing.style.marginLeft = 'auto';
-        existing.innerHTML = accessIconHTML();
-
+        // El botón ya lo crea wv-shop-ui.js. Solo wirear el click.
         if (!existing.__wvpdClick){
           existing.__wvpdClick = true;
           existing.addEventListener('click', function(ev){
