@@ -90,7 +90,7 @@
       
       .wvpd-dash{ display:grid; gap:10px; margin-bottom:12px; }
       .wvpd-dash__grid{ display:grid; gap:10px; grid-template-columns: repeat(3, minmax(0,1fr)); }
-      .wvpd-card{ background: linear-gradient(180deg, #0f1116 0%, #0d0f14 100%); border:1px solid #26262b; border-radius:12px; padding:10px 12px; }
+      .wvpd-card{ background: linear-gradient(180deg, #0f1116 0%, #0d0f14 100%); border:1px solid #26262b; border-radius:12px; padding:10px 12px; }}
       
       /* ====== Skeleton Loader ====== */
       .wvpd-skeleton {
@@ -142,7 +142,7 @@
         border-left-color: #ff9d9d;
         box-shadow: 0 0 6px rgba(255, 157, 157, 0.2);
       }
-      .wvpd-kpi__lbl{ color:#a0a6b3; font-size:12px; display:inline-flex; align-items:center; gap:8px; }
+      .wvpd-kpi__lbl{ color:#a0a6b3; font-size:11px; display:inline-flex; align-items:center; gap:8px; }
       .wvpd-kpi__val{ font-size:20px; font-weight:800; letter-spacing:0.2px; }
       .wvpd-kpi--ok .wvpd-kpi__val{ color:#a0ffc8; }
       .wvpd-kpi--warn .wvpd-kpi__val{ color:#ffd36b; }
@@ -272,7 +272,7 @@
         font-size: 0.7rem;
       }
       
-      .wvpd-tablewrap{ overflow:auto; border:1px solid #26262b; border-radius:12px; margin-top: 8px; }
+      .wvpd-tablewrap{ overflow:auto; border:1px solid #26262b; border-radius:12px; margin-top: 8px; margin-left: -8px; margin-right: -8px; width: calc(100% + 16px); }
       table.wvpd{ border-collapse:separate; border-spacing:0; width:100%; }
       table.wvpd th, table.wvpd td{ padding:6px 8px; border-bottom:1px solid #24252a; white-space:nowrap; vertical-align: middle; }
       table.wvpd thead th{ 
@@ -770,16 +770,14 @@
     if (!panel.__wired){
       panel.__wired = true;
       panel.innerHTML = [
-        '<div class="wvpd-header__left">',
-          '<div class="wvpd-banner">',
+        '<div class="panel__body">',
+          '<div class="wvpd-banner" style="margin-bottom:16px;">',
             '<div class="wvpd-banner__icon" id="wvpdBannerIcon">'+bannerIconHTML()+'</div>',
             '<div>',
               '<div class="wvpd-banner__title">Seguimiento de compras</div>',
               '<div class="wvpd-help">Resumen estratégico y detalle por cuenta/ítem fijado.</div>',
             '</div>',
           '</div>',
-        '</div>',
-        '<div class="panel__body">',
           '<div id="wvpdDash" class="wvpd-dash">',
             '<div class="wvpd-dash__grid">',
               '<div class="wvpd-card wvpd-kpi" id="wvpdKpiAAAvail">',
@@ -796,7 +794,7 @@
               '</div>',
             '</div>',
             '<div class="wvpd-rows">',
-              '<div class="wvpd-card">',
+              '<div class="card">',
                 '<div class="wvpd-rot">',
                   '<span class="wvpd-rot__pill"><span class="clock-ico">'+getCountdownIcon('daily')+'</span><strong id="wvpdCountDaily">—</strong></span>',
                   '<span class="wvpd-rot__pill"><span class="clock-ico">'+getCountdownIcon('weekly')+'</span><strong id="wvpdCountWeekly">—</strong></span>',
@@ -807,7 +805,7 @@
                   '<div id="wvpdUsefulContent" class="wvpd-cols"></div>',
                 '</div>',
               '</div>',
-              '<div class="wvpd-card">',
+              '<div class="card">',
                 '<div class="wvpd-cols">',
                   '<div class="wvpd-col">',
                     '<div class="wvpd-kpi__lbl" style="margin-bottom:6px">Top cuentas deficitarias</div>',
@@ -823,7 +821,7 @@
           '</div>',
           '<div class="wvpd-filters" id="wvpdFilters">',
             '<input type="text" id="wvpdSearch" placeholder="Buscar cuenta…">',
-            '<span class="wvpd-stickyhint">Tip: “Pendientes” y orden Δ priorizan lo crítico.</span>',
+            '<span class="wvpd-stickyhint">Tip: "Pendientes" y orden Δ priorizan lo crítico.</span>',
             '<label><input type="checkbox" id="wvpdOnlyPending"> Solo pendientes</label>',
             '<label><input type="checkbox" id="wvpdOnlyPendingCols"> Solo columnas con pendientes</label>',
             '<label>Orden: <select id="wvpdSort"><option value="delta">Δ (desc)</option><option value="label">Cuenta (A→Z)</option></select></label>',
@@ -837,7 +835,7 @@
             '<span id="wvpdTimestamp" class="wvpd-timestamp"></span>',
           '</div>',
           '<div class="wvpd-tablewrap" id="wvpdTableWrap">',
-            '<table class="wvpd" id="wvpdTable"><thead></thead><tbody></tbody>^<\/table>',
+            '<table class="wvpd" id="wvpdTable"><thead></thead><tbody></tbody></table>',
           '</div>',
         '</div>'
       ].join('');
