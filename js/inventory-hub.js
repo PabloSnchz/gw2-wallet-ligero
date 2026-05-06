@@ -44,7 +44,7 @@
       close: 'assets/icons/Welcome/156107.png',
       copy: 'assets/icons/Welcome/155911.png',
       wiki: 'assets/icons/Welcome/222580.png',
-      back: 'assets/icons/Welcome/102420.png'
+      back: 'assets/icons/Welcome/358409.png'
     },
     TYPE_LABELS: {
       'Armor': 'Armadura', 'Weapon': 'Arma', 'Trinket': 'Baratija',

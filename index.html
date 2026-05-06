@@ -215,6 +215,7 @@
   #wvPanel {
     overflow-x: hidden;
     width: 100%;
+    padding: 0 12px;
   }
 
 /* Asegurar que el título no se rompa */
@@ -240,6 +241,14 @@
 
 .wv-sync-tip img {
   display: block;
+}
+
+/* Margen interior para header y tabs de WV */
+#wvPanel .panel-head,
+#wvPanel .wv-season,
+#wvPanel .tabs {
+  padding-left: 12px;
+  padding-right: 12px;
 }
 
   </style>
@@ -977,33 +986,11 @@
   #wvpdTopItems .wvpd-li .wvpd-li__rest { color:#ffd36b !important; font-weight:700; }
 </style>
   
-  <script>
+<script>
   (function () {
-    function wirePDButton() {
-      var host = document.getElementById('wvShopToolbarHost');
-      if (!host) return;
-      var btn = host.querySelector('#wvPDOpenBtn');
-      if (!btn) return;
-      btn.classList.add('wvpd-iconbtn');
-      var want = 'assets/icons/3126787.png'; // ← Ícono de Cámara del Brujo
-      if (!btn.querySelector('img')) {
-        btn.innerHTML = '<img src="'+want+'" alt="WV" width="40" height="40" loading="lazy" referrerpolicy="no-referrer">';
-      } else {
-        var im = btn.querySelector('img');
-        if (im) { im.src = want; im.width=40; im.height=40; }
-      }
-      if (!btn.__wvpdClick) {
-        btn.__wvpdClick = true;
-        btn.addEventListener('click', function (ev) {
-          ev.preventDefault();
-          try { window.WVPurchaseDetail?.show(); } catch (e) { console.warn('[WVPD] show error', e); }
-        });
-      }
-    }
-
+    // El botón PD lo crea wv-shop-ui.js con clase btn--ghost y texto.
+    // Solo mantenemos el Dashboard de Wallet.
     document.addEventListener('DOMContentLoaded', function () {
-      wirePDButton();
-      // Botón Dashboard de Wallet
       var dashboardBtn = document.getElementById('walletDashboardBtn');
       if (dashboardBtn) {
         dashboardBtn.addEventListener('click', function (e) {
@@ -1012,13 +999,6 @@
         });
       }
     });
-    setTimeout(wirePDButton, 500);
-
-    var moHost = document.getElementById('wvShopToolbarHost');
-    if (moHost && 'MutationObserver' in window) {
-      var mo = new MutationObserver(function(){ wirePDButton(); });
-      mo.observe(moHost, { childList:true, subtree:true });
-    }
   })();
 </script>
 <style>

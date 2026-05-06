@@ -917,9 +917,6 @@
     if (!state.active) return;
     ensurePanel();
     
-    // NUEVO: Botón para volver al Inventory Hub
-    renderBackToInventoryButton();
-    
     renderAccountHeader();
     renderFilters();
     renderList();
@@ -930,41 +927,9 @@
     });
   }
 
-  // NUEVO: Función para el botón "Volver al Inventario"
+  // Botón "Volver al Inventario" ahora en renderFilters()
   function renderBackToInventoryButton() {
-    var panel = document.getElementById('charactersPanel');
-    if (!panel) return;
-    
-    var title = panel.querySelector('.panel__title');
-    if (!title) return;
-    
-    // Solo agregar si no existe ya
-    var existingBtn = title.querySelector('#charBackToInventory');
-    if (existingBtn) return;
-    
-    var backBtn = document.createElement('button');
-    backBtn.id = 'charBackToInventory';
-    backBtn.className = 'btn btn--ghost';
-    backBtn.type = 'button';
-    backBtn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;margin-left:12px;font-size:0.8rem;';
-    backBtn.innerHTML = '<img src="assets/icons/Welcome/358409.png" width="16" height="16" alt="" style="vertical-align:middle;">← Volver al Inventario';
-    backBtn.title = 'Volver a la búsqueda de inventario';
-    
-    backBtn.addEventListener('click', function() {
-      // Desactivar Characters
-      root.Characters.deactivate();
-      
-      // Activar InventoryHub
-      if (root.InventoryHub && typeof root.InventoryHub.activate === 'function') {
-        root.InventoryHub.activate();
-      } else {
-        // Fallback: recargar la ruta
-        location.hash = '#/account/characters';
-        window.dispatchEvent(new HashChangeEvent('hashchange'));
-      }
-    });
-    
-    title.appendChild(backBtn);
+    return;
   }
 
   function getFilteredCount() {
@@ -997,22 +962,33 @@
 
     var maps = new Set(state.characters.map(function(c) { return c.map_name; }).filter(Boolean));
     var professions = new Set(state.characters.map(function(c) { return c.profession; }).filter(Boolean));
-    
     var categories = new Set(state.pois.map(function(p) { return p.category; }).filter(Boolean));
-    
-    var categoryIcons = {
-      'granja': '🌾',
-      'puzzle': '🧩',
-      'evento': '⏰',
-      'meta': '📦'
-    };
+    var categoryIcons = { 'granja': '🌾', 'puzzle': '🧩', 'evento': '⏰', 'meta': '📦' };
 
-    var html = '\n      <div class="chips">\n        <div class="chip">\n          <input type="text" id="charSearch" placeholder="Buscar personaje..." value="' + esc(state.filters.search) + '">\n        </div>\n        <div class="chip">\n          <select id="charMapFilter">\n            <option value="">Todos los mapas</option>\n            ' + Array.from(maps).map(function(m) { return '<option value="' + esc(m) + '" ' + (state.filters.map === m ? 'selected' : '') + '>' + esc(m) + '</option>'; }).join('') + '\n          </select>\n        </div>\n        <div class="chip">\n          <select id="charProfFilter">\n            <option value="">Todas las profesiones</option>\n            ' + Array.from(professions).map(function(p) { return '<option value="' + esc(p) + '" ' + (state.filters.profession === p ? 'selected' : '') + '>' + esc(p) + '</option>'; }).join('') + '\n          </select>\n        </div>\n        <div class="chip">\n          <select id="poiCategoryFilter">\n            <option value="">Todas las categorías</option>\n            ' + Array.from(categories).map(function(c) {
-              return '<option value="' + c + '" ' + (state.filters.poiCategory === c ? 'selected' : '') + '>\n              ' + (categoryIcons[c] || '📍') + ' ' + (c.charAt(0).toUpperCase() + c.slice(1)) + '\n            </option>';
-            }).join('') + '\n          </select>\n        </div>\n        <div class="chip chip--check">\n          <button id="charViewToggle" class="btn btn--ghost" data-tip="Cambiar vista">' + (state.view === 'table' ? 'Vista tarjetas' : 'Vista tabla') + '</button>\n        </div>\n      </div>\n    ';
+    var html = '';
+    html += '<div class="chips" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
+    html += '<button id="charBackToInventory" class="btn btn--ghost" title="Volver a la busqueda de inventario" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;font-size:0.78rem;">';
+    html += '<img src="assets/icons/Welcome/358409.png" width="14" height="14" alt="" style="opacity:0.7;">Volver al Inventario';
+    html += '</button>';
+    html += '<div class="chip"><select id="charMapFilter"><option value="">Todos los mapas</option>';
+    Array.from(maps).forEach(function(m) { html += '<option value="' + esc(m) + '" ' + (state.filters.map === m ? 'selected' : '') + '>' + esc(m) + '</option>'; });
+    html += '</select></div>';
+    html += '<div class="chip"><select id="charProfFilter"><option value="">Todas las profesiones</option>';
+    Array.from(professions).forEach(function(p) { html += '<option value="' + esc(p) + '" ' + (state.filters.profession === p ? 'selected' : '') + '>' + esc(p) + '</option>'; });
+    html += '</select></div>';
+    html += '<div class="chip"><select id="poiCategoryFilter"><option value="">Todas las categorias</option>';
+    Array.from(categories).forEach(function(c) { html += '<option value="' + c + '" ' + (state.filters.poiCategory === c ? 'selected' : '') + '>' + (categoryIcons[c] || '📍') + ' ' + (c.charAt(0).toUpperCase() + c.slice(1)) + '</option>'; });
+    html += '</select></div>';
+    html += '<div class="chip chip--check"><button id="charViewToggle" class="btn btn--ghost" data-tip="Cambiar vista">' + (state.view === 'table' ? 'Vista tarjetas' : 'Vista tabla') + '</button></div>';
+    html += '<div style="position:relative;margin-left:auto;">';
+    html += '<img src="assets/icons/Welcome/3124974.png" width="14" height="14" alt="" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:0.4;pointer-events:none;">';
+    html += '<input type="text" id="charSearchInp" placeholder="Buscar personaje..." value="' + esc(state.filters.search) + '" style="padding:7px 10px 7px 30px;background:#1a1c24;border:1px solid #2a2c35;border-radius:20px;color:#e0e4ed;font-size:0.8rem;width:200px;">';
+    html += '</div>';
+    html += '</div>';
+
     container.innerHTML = html;
 
-    $('#charSearch').addEventListener('input', function(e) {
+    $('#charSearchInp').addEventListener('input', function(e) {
       state.filters.search = e.target.value;
       state.pagination.page = 1;
       renderList();
@@ -1039,6 +1015,25 @@
       state.view = state.view === 'table' ? 'cards' : 'table';
       render();
     });
+
+    var backBtn = document.getElementById('charBackToInventory');
+    if (backBtn && !backBtn.__wiredBack) {
+      backBtn.__wiredBack = true;
+      backBtn.addEventListener('click', function() {
+        root.Characters.deactivate();
+        if (root.InventoryHub && typeof root.InventoryHub.activate === 'function') {
+          // Mostrar panel de inventario y ocultar panel de personajes
+          var invPanel = document.getElementById('inventoryPanel');
+          var charPanel = document.getElementById('charactersPanel');
+          if (invPanel) invPanel.removeAttribute('hidden');
+          if (charPanel) charPanel.setAttribute('hidden', '');
+          root.InventoryHub.activate();
+        } else {
+          location.hash = '#/account/characters';
+          window.dispatchEvent(new HashChangeEvent('hashchange'));
+        }
+      });
+    }
   }
 
   function renderList() {
