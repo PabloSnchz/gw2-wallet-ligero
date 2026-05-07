@@ -1144,3 +1144,155 @@ aside.col-side .panel-head img {
   font-size: 0.75rem;
   color: #b4bad0;
 }
+
+/* ============================== INVENTORY DASHBOARD =========================== */
+#inventoryDashboardPanel .id-kpi-card {
+  background: linear-gradient(135deg, #0f1118 0%, #0d0f14 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 12px 16px;
+  box-shadow: 0 0 8px rgba(90,110,154,0.12);
+  transition: transform 0.22s cubic-bezier(0.2,0.9,0.4,1.1), box-shadow 0.22s cubic-bezier(0.2,0.9,0.4,1.1), border-color 0.22s ease;
+}
+#inventoryDashboardPanel .id-kpi-card:hover {
+  transform: translateY(-3px);
+  border-color: #2d2f36;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.45), 0 0 16px rgba(90,110,154,0.20), 0 0 0 1px rgba(82,118,255,0.12);
+}
+#inventoryDashboardPanel .id-kpi-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9aa2b8;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#inventoryDashboardPanel .id-kpi-label img {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  object-fit: contain;
+}
+#inventoryDashboardPanel .id-kpi-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #e8ecf5;
+}
+#inventoryDashboardPanel .id-kpi-price {
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+#inventoryDashboardPanel .id-tablewrap {
+  overflow-x: auto;
+  border: 1px solid #26262b;
+  border-radius: 12px;
+  margin-top: 8px;
+}
+#inventoryDashboardPanel #idTable {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+#inventoryDashboardPanel #idTable th,
+#inventoryDashboardPanel #idTable td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #24252a;
+  white-space: nowrap;
+  vertical-align: middle;
+  color: #cfd2d8;
+}
+#inventoryDashboardPanel #idTable thead th {
+  position: sticky;
+  top: 0;
+  background: #0f1118;
+  z-index: 2;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9aa2b8;
+  border-bottom: 1px solid #2a2c35;
+}
+#inventoryDashboardPanel #idTable th:first-child,
+#inventoryDashboardPanel #idTable td:first-child {
+  position: sticky;
+  left: 0;
+  background: #0e1116;
+  z-index: 1;
+}
+#inventoryDashboardPanel #idTable tbody tr:hover {
+  background: #1a1d28;
+}
+#inventoryDashboardPanel #idTable tbody tr:nth-child(even) {
+  background: #0c0e14;
+}
+#inventoryDashboardPanel #idTable tbody tr:nth-child(even):hover {
+  background: #1a1d28;
+}
+#inventoryDashboardPanel #idTable .total-row {
+  background: #0f1118 !important;
+  border-top: 2px solid #3a4c7a;
+  font-weight: 700;
+}
+#inventoryDashboardPanel #idTable .total-row td {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+#inventoryDashboardPanel #idTable .total-label {
+  font-weight: 700;
+  color: #a0ffc8;
+}
+#inventoryDashboardPanel #idTable .total-cell strong {
+  color: #f4c542;
+  font-size: 1.05rem;
+}
+#inventoryDashboardPanel #idTable th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+#inventoryDashboardPanel #idTable th.sortable:hover {
+  background: #1a1d28;
+}
+
+.id-skeleton {
+  background: linear-gradient(90deg, #1a1c24 25%, #252830 50%, #1a1c24 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 8px;
+}
+.id-skeleton-table {
+  width: 100%;
+  height: 300px;
+  border-radius: 12px;
+}
+
+#inventoryDashboardPanel .id-set-btn {
+  transition: all 0.2s ease;
+}
+#inventoryDashboardPanel .id-set-btn:hover {
+  transform: translateY(-1px);
+}
+
+.id-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.id-status-msg {
+  color: #9aa2b8;
+  font-size: 0.75rem;
+}
+.id-status-msg.error {
+  color: #ff9d9d;
+}
+.id-timestamp {
+  color: #6a7080;
+  font-family: monospace;
+  font-size: 0.7rem;
+}

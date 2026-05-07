@@ -1,14 +1,17 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.15.0 (2026-05-02) — Desacople WV Fases 1-3 + Fix objetivos y Purchase Detail
+ * v2.16.0 (2026-05-04) — Sidebar sin conversor + InventoryHub
+ *
+ * Cambios v2.16.0:
+ *  - Eliminada referencia a asideConvSection en updateSidebarFor
+ *  - Sidebar liberada (~80 líneas menos en index.html)
+ *  - Soporte para InventoryHub como pantalla principal de #/account/characters
  *
  * Cambios v2.15.0:
  *  - FASE 2: __getShopState expone estado de tienda a wv-shop-ui.js
  *  - FASE 2: ensureLoadTab('shop') y onTokenChanged delegan a WVShopUI con fallback
  *  - FASE 3: __getObjState/__setObjState exponen estado de objetivos
  *  - FASE 3: renderObjectivesTab y renderObjectivesZero delegan a WVObjectivesUI con fallback
- *  - FIX: observeToolbar y ensureToolbarButton ahora chequean también el toolbar de WVShopUI
- *  - FIX: hydrateWVModePills exportada como WV.hydrateModePills para wv-objectives-ui.js
  *
  * Cambios v2.14.0:
  *  - Agregada ruta '#/account/raids' para el seguimiento semanal de raids
@@ -116,6 +119,7 @@
           '#/account/accounts':'accounts',
           '#/welcome':'welcome',
           '#/wallet/dashboard':'walletDashboard',
+          '#/inventory/dashboard':'inventoryDashboard',
           '#/account/raids':'raids'
         };
         var dv = map[h]; if (dv) found = links.find(function (a) { return (a.getAttribute('data-view')||'').trim().toLowerCase()===dv; }) || null;
@@ -137,11 +141,12 @@
       else if (view==='walletDashboard'){ /* no sidebar específico */ }
       else if (view==='raids'){ /* no sidebar específico para raids */ }
       else if (view==='inventory'){ /* no sidebar específico para inventario */ }
+      else if (view==='inventoryDashboard'){ /* no sidebar específico */ }
     } catch (e) { console.warn('[router] updateSidebarFor error', e); }
   }
 
   function showPanel(idToShow) {
-    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','inventoryPanel','charactersPanel','accountsPanel','welcomePanel','walletDashboardPanel','raidTrackerPanel'].forEach(function(id){
+    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','inventoryPanel','charactersPanel','accountsPanel','welcomePanel','walletDashboardPanel','inventoryDashboardPanel','raidTrackerPanel'].forEach(function(id){
       var node=el(id); if (!node) return;
       if (id===idToShow) node.removeAttribute('hidden'); else node.setAttribute('hidden','hidden');
     });
@@ -1410,6 +1415,22 @@
           return;
         }
 
+        if (h === '#/inventory/dashboard') {
+          try {
+            showPanel('inventoryDashboardPanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('inventory_dashboard');
+            if (window.InventoryDashboard && typeof window.InventoryDashboard.activate === 'function') {
+              window.InventoryDashboard.activate();
+            }
+          } catch (e) {
+            console.warn('[router] show inventory dashboard error', e);
+          } finally {
+            updateSidebarFor('inventoryDashboard');
+            setActiveNav(h);
+          }
+          return;
+        }
+
         if (h === '#/account/raids') {
           try {
             showPanel('raidTrackerPanel');
@@ -1621,6 +1642,10 @@
       } else if (h === '#/wallet/dashboard') {
         if (window.WalletDashboard && typeof window.WalletDashboard.activate === 'function') {
           window.WalletDashboard.activate();
+        }
+      } else if (h === '#/inventory/dashboard') {
+        if (window.InventoryDashboard && typeof window.InventoryDashboard.activate === 'function') {
+          window.InventoryDashboard.activate();
         }
       } else if (h === '#/account/raids') {
         if (window.RaidTracker && typeof window.RaidTracker.refresh === 'function') {

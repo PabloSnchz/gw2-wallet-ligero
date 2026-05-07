@@ -5,8 +5,8 @@
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
-  console.info('%cGW2 Wallet app.js v2.6.3 — Bootstrap keys + toasts + router sync + selected-key persistence + WV Targets refresh', 'color:#0bf; font-weight:700');
-
+  console.info('%cGW2 Wallet app.js v2.7.0 — Bootstrap keys + toasts + router sync + selected-key persistence + WV Targets refresh (conversor extraído)', 'color:#0bf; font-weight:700');
+ 
   /* ========================= Estado ========================= */
   const state = {
     keys: [],
@@ -467,21 +467,7 @@
     return parts.join(' ');
   }
 
-  /* =================== Tabla (columna 📌) ===================== */
-
-  // NUEVO: Formato de moneda con colores (mismo que Dashboard)
-  function formatCoinValue(value) {
-    var copper = Math.abs(Math.floor(value));
-    var gold = Math.floor(copper / 10000);
-    var silver = Math.floor((copper % 10000) / 100);
-    var copperLeft = copper % 100;
-    var parts = [];
-    if (gold > 0) parts.push('<span style="color:#f4c542;font-weight:600;">' + gold.toLocaleString('es-AR') + '</span> <span style="color:#9aa2b8;">g</span>');
-    if (silver > 0) parts.push('<span style="color:#e0e0e0;font-weight:500;">' + silver + '</span> <span style="color:#9aa2b8;">s</span>');
-    parts.push('<span style="color:#b87333;font-weight:500;">' + copperLeft + '</span> <span style="color:#9aa2b8;">c</span>');
-    return parts.join(' ');
-  }
-
+  
   function rowHTML(r) {
     const icon  = iconTag(r._cur?.icon, 22);
 
