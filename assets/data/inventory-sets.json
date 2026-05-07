@@ -1,0 +1,73 @@
+{
+  "sets": [
+    {
+      "id": "high_value",
+      "name": "Alto Valor",
+      "icon": "assets/icons/Cuentas/157085.png",
+      "items": [
+        { "id": 19976, "name": "Moneda mística" },
+        { "id": 19721, "name": "Pegote de ectoplasma" },
+        { "id": 43766, "name": "Tomo de conocimiento" },
+        { "id": 86694, "name": "Estatuilla del León Negro" },
+        { "id": 36708, "name": "Llave de cofre del León Negro" },
+        { "id": 19675, "name": "Trébol místico" },
+        { "id": 71581, "name": "Memoria de batalla" },
+        { "id": 70820, "name": "Esquirla de gloria" }
+      ]
+    },
+    {
+      "id": "t6",
+      "name": "Tier 6",
+      "icon": "assets/icons/Cuentas/255373.png",
+      "items": [
+        { "id": 24358, "name": "Hueso antiguo" },
+        { "id": 24351, "name": "Garra despiadada" },
+        { "id": 24277, "name": "Montón de polvo cristalino" },
+        { "id": 24357, "name": "Colmillo feroz" },
+        { "id": 24289, "name": "Escama blindada" },
+        { "id": 24300, "name": "Tótem elaborado" },
+        { "id": 24283, "name": "Vesícula de veneno poderoso" },
+        { "id": 24295, "name": "Vial de sangre poderosa" }
+      ]
+    },
+    {
+      "id": "symbols_etc",
+      "name": "Símbolos y demás",
+      "icon": "assets/icons/Cuentas/156670.png",
+      "items": [
+        { "id": 89098, "name": "Símbolo de control" },
+        { "id": 89141, "name": "Símbolo de mejora" },
+        { "id": 89182, "name": "Símbolo de dolor" },
+        { "id": 89103, "name": "Talismán de brillantez" },
+        { "id": 89258, "name": "Talismán de potencia" },
+        { "id": 89216, "name": "Talismán de habilidad" },
+        { "id": 24310, "name": "Piedra imán de ónice" },
+        { "id": 24315, "name": "Piedra imán fundida" },
+        { "id": 24320, "name": "Piedra imán glacial" },
+        { "id": 24325, "name": "Piedra imán de destructor" },
+        { "id": 24330, "name": "Piedra imán de cristal" },
+        { "id": 24340, "name": "Piedra imán corrupta" },
+        { "id": 24305, "name": "Piedra imán cargada" },
+        { "id": 70842, "name": "Piedra imán mordrem" },
+        { "id": 68942, "name": "Piedra imán perenne" },
+        { "id": 42010, "name": "Orbe de azurita" },
+        { "id": 24520, "name": "Orbe de berilo" },
+        { "id": 24516, "name": "Orbe de zafiro" },
+        { "id": 24515, "name": "Orbe de esmeralda" },
+        { "id": 24512, "name": "Orbe de crisocola" },
+        { "id": 24510, "name": "Orbe de coral" },
+        { "id": 24508, "name": "Orbe de rubí" },
+        { "id": 24522, "name": "Orbe de ópalo" },
+        { "id": 24773, "name": "Doblón de platino" },
+        { "id": 72436, "name": "Orbe de ágata" },
+        { "id": 76491, "name": "Diamante negro" },
+        { "id": 75654, "name": "Orbe de ébano" },
+        { "id": 72504, "name": "Orbe de feldespato" },
+        { "id": 76179, "name": "Perla de agua dulce" },
+        { "id": 72315, "name": "Nudo de Maguuma" },
+        { "id": 74988, "name": "Brote de lino" },
+        { "id": 70957, "name": "Lirio de Maguuma" }
+      ]
+    }
+  ]
+}

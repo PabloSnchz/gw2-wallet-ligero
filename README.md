@@ -689,7 +689,7 @@ Definí en `index.html` (antes de router.js):
 
 ---
 
-## 📦 Archivos clave (v6.4.0)
+## 📦 Archivos clave (v6.5.0)
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
@@ -732,12 +732,6 @@ Definí en `index.html` (antes de router.js):
 
 ### Archivos nuevos (v6.4.0)
 - `js/inventory-hub.js` — Módulo de Inventario y Personajes (buscador de objetos, KPIs, vistas de sección, modal de ítem)
-
-### Archivos nuevos (v6.5.0)
-- `js/converter-modal.js` — Modal del Conversor Gem ↔ Gold con 3 tabs (Cambio, Transacciones, Populares)
-
-### Archivos eliminados (v6.5.0)
-- `assets/data/gemstore-items.json` — Datos estáticos de Gem Store (reemplazado por datos reales de API)
 
 ---
 

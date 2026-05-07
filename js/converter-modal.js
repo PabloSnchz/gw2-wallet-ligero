@@ -525,7 +525,7 @@
     var html =
       '<div style="margin-bottom:8px;font-size:0.75rem;color:#9aa2b8;line-height:1.5;">' +
         (isLegendaryFilter
-          ? '� <strong>Legendarias más activas:</strong> ordenadas por cantidad de gente vendiendo. A más vendedores, más liquidez y precios más competitivos.'
+          ? '💜 <strong>Legendarias más activas:</strong> ordenadas por cantidad de gente vendiendo. A más vendedores, más liquidez y precios más competitivos.'
           : '📊 <strong>Ítems más populares:</strong> ordenados por volumen total de órdenes de compra y venta. Mostrando los que más se mueven. Usá el filtro de rareza para enfocarte.') +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">' +

@@ -1,27 +1,35 @@
 /* =======================================================================
  * js/api-gw2.js  —  Capa API con fallbacks + caché persistente (mejorada)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 2.14.0-modular (2026-05-04) — Commerce: Listings + Prices para Ofertas TP
+ * Versión: 2.15.0 (2026-05-04) — Commerce: Listings, Prices + Transactions (Buy/Sell)
  *
  * Cobertura de este archivo:
  *  - Token / permisos (tokeninfo)
  *  - Wallet + currencies (fallback AA)
- *  - Items batch (con caché por id)
+ *  - Items batch (con caché por id, cap de 500 entradas)
  *  - Achievements (cuenta + metadatos)
  *  - Account info (con last_modified para detectar actividad)
  *  - Raids (getAccountRaids para seguimiento semanal)
  *  - Inventory: Bank, Materials, Legendary Armory
+ *  - Commerce: Listings, Prices, Transactions (buys/sells)
  *  - Delegados Wizard's Vault (retrocompatibles)
  *
- * Cambios v2.13.0:
+ * Cambios v2.15.0:
+ *  - NUEVA función getCommerceListings(opts) — Endpoint /v2/commerce/listings
+ *  - NUEVA función getCommercePrices(ids, opts) — Endpoint /v2/commerce/prices
+ *  - NUEVA función getCommerceTransactionsBuys(token, opts)
+ *  - NUEVA función getCommerceTransactionsSells(token, opts)
+ *  - Cap de 500 entradas en items_cache_v1:es (elimina las 100 más viejas)
+ *
+ * Cambios v2.14.0:
  *  - NUEVA función getAccountBank(token, opts) para obtener el banco de la cuenta
- *  - NUEVA función getAccountMaterials(token, opts) para obtener almacenamiento de materiales
- *  - NUEVA función getAccountLegendaryArmory(token, opts) para obtener armería legendaria
+ *  - NUEVA función getAccountMaterials(token, opts) para almacenamiento de materiales
+ *  - NUEVA función getAccountLegendaryArmory(token, opts) para armería legendaria
+ *
+ * Cambios v2.13.0:
+ *  - NUEVA función getAccountRaids(token, opts) para encuentros de raid completados
  *
  * Cambios v2.12.0:
- *  - NUEVA función getAccountRaids(token, opts) para obtener encuentros de raid completados
- *
- * Cambios v2.11.0:
  *  - NUEVA función getAccountInfo(token) que devuelve last_modified
  *  - ELIMINADA lógica de PvP (getPvPGames, isRecentlyActiveInPvP)
  * ======================================================================= */

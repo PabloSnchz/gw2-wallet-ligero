@@ -386,6 +386,9 @@
           '<input type="text" id="invSearchInput" placeholder="Buscar en inventario..." value="' + esc(state.filters.q) + '" style="width:100%;padding:9px 12px 9px 34px;background:#1a1c24;border:1px solid #2a2c35;border-radius:20px;color:#e0e4ed;font-size:0.82rem;transition:border-color 0.15s ease,box-shadow 0.15s ease;" onfocus="this.style.borderColor=\'#5276ff\';this.style.boxShadow=\'0 0 0 2px rgba(82,118,255,0.15)\'" onblur="this.style.borderColor=\'#2a2c35\';this.style.boxShadow=\'none\'">' +
         '</div>' +
         '<select id="invRarityFilter" style="background:#1a1c24;border:1px solid #2a2c35;border-radius:20px;color:#e0e4ed;padding:8px 32px 8px 12px;font-size:0.78rem;cursor:pointer;transition:border-color 0.15s ease;appearance:none;background-image:url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="%239aa2b8"/></svg>\');background-repeat:no-repeat;background-position:right 10px center;"><option value="">Todas las rarezas</option>' + rarityOptions + '</select>' +
+        '<button id="invDashboardBtn" class="btn btn--ghost" title="Dashboard Multi-Cuenta de Inventario" style="display:inline-flex;align-items:center;gap:5px;padding:8px 14px;font-size:0.78rem;transition:all 0.15s ease;">' +
+          '<img src="assets/icons/733322.png" width="14" height="14" alt="" style="opacity:0.7;"> Dashboard' +
+        '</button>' +
         '<button id="invRefreshBtn" class="btn btn--ghost" title="Refrescar datos" style="display:inline-flex;align-items:center;gap:5px;padding:8px 14px;font-size:0.78rem;transition:all 0.15s ease;">' +
           '<img src="' + CONFIG.ICONS.refresh + '" width="14" height="14" alt="" style="opacity:0.7;"> Refrescar' +
         '</button>' +
@@ -1357,6 +1360,14 @@
     if (refreshBtn && !refreshBtn.__wired) {
       refreshBtn.__wired = true;
       refreshBtn.addEventListener('click', function() { refresh(true); });
+    }
+
+    var dashboardBtn = document.getElementById('invDashboardBtn');
+    if (dashboardBtn && !dashboardBtn.__wired) {
+      dashboardBtn.__wired = true;
+      dashboardBtn.addEventListener('click', function() {
+        location.hash = '#/inventory/dashboard';
+      });
     }
 
     $$('.inv-kpi-card[data-section]').forEach(function(card) {
