@@ -194,12 +194,7 @@
         '<div class="group" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">',
           '<strong style="margin-right:6px">Tienda:</strong>',
           '<input id="wvShopSearch" type="text" placeholder="Buscar (nombre o ID)…" />',
-          '<select id="wvShopSort">',
-            '<option value="name">Nombre (A→Z)</option>',
-            '<option value="cost">Costo AA (↑)</option>',
-            '<option value="costDesc">Costo AA (↓)</option>',
-            '<option value="id">ID (↑)</option>',
-          '</select>',
+
           '<button id="wvShopToggleView" class="btn btn--ghost">Vista: ' + (st.view === 'cards' ? 'Tarjetas' : 'Tabla') + '</button>',
           '<button id="wvShopRefresh" class="btn btn--ghost">Refrescar</button>',
           '<label for="wvLegacyFilter" class="muted" style="margin-left:8px;">Recompensas Legado:</label>',
@@ -208,6 +203,12 @@
             '<option value="hide"' + (legacyVis === 'hide' ? ' selected' : '') + '>Ocultar</option>',
           '</select>',
           '<button id="wvClearSynced" class="btn btn--ghost" title="Borrar o recortar marcas ya cubiertas por el API">Limpiar sincronizados</button>',
+          '<button id="wvClearPinsAll" class="btn btn--ghost" title="Borrar TODOS los fijados de TODAS las API keys para esta temporada" style="display:inline-flex;align-items:center;gap:4px;color:#ff9d9d;">' +
+            '<img src="assets/icons/Welcome/156107.png" width="14" height="14" alt="">Limpiar fijados' +
+          '</button>',
+          '<button id="wvReplicatePins" class="btn btn--ghost" title="Copiar los fijados de esta API key a todas las demás" style="display:inline-flex;align-items:center;gap:4px;">' +
+            '<img src="assets/icons/Welcome/155911.png" width="14" height="14" alt="">Replicar fijados' +
+          '</button>',
           '<button id="wvPDOpenBtn" class="btn btn--ghost" title="Detalle de compras (todas las cuentas)" style="display:inline-flex;align-items:center;gap:6px;margin-left:auto;padding:6px 12px;font-size:0.78rem;">' +
   '<img src="' + (localStorage.getItem('wvpd_icon_url') || 'assets/icons/3126787.png') + '" alt="" loading="lazy" width="18" height="18">Detalle de compras' +
 '</button>',
@@ -219,14 +220,12 @@
 
     // Wire events
     var q = host.querySelector('#wvShopSearch');
-    var s = host.querySelector('#wvShopSort');
     var v = host.querySelector('#wvShopToggleView');
     var r = host.querySelector('#wvShopRefresh');
     var lf = host.querySelector('#wvLegacyFilter');
     var cls = host.querySelector('#wvClearSynced');
 
     if (q) q.addEventListener('input', function () { st.q = (q.value || '').trim().toLowerCase(); WVShopUI.render(); });
-    if (s) s.addEventListener('change', function () { st.sort = s.value; WVShopUI.render(); });
     if (v) v.addEventListener('click', function () {
       st.view = (st.view === 'cards') ? 'table' : 'cards';
       try { localStorage.setItem('gw2_wv_view_v1', st.view); } catch (_) {}
@@ -279,6 +278,73 @@
         root.toast?.('info', 'No hay marcas para limpiar', { ttl: 1500 });
       }
     });
+
+    // Botón: Limpiar fijados de TODAS las cuentas
+    var clearPinsBtn = host.querySelector('#wvClearPinsAll');
+    if (clearPinsBtn) {
+      clearPinsBtn.addEventListener('click', async function() {
+        if (!confirm('¿Borrar TODOS los fijados de TODAS las API keys para esta temporada?\n\nEsta acción no se puede deshacer.')) return;
+        if (!root.WVSeasonStore || !st.season) {
+          root.toast?.('error', 'No se pudo acceder al almacén de temporada', { ttl: 2000 });
+          return;
+        }
+        try {
+          var keys = JSON.parse(localStorage.getItem('gw2_keys') || '[]');
+          var year = st.season.year;
+          var seq = st.season.seq;
+          var count = 0;
+          for (var k = 0; k < keys.length; k++) {
+            var fp = keys[k].value ? keys[k].value.slice(0, 4) + '…' + keys[k].value.slice(-4) : 'anon';
+            var currentPins = root.WVSeasonStore.getPinned(year, seq, fp) || {};
+            var pinIds = Object.keys(currentPins);
+            if (pinIds.length > 0) {
+              await root.WVSeasonStore.delPinned(year, seq, fp, pinIds);
+              count++;
+            }
+          }
+          root.toast?.('success', 'Fijados limpiados en ' + count + ' cuenta(s)', { ttl: 2000 });
+          WVShopUI.refresh(false);
+        } catch (e) {
+          root.toast?.('error', 'Error al limpiar fijados: ' + (e.message || 'desconocido'), { ttl: 2500 });
+        }
+      });
+    }
+
+    // Botón: Replicar fijados a todas las cuentas
+    var replicateBtn = host.querySelector('#wvReplicatePins');
+    if (replicateBtn) {
+      replicateBtn.addEventListener('click', async function() {
+        if (!confirm('¿Copiar los fijados de esta API key a TODAS las demás?\n\nSolo se agregarán, no se borrarán los existentes.')) return;
+        if (!root.WVSeasonStore || !st.season) {
+          root.toast?.('error', 'No se pudo acceder al almacén de temporada', { ttl: 2000 });
+          return;
+        }
+        try {
+          var token = getSelectedToken();
+          if (!token) {
+            root.toast?.('error', 'No hay API key seleccionada', { ttl: 2000 });
+            return;
+          }
+          var sourceFp = token.slice(0, 4) + '…' + token.slice(-4);
+          var year = st.season.year;
+          var seq = st.season.seq;
+          var sourcePins = root.WVSeasonStore.getPinned(year, seq, sourceFp) || {};
+
+          var keys = JSON.parse(localStorage.getItem('gw2_keys') || '[]');
+          var count = 0;
+          for (var k = 0; k < keys.length; k++) {
+            var destFp = keys[k].value ? keys[k].value.slice(0, 4) + '…' + keys[k].value.slice(-4) : 'anon';
+            if (destFp === sourceFp) continue;
+            await root.WVSeasonStore.setPinned(year, seq, destFp, sourcePins);
+            count++;
+          }
+          root.toast?.('success', 'Fijados replicados a ' + count + ' cuenta(s)', { ttl: 2000 });
+          WVShopUI.refresh(false);
+        } catch (e) {
+          root.toast?.('error', 'Error al replicar fijados: ' + (e.message || 'desconocido'), { ttl: 2500 });
+        }
+      });
+    }
   }
 
   function syncShopToggleLabel() {
