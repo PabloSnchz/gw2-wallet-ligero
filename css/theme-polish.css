@@ -438,6 +438,16 @@ aside.col-side .panel-head img {
 .kpi--warn .kpi__value { color: var(--color-amber); }
 .kpi--bad .kpi__value { color: var(--color-red); }
 
+/* ============================== WV PURCHASE DETAIL KPIs ==================== */
+#wvPDPanel .wvpd-card {
+  transition: transform 0.22s cubic-bezier(0.2, 0.9, 0.4, 1.1), box-shadow 0.22s cubic-bezier(0.2, 0.9, 0.4, 1.1), border-color 0.22s ease;
+}
+#wvPDPanel .wvpd-card:hover {
+  transform: translateY(-3px);
+  border-color: #2d2f36;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.45), 0 0 16px rgba(90,110,154,0.20), 0 0 0 1px rgba(82,118,255,0.12);
+}
+
 /* ============================== ENCABEZADOS TIPO PILL ====================== */
 .header-pill {
   display: inline-flex;
