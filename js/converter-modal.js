@@ -922,7 +922,7 @@
             '<img src="assets/icons/155033.png" width="16" height="16" alt="" style="vertical-align:middle;margin-right:5px;opacity:0.6;">Populares' +
           '</button>' +
           '<button class="conv-modal-tab" data-tab="historial" style="background:transparent;border:none;padding:10px 16px;font-size:0.82rem;color:#9aa2b8;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s ease;" onmouseover="this.style.color=\'#e0e4ed\';this.style.background=\'rgba(123,194,255,0.05)\'" onmouseout="this.style.color=\'#9aa2b8\';this.style.background=\'transparent\'">' +
-            '<img src="assets/icons/3124974.png" width="16" height="16" alt="" style="vertical-align:middle;margin-right:5px;opacity:0.6;">Historial' +
+            '<img src="assets/icons/Welcome/3124974.png" width="16" height="16" alt="" style="vertical-align:middle;margin-right:5px;opacity:0.6;">Historial' +
           '</button>' +
         '</div>' +
         '<div class="modal__body" style="max-height:65vh;overflow-y:auto;">' +
@@ -994,7 +994,7 @@
           // Tab: Historial (placeholder Fase 3)
           '<div class="conv-tab-content" data-tab="historial" style="display:none;">' +
             '<div style="text-align:center;padding:40px;color:#9aa2b8;">' +
-              '<img src="assets/icons/3124974.png" width="48" height="48" alt="" style="opacity:0.3;margin-bottom:16px;"><br>' +
+              '<img src="assets/icons/Welcome/3124974.png" width="48" height="48" alt="" style="opacity:0.3;margin-bottom:16px;"><br>' +
               'Historial de tendencia de gemas<br>' +
               '<span style="font-size:0.8rem;">Próximamente</span>' +
             '</div>' +
