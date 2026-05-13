@@ -1359,14 +1359,7 @@ function hidePanel(){
       });
       if (leftSum > 0){
         meta = (itemId!=null) ? getItemMeta(itemId) : null;
-        // Obtener item_count del listing para calcular cantidad total de items
-        var itemCount = 1;
-        for (var a = 0; a < state.accounts.length; a++) {
-          var row = findRowByListingId(state.accounts[a].rows || [], listingId);
-          if (row && row.item_count != null) { itemCount = row.item_count; break; }
-        }
-        var totalItems = leftSum * itemCount;
-        out.push({ listingId: listingId, leftSum: leftSum, countAcc: countAcc, itemId: itemId, meta: meta, totalItems: totalItems });
+        out.push({ listingId: listingId, leftSum: leftSum, countAcc: countAcc, itemId: itemId, meta: meta });
       }
     });
     out.sort(function(a,b){
@@ -1451,16 +1444,17 @@ function hidePanel(){
       listI.innerHTML = topI.length ? topI.map(function(x){
         var name = x.meta?.name || (x.itemId!=null ? ('#'+x.itemId) : ('#'+x.listingId));
         var icon = x.meta?.icon ? ('<span class="wvpd-li__icon"><img src="'+esc(x.meta.icon)+'" alt="'+esc(name)+'" loading="lazy"></span>') : '<span class="wvpd-li__icon"></span>';
-        var totalItemsText = x.totalItems > 1 ? (' — ' + fmtInt(x.totalItems) + ' uds') : '';
         var aaNeeded = 0;
+        var totalItems = 0;
         for (var a = 0; a < state.accounts.length; a++) {
           var row = findRowByListingId(state.accounts[a].rows || [], x.listingId);
           if (row) {
             var left = leftForListingInAccount(state.accounts[a], x.listingId);
             aaNeeded += left * (row.cost || 0);
+            totalItems += left * (row.item_count || 1);
           }
         }
-        var totalItemsText = x.totalItems > 1 ? (' → <span style="color:#b4bad0;font-weight:700;">' + fmtInt(x.totalItems) + ' uds</span>') : '';
+        var totalItemsText = totalItems > 1 ? (' → <span style="color:#b4bad0;font-weight:700;">' + fmtInt(totalItems) + ' uds</span>') : '';
         return '<li class="wvpd-li" title="'+esc(name)+'">'+
                  '<span class="wvpd-li__left">'+icon+'<span class="wvpd-li__name" style="display:none">'+esc(name)+'</span></span>'+
                  '<span class="wvpd-li__rest">' + fmtInt(aaNeeded) + ' AA' + totalItemsText + '</span>'+
