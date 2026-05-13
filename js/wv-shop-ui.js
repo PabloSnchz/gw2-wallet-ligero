@@ -629,6 +629,49 @@
     });
   }
 
+  function updateCardProgress(listingId, newMarked, st) {
+    var card = document.querySelector('.wv-card[data-id="' + listingId + '"]');
+    if (!card) return;
+
+    var row = (st.merged || []).find(function(r) { return String(r.id) === String(listingId); });
+    if (!row) return;
+
+    var limit = row.purchase_limit;
+    var purchasedApi = row.purchased || 0;
+    var purchasedEff = purchasedApi + newMarked;
+    var cost = row.cost || 0;
+    var leftVal = limit !== null ? Math.max(0, limit - purchasedEff) : null;
+    var leftDisplay = leftVal === null ? '∞' : leftVal;
+    var totalRemainingAA = leftVal !== null ? leftVal * cost : 0;
+    var progressPercent = limit !== null ? (purchasedEff / limit) * 100 : 0;
+    var isCompleted = leftVal !== null && leftVal === 0;
+    var statusIcon = isCompleted ? '✅' : (limit === null ? '∞' : '⚠️');
+    var statusText = isCompleted ? 'Completado' : (limit === null ? 'Ilimitado' : 'Pendiente');
+    var statusColor = isCompleted ? '#a0ffc8' : (limit === null ? '#7bc2ff' : '#ffd36b');
+
+    // Actualizar barra de progreso
+    var statusDiv = card.querySelector('.wvpd-item-progress__status');
+    if (statusDiv) {
+      statusDiv.style.color = statusColor;
+      statusDiv.setAttribute('title', isCompleted ? 'Completado' : (limit === null ? 'Sin límite' : 'Faltan ' + leftVal + ' unidades (' + totalRemainingAA + ' AA)'));
+      statusDiv.innerHTML = statusIcon + ' ' + statusText + ': ' + (leftDisplay === '∞' ? '∞' : leftDisplay + ' (' + totalRemainingAA + ' AA)');
+    }
+
+    var fillDiv = card.querySelector('.wvpd-item-progress__fill');
+    if (fillDiv) {
+      fillDiv.style.width = Math.min(100, progressPercent) + '%';
+    }
+
+    // Actualizar pills de Comprado y Restante
+    var rows = card.querySelectorAll('.wv-card__row');
+    if (rows.length >= 2) {
+      var purchasedPill = rows[0].querySelector('.pill');
+      if (purchasedPill) purchasedPill.textContent = purchasedEff + ' / ' + (limit === null ? '∞' : limit);
+      var restantePill = rows[1].querySelector('.pill');
+      if (restantePill) restantePill.textContent = leftDisplay;
+    }
+  }
+
   function wireManualInputs(area, st) {
     $$('.wvpd-manual-input-field', area).forEach(function (input) {
       if (input.__wired) return;
@@ -651,6 +694,8 @@
         } catch (_) {}
         var sums = computeShopNumbers(st.merged, st.marks);
         setShopHeader(st.aa, sums.spentApi, sums.reservedMarks, st.aaIconUrl);
+        // Actualizar barra de progreso en la card individual
+        updateCardProgress(listingId, newValue, st);
       });
     });
 
