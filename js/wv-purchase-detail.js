@@ -142,7 +142,7 @@
         border-left-color: #ff9d9d;
         box-shadow: 0 0 6px rgba(255, 157, 157, 0.2);
       }
-      .wvpd-kpi__lbl{ color:#a0a6b3; font-size:11px; display:inline-flex; align-items:center; gap:8px; }
+      .wvpd-kpi__lbl{ color:#b4bad0; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:8px; text-transform:uppercase; letter-spacing:0.5px; }
       .wvpd-kpi__val{ font-size:20px; font-weight:800; letter-spacing:0.2px; }
       .wvpd-kpi--ok .wvpd-kpi__val{ color:#a0ffc8; }
       .wvpd-kpi--warn .wvpd-kpi__val{ color:#ffd36b; }
@@ -1359,7 +1359,14 @@ function hidePanel(){
       });
       if (leftSum > 0){
         meta = (itemId!=null) ? getItemMeta(itemId) : null;
-        out.push({ listingId: listingId, leftSum: leftSum, countAcc: countAcc, itemId: itemId, meta: meta });
+        // Obtener item_count del listing para calcular cantidad total de items
+        var itemCount = 1;
+        for (var a = 0; a < state.accounts.length; a++) {
+          var row = findRowByListingId(state.accounts[a].rows || [], listingId);
+          if (row && row.item_count != null) { itemCount = row.item_count; break; }
+        }
+        var totalItems = leftSum * itemCount;
+        out.push({ listingId: listingId, leftSum: leftSum, countAcc: countAcc, itemId: itemId, meta: meta, totalItems: totalItems });
       }
     });
     out.sort(function(a,b){
@@ -1444,9 +1451,19 @@ function hidePanel(){
       listI.innerHTML = topI.length ? topI.map(function(x){
         var name = x.meta?.name || (x.itemId!=null ? ('#'+x.itemId) : ('#'+x.listingId));
         var icon = x.meta?.icon ? ('<span class="wvpd-li__icon"><img src="'+esc(x.meta.icon)+'" alt="'+esc(name)+'" loading="lazy"></span>') : '<span class="wvpd-li__icon"></span>';
+        var totalItemsText = x.totalItems > 1 ? (' — ' + fmtInt(x.totalItems) + ' uds') : '';
+        var aaNeeded = 0;
+        for (var a = 0; a < state.accounts.length; a++) {
+          var row = findRowByListingId(state.accounts[a].rows || [], x.listingId);
+          if (row) {
+            var left = leftForListingInAccount(state.accounts[a], x.listingId);
+            aaNeeded += left * (row.cost || 0);
+          }
+        }
+        var totalItemsText = x.totalItems > 1 ? (' → <span style="color:#b4bad0;font-weight:700;">' + fmtInt(x.totalItems) + ' uds</span>') : '';
         return '<li class="wvpd-li" title="'+esc(name)+'">'+
                  '<span class="wvpd-li__left">'+icon+'<span class="wvpd-li__name" style="display:none">'+esc(name)+'</span></span>'+
-                 '<span class="wvpd-li__rest">restante: '+fmtInt(x.leftSum)+'</span>'+
+                 '<span class="wvpd-li__rest">' + fmtInt(aaNeeded) + ' AA' + totalItemsText + '</span>'+
                '</li>';
       }).join('') : '<li class="wvpd-li"><span class="wvpd-li__name">—</span><span class="wvpd-li__rest">—</span></li>';
     }
