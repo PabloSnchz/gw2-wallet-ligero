@@ -32,7 +32,7 @@
   const SOON_MIN  = 20;
 
   const LS_FLAGS      = 'gw2_meta_flags_v1';
-  const FLAGS_TTL_MS  = 5 * 60 * 1000;
+  const FLAGS_TTL_MS  = 30 * 1000; // 30 segundos (antes 5 min) — para reflejar cambios en vivo
 
   const LS_META_COMPACT = 'gw2_meta_compact';
 
