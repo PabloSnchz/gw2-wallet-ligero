@@ -209,9 +209,6 @@
           '<button id="wvReplicatePins" class="btn btn--ghost" title="Copiar los fijados de esta API key a todas las demás" style="display:inline-flex;align-items:center;gap:4px;">' +
             '<img src="assets/icons/Welcome/155911.png" width="14" height="14" alt="">Replicar fijados' +
           '</button>',
-          '<button id="wvPDOpenBtn" class="btn btn--ghost" title="Detalle de compras (todas las cuentas)" style="display:inline-flex;align-items:center;gap:6px;margin-left:auto;padding:6px 12px;font-size:0.78rem;">' +
-  '<img src="' + (localStorage.getItem('wvpd_icon_url') || 'assets/icons/3126787.png') + '" alt="" loading="lazy" width="18" height="18">Detalle de compras' +
-'</button>',
         '</div>',
         shopSyncLine(),
         '<div id="wvShopHeader" class="muted" style="margin-top:4px">—</div>',
@@ -237,16 +234,6 @@
       try { localStorage.setItem('gw2_wv_legacy_filter_v1', st.legacyFilter); } catch (_) {}
       WVShopUI.render();
     });
-
-    // Asignar evento al botón de Purchase Detail
-    var pdBtn = host.querySelector('#wvPDOpenBtn');
-    if (pdBtn && !pdBtn.__wvpdClick) {
-      pdBtn.__wvpdClick = true;
-      pdBtn.addEventListener('click', function(ev) {
-        ev.preventDefault();
-        try { window.WVPurchaseDetail?.show(); } catch(e) { console.warn('[WV-PD] show error', e); }
-      });
-    }
 
     if (cls) cls.addEventListener('click', async function () {
       var marks = st.marks || {};

@@ -146,7 +146,7 @@
   }
 
   function showPanel(idToShow) {
-    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','inventoryPanel','charactersPanel','accountsPanel','welcomePanel','walletDashboardPanel','inventoryDashboardPanel','raidTrackerPanel'].forEach(function(id){
+    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','inventoryPanel','charactersPanel','accountsPanel','welcomePanel','walletDashboardPanel','inventoryDashboardPanel','wvObjectivesDashboardPanel','raidTrackerPanel'].forEach(function(id){
       var node=el(id); if (!node) return;
       if (id===idToShow) node.removeAttribute('hidden'); else node.setAttribute('hidden','hidden');
     });
@@ -954,8 +954,7 @@
         });
       });
       
-      // FIX: Inyectar botón de Purchase Detail en el toolbar
-      ensureToolbarButton();
+      // Purchase Detail ahora en nav de tabs (index.html)
     }
 
     function ensureShopAutoRefresh(on){
@@ -1070,9 +1069,36 @@
       Object.keys(mapBtns).forEach(function(k){ var b=mapBtns[k]; if (b) b.setAttribute('aria-selected', k===tab?'true':'false'); });
       Object.keys(mapTabs).forEach(function(k){ var p=mapTabs[k]; if (p) (k===tab ? show(p) : hide(p)); });
       ensureShopAutoRefresh(tab==='shop');
+      
+      // Dashboard visible solo en Diarias/Semanales/Especiales
+      // Purchase Detail visible solo en Tienda
+      var dashBtn = document.getElementById('wvTabBtnObjDashboard');
+      var pdBtn = document.getElementById('wvTabBtnPurchaseDetail');
+      if (dashBtn) {
+        dashBtn.hidden = (tab !== 'daily' && tab !== 'weekly' && tab !== 'special');
+      }
+      if (pdBtn) {
+        pdBtn.hidden = (tab !== 'shop');
+      }
     }
 
-    function onTabClick(ev){ var btn=ev.currentTarget; var tab=btn && btn.getAttribute('data-tab'); if(!tab) return; setActiveTab(tab); ensureLoadTab(tab); }
+    function onTabClick(ev){ 
+      var btn=ev.currentTarget; 
+      var tab=btn && btn.getAttribute('data-tab'); 
+      if(!tab) return; 
+      // Si el dashboard está abierto, cerrarlo y cargar la tab directamente
+      var dashPanel = document.getElementById('wvObjectivesDashboardPanel');
+      if (dashPanel && !dashPanel.hasAttribute('hidden')) {
+        hideObjectivesDashboard();
+        setActiveTab(tab);
+        ensureLoadTab(tab);
+        // Actualizar hash sin disparar navegación completa
+        location.hash = '#/account/wizards-vault';
+        return;
+      }
+      setActiveTab(tab); 
+      ensureLoadTab(tab); 
+    }
 
     function wireTabsOnce(){
       if (els.panel && els.panel.__tabsWired) return;
@@ -1269,6 +1295,57 @@
       scheduleSeasonReset();
     }
 
+    function showObjectivesDashboard(){
+      // Inicializar WV si no está iniciado (necesario para F5 en dashboard)
+      if (!state.inited) {
+        state.inited = true;
+        wireTabsOnce();
+        var last = loadLastTab();
+        if (['daily','weekly','special','shop'].indexOf(last) === -1) last = 'daily';
+        state.lastTab = last;
+      }
+      // Asegurar que WV está activo
+      state._active = true;
+      // Ocultar tabs de contenido de objetivos/tienda
+      ['wvTabDaily','wvTabWeekly','wvTabSpecial','wvTabShop'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) el.setAttribute('hidden','hidden');
+      });
+      // Deseleccionar botones de tabs
+      ['wvTabBtnDaily','wvTabBtnWeekly','wvTabBtnSpecial','wvTabBtnShop'].forEach(function(id){
+        var btn = document.getElementById(id);
+        if (btn) btn.setAttribute('aria-selected','false');
+      });
+      // Ocultar botones de navegación, mostrar botones de dashboard
+      var dashBtn = document.getElementById('wvTabBtnObjDashboard');
+      var pdBtn = document.getElementById('wvTabBtnPurchaseDetail');
+      var refreshBtn = document.getElementById('wvTabBtnRefreshDashboard');
+      var backBtn = document.getElementById('wvTabBtnBackToWV');
+      if (dashBtn) dashBtn.hidden = true;
+      if (pdBtn) pdBtn.hidden = true;
+      if (refreshBtn) refreshBtn.hidden = false;
+      if (backBtn) backBtn.hidden = false;
+      // Mostrar panel del dashboard
+      var dashPanel = document.getElementById('wvObjectivesDashboardPanel');
+      if (dashPanel) dashPanel.removeAttribute('hidden');
+      // Activar el dashboard
+      if (window.WVObjectivesDashboard && typeof window.WVObjectivesDashboard.activate === 'function') {
+        window.WVObjectivesDashboard.activate();
+      }
+    }
+
+    function hideObjectivesDashboard(){
+      var dashPanel = document.getElementById('wvObjectivesDashboardPanel');
+      if (dashPanel) dashPanel.setAttribute('hidden','hidden');
+      // Ocultar botones del dashboard
+      var refreshBtn = document.getElementById('wvTabBtnRefreshDashboard');
+      var backBtn = document.getElementById('wvTabBtnBackToWV');
+      if (refreshBtn) refreshBtn.hidden = true;
+      if (backBtn) backBtn.hidden = true;
+      // setActiveTab ya maneja mostrar la tab correcta y ocultar las demás
+      setActiveTab(state.lastTab || 'daily');
+    }
+
     function activate(){
       if (state._active) return;
       state._active = true;
@@ -1298,6 +1375,7 @@
       state._active = false;
       ensureShopAutoRefresh(false);
       clearResetTimers();
+      hideObjectivesDashboard();
     }
 
     function onVisibilityChange(hidden){
@@ -1336,13 +1414,8 @@
       scheduleAllResets();
     }
 
-    // FIX: Botón de Purchase Detail — se inyecta en el toolbar
-    function accessIconHTML(){
-      var u = localStorage.getItem('wvpd_icon_url') || 'assets/icons/3126787.png';
-      return '<img src="'+u+'" alt="" loading="lazy" width="32" height="32">';
-    }
-
-    function ensureToolbarButton(){
+    // Purchase Detail ahora en nav de tabs (index.html) — código removido
+    function _pdDeprecated_ensureToolbarButton(){
       try{
         var host = document.getElementById('wvShopToolbarHost');
         if (!host) return;
@@ -1410,6 +1483,7 @@
 
     var api={
       activate:activate, setActiveTab:setActiveTab, ensureLoadTab:ensureLoadTab,
+      showObjectivesDashboard:showObjectivesDashboard, hideObjectivesDashboard:hideObjectivesDashboard,
       deactivate:deactivate, onVisibilityChange:onVisibilityChange, onTokenChanged:onTokenChanged,
       refreshObjectives:refreshObjectives, onTargetsRefresh:onTargetsRefresh,
       hydrateModePills:function(scope){ hydrateWVModePills(scope||el('wvPanel')); },
@@ -1428,8 +1502,7 @@
       }
     }catch(_){}
 
-    // FIX: Inicializar observer de Purchase Detail
-    observeToolbar();
+    // Purchase Detail ahora en nav de tabs (index.html)
 
     return api;
   })();
@@ -1451,6 +1524,13 @@
       _actInflight = null;
     });
     return _actInflight;
+  }
+
+  function hideBothNavButtons(){
+    var dashBtn = document.getElementById('wvTabBtnObjDashboard');
+    var pdBtn = document.getElementById('wvTabBtnPurchaseDetail');
+    if (dashBtn) dashBtn.hidden = true;
+    if (pdBtn) pdBtn.hidden = true;
   }
 
   function route() {
@@ -1554,9 +1634,27 @@
           return;
         }
 
+        if (h === '#/account/wizards-vault/objectives-dashboard') {
+          try {
+            showPanel('wvPanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('wv_objectives_dashboard');
+            if (WV && typeof WV.showObjectivesDashboard === 'function') {
+              WV.showObjectivesDashboard();
+            }
+          } catch (e) {
+            console.warn('[router] WV Objectives Dashboard error', e);
+          } finally {
+            updateSidebarFor('wv');
+            setActiveNav(h);
+          }
+          return;
+        }
+
         if (h === '#/account/wizards-vault') {
           try {
             showPanel('wvPanel');
+            // Cerrar dashboard si estaba abierto
+            if (WV && typeof WV.hideObjectivesDashboard === 'function') WV.hideObjectivesDashboard();
             if (typeof Analytics !== 'undefined') Analytics.viewModule('wizards_vault');
             if (WV && typeof WV.activate === 'function') WV.activate();
             hydrateWVModePills(el('wvPanel'));
@@ -1657,6 +1755,10 @@
           window.Achievements.render();
         }
 
+      } else if (h === '#/account/wizards-vault/objectives-dashboard') {
+        if (window.WVObjectivesDashboard && typeof window.WVObjectivesDashboard.refresh === 'function') {
+          window.WVObjectivesDashboard.refresh(true);
+        }
       } else if (h === '#/account/wizards-vault') {
         if (WV && typeof WV.onTokenChanged === 'function') WV.onTokenChanged(token);
         if (WV && typeof WV.ensureLoadTab === 'function') WV.ensureLoadTab('shop');
@@ -1767,6 +1869,40 @@
           localStorage.setItem('gn_welcome_seen', 'true');
         }
       }
+    }
+
+    // Wirear botón Purchase Detail en tabs
+    var pdTabBtn = document.getElementById('wvTabBtnPurchaseDetail');
+    if (pdTabBtn && !pdTabBtn.__wired) {
+      pdTabBtn.__wired = true;
+      pdTabBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        hideBothNavButtons();
+        try { window.WVPurchaseDetail?.show(); } catch(err) { console.warn('[router] PD show error', err); }
+      });
+    }
+
+    // Wirear botones del dashboard (Refrescar / Volver)
+    var refreshDashBtn = document.getElementById('wvTabBtnRefreshDashboard');
+    var backDashBtn = document.getElementById('wvTabBtnBackToWV');
+    if (refreshDashBtn && !refreshDashBtn.__wired) {
+      refreshDashBtn.__wired = true;
+      refreshDashBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (window.WVObjectivesDashboard && typeof window.WVObjectivesDashboard.refresh === 'function') {
+          window.WVObjectivesDashboard.refresh(true);
+        }
+      });
+    }
+    if (backDashBtn && !backDashBtn.__wired) {
+      backDashBtn.__wired = true;
+      backDashBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (WV && typeof WV.hideObjectivesDashboard === 'function') {
+          WV.hideObjectivesDashboard();
+        }
+        location.hash = '#/account/wizards-vault';
+      });
     }
 
     route(); hydrateWVModePills(el('wvPanel'));
