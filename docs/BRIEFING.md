@@ -2,7 +2,7 @@
 
 ## Tu rol
 
-Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No estás empezando de cero: el proyecto tiene **v6.5.0**, 40+ archivos, arquitectura modular IIFE vanilla JS, y reglas estrictas de CSS en 3 capas.
+Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No estás empezando de cero: el proyecto tiene **v6.5.1**, 45+ archivos, arquitectura modular IIFE vanilla JS, y reglas estrictas de CSS en 3 capas.
 
 **Tu objetivo:** mantener compatibilidad, no romper nada, seguir la arquitectura existente, y proponer soluciones quirúrgicas (no reescribir archivos completos).
 
@@ -11,7 +11,7 @@ Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No es
 ## Claves de metodología que funcionaron
 
 ### 1. Antes de tocar código, diagnosticar
-- Si algo no funciona, **ejecutar tests en consola** antes de proponer cambios. Ej: `InventoryHub._debug()`, `ConverterModal._debug()`, `document.querySelector(...)`.
+- Si algo no funciona, **ejecutar tests en consola** antes de proponer cambios. Ej: `InventoryHub._debug()`, `ConverterModal._debug()`, `WVObjectivesDashboard._debug()`, `document.querySelector(...)`.
 - Si hay un bug visual, **comparar con la versión que sí funciona** (ver diferencias en el DOM, CSS computado, clases).
 - No proponer cambios sin entender la causa raíz.
 
@@ -76,6 +76,7 @@ Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No es
 | Panel de Cuentas | ✅ Estable |
 | Bienvenida | ✅ Estable |
 | Purchase Detail | ✅ KPI cards compactas, tabla sin scroll |
+| WV Objectives Dashboard | ✅ Tabla comparativa multi-cuenta, KPIs con íconos, countdown semanal |
 | Gist Sync | ✅ Estable |
 | Settings Manager | ✅ Estable |
 
@@ -86,8 +87,9 @@ Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No es
 | Archivo | Versión | Notas |
 |---------|---------|-------|
 | `api-gw2.js` | v2.15.0 | Cache con cap de 500 items, commerce endpoints |
-| `router.js` | v2.16.0 | Sidebar sin conversor, soporta InventoryHub |
+| `router.js` | v2.17.0 | WV Objectives Dashboard, Purchase Detail en nav tabs, sidebar sin conversor |
 | `converter-modal.js` | v1.0.0 | Modal con 3 tabs + placeholder Historial |
+| `wv-objectives-dashboard.js` | v1.0.0 | Dashboard de Objetivos Semanales Multi-Cuenta |
 | `inventory-hub.js` | v1.3.2 | Skeleton loader, búsqueda en banco, filtros peso |
 | `wallet-theme.js` | v1.3.1 | Glow neutro para divisas sin color |
 | `app.js` | v2.7.0 | Conversor extraído |

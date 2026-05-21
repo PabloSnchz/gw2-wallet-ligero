@@ -24,9 +24,55 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 - 🎨 **Interfaz visual unificada** — Diseño consistente en todos los módulos con bordes, glows y animaciones
 - 🏗️ **Arquitectura CSS en 3 capas** — Separación estricta de responsabilidades: layout, piel unificada y color semántico
 - 🎒 **Inventario y Personajes** — Buscador de objetos en toda la cuenta (banco, materiales, armería legendaria)
+- 📊 **Dashboard de Objetivos WV** — Tabla comparativa de objetivos semanales multi-cuenta con KPIs y countdown
 
 👉 **Página oficial (Deploy GitHub Pages):**  
 https://pablosnchz.github.io/gw2-wallet-ligero/
+
+---
+
+## ✨ Novedades principales — v6.5.1
+
+### 📊 WV Objectives Dashboard — Dashboard de Objetivos Multi-Cuenta (wv-objectives-dashboard.js v1.0.0)
+
+**Nuevo módulo que muestra los objetivos semanales de todas las cuentas en una tabla comparativa.**
+
+| Característica | Descripción |
+|----------------|-------------|
+| **Tabla cuentas vs objetivos** | Filas = cuentas, Columnas = objetivos semanales, Celdas = estado |
+| **KPIs con íconos GW2** | Cuentas, Reclamados, Completados, Progreso con descripciones y totales (X / Y) |
+| **Mini barra de progreso** | En el KPI de Progreso, con gradiente azul |
+| **Countdown semanal** | Al reset del lunes 07:30 UTC, mismo formato que Actividades/Meta |
+| **Carga paralela** | MAX=3 peticiones concurrentes a `GW2Api.getWVWeekly()` por cuenta |
+| **Skeleton loader** | Animación durante la carga de datos |
+| **Fila de resumen TOTAL** | Con contadores de reclamados/completados por columna |
+| **Scroll horizontal** | Para muchas columnas de objetivos |
+| **Zebra striping + hover** | Estilos de tabla unificados |
+| **Iconos de cuenta** | Idénticos a wallet-dashboard.js |
+
+**Estados de celda:**
+
+| Estado | Condición | Visual |
+|--------|-----------|--------|
+| Reclamado | `claimed === true` | ✅ Verde |
+| Completado | `pct >= 100 && !claimed` | ✔️ Ámbar |
+| En progreso | `pct < 100` | Neutro con % |
+
+**Acceso:**
+- Botón "Dashboard" en la fila de tabs de Cámara del Brujo (visible solo en Diarias/Semanales/Especiales)
+- Ruta: `#/account/wizards-vault/objectives-dashboard`
+
+**Navegación integrada:**
+- Botón "Compras" (Purchase Detail) visible solo en Tienda — alterna con Dashboard
+- Botones "Refrescar" y "Volver" visibles solo cuando el dashboard está abierto
+- Click en cualquier tab de objetivos cierra el dashboard y carga la tab
+
+### 🔄 Purchase Detail movido al nav de tabs
+
+El botón de acceso a Purchase Detail migró del toolbar de Tienda al `<nav class="tabs">` de WV:
+- Visible solo en la tab Tienda (alterna con Dashboard)
+- Estilo consistente con el resto de botones de navegación
+- Eliminado botón `#wvPDOpenBtn` del toolbar (código deprecado removido)
 
 ---
 
@@ -695,10 +741,11 @@ Definí en `index.html` (antes de router.js):
 |---------|---------|-----------------|
 | `js/api-gw2.js` | **v2.15.0** | API Layer. **Inventory + Commerce (listings, prices, transactions)** |
 | `js/converter-modal.js` | **v1.0.0** | **NUEVO: Modal del Conversor con 3 tabs (Cambio, Transacciones, Populares)** |
-| `js/router.js` | **v2.16.0** | **Router desacoplado (~740 líneas). Sidebar sin conversor.** |
+| `js/router.js` | **v2.17.0** | **Router desacoplado (~800 líneas). WV Objectives Dashboard + Purchase Detail en nav tabs. Sidebar sin conversor.** |
 | `js/inventory-hub.js` | **v1.3.1** | **Inventario y Personajes — Buscador de objetos, KPIs, vistas de sección, modal de ítem** |
 | `js/wv-shop-ui.js` | **v1.0.2** | UI de Tienda WV. **Glow solo en ícono de rareza, fix de timing con wv-theme.js** |
 | `js/wv-objectives-ui.js` | v1.0.0 | UI de Objetivos WV |
+| `js/wv-objectives-dashboard.js` | **v1.0.0** | **Dashboard de Objetivos Multi-Cuenta — Tabla comparativa, KPIs, countdown** |
 | `js/wv-theme.js` | **v1.0.1** | Tema visual de WV. **Solo border-left, expone window.WVTheme** |
 | `js/characters-theme.js` | **v1.0.1** | Tema visual de Personajes. **Solo border-left, elimina hover manual** |
 | `js/wv-purchase-detail.js` | **v1.13.1** | Detalle de compras. **Fix estado online (data-token), ícono reloj local** |
@@ -719,6 +766,9 @@ Definí en `index.html` (antes de router.js):
 | `js/app.js` | **v2.7.0** | Keys, wallet, eventos globales. **Conversor extraído a converter-modal.js** |
 | `css/theme-polish.css` | **v2.1.0** | **Componentes canónicos + hover unificado + conversor** |
 | `css/main.css` | **v2.6.0** | Estilos principales. **Solo layout, sin bordes ni box-shadows. Tag infusión celestial.** |
+
+### Archivos nuevos (v6.5.1)
+- `js/wv-objectives-dashboard.js` — Dashboard de Objetivos Semanales Multi-Cuenta con KPIs, countdown y tabla comparativa
 
 ### Archivos nuevos (v6.5.0)
 - `js/converter-modal.js` — Modal del Conversor con 3 tabs funcionales + placeholder
@@ -843,6 +893,14 @@ assets/icons/
 
 ## 🧪 Cómo probar las novedades
 
+### WV Objectives Dashboard (NUEVO en v6.5.1)
+1. Navegar a **Cámara del Brujo** → click en "Dashboard" en la fila de tabs (visible en Diarias/Semanales/Especiales)
+2. Verificar KPIs con íconos, descripciones, totales y mini barra de progreso
+3. Verificar countdown semanal a la derecha del título
+4. Verificar tabla con scroll horizontal, zebra striping y fila de resumen TOTAL
+5. Click en cualquier tab de objetivos → el dashboard se cierra y carga la tab
+6. Recargar con F5 en el dashboard → los botones deben seguir funcionando
+
 ### Inventory Hub (NUEVO en v6.4.0)
 1. Navegar a **Inventario y Personajes** desde el sidebar
 2. Verificar que los KPIs muestran Materiales, Banco, Legendarios, Personajes y acceso a "Ver Personajes"
@@ -935,6 +993,7 @@ assets/icons/
 
 Este proyecto sigue **Semantic Versioning** (SemVer).
 
+- `v6.5.1`: **Dashboard de Objetivos Multi-Cuenta** — Nuevo módulo `wv-objectives-dashboard.js` v1.0.0, tabla comparativa de objetivos semanales, KPIs con íconos y mini barra de progreso, countdown semanal, Purchase Detail movido al nav de tabs, eliminado `#wvPDOpenBtn` legacy
 - `v6.5.0`: **Conversor Modal + Comercio** — Conversor en modal con 3 tabs (Cambio, Transacciones, Populares), 4 nuevas funciones de commerce en api-gw2.js, glow neutro en divisas sin color, cap de caché de items
 - `v6.4.0`: **Inventory Hub — Buscador de Objetos** — Nuevo módulo `inventory-hub.js` v1.3.1, 3 nuevos endpoints en api-gw2.js v2.13.0, vistas de sección (Materiales 10 categorías, Banco grid 10×3, Armería por tipo), modal con stats, wiki en español, characters.js como subvista
 - `v6.3.1`: **Refactor Arquitectura CSS + Unificación Visual Completa** — CSS en 3 capas estrictas, 5 theme files corregidos (solo `borderLeft`), Panel de Cuentas v2.0.0 "Profile Card" premium + tabla zebra, Meta v3.3.0 (ícono expansión con glow, tag infusión celestial, fix preview), WV Tienda v1.0.2 (glow solo en ícono, fix timing), Purchase Detail fix estado online (data-token, ícono reloj local), Activities glow en Ecto, Wallet glow en íconos, Dashboard KPIs con border-left + glow + tabla unificada, Conversor rediseño visual, fix botón Dashboard
