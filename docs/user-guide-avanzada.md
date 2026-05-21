@@ -1,6 +1,6 @@
 # 🐈‍⬛ Bóveda del Gato Negro — Guía de Usuario Avanzada
 
-**Versión: v6.5.0** | **Actualizado: Mayo 2026**
+**Versión: v6.5.1** | **Actualizado: Mayo 2026**
 
 Esta guía cubre cada módulo en detalle con tres preguntas clave:
 
@@ -25,7 +25,8 @@ Esta guía cubre cada módulo en detalle con tres preguntas clave:
 9. [Dashboard de Cartera Multi-Cuenta](#9-dashboard-de-cartera-multi-cuenta)
 10. [Panel de Cuentas](#10-panel-de-cuenta)
 11. [Purchase Detail](#11-purchase-detail)
-12. [Backup y Restaurar](#12-backup-y-restaurar)
+12. [Dashboard de Objetivos WV](#12-dashboard-de-objetivos-wv)
+13. [Backup y Restaurar](#13-backup-y-restaurar)
 13. [Sincronización con GitHub Gist](#13-sincronización-con-github-gist)
 14. [API Keys](#14-api-keys)
 
@@ -291,7 +292,33 @@ Un panel de **seguimiento de compras del Wizard's Vault** que muestra tus cuenta
 
 ---
 
-## 12. Backup y Restaurar
+## 12. Dashboard de Objetivos WV
+
+### ¿Qué es?
+Un panel que compara los **objetivos semanales del Wizard's Vault** de todas tus cuentas en una sola tabla. Cada celda muestra el estado de un objetivo para una cuenta.
+
+### ¿Cómo se usa?
+1. Navegá a **Cámara del Brujo** → pestaña **Semanales** (o Diarias/Especiales)
+2. Clic en el botón **Dashboard** (margen derecho de la fila de tabs)
+3. La tabla muestra:
+   - **Filas**: cada una de tus cuentas (API Keys)
+   - **Columnas**: cada objetivo semanal
+   - **Celdas**: ✅ Reclamado, ✔️ Completado, o progreso X/Y
+4. Los **KPIs superiores** muestran totales: Cuentas, Reclamados, Completados, y Progreso general con mini barra
+5. El **countdown semanal** (arriba a la derecha) muestra cuánto falta para el reset del lunes
+6. La **fila TOTAL** (al final de la tabla) resume cuántas cuentas reclamaron/completaron cada objetivo
+7. Usá los botones **Refrescar** (actualiza datos) y **Volver** (regresa a los objetivos normales)
+8. Clic en cualquier tab (Diarias/Semanales/Especiales/Tienda) para cerrar el dashboard
+
+### ¿Para qué sirve?
+- Ver de un vistazo qué cuentas completaron los semanales
+- Identificar cuentas que no reclamaron sus recompensas
+- Planificar en qué cuentas farmear AA antes del reset semanal
+- Comparar el progreso entre todas tus cuentas sin cambiar de API Key
+
+---
+
+## 13. Backup y Restaurar
 
 ### ¿Qué es?
 Un sistema para **exportar toda tu configuración** (API Keys, WV pins, Wallet pins, actividades, personajes, meta) a un archivo JSON y restaurarla en otro navegador o dispositivo.
@@ -307,7 +334,7 @@ Un sistema para **exportar toda tu configuración** (API Keys, WV pins, Wallet p
 
 ---
 
-## 13. Sincronización con GitHub Gist
+## 14. Sincronización con GitHub Gist
 
 ### ¿Qué es?
 Un sistema opcional para **sincronizar tu configuración en la nube** usando un Gist privado de GitHub.
@@ -324,7 +351,7 @@ Un sistema opcional para **sincronizar tu configuración en la nube** usando un 
 
 ---
 
-## 14. API Keys
+## 15. API Keys
 
 ### ¿Qué son?
 Las **claves de acceso** que le dan permiso a la Bóveda para consultar tus datos de Guild Wars 2.

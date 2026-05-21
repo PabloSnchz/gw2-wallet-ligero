@@ -8,6 +8,59 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [6.5.1] - 2026-05-21
+
+### Added
+- **WV Objectives Dashboard — Dashboard de Objetivos Multi-Cuenta (wv-objectives-dashboard.js v1.0.0)**:
+  - Tabla comparativa de objetivos semanales: filas = cuentas, columnas = objetivos, celdas = estado
+  - KPIs con íconos GW2, descripciones y totales (X / Y): Cuentas, Reclamados, Completados, Progreso
+  - Mini barra de progreso en el KPI de Progreso con gradiente azul
+  - Countdown semanal al reset (lunes 07:30 UTC), mismo formato que Actividades/Meta
+  - Carga paralela MAX=3 desde `GW2Api.getWVWeekly()` por cuenta
+  - Skeleton loader durante la carga de datos
+  - Fila de resumen TOTAL con contadores de reclamados/completados por columna
+  - Scroll horizontal para muchas columnas de objetivos
+  - Zebra striping + hover en tabla con estilos unificados
+  - Iconos de cuenta idénticos a `wallet-dashboard.js` (`ACCOUNT_TYPE_ICONS` + `DECORATIVE_ICONS`)
+  - Ruta: `#/account/wizards-vault/objectives-dashboard`
+  - Panel integrado dentro de `wvPanel` (mismo patrón que Purchase Detail)
+- **Botones de navegación en el `<nav class="tabs">` de WV**:
+  - Dashboard (visible solo en Diarias/Semanales/Especiales)
+  - Compras / Purchase Detail (visible solo en Tienda)
+  - Refrescar y Volver (visibles solo cuando el dashboard está abierto)
+  - Visibilidad alternada automáticamente según la tab activa
+- **Nuevo evento Analytics**: `view_module` con `module_name: 'wv_objectives_dashboard'`
+
+### Changed
+- **router.js v2.16.0 → v2.17.0**:
+  - Nuevas funciones: `showObjectivesDashboard()`, `hideObjectivesDashboard()` expuestas en API pública de WV
+  - Ruta `#/account/wizards-vault/objectives-dashboard`
+  - `setActiveTab` alterna visibilidad de botones Dashboard/Compras
+  - `showObjectivesDashboard` inicializa WV si es necesario (soporta F5 en el dashboard)
+  - `onTabClick` cierra el dashboard al clickear cualquier tab de objetivos
+  - `hideBothNavButtons()` oculta Dashboard y Compras al abrir Purchase Detail
+- **wv-shop-ui.js v1.0.2**:
+  - Eliminado botón `#wvPDOpenBtn` del toolbar de tienda (movido al nav de tabs)
+  - Eliminado event listener asociado
+- **index.html**:
+  - Panel `wvObjectivesDashboardPanel` dentro de `wvPanel` (en `tabs-content`)
+  - Botones en `<nav class="tabs">`: Dashboard, Compras, Refrescar, Volver
+  - CSS para display/hidden de botones (`#wvTabBtnObjDashboard`, `#wvTabBtnPurchaseDetail`, etc.)
+- **theme-polish.css**:
+  - Estilos `#wvTabBtnObjDashboard[hidden]`, `#wvTabBtnPurchaseDetail[hidden]`, `#wvTabBtnRefreshDashboard[hidden]`, `#wvTabBtnBackToWV[hidden]` con `display: none !important`
+- **Documentación**: ONBOARDING.md, README.md, CHANGELOG.md actualizados a v6.5.1
+
+### Removed
+- **Botón `#wvPDOpenBtn` del toolbar de tienda**: eliminado del HTML generado por `wv-shop-ui.js` y `router.js`
+- **Funciones deprecadas en `router.js`**: `_pdDeprecated_ensureToolbarButton()`, `observeToolbar()`, `accessIconHTML()` — código muerto eliminado
+
+### Fixed
+- **F5 en el dashboard**: los botones de navegación ahora funcionan correctamente tras recargar la página en el dashboard
+- **Botón Dashboard siempre visible**: corregido con CSS `display: inline-flex !important` + `[hidden] { display: none !important }`
+- **Countdown semanal**: se inicia correctamente después de renderizar el DOM del dashboard
+
+---
+
 ## [6.5.0] - 2026-05-04
 
 ### Added

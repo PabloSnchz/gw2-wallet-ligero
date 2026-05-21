@@ -2,7 +2,7 @@
 # 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v6.5.0)
 
 Fecha: 2026-05-04
-Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `wv-shop-ui.js`, `wv-objectives-ui.js`, `wv-theme.js`, `wallet-dashboard.js`, `raid-tracker.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `characters-theme.js`, `accounts-panel.js`, `welcome-panel.js`, `settings-manager.js`, `analytics.js`, `gist-sync.js`, `sidebar-nav.js`, `inventory-hub.js`, `converter-modal.js`, `*-theme.js`, `main.css`, `theme-polish.css`
+Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `wv-shop-ui.js`, `wv-objectives-ui.js`, `wv-objectives-dashboard.js`, `wv-theme.js`, `wallet-dashboard.js`, `raid-tracker.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `characters-theme.js`, `accounts-panel.js`, `welcome-panel.js`, `settings-manager.js`, `analytics.js`, `gist-sync.js`, `sidebar-nav.js`, `inventory-hub.js`, `converter-modal.js`, `*-theme.js`, `main.css`, `theme-polish.css`
 
 ## 📌 BAI — Bloque de Alineamiento Instantáneo
 
@@ -139,6 +139,70 @@ Si hay riesgo → advertir antes de generar código.
 
 ### Archivos eliminados
 - `assets/data/gemstore-items.json` — Eliminado (reemplazado por tabs con datos reales de API)
+
+---
+
+## 🚀 Novedades v6.5.1 (MAYO 2026) — Dashboard de Objetivos Multi-Cuenta
+
+### 📊 WV Objectives Dashboard — Tabla comparativa de objetivos semanales (wv-objectives-dashboard.js v1.0.0)
+
+**Objetivo:** Dashboard que muestra los objetivos semanales de **todas** las cuentas en una tabla comparativa.
+
+**Arquitectura:**
+- Panel integrado dentro de `wvPanel` (mismo patrón que Purchase Detail)
+- Tabs de navegación de WV siempre visibles
+- Ruta: `#/account/wizards-vault/objectives-dashboard`
+
+**Características principales:**
+
+| Característica | Descripción |
+|----------------|-------------|
+| **Tabla cuentas vs objetivos** | Filas = cuentas, Columnas = objetivos semanales, Celdas = estado |
+| **KPIs con íconos** | Cuentas, Reclamados, Completados, Progreso con descripciones y totales |
+| **Mini barra de progreso** | En el KPI de Progreso, con gradiente azul |
+| **Countdown semanal** | Al reset del lunes 07:30 UTC, mismo formato que Actividades/Meta |
+| **Carga paralela** | MAX=3 peticiones concurrentes a `GW2Api.getWVWeekly()` |
+| **Skeleton loader** | Animación durante la carga de datos |
+| **Fila de resumen** | TOTAL con contadores de reclamados/completados por columna |
+| **Scroll horizontal** | Para muchas columnas de objetivos |
+| **Zebra striping + hover** | Estilos de tabla unificados |
+
+**Estados de celda:**
+
+| Estado | Condición | Color |
+|--------|-----------|-------|
+| Reclamado | `claimed === true` | Verde `#a0ffc8` ✅ |
+| Completado | `pct >= 100 && !claimed` | Ámbar `#ffd36b` ✔️ |
+| En progreso | `pct < 100` | Neutro con % |
+
+**Navegación:**
+- Botón "Dashboard" en el `<nav class="tabs">` de WV, visible solo en Diarias/Semanales/Especiales
+- Purchase Detail movido al mismo nav, visible solo en Tienda
+- Botones "Refrescar" y "Volver" visibles solo cuando el dashboard está abierto
+- Click en cualquier tab de objetivos cierra el dashboard y carga la tab
+
+**APIs consumidas:**
+- `GW2Api.getWVWeekly(token, { nocache })` por cada cuenta
+
+**Iconos de cuenta:**
+- Idénticos a `wallet-dashboard.js`: `ACCOUNT_TYPE_ICONS` + `DECORATIVE_ICONS`
+
+**Cambios en `router.js`:**
+- Nuevas funciones: `showObjectivesDashboard()`, `hideObjectivesDashboard()`
+- Expuestas en API pública de WV
+- Ruta `#/account/wizards-vault/objectives-dashboard`
+- `setActiveTab` alterna visibilidad de botones Dashboard/Compras
+
+**Cambios en `index.html`:**
+- Panel `wvObjectivesDashboardPanel` dentro de `wvPanel`
+- Botones en `<nav class="tabs">`: Dashboard, Compras, Refrescar, Volver
+- CSS para display/hidden de botones
+
+**Cambios en `wv-shop-ui.js`:**
+- Eliminado botón `#wvPDOpenBtn` del toolbar (movido al nav de tabs)
+
+**Cambios en `theme-polish.css`:**
+- Estilos `#wvTabBtnObjDashboard`, `#wvTabBtnPurchaseDetail`, `#wvTabBtnRefreshDashboard`, `#wvTabBtnBackToWV`
 
 ---
 
@@ -668,7 +732,7 @@ Archivo redundante (v2.3.1) que competía con `wallet-theme.js`:
 
 | Evento | Disparo | Archivo |
 |--------|---------|---------|
-| `view_module` | Navegación a cada módulo (wallet, meta_events, achievements, wizards_vault, activities, characters, accounts, welcome, **wallet_dashboard**, **raids**, **inventory**) | `router.js` |
+| `view_module` | Navegación a cada módulo (wallet, meta_events, achievements, wizards_vault, activities, characters, accounts, welcome, **wallet_dashboard**, **raids**, **inventory**, **wv_objectives_dashboard**) | `router.js` |
 | `export_backup` | Exportación de backup | `settings-manager.js` |
 | `import_backup` | Importación de backup | `settings-manager.js` |
 | `open_account_wizard` | Apertura del asistente de cuentas | `accounts-panel.js` |
@@ -1347,6 +1411,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 - `#/welcome` — Pantalla de Bienvenida
 - `#/wallet/dashboard` — Dashboard de Cartera Multi-Cuenta
 - `#/account/raids` — Seguimiento de Raids
+- `#/account/wizards-vault/objectives-dashboard` — Dashboard de Objetivos Multi-Cuenta (NUEVO)
 
 ## 🧩 Responsabilidades por archivo (Consolidado v6.4.0)
 
@@ -1357,6 +1422,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/wizards-vault.js` | v1.3.0 | WV: objetivos, tienda, integración con SeasonStore. Recarga forzada de temporada |
 | `js/wv-shop-ui.js` | **v1.0.2** | UI de Tienda WV — **Glow solo en ícono de rareza, fix de timing con wv-theme.js** |
 | `js/wv-objectives-ui.js` | v1.0.0 | UI de Objetivos WV — renderizado de diarias/semanales/especiales |
+| `js/wv-objectives-dashboard.js` | **v1.0.0** | **Dashboard de Objetivos Multi-Cuenta — tabla comparativa, KPIs, countdown semanal** |
 | `js/wv-purchase-detail.js` | **v1.13.1** | Detalle de compras — **Fix estado online (data-token), ícono reloj local** |
 | `js/wv-tabs-skin.js` | v1.0.0 | Re-skin de tabs WV, consistente con rerenders |
 | `js/achievements.js` | v3.2.0 | Logros: grid único, recompensas visibles, dropdowns personalizados, AP potencial |
@@ -1373,7 +1439,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/welcome-panel.js` | v1.3.0 | Pantalla de Bienvenida |
 | `js/raid-tracker.js` | v1.7.0 | Seguimiento de Raids Semanales |
 | `js/wallet-dashboard.js` | **v2.5.0** | Dashboard de Cartera — **KPIs con border-left semántico + glow, tabla unificada** |
-| `js/router.js` | **v2.16.0** | Router desacoplado (~740 líneas). **Soporta InventoryHub como pantalla principal. Sidebar sin conversor.** |
+| `js/router.js` | **v2.17.0** | Router desacoplado (~800 líneas). **Soporta InventoryHub, WV Objectives Dashboard. Sidebar sin conversor. Purchase Detail en nav tabs.** |
 | `js/app.js` | **v2.7.0** | Keys, wallet, eventos globales. **Conversor extraído a converter-modal.js** |
 | `js/analytics.js` | v1.0.0 | Eventos personalizados para Google Analytics |
 | `js/wallet-theme.js` | **v1.3.1** | Tema visual de Cartera — **Glow en ícono de divisa + glow neutro para divisas sin color** |
@@ -1391,6 +1457,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 
 ### Archivos nuevos (v6.5.0)
 - `js/converter-modal.js` — Modal del Conversor Gem ↔ Gold con 3 tabs (Cambio, Transacciones, Populares)
+- `js/wv-objectives-dashboard.js` — Dashboard de Objetivos Semanales Multi-Cuenta con KPIs, countdown y tabla comparativa
 
 ### Archivos eliminados (v6.5.0)
 - `assets/data/gemstore-items.json` — Datos estáticos de Gem Store (reemplazado por datos reales de API)
@@ -2597,6 +2664,15 @@ SIN defer (temas, al final):
   - **Dashboard Cartera**: KPIs con border-left semántico + glow, tabla unificada
   - **Fix botón Dashboard Wallet** en index.html
   - **Limpieza**: eliminado `wv-theme.js` duplicado, `.inf-prev` duplicado de `theme-polish.css`
+- **May 2026:** **Dashboard de Objetivos Multi-Cuenta (v6.5.1)**:
+  - Nuevo módulo `wv-objectives-dashboard.js` v1.0.0
+  - Tabla comparativa de objetivos semanales por cuenta
+  - KPIs con íconos, descripciones, totales y mini barra de progreso
+  - Countdown semanal al reset (lunes 07:30 UTC)
+  - Purchase Detail movido al nav de tabs, visibilidad alternada con Dashboard
+  - Carga paralela MAX=3 desde `GW2Api.getWVWeekly()`
+  - Botones Refrescar/Volver en el nav de tabs
+  - Eliminado `#wvPDOpenBtn` del toolbar (código deprecado removido de router.js)
 - **May 2026:** **Modal del Conversor + Comercio + Mejoras (v6.5.0)**:
   - Conversor extraído de `app.js` a `converter-modal.js` como modal con 4 tabs
   - Tab Cambio: conversor Gem ↔ Gold con glow e índice de conveniencia
@@ -2646,6 +2722,7 @@ SIN defer (temas, al final):
 - ✅ Estado online basado en last_modified: umbral 20 minutos, ícono local
 - ✅ Dashboard de Cartera Multi-Cuenta: KPIs con border-left + glow, tabla unificada
 - ✅ **Conversor Modal v1.0.0**: 3 tabs funcionales (Cambio, Transacciones, Populares), KPIs con glow, formato unificado
+- ✅ **WV Objectives Dashboard v1.0.0**: tabla comparativa multi-cuenta, KPIs con íconos, countdown semanal, skeleton loader
 - ✅ **api-gw2.js v2.15.0**: 4 nuevas funciones de commerce + cap de caché de items
 - ✅ Raid Tracker: 8 alas, 33 encuentros, modal con detalles
 - ✅ **Cámara del Brujo 100% desacoplada de router.js**
