@@ -176,15 +176,18 @@
     try {
       var results = await Promise.all([
         root.GW2Api.getAccountBank(token, { nocache: !!forceNoCache }),
-        root.GW2Api.getAccountMaterials(token, { nocache: !!forceNoCache })
+        root.GW2Api.getAccountMaterials(token, { nocache: !!forceNoCache }),
+        loadActiveCharacterInventory(token)
       ]);
       return {
         bank: Array.isArray(results[0]) ? results[0] : [],
-        materials: Array.isArray(results[1]) ? results[1] : []
+        materials: Array.isArray(results[1]) ? results[1] : [],
+        activeCharName: results[2].name,
+        activeCharBags: results[2].bags
       };
     } catch(e) {
       console.warn(LOG, 'Error loading inventory for token', fpToken(token), e);
-      return { bank: [], materials: [] };
+      return { bank: [], materials: [], activeCharName: null, activeCharBags: [] };
     }
   }
 
@@ -207,6 +210,55 @@
       }
     }
     return 0;
+  }
+
+  function countItemInBags(bags, itemId) {
+    var total = 0;
+    if (!bags || !bags.length) return 0;
+    for (var b = 0; b < bags.length; b++) {
+      if (!bags[b]) continue;
+      var inv = bags[b].inventory || [];
+      for (var i = 0; i < inv.length; i++) {
+        if (inv[i] && inv[i].id === itemId) {
+          total += (inv[i].count || 1);
+        }
+      }
+    }
+    return total;
+  }
+
+  async function loadActiveCharacterInventory(token) {
+    try {
+      var charsResp = await fetch('https://api.guildwars2.com/v2/characters?access_token=' + token);
+      var chars = await charsResp.json();
+      if (!chars || !chars.length) return { name: null, bags: [] };
+      var activeChar = chars[0];
+      var invResp = await fetch('https://api.guildwars2.com/v2/characters/' + encodeURIComponent(activeChar) + '/inventory?access_token=' + token);
+      var invData = await invResp.json();
+      return { name: activeChar, bags: invData.bags || [] };
+    } catch(e) {
+      return { name: null, bags: [] };
+    }
+  }
+
+  async function loadInventoryForAccount(token, forceNoCache) {
+    try {
+      // Paralelizar banco + materiales + personaje activo
+      var results = await Promise.all([
+        root.GW2Api.getAccountBank(token, { nocache: !!forceNoCache }),
+        root.GW2Api.getAccountMaterials(token, { nocache: !!forceNoCache }),
+        loadActiveCharacterInventory(token)
+      ]);
+      return {
+        bank: Array.isArray(results[0]) ? results[0] : [],
+        materials: Array.isArray(results[1]) ? results[1] : [],
+        activeCharName: results[2].name,
+        activeCharBags: results[2].bags
+      };
+    } catch(e) {
+      console.warn(LOG, 'Error loading inventory for token', fpToken(token), e);
+      return { bank: [], materials: [], activeCharName: null, activeCharBags: [] };
+    }
   }
 
   async function loadAllInventories(forceNoCache) {
@@ -237,7 +289,9 @@
                   label: label,
                   tag: k.tag || null,
                   bank: inv.bank,
-                  materials: inv.materials
+                  materials: inv.materials,
+                  activeCharName: inv.activeCharName,
+                  activeCharBags: inv.activeCharBags
                 });
               })
               .catch(function(e) {
@@ -248,7 +302,9 @@
                   label: label,
                   tag: k.tag || null,
                   bank: [],
-                  materials: []
+                  materials: [],
+                  activeCharName: null,
+                  activeCharBags: []
                 });
               })
               .finally(function() { ACTIVE--; next(); });
@@ -350,7 +406,8 @@
   function getItemTotalForAccount(account, itemId) {
     var bankCount = countItemInBank(account.bank, itemId);
     var matCount = countItemInMaterials(account.materials, itemId);
-    return bankCount + matCount;
+    var charCount = countItemInBags(account.activeCharBags || [], itemId);
+    return bankCount + matCount + charCount;
   }
 
   function getItemTotalAcrossAll(itemId, accountsOverride) {
@@ -724,10 +781,16 @@
       var tag = keyItem ? keyItem.tag : null;
       var tagIcon = tag ? getAccountTypeIcon(tag) : '';
 
+      var charInfo = acc.activeCharName
+        ? '<div style="font-size:0.6rem;color:#5a6072;margin-top:1px;">' + esc(acc.activeCharName) + '</div>'
+        : '';
+
       cells.push(
-        '<td style="display:flex;align-items:center;gap:8px;min-width:140px;">' +
-          (tagIcon ? '<img src="' + tagIcon + '" width="20" height="20" alt="" style="border-radius:6px;flex-shrink:0;" loading="lazy">' : '') +
-          '<strong>' + esc(acc.label) + '</strong>' +
+        '<td style="min-width:140px;">' +
+          '<div style="display:flex;align-items:center;gap:8px;">' +
+            (tagIcon ? '<img src="' + tagIcon + '" width="20" height="20" alt="" style="border-radius:6px;flex-shrink:0;" loading="lazy">' : '') +
+            '<div><strong>' + esc(acc.label) + '</strong>' + charInfo + '</div>' +
+          '</div>' +
         '</td>'
       );
 

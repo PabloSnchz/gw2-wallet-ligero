@@ -1070,15 +1070,19 @@
       Object.keys(mapTabs).forEach(function(k){ var p=mapTabs[k]; if (p) (k===tab ? show(p) : hide(p)); });
       ensureShopAutoRefresh(tab==='shop');
       
-      // Dashboard visible solo en Diarias/Semanales/Especiales
+      // Dashboard y Sincronizar visibles solo en Diarias/Semanales/Especiales
       // Purchase Detail visible solo en Tienda
       var dashBtn = document.getElementById('wvTabBtnObjDashboard');
       var pdBtn = document.getElementById('wvTabBtnPurchaseDetail');
+      var syncBtn = document.getElementById('wvTabBtnSyncObjectives');
       if (dashBtn) {
         dashBtn.hidden = (tab !== 'daily' && tab !== 'weekly' && tab !== 'special');
       }
       if (pdBtn) {
         pdBtn.hidden = (tab !== 'shop');
+      }
+      if (syncBtn) {
+        syncBtn.hidden = (tab !== 'daily' && tab !== 'weekly' && tab !== 'special');
       }
     }
 
@@ -1319,10 +1323,12 @@
       // Ocultar botones de navegación, mostrar botones de dashboard
       var dashBtn = document.getElementById('wvTabBtnObjDashboard');
       var pdBtn = document.getElementById('wvTabBtnPurchaseDetail');
+      var syncBtn = document.getElementById('wvTabBtnSyncObjectives');
       var refreshBtn = document.getElementById('wvTabBtnRefreshDashboard');
       var backBtn = document.getElementById('wvTabBtnBackToWV');
       if (dashBtn) dashBtn.hidden = true;
       if (pdBtn) pdBtn.hidden = true;
+      if (syncBtn) syncBtn.hidden = true;
       if (refreshBtn) refreshBtn.hidden = false;
       if (backBtn) backBtn.hidden = false;
       // Mostrar panel del dashboard
@@ -1342,7 +1348,7 @@
       var backBtn = document.getElementById('wvTabBtnBackToWV');
       if (refreshBtn) refreshBtn.hidden = true;
       if (backBtn) backBtn.hidden = true;
-      // setActiveTab ya maneja mostrar la tab correcta y ocultar las demás
+      // setActiveTab ya maneja mostrar la tab correcta, ocultar las demás, y mostrar/ocultar Sincronizar
       setActiveTab(state.lastTab || 'daily');
     }
 
@@ -1902,6 +1908,19 @@
           WV.hideObjectivesDashboard();
         }
         location.hash = '#/account/wizards-vault';
+      });
+    }
+
+    // Wirear botón Sincronizar objetivos
+    var syncObjBtn = document.getElementById('wvTabBtnSyncObjectives');
+    if (syncObjBtn && !syncObjBtn.__wired) {
+      syncObjBtn.__wired = true;
+      syncObjBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (WV && typeof WV.refreshObjectives === 'function') {
+          WV.refreshObjectives(true);
+          window.toast?.('info', 'Sincronizando objetivos con la API...', { ttl: 1500 });
+        }
       });
     }
 
