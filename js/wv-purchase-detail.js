@@ -662,82 +662,7 @@
     el.innerHTML = bannerIconHTML();
   }
 
-  // ------------------------------ Toolbar button Tienda ------------------
-  function ensureToolbarButton(){
-    try{
-      var host = document.getElementById('wvShopToolbarHost');
-      if (!host) return;
-      var toolbar = host.querySelector('.wv-shop-toolbar');
-      if (!toolbar) return;
-
-      var group = toolbar.querySelector('.group') || toolbar;
-      var clearBtn = group.querySelector('#wvClearSynced');
-      var insertAfter = clearBtn || group.lastElementChild;
-
-      var existing = group.querySelector('#wvPDOpenBtn');
-      if (existing) {
-        // El botón ya lo crea wv-shop-ui.js. Solo wirear el click.
-        if (!existing.__wvpdClick){
-          existing.__wvpdClick = true;
-          existing.addEventListener('click', function(ev){
-            ev.preventDefault();
-            try { window.WVPurchaseDetail?.show(); }
-            catch(e){ console.warn('[WV-PD] show() error (existing)', e); }
-          });
-        }
-        return;
-      }
-
-      var btn = document.createElement('button');
-      btn.id = 'wvPDOpenBtn';
-      btn.setAttribute('data-wvpd-open','1');
-      btn.className = 'wvpd-iconbtn';
-      btn.title = 'Detalle de compras (todas las cuentas)';
-      btn.setAttribute('aria-label','Detalle de compras');
-      btn.innerHTML = accessIconHTML();
-      // Evitar que la imagen bloquee los clics
-      var img = btn.querySelector('img');
-      if (img) img.style.pointerEvents = 'none';
-      btn.style.marginLeft = 'auto';
-
-      btn.addEventListener('click', function(ev){
-        ev.preventDefault();
-        try { window.WVPurchaseDetail?.show(); }
-        catch(e){ console.warn('[WV-PD] show() error (new)', e); }
-      });
-
-      // Botón Online ELIMINADO - ahora está en el dashboard
-
-      if (insertAfter && insertAfter.parentNode === group) {
-        insertAfter.insertAdjacentElement('afterend', btn);
-      } else {
-        group.appendChild(btn);
-      }
-
-      console.debug('[WV-PD] Toolbar button ready');
-
-    }catch(e){ console.warn('[WV-PD] ensureToolbarButton', e); }
-  }
-
-  function observeToolbar(){
-    var host = document.getElementById('wvShopToolbarHost');
-    if (!host) return;
-
-    if (!host.__wvpdDelegated){
-      host.__wvpdDelegated = true;
-      host.addEventListener('click', function(ev){
-        var t = ev.target;
-        while (t && t !== host && !t.hasAttribute('data-wvpd-open')) t = t.parentElement;
-        if (t && t.hasAttribute('data-wvpd-open')) {
-          ev.preventDefault();
-          try { window.WVPurchaseDetail?.show(); }
-          catch (e) { console.warn('[WV-PD] show error (delegated)', e); }
-        }
-      });
-    }
-
-    ensureToolbarButton();
-  }
+  // Purchase Detail ahora en nav de tabs (index.html)
 
   // ------------------------------ Panel ------------------------------------
   function firstWVTabNode(){ return $('#wvTabDaily') || $('#wvTabWeekly') || $('#wvTabSpecial') || $('#wvTabShop'); }
@@ -2171,7 +2096,6 @@ function hidePanel(){
     async initOnce(){
       if (state.inited) return;
       injectStyles();
-      observeToolbar();
       ensurePanel();
       try { state.accessIconUrl = localStorage.getItem('wvpd_icon_url') || null; } catch(_){}
       updateBannerIcon();
@@ -2190,7 +2114,6 @@ function hidePanel(){
               if (myToken === _refreshSeq) WVPurchaseDetail.show(); 
             });
           }
-          observeToolbar();
         } catch(_){}
       });
       
@@ -2200,7 +2123,6 @@ function hidePanel(){
         var p = document.getElementById('wvPDPanel');
         if (e.key==='wvpd_icon_url'){ 
           state.accessIconUrl = localStorage.getItem('wvpd_icon_url') || null; 
-          ensureToolbarButton(); 
           updateBannerIcon(); 
           return; 
         }
@@ -2260,7 +2182,6 @@ function hidePanel(){
         if (state.accessIconUrl) localStorage.setItem('wvpd_icon_url', state.accessIconUrl);
         else localStorage.removeItem('wvpd_icon_url');
       } catch(_){}
-      ensureToolbarButton();
       updateBannerIcon();
     },
     
