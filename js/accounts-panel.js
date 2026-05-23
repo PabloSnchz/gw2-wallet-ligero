@@ -552,7 +552,27 @@
     var tc = document.getElementById('accountsToggleCompact'); if(tc&&!tc.__wired){ tc.__wired=true; tc.addEventListener('click',function(){ state.compact=!state.compact; renderList(); }); }
   }
 
-  function renderList() { var accounts = getFilteredAccounts(); renderStats(accounts); renderFilters(accounts); if(state.view==='table') renderTable(accounts); else renderCards(accounts); }
+  function renderList() {
+    var activeElement = document.activeElement;
+    var activeId = activeElement ? activeElement.id : null;
+    var cursorPos = (activeElement && activeElement.selectionStart !== undefined) ? activeElement.selectionStart : null;
+    
+    var accounts = getFilteredAccounts();
+    renderStats(accounts);
+    renderFilters(accounts);
+    if(state.view=='table') renderTable(accounts);
+    else renderCards(accounts);
+    
+    if (activeId === 'accountsSearch') {
+      var newInput = document.getElementById('accountsSearch');
+      if (newInput && document.activeElement !== newInput) {
+        newInput.focus();
+        if (cursorPos !== null) {
+          newInput.setSelectionRange(cursorPos, cursorPos);
+        }
+      }
+    }
+  }
 
   // =======================================================================
   // 8. FORMULARIO DE CARGA + ASISTENTE (mantenido)
