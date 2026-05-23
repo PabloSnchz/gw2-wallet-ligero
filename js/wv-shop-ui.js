@@ -746,6 +746,13 @@
         }
 
         WVShopUI.render();
+        
+        // Actualizar sync line después del render
+        var syncLineEl = document.querySelector('#wvShopToolbarHost .wv-syncline');
+        if (syncLineEl) {
+          var secs = Math.max(0, Math.floor((Date.now() - st.lastSyncTs) / 1000));
+          syncLineEl.innerHTML = '<span class="wv-sync-badge">Sincronizado hace ' + secs + 's</span>';
+        }
       } catch (e) {
         console.warn(LOG, 'refresh error:', e);
         setShopLoading(false);
