@@ -72,6 +72,7 @@ Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No es
 | Personajes | ✅ Subvista con botón "Volver al Inventario" |
 | Conversor (Modal) | ✅ 3 tabs: Cambio, Transacciones, Populares |
 | Dashboard Cartera | ✅ Estable |
+| Dashboard Inventario | ✅ Ítems del personaje activo incluidos |
 | Raid Tracker | ✅ Estable |
 | Panel de Cuentas | ✅ Estable |
 | Bienvenida | ✅ Estable |
@@ -91,6 +92,7 @@ Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No es
 | `converter-modal.js` | v1.0.0 | Modal con 3 tabs + placeholder Historial |
 | `wv-objectives-dashboard.js` | v1.0.0 | Dashboard de Objetivos Semanales Multi-Cuenta |
 | `inventory-hub.js` | v1.3.2 | Skeleton loader, búsqueda en banco, filtros peso |
+| `inventory-dashboard.js` | v1.0.0 | Dashboard multi-cuenta con inventario del personaje activo |
 | `wallet-theme.js` | v1.3.1 | Glow neutro para divisas sin color |
 | `app.js` | v2.7.0 | Conversor extraído |
 | `index.html` | — | Sidebar sin conversor, botón PD simplificado |
