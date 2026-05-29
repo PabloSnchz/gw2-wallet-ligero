@@ -278,6 +278,47 @@
     }catch{}
   }
 
+  // --------- API GW2: Ley Line Anomaly (evento rotativo) ----------
+  var _leyLineCache = { mapName: null, ts: 0 };
+  var LEY_LINE_TTL = 2 * 60 * 1000; // 2 minutos
+
+  async function fetchLeyLineActiveMap(eventIds) {
+    if (!eventIds || !eventIds.length) return null;
+    var now = Date.now();
+    if (_leyLineCache.mapName && (now - _leyLineCache.ts) < LEY_LINE_TTL) {
+      return _leyLineCache.mapName;
+    }
+    try {
+      var url = 'https://api.guildwars2.com/v2/events?ids=' + eventIds.join(',');
+      var r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      if (!r.ok) return _leyLineCache.mapName || null;
+      var events = await r.json();
+      for (var i = 0; i < events.length; i++) {
+        var e = events[i];
+        if (e && (e.state === 'Active' || e.state === 'Warmup')) {
+          _leyLineCache = { mapName: e.map_id, ts: now };
+          return e.map_id;
+        }
+      }
+      // Si ninguno está activo, devolver el último conocido
+      _leyLineCache.ts = now;
+      return _leyLineCache.mapName || null;
+    } catch (e) {
+      return _leyLineCache.mapName || null;
+    }
+  }
+
+  function getWaypointForMapId(mapId, waypoints) {
+    if (!waypoints || !mapId) return null;
+    var mapNames = {
+      25: 'Gendarran Fields',
+      28: 'Iron Marches',
+      34: 'Timberline Falls'
+    };
+    var mapName = mapNames[mapId];
+    return mapName ? waypoints[mapName] : null;
+  }
+
   // --------- API GW2: items (para drops destacados) ----------
   const itemCache = new Map();
   async function batchItems(ids){
@@ -528,6 +569,10 @@
     var statusCls = dt.done ? 'meta-status--done' : 'meta-status--pending';
     var statusText = dt.done ? 'Hecho hoy' : 'Pendiente';
 
+    // Waypoint dinámico para Ley Line
+    var activeWp = inst._activeWaypoint || meta.chat;
+    var wpTitle = inst._activeMapId ? 'Waypoint confirmado por API' : 'Waypoint';
+
     // Acciones
     const wikiHtml = meta.wiki
       ? `<a class="btn btn--ghost m-wiki" href="${esc(meta.wiki)}" target="_blank" rel="noopener">Wiki</a>`
@@ -541,7 +586,13 @@
     const winBtn  = hasWins ? `<button class="btn btn--ghost m-win__toggle" aria-expanded="false" title="Ver horarios">Horarios</button>` : '';
     const winPane = hasWins ? buildWindowsChips(meta) : '';
 
-    const ctx = buildContext(meta);
+    var mapNames = { 25: 'Gendarran Fields', 28: 'Iron Marches', 34: 'Timberline Falls' };
+    var activeMap = inst._activeMapId ? (mapNames[inst._activeMapId] || '') : '';
+    
+    var ctx = buildContext(meta);
+    if (activeMap) {
+      ctx = '• Mapa activo: ' + activeMap + ' • ' + ctx;
+    }
 
     // Pin
     const pinBtn = `<button class="wv-pin ${isFav?'wv-pin--active':''}" data-pin="${meta.id}" aria-pressed="${isFav?'true':'false'}" title="${isFav?'Desfijar':'Fijar'}">📌</button>`;
@@ -582,14 +633,23 @@
 
         <div class="meta-body">
           <div class="meta-tags">
-            <span class="meta-pill">${meta.map ? esc(meta.map) : '—'}</span>
+            <span class="meta-pill">${inst._activeMapId ? 
+              meta.map.split('/').map(function(m) {
+                var trimmed = m.trim();
+                if (trimmed === activeMap) {
+                  return '<span style="color:#a0ffc8;font-weight:700;text-shadow:0 0 4px rgba(160,255,200,0.5);">' + esc(trimmed) + '</span>';
+                }
+                return esc(trimmed);
+              }).join(' / ') :
+              esc(meta.map || '—')
+            }</span>
             <span class="meta-pill">${esc(meta.type)}</span>
             <span class="meta-status ${statusCls}" title="${esc(doneTitle)}">${statusText}</span>
           </div>
           ${ctx ? `<div class="m-context">${esc(ctx)}</div>` : ''}
           <div class="meta-linkbar">
             <span class="meta-linkbar__primary">
-              ${meta.chat ? `<button class="btn btn--ghost m-copy" data-copy="${esc(meta.chat)}" title="Copiar waypoint" aria-label="Copiar waypoint">${wpIcon(16)}</button>` : ''}
+              ${activeWp ? `<button class="btn btn--ghost m-copy" data-copy="${esc(activeWp)}" title="${esc(wpTitle)}" aria-label="Copiar waypoint">${wpIcon(16)}</button>` : ''}
               ${wikiHtml}
               ${mapBtn}
             </span>
@@ -654,6 +714,18 @@
       const bn = b.inst.nextAt? b.inst.nextAt.getTime() : Infinity;
       return an - bn;
     });
+
+    // Ley Line Anomaly: consultar API para waypoint correcto
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      if (r.meta.api && Array.isArray(r.meta.api.eventIds) && r.meta.api.eventIds.length) {
+        var activeMapId = await fetchLeyLineActiveMap(r.meta.api.eventIds);
+        if (activeMapId && r.meta.api.waypoints) {
+          r._activeWaypoint = getWaypointForMapId(activeMapId, r.meta.api.waypoints);
+          r._activeMapId = activeMapId;
+        }
+      }
+    }
 
     const ids     = [...new Set(rows.map(x=>x.meta.highlightItemId).filter(Boolean))];
     const missing = ids.filter(id => !itemCache.has(id));
