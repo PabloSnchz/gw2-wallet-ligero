@@ -373,8 +373,19 @@
     "chat": "[&BOQAAAA=]",
     "windowsUTC": ["00:20","02:20","04:20","06:20","08:20","10:20","12:20","14:20","16:20","18:20","20:20","22:20"],
     "durationMin": 15,
-    "api": {},
-    "manualCheck": true,
+    "api": {
+      "eventIds": [
+        "6D479E30-2475-45C3-A880-EF6705D66F95",
+        "6F1D406E-CC4A-4811-9D22-6805E98B48F6",
+        "68E8E92B-3F48-4BD0-8D63-7F064C65D68D"
+      ],
+      "waypoints": {
+        "Gendarran Fields": "[&BOQAAAA=]",
+        "Iron Marches": "[&BOcBAAA=]",
+        "Timberline Falls": "[&BEwCAAA=]"
+      }
+    },
+    "manualCheck": false,
     "highlightItemId": null
   },
   {
