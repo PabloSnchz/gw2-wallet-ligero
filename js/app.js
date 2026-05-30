@@ -1007,7 +1007,13 @@
     } else if (KeyManager.selected) {
       // Hay selección válida guardada → restaurar y cargar
       KeyManager.setSelected(KeyManager.selected);
-      await loadAllForToken(KeyManager.selected);
+      try {
+        await loadAllForToken(KeyManager.selected);
+      } catch (e) {
+        console.warn('[app] Error cargando datos para la key seleccionada:', e.message);
+        setStatus('⚠️ La API key guardada no tiene acceso al juego. Seleccioná otra.', 'error');
+        // No bloquear la app — wireEvents se ejecuta igual
+      }
     } else {
       render();
     }
