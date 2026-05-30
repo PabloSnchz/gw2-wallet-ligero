@@ -1,8 +1,8 @@
 ```markdown
-# 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v6.5.0)
+# 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v6.6.0)
 
-Fecha: 2026-05-04
-Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `wv-shop-ui.js`, `wv-objectives-ui.js`, `wv-objectives-dashboard.js`, `wv-theme.js`, `wallet-dashboard.js`, `raid-tracker.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `characters-theme.js`, `accounts-panel.js`, `welcome-panel.js`, `settings-manager.js`, `analytics.js`, `gist-sync.js`, `sidebar-nav.js`, `inventory-hub.js`, `converter-modal.js`, `*-theme.js`, `main.css`, `theme-polish.css`
+Fecha: 2026-05-30
+Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `wv-shop-ui.js`, `wv-objectives-ui.js`, `wv-objectives-dashboard.js`, `wv-theme.js`, `wallet-dashboard.js`, `inventory-dashboard.js`, `raid-tracker.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `characters-theme.js`, `accounts-panel.js`, `welcome-panel.js`, `settings-manager.js`, `analytics.js`, `gist-sync.js`, `sidebar-nav.js`, `inventory-hub.js`, `converter-modal.js`, `*-theme.js`, `main.css`, `theme-polish.css`
 
 ## 📌 BAI — Bloque de Alineamiento Instantáneo
 
@@ -56,6 +56,58 @@ Bóveda del Gato Negro es una web app vanilla JS modular, sin framework, con foc
 - ☐ ¿Impacto en performance/UI?
 
 Si hay riesgo → advertir antes de generar código.
+
+---
+
+## 🚀 Novedades v6.6.0 (MAYO 2026) — Dashboard de Inventario Multi-Cuenta + Fixes
+
+### 📦 Inventory Dashboard (inventory-dashboard.js v1.0.0)
+
+Dashboard que muestra ítems del inventario (banco + materiales + personaje activo) de todas las cuentas en una tabla comparativa. Ruta: `#/inventory/dashboard`. Mismo patrón de carga que Wallet Dashboard (MAX=3 concurrentes).
+
+**Sets predefinidos:** Alto Valor, Materiales de artesanía, Símbolos y demás.
+
+**Sistema de Tiers:** El set "Materiales de artesanía" tiene 4 tiers (T6/T5/T4/T3, 32 ítems) con checkboxes para activar/desactivar. Solo visibles en ese set. Orden canónico: Colmillos → Escamas → Garras → Huesos → Sangre → Veneno → Tótem → Polvo.
+
+**Carga en 2 fases:** Fase 1 (rápida): banco + materiales. Fase 2 (background): inventario del personaje activo con `Promise.allSettled` en paralelo. Ícono de personaje con glow pulsante `charPulse` (#7bc2ff) durante la carga.
+
+**Flash ámbar en deltas:** Cuando el personaje aporta ítems nuevos, la celda parpadea 3 veces en `#ffd36b` y queda fija hasta que el mouse la toca.
+
+**Selector de ítems:** Dropdown con checkboxes + íconos de API.
+
+**KPIs con precios:** Cantidad total + valor en oro usando precios de venta del Trading Post. Badge de oro total.
+
+**Filtros:** Ocultar cuentas vacías, ocultar columnas vacías, ocultar cuentas main.
+
+**APIs:** `getAccountBank`, `getAccountMaterials`, `getCommercePrices`, `/v2/characters` + `/inventory`.
+
+**Persistencia:** `inv_dashboard_selected_items`, `inv_dashboard_active_set`, `inv_dashboard_active_tiers`, `inv_dashboard_sort`, `inv_dashboard_hide_zero`.
+
+**Método `_debug()`:** Expone version, inited, active, accounts, sets, activeSetId, activeTiers, activeItems, itemsMeta, sortColumn, hideZeroRows/Columns/MainAccounts, dom.
+
+### 🩹 Fix: F5 en Tienda WV redirigía a Diarias
+
+Al presionar F5 en la tab de Tienda, la página mostraba Objetivos Diarios. Causa: `route()` llamaba a `hideObjectivesDashboard()` que ejecutaba `setActiveTab(state.lastTab || 'daily')`. Como `state.lastTab` se inicializa como `'daily'` y `WV.activate()` aún no había corrido, pisaba el `'shop'` en localStorage. Fix: reemplazar la llamada por código inline que solo oculta el panel sin tocar `setActiveTab`.
+
+### 🔧 Skeleton loader ampliado en WV Shop
+
+Cards: 8 → 24. Tabla: 8 → 30 filas. Aplicado en `router.js` y `wv-shop-ui.js`.
+
+### 🩹 Fix: `_debug()` en Raid Tracker
+
+Agregado método `_debug()` a `RaidTracker` (v1.7.0). Expone: version, inited, active, token, completedEncounters, liAvailable, loading, error, dom (panel/grid/kpis/modal), timers, encounters (total/wings/completed/pending), refresh (inFlight/seq).
+
+### 📋 Tabla de Versiones
+
+| Archivo | Versión Anterior | Versión Nueva |
+|---------|:---:|:---:|
+| `inventory-dashboard.js` | — | **v1.0.0** |
+| `inventory-sets.json` | v1 (2 sets) | **v2 (3 sets + sistema de tiers)** |
+| `raid-tracker.js` | v1.7.0 | **v1.7.0** (+ `_debug()`) |
+| `router.js` | v2.16.0 | **v2.17.0** |
+
+### Archivos nuevos (v6.6.0)
+- `js/inventory-dashboard.js` — Dashboard de Inventario Multi-Cuenta con sets, tiers y carga en 2 fases
 
 ---
 
@@ -1412,8 +1464,9 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 - `#/wallet/dashboard` — Dashboard de Cartera Multi-Cuenta
 - `#/account/raids` — Seguimiento de Raids
 - `#/account/wizards-vault/objectives-dashboard` — Dashboard de Objetivos Multi-Cuenta (NUEVO)
+- `#/inventory/dashboard` — Dashboard de Inventario Multi-Cuenta (NUEVO v6.6.0)
 
-## 🧩 Responsabilidades por archivo (Consolidado v6.4.0)
+## 🧩 Responsabilidades por archivo (Consolidado v6.6.0)
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
@@ -1439,6 +1492,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/welcome-panel.js` | v1.3.0 | Pantalla de Bienvenida |
 | `js/raid-tracker.js` | v1.7.0 | Seguimiento de Raids Semanales |
 | `js/wallet-dashboard.js` | **v2.5.0** | Dashboard de Cartera — **KPIs con border-left semántico + glow, tabla unificada** |
+| `js/inventory-dashboard.js` | **v1.0.0** | **Dashboard de Inventario Multi-Cuenta — Tabla comparativa de ítems, sets con tiers, carga en 2 fases** |
 | `js/router.js` | **v2.17.0** | Router desacoplado (~800 líneas). **Soporta InventoryHub, WV Objectives Dashboard. Sidebar sin conversor. Purchase Detail en nav tabs.** |
 | `js/app.js` | **v2.7.0** | Keys, wallet, eventos globales. **Conversor extraído a converter-modal.js** |
 | `js/analytics.js` | v1.0.0 | Eventos personalizados para Google Analytics |
@@ -2297,7 +2351,7 @@ assets/icons/
 - **WalletDashboard**: accesible desde botón en `#walletPanel` o ruta `#/wallet/dashboard`
 - **RaidTracker**: accesible desde enlace en sidebar o ruta `#/account/raids`
 
-## 🧪 Checklists de Salud (v6.4.0)
+## 🧪 Checklists de Salud (v6.6.0)
 
 ### Orden de scripts (obligatorio)
 
@@ -2424,7 +2478,7 @@ SIN defer (temas, al final):
 - `wallet_dashboard_sort` → ✔
 - **Inventory Hub: sin localStorage nuevo** → ✔
 
-## 📌 Buenas prácticas actualizadas (v6.4.0)
+## 📌 Buenas prácticas actualizadas (v6.6.0)
 
 ### Arquitectura CSS — Regla de Oro
 
@@ -2588,7 +2642,7 @@ SIN defer (temas, al final):
 - **Iconos por tipo**: leer `gw2_keys[].tag` sincronizado desde `accounts-panel.js`
 - **KPIs con border-left semántico**: Oro `rgba(244,197,66,0.5)`, Karma `rgba(175,99,223,0.5)`, Laurel `rgba(43,193,78,0.5)`, AA `rgba(123,194,255,0.5)`
 
-## 🧾 Historial de decisiones (v6.4.0)
+## 🧾 Historial de decisiones (v6.6.0)
 
 - **Q4 2025:** eliminación listener Ach → router controla todo
 - **Q1 2026:** watchdog Achievements (5s) + pipeline conservador
@@ -2685,6 +2739,17 @@ SIN defer (temas, al final):
   - Formato de monedas unificado `3 g 17 s 88 c` en todo el modal
   - Embellecimiento visual completo: glows, contenedores, KPIs con iconos
   - Sidebar liberada del conversor (~80 líneas menos en `index.html`)
+- **May 2026:** **Dashboard de Inventario Multi-Cuenta + Fixes (v6.6.0)**:
+  - Nuevo módulo `inventory-dashboard.js` v1.0.0 con tabla comparativa de ítems multi-cuenta
+  - Sistema de sets predefinidos con 3 sets (Alto Valor, Materiales de artesanía, Símbolos y demás)
+  - Set "Materiales de artesanía" con 4 tiers (T6/T5/T4/T3) y tier toggles con checkboxes
+  - Carga en 2 fases: banco+materiales (rápido) + personaje activo en background con `Promise.allSettled`
+  - Indicador visual de carga con glow pulsante `charPulse` (#7bc2ff)
+  - Flash ámbar en celdas con delta positivo del personaje (3 parpadeos + fijo hasta hover)
+  - Badge de valor total en oro con precios del Trading Post
+  - Fix: F5 en Tienda WV redirigía a Diarias por `hideObjectivesDashboard()` en `route()`
+  - Fix: skeleton loader ampliado en Tienda WV (8→24 cards, 8→30 filas)
+  - Fix: `_debug()` agregado a RaidTracker (v1.7.0)
 - **May 2026:** **Módulo de Inventario y Personajes (v6.4.0)**:
   - Nuevo módulo `inventory-hub.js` v1.3.1 como pantalla principal de `#/account/characters`
   - Buscador unificado en banco, materiales y armería legendaria
@@ -2696,7 +2761,7 @@ SIN defer (temas, al final):
   - Sin localStorage adicional — solo caché en memoria con TTL
   - `characters.js` como subvista con botón "Volver al Inventario"
 
-## 🎉 Estado actual del proyecto (v6.5.0)
+## 🎉 Estado actual del proyecto (v6.6.0)
 
 - ✅ Navegación estable y desacoplada
 - ✅ **Router reducido a ~750 líneas** (solo orquestación, sin renderizado HTML)
@@ -2731,4 +2796,7 @@ SIN defer (temas, al final):
 - ✅ **Inventory Hub sin localStorage adicional** — solo caché en memoria
 - ✅ **Caché de items con cap de 500 entradas** — sin riesgo de cuota
 - ✅ **Sidebar liberada** — conversor movido a modal, ~80 líneas menos en index.html
+- ✅ **Inventory Dashboard v1.0.0 productivo**: 3 sets, sistema de tiers, carga en 2 fases, flash ámbar
+- ✅ **F5 en Tienda WV**: corregido, mantiene la tab activa
+- ✅ **RaidTracker `_debug()`**: método de diagnóstico expuesto
 ```

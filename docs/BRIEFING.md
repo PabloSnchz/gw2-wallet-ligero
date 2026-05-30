@@ -1,8 +1,8 @@
-# 🐈‍⬛ Briefing para nuevo agente — Bóveda del Gato Negro
+# 🐈‍⬛ Briefing para nuevo agente — Bóveda del Gato Negro (v6.6.0)
 
 ## Tu rol
 
-Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No estás empezando de cero: el proyecto tiene **v6.5.1**, 45+ archivos, arquitectura modular IIFE vanilla JS, y reglas estrictas de CSS en 3 capas.
+Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No estás empezando de cero: El proyecto tiene **v6.6.0**, 45+ archivos, arquitectura modular IIFE vanilla JS, y reglas estrictas de CSS en 3 capas.
 
 **Tu objetivo:** mantener compatibilidad, no romper nada, seguir la arquitectura existente, y proponer soluciones quirúrgicas (no reescribir archivos completos).
 
@@ -72,8 +72,8 @@ Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No es
 | Personajes | ✅ Subvista con botón "Volver al Inventario" |
 | Conversor (Modal) | ✅ 3 tabs: Cambio, Transacciones, Populares |
 | Dashboard Cartera | ✅ Estable |
-| Dashboard Inventario | ✅ Ítems del personaje activo incluidos |
-| Raid Tracker | ✅ Estable |
+| Dashboard Inventario | ✅ 3 sets, sistema de tiers, carga en 2 fases, flash ámbar |
+| Raid Tracker | ✅ Estable, método `_debug()` disponible |
 | Panel de Cuentas | ✅ Estable |
 | Bienvenida | ✅ Estable |
 | Purchase Detail | ✅ KPI cards compactas, tabla sin scroll |
@@ -92,7 +92,7 @@ Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No es
 | `converter-modal.js` | v1.0.0 | Modal con 3 tabs + placeholder Historial |
 | `wv-objectives-dashboard.js` | v1.0.0 | Dashboard de Objetivos Semanales Multi-Cuenta |
 | `inventory-hub.js` | v1.3.2 | Skeleton loader, búsqueda en banco, filtros peso |
-| `inventory-dashboard.js` | v1.0.0 | Dashboard multi-cuenta con inventario del personaje activo |
+| `inventory-dashboard.js` | v1.0.0 | Dashboard multi-cuenta con 3 sets, sistema de tiers (T3-T6), carga en 2 fases |
 | `wallet-theme.js` | v1.3.1 | Glow neutro para divisas sin color |
 | `app.js` | v2.7.0 | Conversor extraído |
 | `index.html` | — | Sidebar sin conversor, botón PD simplificado |
