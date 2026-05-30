@@ -331,7 +331,7 @@
           }
         }
         var viewPref = state.shop.view || loadView() || 'cards';
-        var body = (viewPref === 'table') ? skShopTable(8) : skShopCards(8);
+        var body = (viewPref === 'table') ? skShopTable(30) : skShopCards(24);
         node.innerHTML = '<div style="margin:6px 0 10px 0">'+escapeHtml(String(msg||'Cargando Tienda…'))+'</div>' + body;
         node.hidden = false;
       } else {
@@ -1165,6 +1165,7 @@
       }
 
       if (tab==='shop'){
+        state.lastTab = 'shop'; saveLastTab('shop');
         state.shop.view=loadView(); state.shop.legacyFilter=loadLegacyFilter();
         
         // FASE 2: Delegar a wv-shop-ui.js si está disponible
@@ -1361,6 +1362,9 @@
         wireTabsOnce();
         var last=loadLastTab();
         if(['daily','weekly','special','shop'].indexOf(last)===-1) last='daily';
+        state.lastTab=last;
+        // Forzar persistencia antes de que cualquier otro módulo interfiera
+        saveLastTab(last);
         setActiveTab(last);
       }
 
@@ -1368,12 +1372,14 @@
         const token = window.__GN__?.getSelectedToken?.() ?? null;
         if (GW2Api?.wvInvalidateTargets && token) GW2Api.wvInvalidateTargets(token);
         state.skipObjFetchOnce = true;
-        if (typeof WV?.refreshObjectives === 'function') WV.refreshObjectives(true);
       } catch (e) {
         console.warn('[WV] auto-refresh on activate error', e);
       }
 
-      ensureLoadTab(state.lastTab||'daily');
+      // Solo cargar tab si no se cargó ya desde route
+      if (!state.loaded[state.lastTab] || state.lastTab==='shop') {
+        ensureLoadTab(state.lastTab);
+      }
       scheduleAllResets();
     }
     function deactivate(){
@@ -1592,8 +1598,13 @@
         if (h === '#/account/wizards-vault') {
           try {
             showPanel('wvPanel');
-            // Cerrar dashboard si estaba abierto
-            if (WV && typeof WV.hideObjectivesDashboard === 'function') WV.hideObjectivesDashboard();
+            // Cerrar dashboard si estaba abierto (sin cambiar lastTab)
+            var dashPanel = document.getElementById('wvObjectivesDashboardPanel');
+            if (dashPanel) dashPanel.setAttribute('hidden','hidden');
+            var refreshBtn = document.getElementById('wvTabBtnRefreshDashboard');
+            var backBtn = document.getElementById('wvTabBtnBackToWV');
+            if (refreshBtn) refreshBtn.hidden = true;
+            if (backBtn) backBtn.hidden = true;
             if (typeof Analytics !== 'undefined') Analytics.viewModule('wizards_vault');
             if (WV && typeof WV.activate === 'function') WV.activate();
             hydrateWVModePills(el('wvPanel'));
@@ -1700,7 +1711,6 @@
         }
       } else if (h === '#/account/wizards-vault') {
         if (WV && typeof WV.onTokenChanged === 'function') WV.onTokenChanged(token);
-        if (WV && typeof WV.ensureLoadTab === 'function') WV.ensureLoadTab('shop');
         if (WV && typeof WV.refreshObjectives === 'function') WV.refreshObjectives(true);
         if (WV && typeof WV.activate === 'function') WV.activate();
         hydrateWVModePills(el('wvPanel'));

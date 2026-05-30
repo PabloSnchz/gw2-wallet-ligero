@@ -142,7 +142,7 @@
         }
       }
       var viewPref = st ? (st.view || 'cards') : 'cards';
-      var body = (viewPref === 'table') ? skShopTable(8) : skShopCards(8);
+      var body = (viewPref === 'table') ? skShopTable(30) : skShopCards(24);
       node.innerHTML = '<div style="margin:6px 0 10px 0">' + esc(String(msg || 'Cargando Tienda…')) + '</div>' + body;
       node.hidden = false;
     } else {

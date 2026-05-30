@@ -45,13 +45,15 @@
     sortDirection: 'desc',
     hideZeroRows: false,
     hideZeroColumns: false,
-    hideMainAccounts: false
+    hideMainAccounts: false,
+    activeTiers: ['t6']
   };
 
   var _refreshInFlight = null;
 
   var STORAGE_SELECTED_ITEMS = 'inv_dashboard_selected_items';
   var STORAGE_ACTIVE_SET = 'inv_dashboard_active_set';
+  var STORAGE_ACTIVE_TIERS = 'inv_dashboard_active_tiers';
   var STORAGE_SORT = 'inv_dashboard_sort';
   var STORAGE_HIDE_ZERO = 'inv_dashboard_hide_zero';
   var SETS_URL = 'assets/data/inventory-sets.json';
@@ -108,6 +110,26 @@
     } catch(e) {}
   }
 
+  function loadActiveTiers() {
+    try {
+      var stored = localStorage.getItem(STORAGE_ACTIVE_TIERS);
+      if (stored) {
+        var parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length) {
+          state.activeTiers = parsed;
+          return;
+        }
+      }
+    } catch(e) {}
+    state.activeTiers = ['t6'];
+  }
+
+  function saveActiveTiers() {
+    try {
+      localStorage.setItem(STORAGE_ACTIVE_TIERS, JSON.stringify(state.activeTiers));
+    } catch(e) {}
+  }
+
   function loadHideZeroPrefs() {
     try {
       var stored = localStorage.getItem(STORAGE_HIDE_ZERO);
@@ -156,8 +178,42 @@
           { id: 43766, name: 'Tomo de conocimiento' },
           { id: 86694, name: 'Estatuilla del León Negro' },
           { id: 36708, name: 'Llave de cofre del León Negro' },
-          { id: 19675, name: 'Trébol místico' }
+          { id: 19675, name: 'Trébol místico' },
+          { id: 71581, name: 'Memoria de batalla' },
+          { id: 70820, name: 'Esquirla de gloria' }
         ]
+      },
+      {
+        id: 'crafting_materials',
+        name: 'Materiales de artesanía',
+        icon: 'assets/icons/Cuentas/255373.png',
+        defaultTiers: ['t6'],
+        tiers: {
+          t6: { name: 'Tier 6', items: [
+            { id: 24357, name: 'Colmillo feroz' }, { id: 24289, name: 'Escama blindada' },
+            { id: 24351, name: 'Garra despiadada' }, { id: 24358, name: 'Hueso antiguo' },
+            { id: 24295, name: 'Vial de sangre poderosa' }, { id: 24283, name: 'Vesícula de veneno poderoso' },
+            { id: 24300, name: 'Tótem elaborado' }, { id: 24277, name: 'Montón de polvo cristalino' }
+          ]},
+          t5: { name: 'Tier 5', items: [
+            { id: 24356, name: 'Colmillo grande' }, { id: 24288, name: 'Escama grande' },
+            { id: 24350, name: 'Garra grande' }, { id: 24341, name: 'Hueso grande' },
+            { id: 24294, name: 'Vial de sangre espesa' }, { id: 24282, name: 'Vesícula de veneno potente' },
+            { id: 24299, name: 'Tótem intrincado' }, { id: 24276, name: 'Montón de polvo incandescente' }
+          ]},
+          t4: { name: 'Tier 4', items: [
+            { id: 24355, name: 'Colmillo afilado' }, { id: 24287, name: 'Escama suave' },
+            { id: 24349, name: 'Garra afilada' }, { id: 24345, name: 'Hueso pesado' },
+            { id: 24293, name: 'Vial de sangre potente' }, { id: 24281, name: 'Vesícula de veneno llena' },
+            { id: 24298, name: 'Tótem grabado' }, { id: 24275, name: 'Montón de polvo luminoso' }
+          ]},
+          t3: { name: 'Tier 3', items: [
+            { id: 24354, name: 'Colmillo' }, { id: 24286, name: 'Escama' },
+            { id: 24348, name: 'Garra' }, { id: 24344, name: 'Hueso' },
+            { id: 24292, name: 'Vial de sangre' }, { id: 24280, name: 'Vesícula de veneno' },
+            { id: 24297, name: 'Tótem' }, { id: 24274, name: 'Montón de polvo radiante' }
+          ]}
+        }
       }
     ];
     return state.sets;
@@ -169,26 +225,6 @@
       var list = JSON.parse(localStorage.getItem('gw2_keys') || '[]');
       return Array.isArray(list) ? list : [];
     } catch(_) { return []; }
-  }
-
-  // ------------------------------ Carga de inventario ------------------------
-  async function loadInventoryForAccount(token, forceNoCache) {
-    try {
-      var results = await Promise.all([
-        root.GW2Api.getAccountBank(token, { nocache: !!forceNoCache }),
-        root.GW2Api.getAccountMaterials(token, { nocache: !!forceNoCache }),
-        loadActiveCharacterInventory(token)
-      ]);
-      return {
-        bank: Array.isArray(results[0]) ? results[0] : [],
-        materials: Array.isArray(results[1]) ? results[1] : [],
-        activeCharName: results[2].name,
-        activeCharBags: results[2].bags
-      };
-    } catch(e) {
-      console.warn(LOG, 'Error loading inventory for token', fpToken(token), e);
-      return { bank: [], materials: [], activeCharName: null, activeCharBags: [] };
-    }
   }
 
   function countItemInBank(bank, itemId) {
@@ -229,35 +265,27 @@
 
   async function loadActiveCharacterInventory(token) {
     try {
-      var charsResp = await fetch('https://api.guildwars2.com/v2/characters?access_token=' + token);
+      var c1 = new AbortController();
+      var t1 = setTimeout(function() { c1.abort(); }, 4000);
+      var charsResp = await fetch('https://api.guildwars2.com/v2/characters?access_token=' + token, { signal: c1.signal });
+      clearTimeout(t1);
+      if (!charsResp.ok) return { name: null, bags: [] };
       var chars = await charsResp.json();
       if (!chars || !chars.length) return { name: null, bags: [] };
       var activeChar = chars[0];
-      var invResp = await fetch('https://api.guildwars2.com/v2/characters/' + encodeURIComponent(activeChar) + '/inventory?access_token=' + token);
-      var invData = await invResp.json();
-      return { name: activeChar, bags: invData.bags || [] };
+      try {
+        var c2 = new AbortController();
+        var t2 = setTimeout(function() { c2.abort(); }, 15000);
+        var invResp = await fetch('https://api.guildwars2.com/v2/characters/' + encodeURIComponent(activeChar) + '/inventory?access_token=' + token, { signal: c2.signal });
+        clearTimeout(t2);
+        if (!invResp.ok) return { name: activeChar, bags: [] };
+        var invData = await invResp.json();
+        return { name: activeChar, bags: invData.bags || [] };
+      } catch(e) {
+        return { name: activeChar, bags: [] };
+      }
     } catch(e) {
       return { name: null, bags: [] };
-    }
-  }
-
-  async function loadInventoryForAccount(token, forceNoCache) {
-    try {
-      // Paralelizar banco + materiales + personaje activo
-      var results = await Promise.all([
-        root.GW2Api.getAccountBank(token, { nocache: !!forceNoCache }),
-        root.GW2Api.getAccountMaterials(token, { nocache: !!forceNoCache }),
-        loadActiveCharacterInventory(token)
-      ]);
-      return {
-        bank: Array.isArray(results[0]) ? results[0] : [],
-        materials: Array.isArray(results[1]) ? results[1] : [],
-        activeCharName: results[2].name,
-        activeCharBags: results[2].bags
-      };
-    } catch(e) {
-      console.warn(LOG, 'Error loading inventory for token', fpToken(token), e);
-      return { bank: [], materials: [], activeCharName: null, activeCharBags: [] };
     }
   }
 
@@ -271,6 +299,7 @@
     var out = [];
     var idx = 0, ACTIVE = 0, MAX = 3;
 
+    // FASE 1: Solo banco + materiales (rápido, sin personaje)
     await new Promise(function(resolve) {
       function next() {
         if (idx >= state.keys.length && ACTIVE === 0) return resolve();
@@ -281,17 +310,21 @@
             var token = k.value;
             var label = k.label || ('Key ' + fpToken(token));
             var fp = fpToken(token);
-            loadInventoryForAccount(token, forceNoCache)
-              .then(function(inv) {
+            Promise.all([
+              root.GW2Api.getAccountBank(token, { nocache: !!forceNoCache }),
+              root.GW2Api.getAccountMaterials(token, { nocache: !!forceNoCache })
+            ])
+              .then(function(results) {
                 out.push({
                   token: token,
                   fp: fp,
                   label: label,
                   tag: k.tag || null,
-                  bank: inv.bank,
-                  materials: inv.materials,
-                  activeCharName: inv.activeCharName,
-                  activeCharBags: inv.activeCharBags
+                  bank: Array.isArray(results[0]) ? results[0] : [],
+                  materials: Array.isArray(results[1]) ? results[1] : [],
+                  activeCharName: null,
+                  activeCharBags: [],
+                  _charLoading: true
                 });
               })
               .catch(function(e) {
@@ -304,7 +337,8 @@
                   bank: [],
                   materials: [],
                   activeCharName: null,
-                  activeCharBags: []
+                  activeCharBags: [],
+                  _charLoading: true
                 });
               })
               .finally(function() { ACTIVE--; next(); });
@@ -316,7 +350,149 @@
 
     state.accounts = out;
     state.lastRefreshTime = new Date();
-    console.log(LOG, 'Cargadas', out.length, 'cuentas');
+    console.log(LOG, 'Fase 1 completada:', out.length, 'cuentas (banco + materiales)');
+
+    // FASE 2: Personaje activo (background)
+    loadCharactersInBackground(out);
+  }
+
+  async function loadCharactersInBackground(accounts) {
+    // Guardar snapshot de valores antes de actualizar bags
+    var activeItems = getActiveItems();
+    accounts.forEach(function(acc) {
+      acc._preCharValues = {};
+      activeItems.forEach(function(itemId) {
+        acc._preCharValues[itemId] = getItemTotalForAccount(acc, itemId);
+      });
+    });
+
+    var promises = accounts.map(function(acc) {
+      return loadActiveCharacterInventory(acc.token)
+        .then(function(charData) {
+          acc.activeCharName = charData.name;
+          acc.activeCharBags = charData.bags || [];
+          acc._charLoading = false;
+          updateCharCell(acc);
+        })
+        .catch(function() {
+          acc.activeCharName = null;
+          acc.activeCharBags = [];
+          acc._charLoading = false;
+          updateCharCell(acc);
+        });
+    });
+    await Promise.allSettled(promises);
+    console.log(LOG, 'Fase 2 completada: personajes activos cargados');
+    updateTotalGoldBadge();
+    var currentItems = getActiveItems();
+    renderKPIs(currentItems, getFilteredAccounts());
+  }
+
+  function updateCharCell(acc) {
+    var table = $('#idTable');
+    if (!table) return;
+    var tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    var rows = tbody.querySelectorAll('tr');
+    for (var r = 0; r < rows.length; r++) {
+      var row = rows[r];
+      if (row.classList.contains('total-row')) continue;
+      var firstCell = row.querySelector('td');
+      if (!firstCell) continue;
+      if (firstCell.textContent.indexOf(acc.label) !== -1) {
+        var charInfoDiv = firstCell.querySelector('.id-char-info');
+        if (charInfoDiv) {
+          if (acc._charLoading) {
+            charInfoDiv.innerHTML = '<img src="assets/icons/Cuentas/358353.png" width="14" height="14" alt="" style="vertical-align:middle;animation:charPulse 2s ease-in-out infinite;"> <span style="color:#5a6072;">cargando...</span>';
+          } else if (acc.activeCharName) {
+            charInfoDiv.innerHTML = '<img src="assets/icons/Cuentas/358353.png" width="14" height="14" alt="" style="vertical-align:middle;opacity:0.7;"> <span style="color:#5a6072;">' + esc(acc.activeCharName) + '</span>';
+          } else {
+            charInfoDiv.innerHTML = '';
+          }
+        }
+        var activeItems = getActiveItems();
+        var cells = row.querySelectorAll('td');
+        var totalDelta = 0;
+        for (var c = 1; c < cells.length; c++) {
+          var itemId = activeItems[c - 1];
+          if (itemId != null) {
+            var oldValue = (acc._preCharValues && acc._preCharValues[itemId] != null) ? acc._preCharValues[itemId] : 0;
+            var newValue = getItemTotalForAccount(acc, itemId);
+            var delta = newValue - oldValue;
+            if (delta > 0) {
+              totalDelta += delta;
+              cells[c].textContent = fmtInt(newValue);
+              cells[c].setAttribute('title', getItemName(itemId) + ': ' + fmtInt(newValue) + ' (+' + delta + ' del personaje)');
+              startDeltaBlink(cells[c]);
+            } else {
+              cells[c].textContent = fmtInt(newValue);
+              cells[c].setAttribute('title', getItemName(itemId) + ': ' + fmtInt(newValue));
+            }
+          }
+        }
+        if (totalDelta > 0 && acc.activeCharName) {
+          var charName = acc.activeCharName.split(' ')[0];
+          setStatus(charName + ': +' + totalDelta + ' ítems del inventario', '');
+        }
+        updateTotalRow();
+        break;
+      }
+    }
+  }
+
+  function startDeltaBlink(cell) {
+    if (!cell || cell.__blinking) return;
+    cell.__blinking = true;
+    cell.classList.add('id-cell-updated');
+    cell.style.transition = 'none';
+    cell.style.color = '#ffd36b';
+    cell.style.fontWeight = '700';
+    var blinks = 0;
+    var blinkInterval = setInterval(function() {
+      blinks++;
+      if (blinks > 6) {
+        clearInterval(blinkInterval);
+        if (cell && cell.isConnected) {
+          cell.style.color = '#ffd36b';
+          cell.style.fontWeight = '700';
+          cell.__blinking = false;
+        }
+      } else {
+        if (cell && cell.isConnected) {
+          cell.style.color = (blinks % 2 === 1) ? '#ffd36b' : '';
+          cell.style.fontWeight = (blinks % 2 === 1) ? '700' : '';
+        }
+      }
+    }, 300);
+    cell.addEventListener('mouseenter', function resetGlow() {
+      clearInterval(blinkInterval);
+      cell.style.color = '';
+      cell.style.fontWeight = '';
+      cell.classList.remove('id-cell-updated');
+      cell.__blinking = false;
+    }, { once: true });
+  }
+
+  function updateTotalRow() {
+    var table = $('#idTable');
+    if (!table) return;
+    var tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    var totalRow = tbody.querySelector('.total-row');
+    if (!totalRow) return;
+    var filteredAccounts = getFilteredAccounts();
+    var visibleItems = getActiveItems();
+    if (state.hideZeroColumns) {
+      visibleItems = visibleItems.filter(function(itemId) { return getItemTotalAcrossAll(itemId) > 0; });
+    }
+    var cells = totalRow.querySelectorAll('td');
+    for (var c = 1; c < cells.length; c++) {
+      var itemId = visibleItems[c - 1];
+      if (itemId != null) {
+        var totalValue = getItemTotalAcrossAll(itemId, filteredAccounts);
+        cells[c].innerHTML = '<strong>' + fmtInt(totalValue) + '</strong>';
+      }
+    }
   }
 
   // ------------------------------ Metadatos de items -------------------------
@@ -455,7 +631,29 @@
       return state.selectedItems;
     }
     var set = getActiveSet();
-    return set ? set.items.map(function(item) { return item.id; }) : [];
+    if (!set) return [];
+
+    // Si el set tiene tiers, combinar los items de los tiers activos
+    if (set.tiers) {
+      var activeTiers = state.activeTiers.length ? state.activeTiers : (set.defaultTiers || ['t6']);
+      var items = [];
+      var seen = {};
+      for (var t = 0; t < activeTiers.length; t++) {
+        var tier = set.tiers[activeTiers[t]];
+        if (tier && tier.items) {
+          for (var i = 0; i < tier.items.length; i++) {
+            var item = tier.items[i];
+            if (!seen[item.id]) {
+              seen[item.id] = true;
+              items.push(item.id);
+            }
+          }
+        }
+      }
+      return items;
+    }
+
+    return set.items ? set.items.map(function(item) { return item.id; }) : [];
   }
 
   function getActiveSet() {
@@ -501,9 +699,22 @@
     if (meta && meta.name) return meta.name;
     // Buscar en sets
     for (var i = 0; i < state.sets.length; i++) {
-      var items = state.sets[i].items;
-      for (var j = 0; j < items.length; j++) {
-        if (items[j].id === itemId) return items[j].name;
+      var set = state.sets[i];
+      // Buscar en items planos
+      if (set.items) {
+        for (var j = 0; j < set.items.length; j++) {
+          if (set.items[j].id === itemId) return set.items[j].name;
+        }
+      }
+      // Buscar en tiers
+      if (set.tiers) {
+        var tierKeys = Object.keys(set.tiers);
+        for (var t = 0; t < tierKeys.length; t++) {
+          var tierItems = set.tiers[tierKeys[t]].items || [];
+          for (var k = 0; k < tierItems.length; k++) {
+            if (tierItems[k].id === itemId) return tierItems[k].name;
+          }
+        }
       }
     }
     return 'Ítem #' + itemId;
@@ -542,6 +753,7 @@
         state.selectedItems = [];
         saveActiveSet();
         saveSelectedItems();
+        renderTierToggles();
         refreshData(false);
       });
     });
@@ -552,7 +764,26 @@
     if (!container) return;
 
     var activeSet = getActiveSet();
-    var allItems = activeSet ? activeSet.items.slice() : [];
+    var allItems = [];
+    if (activeSet) {
+      if (activeSet.tiers) {
+        // Combinar items de todos los tiers para el dropdown
+        var tierKeys = Object.keys(activeSet.tiers);
+        var seen = {};
+        for (var t = 0; t < tierKeys.length; t++) {
+          var tierItems = activeSet.tiers[tierKeys[t]].items || [];
+          for (var j = 0; j < tierItems.length; j++) {
+            var item = tierItems[j];
+            if (!seen[item.id]) {
+              seen[item.id] = true;
+              allItems.push(item);
+            }
+          }
+        }
+      } else if (activeSet.items) {
+        allItems = activeSet.items.slice();
+      }
+    }
     // Agregar custom items
     state.customItems.forEach(function(customId) {
       if (!allItems.find(function(item) { return item.id === customId; })) {
@@ -644,6 +875,60 @@
     }
   }
 
+  function renderTierToggles() {
+    var container = $('#idTierToggles');
+    if (!container) return;
+
+    var set = getActiveSet();
+    if (!set || !set.tiers) {
+      container.innerHTML = '';
+      container.style.display = 'none';
+      return;
+    }
+
+    container.style.display = 'inline-flex';
+    var tierKeys = Object.keys(set.tiers);
+    var html = '';
+    for (var i = 0; i < tierKeys.length; i++) {
+      var tierKey = tierKeys[i];
+      var tier = set.tiers[tierKey];
+      var isActive = state.activeTiers.indexOf(tierKey) !== -1;
+      html += '<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:0.75rem;color:#b4bad0;margin-left:12px;">' +
+        '<input type="checkbox" class="id-tier-cb" data-tier="' + esc(tierKey) + '" ' + (isActive ? 'checked' : '') + '> ' + esc(tier.name) +
+      '</label>';
+    }
+    container.innerHTML = html;
+
+    var TIER_ORDER = ['t6', 't5', 't4', 't3'];
+
+    var cbs = container.querySelectorAll('.id-tier-cb');
+    cbs.forEach(function(cb) {
+      if (cb.__wired) return;
+      cb.__wired = true;
+      cb.addEventListener('change', function() {
+        var tierKey = this.getAttribute('data-tier');
+        if (this.checked) {
+          if (state.activeTiers.indexOf(tierKey) === -1) {
+            state.activeTiers.push(tierKey);
+          }
+        } else {
+          state.activeTiers = state.activeTiers.filter(function(t) { return t !== tierKey; });
+        }
+        // Asegurar al menos un tier activo
+        if (!state.activeTiers.length) {
+          state.activeTiers = ['t6'];
+          this.checked = true;
+        }
+        // Ordenar siempre T6 → T5 → T4 → T3
+        state.activeTiers.sort(function(a, b) {
+          return TIER_ORDER.indexOf(a) - TIER_ORDER.indexOf(b);
+        });
+        saveActiveTiers();
+        renderTable();
+      });
+    });
+  }
+
   function renderHideToggles() {
     var container = $('#idHideToggles');
     if (!container) return;
@@ -657,7 +942,10 @@
       '</label>' +
       '<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:0.75rem;color:#b4bad0;margin-left:12px;">' +
         '<input type="checkbox" id="idHideMain" ' + (state.hideMainAccounts ? 'checked' : '') + '> Ocultar cuentas main' +
-      '</label>';
+      '</label>' +
+      '<span id="idTierToggles" style="display:inline-flex;align-items:center;gap:4px;"></span>';
+
+    renderTierToggles();
 
     var hideRowsCb = document.getElementById('idHideZeroRows');
     var hideColsCb = document.getElementById('idHideZeroCols');
@@ -715,7 +1003,7 @@
     container.innerHTML = kpis;
   }
 
-  function renderTable() {
+  async function renderTable() {
     var table = $('#idTable');
     if (!table) {
       var tableWrap = document.querySelector('#inventoryDashboardPanel .id-tablewrap');
@@ -735,6 +1023,13 @@
     if (!thead || !tbody) return;
 
     var activeItems = getActiveItems();
+
+    // Cargar metadatos faltantes (íconos) para items nuevos
+    var missingMeta = activeItems.filter(function(id) { return !state.itemsMeta[id]; });
+    if (missingMeta.length) {
+      await loadItemsMeta(missingMeta);
+      await loadPrices(missingMeta);
+    }
     if (!activeItems.length) {
       thead.innerHTML = '<tr><th>Cuenta</th><th colspan="1">No hay ítems seleccionados</th></tr>';
       tbody.innerHTML = '<tr><td colspan="2">Seleccioná al menos un ítem.</td></tr>';
@@ -781,9 +1076,12 @@
       var tag = keyItem ? keyItem.tag : null;
       var tagIcon = tag ? getAccountTypeIcon(tag) : '';
 
-      var charInfo = acc.activeCharName
-        ? '<div style="font-size:0.6rem;color:#5a6072;margin-top:1px;">' + esc(acc.activeCharName) + '</div>'
-        : '';
+      var charInfo = '';
+      if (acc._charLoading) {
+        charInfo = '<div class="id-char-info" style="font-size:0.6rem;color:#5a6072;margin-top:1px;"><img src="assets/icons/Cuentas/358353.png" width="14" height="14" alt="" style="vertical-align:middle;animation:charPulse 2s ease-in-out infinite;"> <span style="color:#5a6072;">cargando...</span></div>';
+      } else if (acc.activeCharName) {
+        charInfo = '<div class="id-char-info" style="font-size:0.6rem;color:#5a6072;margin-top:1px;"><img src="assets/icons/Cuentas/358353.png" width="14" height="14" alt="" style="vertical-align:middle;opacity:0.7;"> ' + esc(acc.activeCharName) + '</div>';
+      }
 
       cells.push(
         '<td style="min-width:140px;">' +
@@ -931,6 +1229,7 @@
           '<span id="idStatusMsg" class="id-status-msg">—</span>' +
           '<span id="idTimestamp" class="id-timestamp"></span>' +
         '</div>' +
+        '<style>@keyframes pulse{0%,100%{opacity:0.3}50%{opacity:0.8}}@keyframes charPulse{0%,100%{opacity:0.4;filter:drop-shadow(0 0 3px rgba(123,194,255,0.3))}50%{opacity:0.85;filter:drop-shadow(0 0 6px rgba(123,194,255,0.55))}}</style>' +
         '<div class="id-tablewrap" style="overflow:auto;border:1px solid #26262b;border-radius:12px;">' +
           '<table id="idTable" style="width:100%;border-collapse:collapse;">' +
             '<thead></thead>' +
@@ -950,12 +1249,47 @@
 
   // ------------------------------ API pública ------------------------------
   var InventoryDashboard = {
+    _debug: function () {
+      var set = getActiveSet();
+      var activeItems = getActiveItems();
+      return {
+        version: '1.0.0',
+        inited: state.inited,
+        active: state.active,
+        accounts: state.accounts.length,
+        sets: state.sets.length,
+        activeSetId: state.activeSetId,
+        activeSet: set ? set.id : null,
+        activeSetHasTiers: set ? !!set.tiers : false,
+        activeSetHasItems: set ? !!set.items : false,
+        selectedItems: state.selectedItems.length,
+        activeTiers: state.activeTiers,
+        activeItems: activeItems.length,
+        activeItemsSample: activeItems.slice(0, 5),
+        itemsMeta: Object.keys(state.itemsMeta).length,
+        loading: state.loading,
+        lastRefreshTime: state.lastRefreshTime,
+        sortColumn: state.sortColumn,
+        hideZeroRows: state.hideZeroRows,
+        hideZeroColumns: state.hideZeroColumns,
+        hideMainAccounts: state.hideMainAccounts,
+        dom: {
+          kpis: !!$('#idKPIs'),
+          table: !!$('#idTable'),
+          setSwitch: !!$('#idSetSwitch'),
+          tierToggles: !!$('#idTierToggles'),
+          tierTogglesVisible: $('#idTierToggles') ? $('#idTierToggles').style.display !== 'none' : false
+        }
+      };
+    },
+
     async initOnce() {
       if (state.inited) return;
       console.log(LOG, 'initOnce()');
 
       loadActiveSet();
       loadSelectedItems();
+      loadActiveTiers();
       loadSortPreference();
       loadHideZeroPrefs();
 

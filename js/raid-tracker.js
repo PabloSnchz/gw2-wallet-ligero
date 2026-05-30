@@ -1694,6 +1694,49 @@
     deactivate: deactivate,
     prefetch: prefetch,
     refresh: refresh,
+    _debug: function () {
+      var panel = document.getElementById('raidTrackerPanel');
+      var grid = document.getElementById('raidWingsGrid');
+      var kpis = document.getElementById('raidKPIs');
+      var modalEl = document.getElementById('raidBossModal');
+      var totalEncounters = WINGS.reduce(function (s, w) { return s + w.encounters.length; }, 0);
+
+      return {
+        version: '1.7.0',
+        inited: state.inited,
+        active: state.active,
+        token: state.token ? (state.token.slice(0, 8) + '...') : null,
+        completedEncounters: state.completedEncounters.length,
+        completedIds: state.completedEncounters,
+        liAvailable: state.liAvailable,
+        loading: state.loading,
+        error: state.error,
+        dom: {
+          panel: !!panel,
+          panelVisible: panel ? !panel.hasAttribute('hidden') : false,
+          grid: !!grid,
+          gridHasContent: grid ? grid.innerHTML.length > 100 : false,
+          kpis: !!kpis,
+          modal: !!modalEl,
+          modalVisible: modalEl ? !modalEl.hasAttribute('hidden') : false
+        },
+        timers: {
+          utc: !!state.utcTimeInterval,
+          local: !!state.localTimeInterval,
+          reset: !!state.resetInterval
+        },
+        encounters: {
+          total: totalEncounters,
+          wings: WINGS.length,
+          completedCount: state.completedEncounters.length,
+          pendingCount: totalEncounters - state.completedEncounters.length
+        },
+        refresh: {
+          inFlight: !!_refreshInFlight,
+          seq: _refreshSeq
+        }
+      };
+    },
     Route: {
       path: 'account/raids',
       mount: activate,

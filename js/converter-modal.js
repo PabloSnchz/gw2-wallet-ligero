@@ -400,7 +400,16 @@
   async function loadOfertas(forceNoCache) {
     var st = state.ofertas;
     if (st.loading) return;
+    
+    // Usar caché si los datos son recientes (menos de 2 minutos)
+    if (!forceNoCache && st.lastUpdate && (Date.now() - st.lastUpdate) < 120000 && st.prices.length) {
+      console.log(LOG, 'Usando caché de ofertas (reciente)');
+      renderOfertas();
+      return;
+    }
+    
     st.loading = true;
+    renderOfertas();
 
     try {
       // Paso 1: Obtener listado de IDs del TP
@@ -505,8 +514,7 @@
     var st = state.ofertas;
 
     if (st.loading) {
-      container.innerHTML = '<div style="text-align:center;padding:40px;color:#9aa2b8;">' +
-        '<div class="skeleton-enhanced" style="height:200px;margin-bottom:16px;"></div>Analizando el mercado…</div>';
+      container.innerHTML = renderSkeletonOfertas();
       return;
     }
 
@@ -885,6 +893,40 @@
     } catch (e) { return null; }
   }
 
+  // Cache de permisos para no llamar a la API repetidamente
+  var _permissionsCache = {};
+  var _permissionsCacheTs = 0;
+  var PERMISSIONS_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+  function hasTradingPostPermission(token) {
+    return new Promise(function(resolve) {
+      if (!token) {
+        resolve(false);
+        return;
+      }
+      
+      // Verificar caché
+      var now = Date.now();
+      if (_permissionsCache[token] !== undefined && (now - _permissionsCacheTs) < PERMISSIONS_CACHE_TTL) {
+        resolve(_permissionsCache[token]);
+        return;
+      }
+      
+      // Consultar API
+      root.GW2Api.getTokenInfo(token, { nocache: false })
+        .then(function(info) {
+          var perms = info && info.permissions ? info.permissions : [];
+          var hasTP = perms.includes('tradingpost');
+          _permissionsCache[token] = hasTP;
+          _permissionsCacheTs = now;
+          resolve(hasTP);
+        })
+        .catch(function() {
+          resolve(false);
+        });
+    });
+  }
+
   // =======================================================================
   // RENDERIZADO DEL MODAL
   // =======================================================================
@@ -1118,10 +1160,44 @@
     }
 
     // Cargar datos al cambiar de tab
-    if (tabId === 'transacciones' && !state.transacciones.buys.length && !state.transacciones.sells.length) {
-      loadTransacciones(false);
-    }
-    if (tabId === 'populares' && !state.ofertas.prices.length) {
+    if (tabId === 'transacciones') {
+      var token = getSelectedTokenForCommerce();
+      if (token) {
+        hasTradingPostPermission(token).then(function(hasTP) {
+          if (!hasTP) {
+            var container = document.querySelector('.conv-tab-content[data-tab="transacciones"]');
+            if (container) {
+              container.innerHTML = 
+                '<div style="text-align:center;padding:40px;">' +
+                  '<img src="assets/icons/Welcome/156107.png" width="48" height="48" alt="" style="margin-bottom:16px;opacity:0.7;">' +
+                  '<h4 style="margin:0 0 12px 0;color:#b71c1c;text-shadow:0 0 6px rgba(255,59,59,0.55);">⚠️ Permiso requerido</h4>' +
+                  '<p style="margin:0 0 8px 0;color:#9aa2b8;">Esta API Key no tiene el permiso <strong style="color:#b71c1c;">tradingpost</strong>.</p>' +
+                  '<p style="margin:0 0 16px 0;color:#9aa2b8;font-size:0.8rem;">Para ver tus órdenes activas, necesitás una key con ese permiso.</p>' +
+                  '<a href="https://account.arena.net/applications" target="_blank" rel="noopener" class="an-util-link" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;background:#0f1013;border:1px solid #2a2c35;border-radius:8px;padding:8px 14px;color:#b71c1c;text-shadow:0 0 6px rgba(255,59,59,0.55);">' +
+                    '<img src="assets/icons/Welcome/547832.png" width="16" height="16" alt="">' +
+                    'Crear API Key con tradingpost' +
+                  '</a>' +
+                '</div>';
+            }
+            return;
+          }
+          if (!state.transacciones.buys.length && !state.transacciones.sells.length) {
+            loadTransacciones(false);
+          } else {
+            renderTransacciones();
+          }
+        });
+      } else {
+        var container = document.querySelector('.conv-tab-content[data-tab="transacciones"]');
+        if (container && (!container.innerHTML || container.innerHTML.includes('Cargando') || container.innerHTML.includes('perdido'))) {
+          container.innerHTML = 
+            '<div style="text-align:center;padding:40px;color:#9aa2b8;">' +
+              '<img src="assets/icons/155048.png" width="48" height="48" alt="" style="opacity:0.3;margin-bottom:16px;">' +
+              '<p>Seleccioná una API Key para ver tus transacciones.</p>' +
+            '</div>';
+        }
+      }
+    } else if (tabId === 'populares' && !state.ofertas.prices.length) {
       loadOfertas(false);
     }
   }

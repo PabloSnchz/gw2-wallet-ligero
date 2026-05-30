@@ -31,6 +31,39 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 
 ---
 
+## ✨ Novedades principales — v6.6.0
+
+### 📦 Dashboard de Inventario Multi-Cuenta (inventory-dashboard.js v1.0.0)
+
+**Nuevo módulo que muestra los ítems del inventario (banco + materiales + personaje activo) de todas las cuentas en una tabla comparativa.**
+
+| Característica | Descripción |
+|----------------|-------------|
+| **Sets predefinidos** | Alto Valor, Materiales de artesanía, Símbolos y demás |
+| **Sistema de Tiers** | Set "Materiales de artesanía" con 4 tiers (T6/T5/T4/T3, 32 ítems) y checkboxes |
+| **Carga en 2 fases** | Fase 1 rápida (banco + materiales), Fase 2 background (personaje activo) |
+| **Indicador de carga** | Ícono de personaje con glow pulsante azul durante la Fase 2 |
+| **Flash ámbar en deltas** | Celdas con ítems del personaje parpadean 3 veces y quedan fijas hasta hover |
+| **Badge de oro total** | Valor total de todos los ítems combinados con precios del Trading Post |
+| **Filtros** | Ocultar cuentas vacías, ocultar columnas vacías, ocultar cuentas main |
+
+**Acceso:**
+- Ruta: `#/inventory/dashboard`
+
+### 🩹 Fix: F5 en Tienda WV
+
+Al presionar F5 estando en la tab de Tienda de Cámara del Brujo, ahora mantiene la Tienda (antes saltaba a Diarias).
+
+### 🩹 Fix: `_debug()` en Raid Tracker
+
+El módulo RaidTracker ahora expone el método `_debug()` con diagnóstico completo del estado.
+
+### 🔧 Skeleton loader ampliado en WV Shop
+
+Las animaciones de carga ahora muestran 24 cards y 30 filas de tabla (antes 8).
+
+---
+
 ## ✨ Novedades principales — v6.5.1
 
 ### 📊 WV Objectives Dashboard — Dashboard de Objetivos Multi-Cuenta (wv-objectives-dashboard.js v1.0.0)
@@ -741,7 +774,8 @@ Definí en `index.html` (antes de router.js):
 |---------|---------|-----------------|
 | `js/api-gw2.js` | **v2.15.0** | API Layer. **Inventory + Commerce (listings, prices, transactions)** |
 | `js/converter-modal.js` | **v1.0.0** | **NUEVO: Modal del Conversor con 3 tabs (Cambio, Transacciones, Populares)** |
-| `js/router.js` | **v2.17.0** | **Router desacoplado (~800 líneas). WV Objectives Dashboard + Purchase Detail en nav tabs. Sidebar sin conversor.** |
+| `js/inventory-dashboard.js` | **v1.0.0** | **Dashboard de Inventario Multi-Cuenta — Tabla comparativa, sets con tiers, carga en 2 fases** |
+| `js/router.js` | **v2.17.0** | **Router desacoplado (~800 líneas). WV Objectives Dashboard + Inventory Dashboard. Sidebar sin conversor.** |
 | `js/inventory-hub.js` | **v1.3.1** | **Inventario y Personajes — Buscador de objetos, KPIs, vistas de sección, modal de ítem** |
 | `js/wv-shop-ui.js` | **v1.0.2** | UI de Tienda WV. **Glow solo en ícono de rareza, fix de timing con wv-theme.js** |
 | `js/wv-objectives-ui.js` | v1.0.0 | UI de Objetivos WV |
@@ -993,6 +1027,7 @@ assets/icons/
 
 Este proyecto sigue **Semantic Versioning** (SemVer).
 
+- `v6.6.0`: **Dashboard de Inventario Multi-Cuenta + Fixes** — Nuevo módulo `inventory-dashboard.js` v1.0.0, tabla comparativa de ítems multi-cuenta, sets con sistema de tiers (T6/T5/T4/T3), carga en 2 fases, flash ámbar en deltas, badge de oro total, fix F5 en Tienda WV, `_debug()` en RaidTracker, skeleton ampliado en WV Shop
 - `v6.5.1`: **Dashboard de Objetivos Multi-Cuenta** — Nuevo módulo `wv-objectives-dashboard.js` v1.0.0, tabla comparativa de objetivos semanales, KPIs con íconos y mini barra de progreso, countdown semanal, Purchase Detail movido al nav de tabs, eliminado `#wvPDOpenBtn` legacy
 - `v6.5.0`: **Conversor Modal + Comercio** — Conversor en modal con 3 tabs (Cambio, Transacciones, Populares), 4 nuevas funciones de commerce en api-gw2.js, glow neutro en divisas sin color, cap de caché de items
 - `v6.4.0`: **Inventory Hub — Buscador de Objetos** — Nuevo módulo `inventory-hub.js` v1.3.1, 3 nuevos endpoints en api-gw2.js v2.13.0, vistas de sección (Materiales 10 categorías, Banco grid 10×3, Armería por tipo), modal con stats, wiki en español, characters.js como subvista

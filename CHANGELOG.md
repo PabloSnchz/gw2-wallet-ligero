@@ -8,6 +8,40 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [6.6.0] - 2026-05-30
+
+### Added
+- **Dashboard de Inventario Multi-Cuenta (inventory-dashboard.js v1.0.0)**:
+  - Tabla comparativa de ítems (banco + materiales + personaje activo) para todas las cuentas
+  - 3 sets predefinidos: Alto Valor, Materiales de artesanía, Símbolos y demás
+  - Sistema de Tiers para "Materiales de artesanía": T6/T5/T4/T3 (32 ítems) con checkboxes para activar/desactivar
+  - Orden canónico: Colmillos → Escamas → Garras → Huesos → Sangre → Veneno → Tótem → Polvo
+  - Carga en 2 fases: Fase 1 rápida (banco + materiales), Fase 2 background (personaje activo con `Promise.allSettled`)
+  - Indicador visual de carga con glow pulsante `charPulse` (#7bc2ff)
+  - Flash ámbar en celdas con delta positivo del personaje: 3 parpadeos + fijo hasta hover
+  - Badge de valor total en oro con precios del Trading Post
+  - Filtros: ocultar cuentas vacías, ocultar columnas vacías, ocultar cuentas main
+  - Método `_debug()` con diagnóstico completo del módulo
+- **Nuevo archivo**: `js/inventory-dashboard.js` v1.0.0
+- **Nuevo archivo actualizado**: `assets/data/inventory-sets.json` v2 (3 sets + sistema de tiers)
+- **Método `_debug()` en Raid Tracker (raid-tracker.js v1.7.0)**:
+  - Expone: version, inited, active, token, completedEncounters, liAvailable, loading, error, dom, timers, encounters, refresh
+
+### Changed
+- **Skeleton loader ampliado en WV Shop**:
+  - Cards: 8 → 24 (en `router.js` y `wv-shop-ui.js`)
+  - Tabla: 8 → 30 filas
+- **router.js v2.16.0 → v2.17.0**:
+  - Fix: F5 en Tienda WV redirigía a Diarias (causa: `hideObjectivesDashboard()` en `route()`)
+  - Reemplazada llamada a `hideObjectivesDashboard()` por código inline que solo oculta el panel sin tocar `setActiveTab`
+- **Documentación**: ONBOARDING.md, CHANGELOG.md actualizados a v6.6.0
+
+### Fixed
+- **F5 en Tienda WV**: al recargar estando en Tienda, ahora mantiene la tab de Tienda (antes saltaba a Diarias)
+- **IDs corregidas en inventory-sets.json**: Hueso grande (24341), Hueso pesado (24345), Hueso (24344)
+
+---
+
 ## [6.5.1] - 2026-05-21
 
 ### Added

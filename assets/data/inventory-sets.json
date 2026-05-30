@@ -16,19 +16,64 @@
       ]
     },
     {
-      "id": "t6",
-      "name": "Tier 6",
+      "id": "crafting_materials",
+      "name": "Materiales de artesanía",
       "icon": "assets/icons/Cuentas/255373.png",
-      "items": [
-        { "id": 24358, "name": "Hueso antiguo" },
-        { "id": 24351, "name": "Garra despiadada" },
-        { "id": 24277, "name": "Montón de polvo cristalino" },
-        { "id": 24357, "name": "Colmillo feroz" },
-        { "id": 24289, "name": "Escama blindada" },
-        { "id": 24300, "name": "Tótem elaborado" },
-        { "id": 24283, "name": "Vesícula de veneno poderoso" },
-        { "id": 24295, "name": "Vial de sangre poderosa" }
-      ]
+      "defaultTiers": ["t6"],
+      "tiers": {
+        "t6": {
+          "name": "Tier 6",
+          "items": [
+            { "id": 24357, "name": "Colmillo feroz" },
+            { "id": 24289, "name": "Escama blindada" },
+            { "id": 24351, "name": "Garra despiadada" },
+            { "id": 24358, "name": "Hueso antiguo" },
+            { "id": 24295, "name": "Vial de sangre poderosa" },
+            { "id": 24283, "name": "Vesícula de veneno poderoso" },
+            { "id": 24300, "name": "Tótem elaborado" },
+            { "id": 24277, "name": "Montón de polvo cristalino" }
+          ]
+        },
+        "t5": {
+          "name": "Tier 5",
+          "items": [
+            { "id": 24356, "name": "Colmillo grande" },
+            { "id": 24288, "name": "Escama grande" },
+            { "id": 24350, "name": "Garra grande" },
+            { "id": 24341, "name": "Hueso grande" },
+            { "id": 24294, "name": "Vial de sangre espesa" },
+            { "id": 24282, "name": "Vesícula de veneno potente" },
+            { "id": 24299, "name": "Tótem intrincado" },
+            { "id": 24276, "name": "Montón de polvo incandescente" }
+          ]
+        },
+        "t4": {
+          "name": "Tier 4",
+          "items": [
+            { "id": 24355, "name": "Colmillo afilado" },
+            { "id": 24287, "name": "Escama suave" },
+            { "id": 24349, "name": "Garra afilada" },
+            { "id": 24345, "name": "Hueso pesado" },
+            { "id": 24293, "name": "Vial de sangre potente" },
+            { "id": 24281, "name": "Vesícula de veneno llena" },
+            { "id": 24298, "name": "Tótem grabado" },
+            { "id": 24275, "name": "Montón de polvo luminoso" }
+          ]
+        },
+        "t3": {
+          "name": "Tier 3",
+          "items": [
+            { "id": 24354, "name": "Colmillo" },
+            { "id": 24286, "name": "Escama" },
+            { "id": 24348, "name": "Garra" },
+            { "id": 24344, "name": "Hueso" },
+            { "id": 24292, "name": "Vial de sangre" },
+            { "id": 24280, "name": "Vesícula de veneno" },
+            { "id": 24297, "name": "Tótem" },
+            { "id": 24274, "name": "Montón de polvo radiante" }
+          ]
+        }
+      }
     },
     {
       "id": "symbols_etc",
