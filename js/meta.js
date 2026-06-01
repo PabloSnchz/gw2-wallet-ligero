@@ -31,8 +31,7 @@
   const LS_FAVS   = 'gw2_meta_favs';
   const SOON_MIN  = 20;
 
-  const LS_FLAGS      = 'gw2_meta_flags_v1';
-  const FLAGS_TTL_MS  = 30 * 1000; // 30 segundos (antes 5 min) — para reflejar cambios en vivo
+
 
   const LS_META_COMPACT = 'gw2_meta_compact';
 
@@ -243,40 +242,7 @@
     return new Set(Array.isArray(arr) ? arr : []);
   }
 
-  // --------- Cache por Key (TTL 5min) ----------
-  function tokenFingerprintFrom(t){
-    if(!t) return null;
-    return `${t.slice(0,4)}…${t.slice(-4)}`;
-  }
-  function loadFlagsFromCache(tokenOpt){
-    try{
-      const all = JSON.parse(localStorage.getItem(LS_FLAGS) || '{}');
-      const fp = tokenFingerprintFrom(tokenOpt ?? (window.__GN__?.getSelectedToken?.() ?? null));
-      if(!fp) return null;
-      const item = all[fp]; if(!item) return null;
-      if(!item.ts || (Date.now() - item.ts) > FLAGS_TTL_MS) return null;
-      return {
-        worldbosses: new Set(item.worldbosses || []),
-        mapchests: new Set(item.mapchests || []),
-        lastTs: item.ts,
-        lastHuman: item.human || '—'
-      };
-    }catch{ return null; }
-  }
-  function saveFlagsToCache(tokenOpt){
-    try{
-      const all = JSON.parse(localStorage.getItem(LS_FLAGS) || '{}');
-      const fp = tokenFingerprintFrom(tokenOpt ?? (window.__GN__?.getSelectedToken?.() ?? null));
-      if(!fp) return;
-      all[fp] = {
-        worldbosses: [...accountFlags.worldbosses],
-        mapchests:   [...accountFlags.mapchests],
-        ts:          accountFlags.lastTs,
-        human:       accountFlags.lastHuman
-      };
-      localStorage.setItem(LS_FLAGS, JSON.stringify(all));
-    }catch{}
-  }
+
 
   // --------- API GW2: Ley Line Anomaly (evento rotativo) ----------
   var _leyLineCache = { mapName: null, ts: 0 };
@@ -395,20 +361,7 @@
     filters.onlyInf    = !!el.onlyInf?.checked;
   }
 
-  // --- Contexto (línea adicional) ---
-  function buildContext(meta){
-    const hasWB = !!meta?.api?.worldBossId;
-    const hasMC = !!meta?.api?.mapChestId;
-    const t = String(meta?.type || '').toLowerCase();
 
-    if (hasWB) return '• Cofre diario (worldboss) • Recom. 40+';
-    if (hasMC) return '• Cofre diario: Hero\'s Choice';
-    if (t==='global')   return '• Evento rotativo / no marcado por API';
-    if (t==='instance') return '• Instancia pública • no marcado por API';
-    if (t==='temple')   return '• Evento de templo • no marcado por API';
-    if (t==='event')    return '• Evento de mapa • no marcado por API';
-    return '';
-  }
 
   function doneTodayDetail(meta){
     if(meta.api?.worldBossId && accountFlags.worldbosses.has(meta.api.worldBossId))
@@ -528,12 +481,12 @@
       ? ' style="box-shadow: 0 0 0 2px ' + iconBorderColor + ', 0 0 10px ' + iconGlowColor + '; border-radius:10px;"'
       : '';
 
+    var iconSize = 'width:36px;height:36px;';
     if (url) {
-      return '<div class="meta-card__iconWrap"' + iconDeco + ' title="' + esc(label) + '" aria-label="Expansión: ' + esc(label) + '"><img class="meta-card__icon" src="' + esc(url) + '" alt="' + esc(label) + '" loading="lazy"/></div>';
+      return '<div class="meta-card__iconWrap"' + iconDeco + ' title="' + esc(label) + '" aria-label="Expansión: ' + esc(label) + '" style="' + iconSize + 'display:flex;align-items:center;justify-content:center;flex-shrink:0;"><img class="meta-card__icon" src="' + esc(url) + '" alt="' + esc(label) + '" loading="lazy" style="width:28px;height:28px;object-fit:contain;"/></div>';
     }
-    // Fallback: inicial del nombre de expansión con el color
     var initial = label.charAt(0).toUpperCase();
-    return '<div class="meta-card__iconWrap meta-card__iconWrap--fallback"' + iconDeco + ' title="' + esc(label) + '" aria-label="Expansión: ' + esc(label) + '"><span class="meta-card__icon--fallback" style="color:' + tint + ';font-size:22px;font-weight:700;">' + initial + '</span></div>';
+    return '<div class="meta-card__iconWrap meta-card__iconWrap--fallback"' + iconDeco + ' title="' + esc(label) + '" aria-label="Expansión: ' + esc(label) + '" style="' + iconSize + 'display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span class="meta-card__icon--fallback" style="color:' + tint + ';font-size:18px;font-weight:700;">' + initial + '</span></div>';
   }
 
   function chipsForTiming(inst, minsRemaining){
@@ -565,34 +518,17 @@
       ? `Hecho hoy (fuente: ${srcTxt}; actualizado ${when})`
       : `No hecho hoy (fuente: ${srcTxt}; actualizado ${when})`;
 
-    // Estado
-    var statusCls = dt.done ? 'meta-status--done' : 'meta-status--pending';
-    var statusText = dt.done ? 'Hecho hoy' : 'Pendiente';
-
     // Waypoint dinámico para Ley Line
     var activeWp = inst._activeWaypoint || meta.chat;
     var wpTitle = inst._activeMapId ? 'Waypoint confirmado por API' : 'Waypoint';
 
     // Acciones
-    const wikiHtml = meta.wiki
-      ? `<a class="btn btn--ghost m-wiki" href="${esc(meta.wiki)}" target="_blank" rel="noopener">Wiki</a>`
+    const wikiUrlEs = meta.wiki ? meta.wiki.replace('wiki.guildwars2.com', 'wiki-es.guildwars2.com') : '';
+    const wikiHtml = wikiUrlEs
+      ? `<a href="${esc(wikiUrlEs)}" target="_blank" rel="noopener" title="Wiki">Wiki</a>`
       : '';
     const mapHref = meta.map ? `https://maps.gw2.io/#/?q=${encodeURIComponent(meta.map)}` : '';
-    const mapBtn  = mapHref
-      ? `<a class="btn btn--ghost m-map" href="${mapHref}" target="_blank" rel="noopener" title="Abrir mapa (gw2.io)">Mapa</a>`
-      : '';
-    const shareBtn = `<button class="btn btn--ghost m-share" data-id="${meta.id}" title="Copiar texto para compartir">Compartir</button>`;
-    const hasWins = Array.isArray(meta.windowsUTC) && meta.windowsUTC.length>0;
-    const winBtn  = hasWins ? `<button class="btn btn--ghost m-win__toggle" aria-expanded="false" title="Ver horarios">Horarios</button>` : '';
-    const winPane = hasWins ? buildWindowsChips(meta) : '';
-
-    var mapNames = { 25: 'Gendarran Fields', 28: 'Iron Marches', 34: 'Timberline Falls' };
-    var activeMap = inst._activeMapId ? (mapNames[inst._activeMapId] || '') : '';
-    
-    var ctx = buildContext(meta);
-    if (activeMap) {
-      ctx = '• Mapa activo: ' + activeMap + ' • ' + ctx;
-    }
+    const mapBtn  = !!mapHref;
 
     // Pin
     const pinBtn = `<button class="wv-pin ${isFav?'wv-pin--active':''}" data-pin="${meta.id}" aria-pressed="${isFav?'true':'false'}" title="${isFav?'Desfijar':'Fijar'}">📌</button>`;
@@ -620,72 +556,55 @@
     const foot = footerDropHTML(meta, item);
 
     // ===== ESTRUCTURA UNIFICADA (sin data-manual, sin role=button) =====
+    // Convertir horarios UTC a hora local
+    var localWindows = Array.isArray(meta.windowsUTC) ? meta.windowsUTC.map(function(hhmm) {
+      var d = localDateFromUTC_HHMM(hhmm);
+      return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+    }) : [];
+
     return `
-      <article class="m-card meta-card meta-card--tint-title" data-id="${meta.id}" data-type="${esc(meta.type)}" data-exp="${esc(meta.expansion)}"${styleTint}>
-        <div class="meta-card__top">
-          ${expIcon}
-          <div class="meta-card__title-wrap">
-            <div class="meta-card__title">${esc(meta.name)}</div>
-            <div class="meta-card__timing">${timingHtml}</div>
+      <article class="meta-card" data-id="${meta.id}"${styleTint} style="background:#0f1116;border:1px solid #26262b;border-radius:16px;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #26262b;overflow:hidden;">
+          <div style="width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+            ${expIcon}
           </div>
-          ${pinBtn}
+          <div style="flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;gap:8px;">
+            <span style="font-weight:700;font-size:0.9rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(meta.name)}">${esc(meta.name)}</span>
+            <span style="font-size:0.6rem;color:${expTintColor(meta)};background:#1a1c24;padding:2px 6px;border-radius:10px;white-space:nowrap;flex-shrink:0;max-width:80px;overflow:hidden;text-overflow:ellipsis;">${esc(meta.expansion || '—')}</span>
+            ${pinBtn}
+          </div>
         </div>
-
-        <div class="meta-body">
-          <div class="meta-tags">
-            <span class="meta-pill">${inst._activeMapId ? 
-              meta.map.split('/').map(function(m) {
-                var trimmed = m.trim();
-                if (trimmed === activeMap) {
-                  return '<span style="color:#a0ffc8;font-weight:700;text-shadow:0 0 4px rgba(160,255,200,0.5);">' + esc(trimmed) + '</span>';
-                }
-                return esc(trimmed);
-              }).join(' / ') :
-              esc(meta.map || '—')
-            }</span>
-            <span class="meta-pill">${esc(meta.type)}</span>
-            <span class="meta-status ${statusCls}" title="${esc(doneTitle)}">${statusText}</span>
-          </div>
-          ${ctx ? `<div class="m-context">${esc(ctx)}</div>` : ''}
-          <div class="meta-linkbar">
-            <span class="meta-linkbar__primary">
-              ${activeWp ? `<button class="btn btn--ghost m-copy" data-copy="${esc(activeWp)}" title="${esc(wpTitle)}" aria-label="Copiar waypoint">${wpIcon(16)}</button>` : ''}
-              ${wikiHtml}
-              ${mapBtn}
-            </span>
-            <span class="meta-linkbar__secondary">
-              ${shareBtn}
-              ${winBtn}
-            </span>
-          </div>
-          ${winPane}
+        <div style="height:3px;background:#2a2c35;overflow:hidden;">
+          <div style="width:${dt.done ? '100' : '0'}%;height:100%;background:linear-gradient(90deg,#7bc2ff,#a0ffc8);transition:width 0.3s ease;"></div>
         </div>
-
-        <div class="meta-sep"></div>
-
-        <div class="meta-footer">
-          ${foot}
+        <div style="padding:0;display:flex;flex-direction:column;gap:0;">
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:#0a0c10;border-radius:12px;border:1px solid ${dt.done ? '#2a6a4a' : '#26262b'};transition:all 0.2s ease;">
+            <div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+              <span style="font-size:0.65rem;color:${inst.state === 'active' ? '#a0ffc8' : (inst.state === 'soon' ? '#ffd36b' : '#7bc2ff')};background:#1a1c24;padding:2px 6px;border-radius:12px;">${inst.state === 'active' ? 'ACTIVO' : (inst.state === 'soon' ? 'PRÓXIMO' : 'MÁS TARDE')}</span>
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span style="font-size:0.65rem;color:#9aa2b8;">${minsRemaining != null ? (inst.state === 'active' ? 'Termina en ' + minsRemaining + ' min' : 'En ' + minsRemaining + ' min') : 'Sin horario'}</span>
+                <span style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:${dt.done ? '#a0ffc8' : '#ff9d9d'};">
+                  <img src="assets/icons/Welcome/${dt.done ? '156108' : '156107'}.png" width="12" height="12" alt="">
+                  ${dt.done ? 'Completado' : 'Pendiente'}
+                </span>
+              </div>
+              ${localWindows.length ? '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:4px;">' + localWindows.slice(0,12).map(function(lhhm, idx){ var hhmm = meta.windowsUTC[idx]; var wStart = localDateFromUTC_HHMM(hhmm); var wEnd = new Date(wStart.getTime() + (meta.durationMin || 15)*60000); var now = new Date(); var wState = (now >= wStart && now < wEnd) ? 'active' : (wStart > now && ((wStart - now)/60000) <= SOON_MIN) ? 'soon' : 'later'; var chipColor = wState === 'active' ? '#a0ffc8' : (wState === 'soon' ? '#ffd36b' : '#9aa2b8'); var chipBg = wState === 'active' ? 'rgba(160,255,200,0.12)' : (wState === 'soon' ? 'rgba(255,211,107,0.12)' : '#1a1c24'); var chipBorder = wState === 'active' ? 'rgba(160,255,200,0.3)' : (wState === 'soon' ? 'rgba(255,211,107,0.3)' : '#2a2c35'); return '<span style="font-size:0.6rem;color:' + chipColor + ';background:' + chipBg + ';padding:1px 4px;border-radius:8px;border:1px solid ' + chipBorder + ';text-align:center;">' + esc(lhhm) + '</span>'; }).join('') + '</div>' : ''}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 16px 8px 16px;">
+            ${activeWp ? '<button class="m-copy" data-copy="' + esc(activeWp) + '" title="' + esc(wpTitle) + '" style="background:none;border:none;cursor:pointer;padding:2px;opacity:0.7;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.7\'"><img src="assets/icons/733330.png" width="24" height="24" alt="Waypoint"></button>' : ''}
+            ${mapBtn ? '<a href="' + mapHref + '" target="_blank" rel="noopener" title="Mapa" style="opacity:0.7;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.7\'"><img src="assets/icons/1770688.png" width="24" height="24" alt="Mapa"></a>' : ''}
+            <button class="m-share" data-id="${meta.id}" title="Compartir" style="background:none;border:none;cursor:pointer;padding:2px;opacity:0.7;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'"><img src="assets/icons/3380750.png" width="24" height="24" alt="Compartir"></button>
+            ${wikiHtml ? '<a href="' + esc(meta.wiki) + '" target="_blank" rel="noopener" title="Wiki" style="opacity:0.7;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.7\'"><img src="assets/icons/1602819.png" width="24" height="24" alt="Wiki"></a>' : ''}
+          </div>
+          ${foot ? '<div style="padding:4px 16px 8px 16px;">' + foot + '</div>' : ''}
         </div>
       </article>`;
   }
   
-  function buildWindowsChips(meta){
-    const list = Array.isArray(meta.windowsUTC) ? meta.windowsUTC : [];
-    if (!list.length) return '';
-    const now = nowLocal();
-    const chips = list.map(hhmm => {
-      const start = localDateFromUTC_HHMM(hhmm);
-      const end   = new Date(start.getTime() + (meta.durationMin ?? 15)*60000);
-      let cls = 'chip chip--ghost';
-      if (now >= start && now < end) cls += ' chip--now';
-      else {
-        const diffMin = Math.floor((start - now)/60000);
-        if (diffMin >=0 && diffMin <= SOON_MIN) cls += ' chip--soon';
-      }
-      return `<span class="${cls}" title="Ventana ${hhmm} UTC">${hhmm}</span>`;
-    }).join('');
-    return `<div class="m-win" hidden><div class="chips">${chips}</div></div>`;
-  }
+
 
   function computeAllInstances(){
     return seed.map(m => ({ meta:m, inst:buildInstance(m), fav:favs.has(m.id) }));
@@ -864,21 +783,13 @@
   }
 
   // ---------- Flags de cuenta ----------
-  async function refreshAccountFlags(force=false, opts = {}){
+  async function refreshAccountFlags(opts = {}){
     const token = opts.token ?? (window.__GN__?.getSelectedToken?.() ?? null);
 
     if(!token){
       accountFlags = { worldbosses:new Set(), mapchests:new Set(), lastTs:0, lastHuman:'—' };
       if(el.flagsTs) el.flagsTs.textContent = 'Actualizado —';
       return;
-    }
-
-    if(!force){
-      const cached = loadFlagsFromCache(token);
-      if(cached){
-        accountFlags = cached;
-        return;
-      }
     }
 
     _flagsSeq += 1;
@@ -900,7 +811,6 @@
       accountFlags.mapchests   = mc;
       accountFlags.lastTs      = Date.now();
       accountFlags.lastHuman   = fmtLocalTime(new Date(accountFlags.lastTs));
-      saveFlagsToCache(token);
       setStatus('Listo.','ok');
     }catch(e){
       if (e?.name === 'AbortError') return;
@@ -938,10 +848,10 @@
   function bindInfusionPreviews(){
     document.querySelectorAll('.inf-prev').forEach(n=>n.remove());
 
-    var cards = document.querySelectorAll('.m-card');
+    var cards = document.querySelectorAll('.meta-card, .m-card');
     for (var i = 0; i < cards.length; i++) {
       var card = cards[i];
-      var target = card.querySelector('.m-foot .m-item');
+      var target = card.querySelector('.m-item[data-preview]');
       if (!target) continue;
 
       var preview = target.getAttribute('data-preview') || '';
@@ -991,15 +901,16 @@
       renderSkeletonMeta(8);
       loadFavs();
       await loadSeed();
+      window._metaSeed = seed;
 
-      await refreshAccountFlags(false, { token: window.__GN__?.getSelectedToken?.() ?? null });
+      await refreshAccountFlags({ token: window.__GN__?.getSelectedToken?.() ?? null });
+      await render();
 
       setCompact(COMPACT_DEFAULT);
       injectUIToggles();
 
       setStatus('Listo.','ok');
       startClock();
-      render();
 
       setTimeout(()=>{
         const issues = [];
@@ -1025,7 +936,9 @@
   window.Meta = window.Meta || {};
   window.Meta.refresh = async function metaRefresh({ token, nocache = false } = {}){
     try {
-      await refreshAccountFlags(!!nocache, { token: token ?? (window.__GN__?.getSelectedToken?.() ?? null) });
+      await refreshAccountFlags({ token: token ?? (window.__GN__?.getSelectedToken?.() ?? null) });
+      // Asegurar que el DOM refleje los flags actualizados
+      await new Promise(function(r) { setTimeout(r, 50); });
       await render();
     } catch (e) {
       if (e?.name === 'AbortError') return;
@@ -1092,5 +1005,8 @@
       }
     });
   })();
+
+  // Debug: exponer estado interno (se actualiza en cada render)
+  window._metaFlags = accountFlags;
 
 })();
