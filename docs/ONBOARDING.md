@@ -1479,7 +1479,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/wv-purchase-detail.js` | **v1.13.1** | Detalle de compras — **Fix estado online (data-token), ícono reloj local** |
 | `js/wv-tabs-skin.js` | v1.0.0 | Re-skin de tabs WV, consistente con rerenders |
 | `js/achievements.js` | v3.2.0 | Logros: grid único, recompensas visibles, dropdowns personalizados, AP potencial |
-| `js/meta.js` | **v3.3.0** | MetaEventos — **Rediseño unificado: ícono expansión con glow, chips timing, tag infusión celestial, fix preview infusiones** |
+| `js/meta.js` | **v3.4.0** | MetaEventos — **Rediseño cards estilo Raids, barra de progreso interna, íconos expansión locales 42x42, horarios hora local, wiki español, limpieza de código (~90 líneas menos)** |
 | `js/sidebar-nav.js` | v1.2 | Router‑friendly + tokenchange + a11y |
 | `js/activities.js` | **v3.19.6** | Actividades — **Glow en íconos de Ecto** |
 | `js/activities-theme.js` | v2.6.0 | Home Nodes + barra de horarios unificada con iconos GW2 |
@@ -1489,7 +1489,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/accounts-panel.js` | **v2.0.0** | Panel de Cuentas — **Rediseño "Profile Card" premium + tabla zebra** |
 | `js/settings-manager.js` | v1.0.2 | Sistema de Backup/Restaurar |
 | `js/gist-sync.js` | v1.0.0 | Sincronización con GitHub Gist |
-| `js/welcome-panel.js` | v1.3.0 | Pantalla de Bienvenida |
+| `js/welcome-panel.js` | v1.4.0 | Pantalla de Bienvenida |
 | `js/raid-tracker.js` | v1.7.0 | Seguimiento de Raids Semanales |
 | `js/wallet-dashboard.js` | **v2.5.0** | Dashboard de Cartera — **KPIs con border-left semántico + glow, tabla unificada** |
 | `js/inventory-dashboard.js` | **v1.0.0** | **Dashboard de Inventario Multi-Cuenta — Tabla comparativa de ítems, sets con tiers, carga en 2 fases** |
@@ -1498,6 +1498,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/analytics.js` | v1.0.0 | Eventos personalizados para Google Analytics |
 | `js/wallet-theme.js` | **v1.3.1** | Tema visual de Cartera — **Glow en ícono de divisa + glow neutro para divisas sin color** |
 | `js/meta-theme.js` | **v1.4.2** | Tema visual de Meta — **Solo border-left** |
+| `js/converter-modal.js` | **v1.0.0** | **Modal del Conversor Gem ↔ Gold con 3 tabs (Cambio, Transacciones, Populares)** |
 | `js/achievements-theme.js` | **v1.1.1** | Tema visual de Logros — **Solo border-left** |
 | `js/wv-theme.js` | **v1.0.1** | Tema visual de WV — **Solo border-left, expone window.WVTheme** |
 | `css/theme-polish.css` | **v2.1.0** | Componentes canónicos + hover unificado + conversor |
@@ -2750,6 +2751,15 @@ SIN defer (temas, al final):
   - Fix: F5 en Tienda WV redirigía a Diarias por `hideObjectivesDashboard()` en `route()`
   - Fix: skeleton loader ampliado en Tienda WV (8→24 cards, 8→30 filas)
   - Fix: `_debug()` agregado a RaidTracker (v1.7.0)
+- **Jun 2026:** **Rediseño de Meta & Eventos (v6.6.1)**:
+  - Cards rediseñadas con estructura unificada estilo Raids
+  - Barra de progreso dentro del header
+  - Íconos de expansión con assets locales 42x42 (sin contenedor ni glow)
+  - Horarios convertidos a hora local con colores semánticos
+  - Estado Completado/Pendiente con íconos 156108/156107
+  - Íconos de acción 32x32 (Waypoint, Mapa, Compartir, Wiki)
+  - Wiki redirige a español (wiki-es.guildwars2.com)
+  - Eliminada caché duplicada de flags (~90 líneas menos)
 - **May 2026:** **Módulo de Inventario y Personajes (v6.4.0)**:
   - Nuevo módulo `inventory-hub.js` v1.3.1 como pantalla principal de `#/account/characters`
   - Buscador unificado en banco, materiales y armería legendaria
@@ -2772,7 +2782,7 @@ SIN defer (temas, al final):
 - ✅ Achievements sin doble pipeline (watchdog ok)
 - ✅ Purchase Detail v1.13.1 productivo: estado online basado en last_modified, fix data-token
 - ✅ Tienda WV v1.0.2 productiva: glow solo en ícono, fix de timing
-- ✅ Meta v3.3.0 productivo: ícono expansión con glow, chips timing, tag infusión celestial, preview infusiones
+- ✅ Meta v3.4.0 productivo: cards rediseñadas estilo Raids, barra progreso interna, íconos locales, horarios hora local, wiki español
 - ✅ Accounts v2.0.0 productivo: Profile Card premium, tags iconos, Twitch/GeForce visibles, expansiones colapsables, tabla zebra
 - ✅ SeasonStore funcionando bien incluso con cuota mínima
 - ✅ Activities v3.19.6 productivo: glow en íconos de Ecto

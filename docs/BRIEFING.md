@@ -1,8 +1,8 @@
-# 🐈‍⬛ Briefing para nuevo agente — Bóveda del Gato Negro (v6.6.0)
+# 🐈‍⬛ Briefing para nuevo agente — Bóveda del Gato Negro (v6.6.1)
 
 ## Tu rol
 
-Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No estás empezando de cero: El proyecto tiene **v6.6.0**, 45+ archivos, arquitectura modular IIFE vanilla JS, y reglas estrictas de CSS en 3 capas.
+Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No estás empezando de cero: El proyecto tiene **v6.6.1**, 45+ archivos, arquitectura modular IIFE vanilla JS, y reglas estrictas de CSS en 3 capas.
 
 **Tu objetivo:** mantener compatibilidad, no romper nada, seguir la arquitectura existente, y proponer soluciones quirúrgicas (no reescribir archivos completos).
 
@@ -53,18 +53,27 @@ Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No es
 - Se agregó `class="card"` a las KPI cards del Purchase Detail pensando que heredarían el estilo unificado. Pero `.card` tiene `min-height: 126px` y eso rompió la altura compacta.
 - **Regla:** antes de agregar una clase del sistema de diseño, revisar qué estilos trae (padding, min-height, border, box-shadow).
 
-### 5. Intentar features imposibles con los datos disponibles
+### 5. Diagnosticar problemas de CSS con mediciones en lugar del panel Styles
+
+- En el fix de espaciado de íconos en Meta cards, se hicieron decenas de mediciones con `getBoundingClientRect` y ajustes de padding/margin inline sin revisar qué regla CSS estaba aplicando el estilo real. Fueron 3 horas para resolver algo que tomaba 5 minutos.
+- **Regla:** si un cambio de estilo inline no se refleja en el DOM, **abrir el panel "Styles" del DevTools** (F12 → Elements → Styles) para ver:
+  1. Qué selector está aplicando el estilo actual (ej: `.m-foot { margin-top: 6px }`)
+  2. Si el estilo inline está tachado (sobrescrito por CSS con `!important` o mayor especificidad)
+  3. La cascada completa de reglas que afectan al elemento
+- **Nunca** ajustar valores a ciegas con `getBoundingClientRect` si el panel Styles te dice exactamente qué regla está ganando.
+
+### 6. Intentar features imposibles con los datos disponibles
 - La tab "Novedades de Gem Store" no se puede hacer sin un backend que scrapee ThatShaman o los archivos del juego. Se intentó 4 enfoques distintos antes de aceptarlo.
 - **Regla:** si una API no devuelve los datos necesarios, no insistir. Buscar alternativas realistas o descartar la feature.
 
 ---
 
-## Estado actual del proyecto (v6.5.0)
+## Estado actual del proyecto (v6.6.1)
 
 | Módulo | Estado |
 |--------|--------|
 | Cartera (Wallet) | ✅ Estable |
-| Meta & Eventos | ✅ Estable |
+| Meta & Eventos | ✅ Cards rediseñadas estilo Raids, barra progreso interna, horarios hora local |
 | Logros | ✅ Estable |
 | Cámara del Brujo (WV) | ✅ Estable |
 | Actividades | ✅ Estable |

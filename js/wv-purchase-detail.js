@@ -1,7 +1,7 @@
 /*!
  * js/wv-purchase-detail.js — Vista de Detalle de Compras (Wizard's Vault)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.13.0 (2026-04-05) — Estado online basado en last_modified
+ * Versión: 1.13.1 (2026-04-05) — Estado online basado en last_modified
  *
  * Cambios v1.13.0:
  *  - REEMPLAZADA lógica de PvP por last_modified de /v2/account
@@ -2225,5 +2225,5 @@ function hidePanel(){
   window.findRowByListingId = findRowByListingId;
   window.__wvpdState = state;
 
-  console.info(LOG, 'ready 1.13.0 — Estado online basado en last_modified (actividad general)');
+  console.info(LOG, 'ready 1.13.1 — Estado online basado en last_modified (actividad general)');
 })(typeof window!=='undefined' ? window : (typeof globalThis!=='undefined' ? globalThis : this));
