@@ -89,7 +89,7 @@
     livingworlds2: 'assets/icons/expansions/ls2.png',
     livingworlds3: 'assets/icons/expansions/ls2.png',
     livingworlds4: 'assets/icons/expansions/ls4.png',
-    icebroodsaga: 'assets/icons/expansions/IS LS5.png'
+    icebroodsaga: 'assets/icons/expansions/is ls5.png'
   };
 
   let seed = [];
