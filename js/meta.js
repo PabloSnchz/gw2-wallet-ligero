@@ -79,17 +79,17 @@
 
   // --------- Iconos oficiales ----------
   const EXP_ICON = {
-    core: 'https://wiki.guildwars2.com/images/thumb/d/df/GW2Logo_new.png/600px-GW2Logo_new.png',
-    hot: 'https://wiki.guildwars2.com/images/thumb/5/52/HoT_Texture_Centered_Trans.png/600px-HoT_Texture_Centered_Trans.png',
-    pof: 'https://wiki.guildwars2.com/images/thumb/0/0e/GW2-PoF_Texture_Centered_Trans.png/600px-GW2-PoF_Texture_Centered_Trans.png',
-    eod: 'https://wiki.guildwars2.com/images/thumb/c/cc/EoD_Texture_Trans.png/600px-EoD_Texture_Trans.png',
-    soto: 'https://wiki.guildwars2.com/images/4/44/Secrets_of_the_Obscure_logo.png',
-    janthir: 'https://wiki.guildwars2.com/images/thumb/6/60/Janthir_Wilds_logo.png/600px-Janthir_Wilds_logo.png',
-    visionseternity: 'https://wiki.guildwars2.com/images/thumb/c/cd/Visions_of_Eternity_logo.png/600px-Visions_of_Eternity_logo.png',
-    livingworlds2: 'https://wiki.guildwars2.com/images/e/e8/Living_World_logo.png',
-    livingworlds3: 'https://wiki.guildwars2.com/images/thumb/c/ca/Living_World_Season_3_logo.png/450px-Living_World_Season_3_logo.png',
-    livingworlds4: 'https://wiki.guildwars2.com/images/thumb/a/a1/Living_World_Season_4_logo.png/450px-Living_World_Season_4_logo.png',
-    icebroodsaga: 'https://wiki.guildwars2.com/images/thumb/1/19/Living_World_Season_5_logo.png/450px-Living_World_Season_5_logo.png'
+    core: 'assets/icons/expansions/core.png',
+    hot: 'assets/icons/expansions/HoT.png',
+    pof: 'assets/icons/expansions/PoF.png',
+    eod: 'assets/icons/expansions/EoD.webp',
+    soto: 'assets/icons/expansions/SoTO.webp',
+    janthir: 'assets/icons/expansions/JW.webp',
+    visionseternity: 'assets/icons/expansions/VoE.webp',
+    livingworlds2: 'assets/icons/expansions/ls2.png',
+    livingworlds3: 'assets/icons/expansions/ls2.png',
+    livingworlds4: 'assets/icons/expansions/ls4.png',
+    icebroodsaga: 'assets/icons/expansions/IS LS5.png'
   };
 
   let seed = [];
@@ -475,18 +475,16 @@
     var url = EXP_ICON[k] || '';
     var label = String(meta.expansion || '—');
 
-    var iconGlowColor = hexToRGBA(tint, 0.36);
-    var iconBorderColor = hexToRGBA(tint, 0.32);
+    var iconGlowColor = hexToRGBA(tint, 0.50);
+    var iconBorderColor = hexToRGBA(tint, 0.45);
     var iconDeco = (iconBorderColor && iconGlowColor)
-      ? ' style="box-shadow: 0 0 0 2px ' + iconBorderColor + ', 0 0 10px ' + iconGlowColor + '; border-radius:10px;"'
-      : '';
-
-    var iconSize = 'width:36px;height:36px;';
+      ? ' style="box-shadow: 0 0 0 2px ' + iconBorderColor + ', 0 0 10px ' + iconGlowColor + '; border-radius:10px; background:#d0d0d0;"'
+      : ' style="background:#d0d0d0;border-radius:10px;"';
     if (url) {
-      return '<div class="meta-card__iconWrap"' + iconDeco + ' title="' + esc(label) + '" aria-label="Expansión: ' + esc(label) + '" style="' + iconSize + 'display:flex;align-items:center;justify-content:center;flex-shrink:0;"><img class="meta-card__icon" src="' + esc(url) + '" alt="' + esc(label) + '" loading="lazy" style="width:28px;height:28px;object-fit:contain;"/></div>';
+      return '<img class="meta-card__icon" src="' + esc(url) + '" alt="' + esc(label) + '" loading="lazy" style="width:42px;height:42px;object-fit:contain;flex-shrink:0;border-radius:10px;"/>';
     }
     var initial = label.charAt(0).toUpperCase();
-    return '<div class="meta-card__iconWrap meta-card__iconWrap--fallback"' + iconDeco + ' title="' + esc(label) + '" aria-label="Expansión: ' + esc(label) + '" style="' + iconSize + 'display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span class="meta-card__icon--fallback" style="color:' + tint + ';font-size:18px;font-weight:700;">' + initial + '</span></div>';
+    return '<span class="meta-card__icon--fallback" style="color:' + tint + ';font-size:24px;font-weight:700;width:42px;height:42px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + initial + '</span>';
   }
 
   function chipsForTiming(inst, minsRemaining){
@@ -565,20 +563,20 @@
     return `
       <article class="meta-card" data-id="${meta.id}"${styleTint} style="background:#0f1116;border:1px solid #26262b;border-radius:16px;overflow:hidden;">
         <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #26262b;overflow:hidden;">
-          <div style="width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-            ${expIcon}
+          ${expIcon}
+          <div style="flex:1;min-width:0;overflow:hidden;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-weight:700;font-size:0.9rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(meta.name)}">${esc(meta.name)}</span>
+              <span style="font-size:0.6rem;color:${expTintColor(meta)};background:#1a1c24;padding:2px 6px;border-radius:10px;white-space:nowrap;flex-shrink:0;max-width:80px;overflow:hidden;text-overflow:ellipsis;">${esc(meta.expansion || '—')}</span>
+              ${pinBtn}
+            </div>
+            <div style="margin-top:6px;height:3px;background:#2a2c35;border-radius:2px;overflow:hidden;">
+              <div style="width:${dt.done ? '100' : '0'}%;height:100%;background:linear-gradient(90deg,#7bc2ff,#a0ffc8);border-radius:2px;transition:width 0.3s ease;"></div>
+            </div>
           </div>
-          <div style="flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;gap:8px;">
-            <span style="font-weight:700;font-size:0.9rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(meta.name)}">${esc(meta.name)}</span>
-            <span style="font-size:0.6rem;color:${expTintColor(meta)};background:#1a1c24;padding:2px 6px;border-radius:10px;white-space:nowrap;flex-shrink:0;max-width:80px;overflow:hidden;text-overflow:ellipsis;">${esc(meta.expansion || '—')}</span>
-            ${pinBtn}
-          </div>
-        </div>
-        <div style="height:3px;background:#2a2c35;overflow:hidden;">
-          <div style="width:${dt.done ? '100' : '0'}%;height:100%;background:linear-gradient(90deg,#7bc2ff,#a0ffc8);transition:width 0.3s ease;"></div>
         </div>
         <div style="padding:0;display:flex;flex-direction:column;gap:0;">
-          <div style="display:flex;align-items:center;gap:12px;padding:8px 12px;background:#0a0c10;border-radius:12px;border:1px solid ${dt.done ? '#2a6a4a' : '#26262b'};transition:all 0.2s ease;">
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 12px 3px 12px;background:#0a0c10;border-radius:12px;border:1px solid ${dt.done ? '#2a6a4a' : '#26262b'};transition:all 0.2s ease;">
             <div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
               <span style="font-size:0.65rem;color:${inst.state === 'active' ? '#a0ffc8' : (inst.state === 'soon' ? '#ffd36b' : '#7bc2ff')};background:#1a1c24;padding:2px 6px;border-radius:12px;">${inst.state === 'active' ? 'ACTIVO' : (inst.state === 'soon' ? 'PRÓXIMO' : 'MÁS TARDE')}</span>
             </div>
@@ -593,13 +591,13 @@
               ${localWindows.length ? '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:4px;">' + localWindows.slice(0,12).map(function(lhhm, idx){ var hhmm = meta.windowsUTC[idx]; var wStart = localDateFromUTC_HHMM(hhmm); var wEnd = new Date(wStart.getTime() + (meta.durationMin || 15)*60000); var now = new Date(); var wState = (now >= wStart && now < wEnd) ? 'active' : (wStart > now && ((wStart - now)/60000) <= SOON_MIN) ? 'soon' : 'later'; var chipColor = wState === 'active' ? '#a0ffc8' : (wState === 'soon' ? '#ffd36b' : '#9aa2b8'); var chipBg = wState === 'active' ? 'rgba(160,255,200,0.12)' : (wState === 'soon' ? 'rgba(255,211,107,0.12)' : '#1a1c24'); var chipBorder = wState === 'active' ? 'rgba(160,255,200,0.3)' : (wState === 'soon' ? 'rgba(255,211,107,0.3)' : '#2a2c35'); return '<span style="font-size:0.6rem;color:' + chipColor + ';background:' + chipBg + ';padding:1px 4px;border-radius:8px;border:1px solid ' + chipBorder + ';text-align:center;">' + esc(lhhm) + '</span>'; }).join('') + '</div>' : ''}
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;padding:8px 16px 8px 16px;">
-            ${activeWp ? '<button class="m-copy" data-copy="' + esc(activeWp) + '" title="' + esc(wpTitle) + '" style="background:none;border:none;cursor:pointer;padding:2px;opacity:0.7;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.7\'"><img src="assets/icons/733330.png" width="24" height="24" alt="Waypoint"></button>' : ''}
-            ${mapBtn ? '<a href="' + mapHref + '" target="_blank" rel="noopener" title="Mapa" style="opacity:0.7;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.7\'"><img src="assets/icons/1770688.png" width="24" height="24" alt="Mapa"></a>' : ''}
-            <button class="m-share" data-id="${meta.id}" title="Compartir" style="background:none;border:none;cursor:pointer;padding:2px;opacity:0.7;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'"><img src="assets/icons/3380750.png" width="24" height="24" alt="Compartir"></button>
-            ${wikiHtml ? '<a href="' + esc(meta.wiki) + '" target="_blank" rel="noopener" title="Wiki" style="opacity:0.7;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.7\'"><img src="assets/icons/1602819.png" width="24" height="24" alt="Wiki"></a>' : ''}
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 16px 5px 16px;">
+            ${activeWp ? '<button class="m-copy" data-copy="' + esc(activeWp) + '" title="' + esc(wpTitle) + '" style="background:none;border:none;cursor:pointer;padding:2px;opacity:0.7;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.7\'"><img src="assets/icons/733330.png" width="32" height="32" alt="Waypoint"></button>' : ''}
+            ${mapBtn ? '<a href="' + mapHref + '" target="_blank" rel="noopener" title="Mapa" style="opacity:0.7;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.7\'"><img src="assets/icons/1770688.png" width="32" height="32" alt="Mapa"></a>' : ''}
+            <button class="m-share" data-id="${meta.id}" title="Compartir" style="background:none;border:none;cursor:pointer;padding:2px;opacity:0.7;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'"><img src="assets/icons/3380750.png" width="32" height="32" alt="Compartir"></button>
+            ${wikiHtml ? '<a href="' + esc(meta.wiki) + '" target="_blank" rel="noopener" title="Wiki" style="opacity:0.7;" onmouseover="this.style.opacity=\'1\'" onmouseout="this.style.opacity=\'0.7\'"><img src="assets/icons/1602819.png" width="32" height="32" alt="Wiki"></a>' : ''}
           </div>
-          ${foot ? '<div style="padding:4px 16px 8px 16px;">' + foot + '</div>' : ''}
+${foot ? '<div style="padding:0 16px 8px 16px;margin-top:0!important;border-top:none!important;padding-top:0!important;">' + foot + '</div>' : ''}
         </div>
       </article>`;
   }
