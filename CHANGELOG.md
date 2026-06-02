@@ -8,6 +8,27 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [6.6.1] - 2026-06-02
+
+### Changed
+- **Meta & Eventos — Rediseño de cards (meta.js v3.4.0)**:
+  - Cards rediseñadas con estructura unificada estilo Raids
+  - Barra de progreso dentro del header (como en Raids)
+  - Íconos de expansión con assets locales 42x42 (sin contenedor ni glow)
+  - Horarios convertidos a hora local con colores semánticos por ventana
+  - Estado "Completado/Pendiente" con íconos locales (156108/156107)
+  - Íconos de acción 32x32 (Waypoint, Mapa, Compartir, Wiki)
+  - Wiki redirige a español (`wiki-es.guildwars2.com`)
+  - Preview de infusiones con hover restaurado
+  - Eliminada caché duplicada de flags (~90 líneas menos)
+  - `_debug()` expuesto: `window._metaFlags`, `window._metaSeed`
+- **Nuevos assets**: `assets/icons/expansions/` — 10 íconos locales (core.png, HoT.png, PoF.png, EoD.webp, SoTO.webp, JW.webp, VoE.webp, ls2.png, ls4.png, IS LS5.png)
+
+### Fixed
+- **Modal de API Keys**: no se bloquea si hay keys sin acceso al juego (try/catch en `boot()`)
+
+---
+
 ## [6.6.0] - 2026-05-30
 
 ### Added

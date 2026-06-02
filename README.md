@@ -31,6 +31,29 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 
 ---
 
+## ✨ Novedades principales — v6.6.1
+
+### 🎨 Rediseño de Meta & Eventos (meta.js v3.4.0)
+
+**Las cards de Meta fueron rediseñadas con una estructura unificada inspirada en Raid Tracker.**
+
+| Característica | Descripción |
+|----------------|-------------|
+| **Cards unificadas** | Misma estructura que Raids: header + barra de progreso + estado + horarios + íconos + drop |
+| **Barra de progreso** | Dentro del header, como en Raids |
+| **Íconos de expansión** | Assets locales 42x42, sin contenedor ni glow |
+| **Horarios en hora local** | Con colores semánticos por ventana (verde/ámbar/azul) |
+| **Estado Completado/Pendiente** | Con íconos locales 156108/156107 |
+| **Íconos de acción** | 32x32 (Waypoint, Mapa, Compartir, Wiki) |
+| **Wiki en español** | Redirige automáticamente a `wiki-es.guildwars2.com` |
+
+**Mejoras internas:**
+- Preview de infusiones con hover restaurado
+- Eliminada caché duplicada de flags (~90 líneas menos)
+- `_debug()` expuesto: `window._metaFlags`, `window._metaSeed`
+
+---
+
 ## ✨ Novedades principales — v6.6.0
 
 ### 📦 Dashboard de Inventario Multi-Cuenta (inventory-dashboard.js v1.0.0)
@@ -793,7 +816,7 @@ Definí en `index.html` (antes de router.js):
 | `js/activities.js` | **v3.19.6** | Actividades. **Glow en íconos de Ecto** |
 | `js/activities-theme.js` | v2.6.0 | Home Nodes + barra de horarios unificada con iconos GW2 |
 | `js/characters.js` | v2.3.0 | Panel de Personajes. **Íconos profesión locales. Subvista del InventoryHub** |
-| `js/meta.js` | **v3.3.1** | MetaEventos. **Sin marcado manual (solo API). Ícono expansión con glow, chips timing, tag infusión celestial** |
+| `js/meta.js` | **v3.4.0** | MetaEventos. **Rediseño cards estilo Raids, barra progreso interna, íconos expansión locales 42x42, horarios hora local, wiki español** |
 | `js/meta-theme.js` | **v1.4.2** | Tema visual de Meta. **Solo border-left** |
 | `js/wallet-theme.js` | **v1.3.1** | Tema visual de Cartera. **Glow en ícono + glow neutro para divisas sin color** |
 | `js/achievements-theme.js` | **v1.1.1** | Tema visual de Logros. **Solo border-left** |
@@ -1027,6 +1050,7 @@ assets/icons/
 
 Este proyecto sigue **Semantic Versioning** (SemVer).
 
+- `v6.6.1`: **Rediseño de Meta & Eventos** — Cards rediseñadas estilo Raids, barra de progreso interna, íconos de expansión locales 42x42, horarios en hora local, wiki español, ~90 líneas menos de código
 - `v6.6.0`: **Dashboard de Inventario Multi-Cuenta + Fixes** — Nuevo módulo `inventory-dashboard.js` v1.0.0, tabla comparativa de ítems multi-cuenta, sets con sistema de tiers (T6/T5/T4/T3), carga en 2 fases, flash ámbar en deltas, badge de oro total, fix F5 en Tienda WV, `_debug()` en RaidTracker, skeleton ampliado en WV Shop
 - `v6.5.1`: **Dashboard de Objetivos Multi-Cuenta** — Nuevo módulo `wv-objectives-dashboard.js` v1.0.0, tabla comparativa de objetivos semanales, KPIs con íconos y mini barra de progreso, countdown semanal, Purchase Detail movido al nav de tabs, eliminado `#wvPDOpenBtn` legacy
 - `v6.5.0`: **Conversor Modal + Comercio** — Conversor en modal con 3 tabs (Cambio, Transacciones, Populares), 4 nuevas funciones de commerce en api-gw2.js, glow neutro en divisas sin color, cap de caché de items

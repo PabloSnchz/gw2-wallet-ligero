@@ -1,8 +1,8 @@
 /*!
  * js/activities.js — Panel de Actividades (Objetivos / Home Nodes)
- * v3.19.5 (2026-04-05) - Persistencia robusta de Piedras Vetustas (sin Promesas como claves)
+ * v3.19.6 (2026-04-05) - Persistencia robusta de Piedras Vetustas (sin Promesas como claves)
  *
- * CAMBIOS v3.19.5:
+ * CAMBIOS v3.19.6:
  * - Creada función síncrona hashToken16Sync() para evitar Promesas como claves de objeto
  * - Persistencia independiente de piedras en localStorage con clave gn_activities_stones_<hash>_<semana>
  * - setStones y setWeeklyKey ahora usan hash síncrono, garantizando claves strings
@@ -1156,7 +1156,7 @@
       ensurePanel();
       wireGlobal();
       state.inited = true;
-      console.info(LOG, 'ready v3.19.5 — Persistencia robusta de Piedras Vetustas');
+      console.info(LOG, 'ready v3.19.6 — Persistencia robusta de Piedras Vetustas');
     },
     activate: activate,
     deactivate: deactivate,
