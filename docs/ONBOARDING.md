@@ -109,6 +109,9 @@ Agregado método `_debug()` a `RaidTracker` (v1.7.0). Expone: version, inited, a
 ### Archivos nuevos (v6.6.0)
 - `js/inventory-dashboard.js` — Dashboard de Inventario Multi-Cuenta con sets, tiers y carga en 2 fases
 
+### Archivos nuevos (v6.6.2)
+- `js/strike-tracker.js` — Seguimiento de Strike Missions con grid optimizado, KPIs y navegación integrada
+
 ---
 
 ## 🚀 Novedades v6.5.0 (MAYO 2026) — Modal del Conversor + Comercio + Mejoras
@@ -1447,8 +1450,102 @@ assets/icons/raids/
 - Nuevo enlace en sidebar (debajo de Actividades, antes de Personajes)
 - Script `js/raid-tracker.js` agregado
 
-## 🗺️ Visión general del proyecto
+### 🆕 Strike Tracker — Seguimiento de Strike Missions (strike-tracker.js v1.0.0)
 
+**Nuevo módulo que permite gestionar el progreso semanal de Strike Missions (encuentros de incursión) desde la unificación de febrero de 2026.**
+
+**Características principales:**
+
+| Característica | Descripción |
+|----------------|-------------|
+| **15 strikes organizadas por expansión** | Core (1), Icebrood Saga (7), EoD (4), SotO (2), VoE (1) |
+| **Marcado automático** | Vía API `/v2/account/raids` (mismo endpoint que raids) |
+| **KPIs semanales** | Strikes completadas, LI farmeables (15), porcentaje de progreso |
+| **Grid de 3 columnas optimizado** | Col1: Juego base + EoD, Col2: Icebrood Saga, Col3: SotO + VoE |
+| **Modal informativo** | Descripción, estrategia (5+ bullets) y enlace a video tutorial por strike |
+| **Diferenciación visual** | Modo NORMAL (�), DESAFÍO (⚔️), LEGENDARIO (🏆) |
+| **Reset semanal** | Automático según lunes 07:30 UTC (misma lógica que raids) |
+| **Navegación integrada** | Botones Raids/Strikes en el header para intercambiar entre módulos |
+| **LI sincronizado** | El badge de LI disponibles se sincroniza automáticamente con Raid Tracker |
+
+**Estructura de strikes por expansión:**
+
+| Expansión | Strikes | Con CM/LM |
+|-----------|---------|-----------|
+| Core Game | Vieja Corte del León | CM ✅ |
+| Icebrood Saga | Shiverpeaks Pass, Voice & Claw, Fraenir, Boneskinner, Whisper of Jormag, Forging Steel, Cold War | — |
+| End of Dragons | Aetherblade Hideout, Xunlai Jade Junkyard, Kaineng Overlook, Harvest Temple | CM ✅ |
+| Secrets of the Obscure | Cosmic Observatory, Temple of Febe | CM + LM ✅ |
+| Visions of Eternity | Guardian's Glade | CM ✅ |
+
+**APIs consumidas:**
+- `GW2Api.getAccountRaids(token)` → obtiene IDs de strikes completadas esta semana
+
+**Persistencia:**
+- No requiere localStorage (la API es la fuente de verdad)
+- Los datos se recargan automáticamente al cambiar de API key
+
+**Ruta:** `#/account/strikes`
+
+**Acceso:**
+- Botones "Raids" y "Strikes" en el header del panel de Raids
+- El estado de la vista activa se guarda en localStorage (`raid_strike_view`)
+
+**Navegación entre módulos:**
+- Al hacer clic en **Raids**: se oculta Strike Tracker, se muestra Raid Tracker
+- Al hacer clic en **Strikes**: se oculta Raid Tracker, se muestra Strike Tracker
+- El badge de LI disponibles permanece visible en ambos módulos
+
+**Estructura del header unificada:**
+
+┌────────────────────────────────────────────────────────────────────────────────┐
+│ 🔥 Seguimiento de Raids [LI Disponible: 0]                                     │
+│ [Raids] [Strikes] [Timer UTC/Local]                                            │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+**KPIs del módulo:**
+
+| KPI | Descripción |
+|-----|-------------|
+| ⚔️ Strikes completadas | X / 15 encuentros de incursión |
+| 🔮 Conocimiento legendario | X / 15 LI farmeables esta semana |
+| 📊 Progreso semanal | Porcentaje + barra + % de LI completados |
+
+**Assets requeridos:**
+assets/icons/raids/bosses/
+├── old_lions_court.png
+├── shiverpeaks_pass.png
+├── voice_claw.png
+├── fraenir.png
+├── boneskinner.png
+├── whisper_of_jormag.png
+├── forging_steel.png
+├── cold_war.png
+├── aetherblade_hideout.png
+├── xunlai_jade_junkyard.png
+├── kaineng_overlook.png
+├── harvest_temple.png
+├── cosmic_observatory.png
+├── temple_of_febe.png
+├── guardians_glade.png
+└── default.png (fallback)
+
+
+**Cambios en `router.js`:**
+- Nueva ruta `#/account/strikes`
+- Agregado `strikeTrackerPanel` a `showPanel()`
+- Agregado caso en `onKeySelectChange()` para recargar al cambiar de key
+- Agregado `updateSidebarFor('strikes')`
+
+**Cambios en `index.html`:**
+- Nuevo panel `#strikeTrackerPanel`
+- Título del panel con badge LI incorporado
+- Script `js/strike-tracker.js` agregado después de `raid-tracker.js`
+
+**Archivos nuevos (v6.6.2):**
+- `js/strike-tracker.js` — Módulo de seguimiento de Strike Missions
+
+## 🗺️ Visión general del proyecto
 Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navegación coordinados por router + eventos globales.
 
 ### Rutas principales
@@ -1463,6 +1560,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 - `#/welcome` — Pantalla de Bienvenida
 - `#/wallet/dashboard` — Dashboard de Cartera Multi-Cuenta
 - `#/account/raids` — Seguimiento de Raids
+- `#/account/strikes` — Seguimiento de Strike Missions (NUEVO v6.6.2)
 - `#/account/wizards-vault/objectives-dashboard` — Dashboard de Objetivos Multi-Cuenta (NUEVO)
 - `#/inventory/dashboard` — Dashboard de Inventario Multi-Cuenta (NUEVO v6.6.0)
 
@@ -1491,6 +1589,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/gist-sync.js` | v1.0.0 | Sincronización con GitHub Gist |
 | `js/welcome-panel.js` | v1.4.0 | Pantalla de Bienvenida |
 | `js/raid-tracker.js` | v1.7.0 | Seguimiento de Raids Semanales |
+| `js/strike-tracker.js` | **v1.0.0** | **Seguimiento de Strike Missions (NUEVO v6.6.2)** |
 | `js/wallet-dashboard.js` | **v2.5.0** | Dashboard de Cartera — **KPIs con border-left semántico + glow, tabla unificada** |
 | `js/inventory-dashboard.js` | **v1.0.0** | **Dashboard de Inventario Multi-Cuenta — Tabla comparativa de ítems, sets con tiers, carga en 2 fases** |
 | `js/router.js` | **v2.17.0** | Router desacoplado (~800 líneas). **Soporta InventoryHub, WV Objectives Dashboard. Sidebar sin conversor. Purchase Detail en nav tabs.** |
@@ -2378,6 +2477,7 @@ DEFER (módulos, en orden):
   - gist-sync.js
   - welcome-panel.js
   - raid-tracker.js
+  - strike-tracker.js (NUEVO v6.6.2)
   - wv-shop-ui.js
   - wv-objectives-ui.js
   - wv-purchase-detail.js
@@ -2809,4 +2909,5 @@ SIN defer (temas, al final):
 - ✅ **Inventory Dashboard v1.0.0 productivo**: 3 sets, sistema de tiers, carga en 2 fases, flash ámbar
 - ✅ **F5 en Tienda WV**: corregido, mantiene la tab activa
 - ✅ **RaidTracker `_debug()`**: método de diagnóstico expuesto
+- ✅ **Strike Tracker v1.0.0**: seguimiento de 15 strikes, grid 3 columnas, navegación integrada con Raids, badge LI sincronizado
 ```

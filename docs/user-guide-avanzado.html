@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bóveda del Gato Negro — Guía de Usuario Avanzada v6.5.1</title>
+  <title>Bóveda del Gato Negro — Guía de Usuario Avanzada v6.6.2</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
@@ -52,6 +52,20 @@
     td { background:#0a0c10; }
     .toc { margin:20px 0; }
     .toc li { margin:4px 0; }
+    .badge {
+      display: inline-block;
+      background: #2a2c35;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    .badge-new {
+      background: #1a3a2a;
+      color: #a0ffc8;
+      border: 1px solid #2a6a4a;
+    }
     @media (max-width:600px) {
       .container { padding:20px; }
       h1 { font-size:1.6rem; }
@@ -66,7 +80,7 @@
   <img src="../assets/logo-gato-negro.png" alt="Logo">
   Bóveda del Gato Negro
 </h1>
-<div class="version">📘 Guía de Usuario Avanzada — v6.5.1 — Mayo 2026</div>
+<div class="version">📘 Guía de Usuario Avanzada — v6.6.2 — Junio 2026</div>
 
 <p>Esta guía cubre cada módulo en detalle con tres preguntas clave: <strong>¿Qué es? ¿Cómo se usa? ¿Para qué sirve?</strong></p>
 
@@ -78,8 +92,10 @@
   <li><a href="#wv">Cámara del Brujo</a></li>
   <li><a href="#actividades">Actividades</a></li>
   <li><a href="#inventario">Inventario y Personajes</a></li>
+  <li><a href="#inventario-dashboard">Dashboard de Inventario Multi-Cuenta</a> <span class="badge badge-new">NUEVO</span></li>
   <li><a href="#conversor">Conversor de Divisas</a></li>
-  <li><a href="#raids">Raid Tracker</a></li>
+  <li><a href="#raids">Raid Tracker</a> <span class="badge badge-new">ACTUALIZADO</span></li>
+  <li><a href="#strikes">Strike Tracker</a> <span class="badge badge-new">NUEVO</span></li>
   <li><a href="#dashboard">Dashboard de Cartera Multi-Cuenta</a></li>
   <li><a href="#cuentas">Panel de Cuentas</a></li>
   <li><a href="#pd">Purchase Detail</a></li>
@@ -111,7 +127,7 @@
 <!-- ========== META ========== -->
 <h2 id="meta">2. Meta & Eventos</h2>
 <h3>¿Qué es?</h3>
-<p>Un panel que muestra <strong>todos los meta eventos y world bosses</strong> con sus horarios en tu zona horaria local, estado (activo/próximo/más tarde), y si ya los completaste hoy.</p>
+<p>Un panel que muestra <strong>todos los meta eventos y world bosses</strong> con sus horarios en tu zona horaria local, estado (activo/próximo/más tarde), y si ya los completaste hoy. Las tarjetas tienen una estructura unificada estilo Raids.</p>
 <h3>¿Cómo se usa?</h3>
 <ol>
   <li>Las tarjetas muestran nombre, mapa, tipo, y horarios</li>
@@ -119,6 +135,9 @@
   <li>Clic en <strong>📌</strong> para fijar hasta 6 favoritos</li>
   <li>Clic en <strong>Horarios</strong> para ver todas las ventanas del día</li>
   <li>El botón <strong>Refrescar estado</strong> consulta si ya lo hiciste hoy</li>
+  <li>Cada tarjeta tiene una barra de progreso dentro del header</li>
+  <li>Los horarios se muestran en tu hora local con colores semánticos</li>
+  <li>Clic en <strong>Wiki</strong> abre la página en español (<code>wiki-es.guildwars2.com</code>)</li>
 </ol>
 <h3>¿Para qué sirve?</h3>
 <ul>
@@ -180,7 +199,7 @@
 </ul>
 <h4>Ecto</h4>
 <ul>
-  <li>✅ = ya lo hiciste hoy. ⏳ = pendiente.</li>
+  <li>Los íconos tienen glow: ✅ verde si está hecho, ⏳ ámbar si pendiente.</li>
 </ul>
 <h4>Fractales</h4>
 <ul>
@@ -188,7 +207,7 @@
 </ul>
 <h4>Llave del León Negro</h4>
 <ul>
-  <li>Detecta automáticamente si ya reclamaste la llave esta semana.</li>
+  <li>Detecta automáticamente si ya reclamaste la llave esta semana (Thief nivel 10+, &lt;7 días, misma semana).</li>
 </ul>
 <h4>Leivas</h4>
 <ul>
@@ -208,7 +227,7 @@
 <!-- ========== INVENTARIO ========== -->
 <h2 id="inventario">6. Inventario y Personajes</h2>
 <h3>¿Qué es?</h3>
-<p>Un buscador unificado que indexa tu <strong>banco, almacenamiento de materiales y armería legendaria</strong>.</p>
+<p>Un buscador unificado que indexa tu <strong>banco, almacenamiento de materiales y armería legendaria</strong>. Es la pantalla principal de <code>#/account/characters</code>.</p>
 <h3>¿Cómo se usa?</h3>
 <ol>
   <li>Navegá a <strong>Inventario y Personajes</strong> desde la sidebar</li>
@@ -216,6 +235,9 @@
   <li>Usá el buscador para encontrar objetos por nombre</li>
   <li>Filtrá por rareza con el dropdown o los chips</li>
   <li>Clic en un KPI o encabezado para ir a la vista detallada</li>
+  <li>En la vista de Banco, los slots se muestran en grid de 10×3 con paginación cada 30</li>
+  <li>En la vista de Materiales, los items están organizados en 10 categorías como en el juego</li>
+  <li>Clic en cualquier ítem abre un modal con stats completos, valor NPC y enlace a Wiki en español</li>
 </ol>
 <h3>¿Para qué sirve?</h3>
 <ul>
@@ -224,76 +246,229 @@
   <li>Ver tus legendarios en la armería</li>
 </ul>
 
-<!-- ========== CONVERSOR ========== -->
-<h2 id="conversor">7. Conversor de Divisas</h2>
+<!-- ========== DASHBOARD INVENTARIO ========== -->
+<h2 id="inventario-dashboard">7. Dashboard de Inventario Multi-Cuenta <span class="badge badge-new">NUEVO</span></h2>
 <h3>¿Qué es?</h3>
-<p>Una herramienta para <strong>calcular el costo de gemas en oro y viceversa</strong>, con tabs adicionales para transacciones activas e items populares del TP.</p>
+<p>Un dashboard que muestra los ítems del inventario (banco + materiales + personaje activo) de <strong>todas tus cuentas</strong> en una tabla comparativa. Ruta: <code>#/inventory/dashboard</code>.</p>
+<h3>¿Cómo se usa?</h3>
+<ol>
+  <li>Navegá a <strong>Inventario y Personajes</strong> → botón <strong>Dashboard</strong> en el toolbar</li>
+  <li>Seleccioná uno de los 3 sets predefinidos: <strong>Alto Valor</strong>, <strong>Materiales de artesanía</strong>, o <strong>Símbolos y demás</strong></li>
+  <li>En el set "Materiales de artesanía", podés activar/desactivar tiers (T6, T5, T4, T3) con checkboxes</li>
+  <li>Usá el dropdown de ítems para seleccionar qué ítems querés ver en la tabla</li>
+  <li>La tabla muestra cada cuenta como fila y cada ítem como columna</li>
+  <li>Los KPIs superiores muestran cantidades totales y valor en oro usando precios del Trading Post</li>
+  <li>Ordená por cualquier columna haciendo clic en el encabezado</li>
+  <li>Usá los filtros para ocultar cuentas vacías, columnas vacías o cuentas main</li>
+  <li>Cuando el personaje activo aporta ítems nuevos, la celda parpadea en ámbar y queda fija hasta que pasás el mouse</li>
+</ol>
+<h3>¿Para qué sirve?</h3>
+<ul>
+  <li>Comparar el inventario entre todas tus cuentas</li>
+  <li>Saber qué cuenta tiene más materiales de artesanía de cierto tier</li>
+  <li>Calcular el valor total de tu inventario en oro</li>
+  <li>Identificar cuentas con materiales valiosos acumulados</li>
+</ul>
+
+<!-- ========== CONVERSOR ========== -->
+<h2 id="conversor">8. Conversor de Divisas</h2>
+<h3>¿Qué es?</h3>
+<p>Una herramienta para <strong>calcular el costo de gemas en oro y viceversa</strong>, con tabs adicionales para transacciones activas e items populares del TP. Se accede desde un modal.</p>
 <h3>¿Cómo se usa?</h3>
 <h4>Tab Cambio</h4>
 <ol>
   <li>Abrí el conversor desde Cartera → botón <strong>💎 Conversor</strong></li>
-  <li>Ingresá gemas u oro, o usá los atajos rápidos</li>
-  <li>El índice de conveniencia te dice si es buen momento para comprar</li>
+  <li>Ingresá gemas u oro, o usá los atajos rápidos (100, 400, 800, 1200 gemas / 10g, 100g, 250g)</li>
+  <li>El índice de conveniencia te dice si es buen momento para comprar (basado en 400 gemas)</li>
 </ol>
 <h4>Tab Transacciones</h4>
 <ol>
   <li>Requiere API Key con permiso <strong>tradingpost</strong></li>
-  <li>Muestra tus órdenes activas de compra/venta con KPIs de totales</li>
+  <li>Muestra tus órdenes activas de compra/venta con KPIs de totales (compras, ventas, balance)</li>
 </ol>
 <h4>Tab Populares</h4>
 <ol>
   <li>Items con mayor volumen en el TP, filtrables por rareza</li>
   <li>Ideal para ver qué legendarias se venden más rápido</li>
 </ol>
+<h3>¿Para qué sirve?</h3>
+<ul>
+  <li>Saber cuánto oro necesitás para comprar X gemas</li>
+  <li>Evaluar si conviene comprar gemas ahora o esperar</li>
+  <li>Monitorear tus órdenes activas en el TP sin abrir el juego</li>
+</ul>
 
-<!-- ========== RAIDS ========== -->
-<h2 id="raids">8. Raid Tracker</h2>
+<!-- ========== RAID TRACKER ========== -->
+<h2 id="raids">9. Raid Tracker <span class="badge badge-new">ACTUALIZADO</span></h2>
 <h3>¿Qué es?</h3>
-<p>Un panel que muestra las <strong>8 alas de raid</strong> con sus 33 encuentros, marcando automáticamente los completados esta semana.</p>
+<p>Un panel que muestra las <strong>8 alas de raid</strong> con sus encuentros, marcando automáticamente los completados esta semana vía API. El header unificado permite alternar entre Raids y Strikes.</p>
+
+<h3>Header unificado</h3>
+<p>El panel de Raids tiene un header con:</p>
+<ul>
+  <li>Título "Seguimiento de Raids"</li>
+  <li>Badge <strong>LI Disponible</strong> (margen derecho, misma fila que el título)</li>
+  <li>Botones <strong>Raids</strong> y <strong>Strikes</strong> para navegar entre módulos</li>
+  <li>Barra de horarios (UTC, Local, Reset diario, Reset semanal)</li>
+</ul>
+
+<h3>Estructura de alas y encuentros</h3>
+<table>
+  <thead><tr><th>Ala</th><th>Nombre</th><th>Encuentros</th><th>LI</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Valle Espiritual</td><td>4</td><td>4</td></tr>
+    <tr><td>2</td><td>Paso de la Salvación</td><td>3</td><td>3</td></tr>
+    <tr><td>3</td><td>Fortaleza de los Fieles</td><td>4</td><td>4</td></tr>
+    <tr><td>4</td><td>Bastión del Penitente</td><td>4</td><td>4</td></tr>
+    <tr><td>5</td><td>Salón de los Cadenas</td><td>4</td><td>4</td></tr>
+    <tr><td>6</td><td>Mito de Mythwright</td><td>3</td><td>3</td></tr>
+    <tr><td>7</td><td>La Llave de Ahdashim</td><td>4</td><td>3</td></tr>
+    <tr><td>8</td><td>Monte Balrior</td><td>3</td><td>3</td></tr>
+  </tbody>
+</table>
+<p><strong>Total de LI por semana: 28</strong> (15 HoT + 10 PoF + 3 JW)</p>
+
+<h3>KPIs del módulo</h3>
+<ul>
+  <li><strong>⚔️ Encuentros completados</strong> — X / 29 (jefes + eventos)</li>
+  <li><strong>🔮 Conocimiento legendario</strong> — X / 28 (LI farmeados esta semana)</li>
+  <li><strong>📊 Progreso semanal</strong> — porcentaje + barra + % de LI completados</li>
+</ul>
+
 <h3>¿Cómo se usa?</h3>
 <ol>
   <li>Navegá a <strong>Raids</strong> desde la sidebar</li>
-  <li>Cada ala muestra sus encuentros con ✅ o ❌</li>
-  <li>Clic en <strong>Detalle</strong> para ver estrategia, recompensas y video</li>
-  <li>KPIs superiores muestran progreso semanal y LI disponibles</li>
+  <li>Cada ala muestra sus encuentros con ✅ Completado o ❌ Pendiente</li>
+  <li>Clic en <strong>Detalle</strong> para ver descripción, estrategia, recompensas y enlaces a wiki/video</li>
+  <li>Los encuentros de tipo <strong>JEFE</strong> (👑) y <strong>EVENTO</strong> (⚡) están diferenciados visualmente</li>
+  <li>Usá los botones <strong>Raids</strong> y <strong>Strikes</strong> para intercambiar entre módulos</li>
 </ol>
+<h3>¿Para qué sirve?</h3>
+<ul>
+  <li>Llevar el control semanal de raids sin planillas externas</li>
+  <li>Ver qué encuentros te faltan para completar el ala</li>
+  <li>Acceder rápido a guías y videos de cada encuentro</li>
+  <li>Calcular cuántos LI podés farmear esta semana</li>
+</ul>
 
-<!-- ========== DASHBOARD ========== -->
-<h2 id="dashboard">9. Dashboard de Cartera Multi-Cuenta</h2>
+<!-- ========== STRIKE TRACKER ========== -->
+<h2 id="strikes">10. Strike Tracker <span class="badge badge-new">NUEVO</span></h2>
+<h3>¿Qué es?</h3>
+<p>Un panel que muestra el progreso semanal de <strong>Strike Missions</strong> (encuentros de incursión). Desde la unificación de febrero de 2026, las strikes se reportan en el mismo endpoint que las raids. El módulo tiene el mismo header unificado que Raid Tracker.</p>
+
+<h3>Estructura de strikes por expansión</h3>
+<table>
+  <thead><tr><th>Expansión</th><th>Strikes</th><th>Con CM/LM</th></tr></thead>
+  <tbody>
+    <tr><td>Core Game</td><td>Vieja Corte del León</td><td>CM ✅</td></tr>
+    <tr><td>Icebrood Saga</td><td>Shiverpeaks Pass, Voice & Claw, Fraenir, Boneskinner, Whisper of Jormag, Forging Steel, Cold War</td><td>—</td></tr>
+    <tr><td>End of Dragons</td><td>Aetherblade Hideout, Xunlai Jade Junkyard, Kaineng Overlook, Harvest Temple</td><td>CM ✅</td></tr>
+    <tr><td>Secrets of the Obscure</td><td>Cosmic Observatory, Temple of Febe</td><td>CM + LM ✅</td></tr>
+    <tr><td>Visions of Eternity</td><td>Guardian's Glade</td><td>CM ✅</td></tr>
+  </tbody>
+</table>
+<p><strong>Total de strikes: 15</strong> (1 + 7 + 4 + 2 + 1)</p>
+<p><strong>LI por strikes: 15 por semana</strong></p>
+
+<h3>Grid de 3 columnas optimizado</h3>
+<ul>
+  <li><strong>Columna 1:</strong> Juego base (arriba) + End of Dragons (abajo)</li>
+  <li><strong>Columna 2:</strong> Sangre y Hielo (Icebrood Saga) — toda la columna</li>
+  <li><strong>Columna 3:</strong> Secrets of the Obscure (arriba) + Visions of Eternity (abajo)</li>
+</ul>
+
+<h3>KPIs del módulo</h3>
+<ul>
+  <li><strong>⚔️ Strikes completadas</strong> — X / 15</li>
+  <li><strong>🔮 Conocimiento legendario</strong> — X / 15 (LI farmeados esta semana)</li>
+  <li><strong>📊 Progreso semanal</strong> — porcentaje + barra + % de LI completados</li>
+</ul>
+
+<h3>Diferenciación visual por dificultad</h3>
+<ul>
+  <li><strong>📋 NORMAL</strong> — azul (#7bc2ff)</li>
+  <li><strong>⚔️ DESAFÍO (CM)</strong> — ámbar (#ffd36b)</li>
+  <li><strong>🏆 LEGENDARIO (LM)</strong> — púrpura (#974EFF)</li>
+</ul>
+
+<h3>¿Cómo se usa?</h3>
+<ol>
+  <li>Navegá a <strong>Raids</strong> desde la sidebar</li>
+  <li>En el header, hacé clic en el botón <strong>Strikes</strong></li>
+  <li>Se muestra el grid de strikes organizado por expansión</li>
+  <li>Cada strike tiene su estado (✅ Completada / ❌ Pendiente) y badge de dificultad</li>
+  <li>Clic en <strong>Detalle</strong> para ver descripción, estrategia y enlaces a wiki/video</li>
+  <li>Usá los botones <strong>Raids</strong> y <strong>Strikes</strong> para volver a Raids o mantenerte en Strikes</li>
+  <li>La vista activa (Raids o Strikes) se guarda automáticamente en localStorage</li>
+</ol>
+<h3>¿Para qué sirve?</h3>
+<ul>
+  <li>Llevar el control semanal de todas las Strike Missions</li>
+  <li>Ver qué strikes completaste y cuáles te faltan</li>
+  <li>Acceder rápido a guías y videos de cada strike</li>
+  <li>Calcular cuántos LI podés farmear adicionalmente (15 por semana)</li>
+</ul>
+
+<!-- ========== DASHBOARD CARTERA ========== -->
+<h2 id="dashboard">11. Dashboard de Cartera Multi-Cuenta</h2>
 <h3>¿Qué es?</h3>
 <p>Una tabla que compara <strong>todas tus cuentas</strong> mostrando los saldos de las divisas seleccionadas.</p>
 <h3>¿Cómo se usa?</h3>
 <ol>
   <li>Andá a <strong>Cartera</strong> → botón <strong>📊 Dashboard</strong></li>
   <li>Seleccioná divisas y ordená por columna</li>
-  <li>Los KPIs superiores muestran totales acumulados</li>
+  <li>Los KPIs superiores muestran totales acumulados con border-left de color y glow suave</li>
+  <li>La tabla tiene zebra striping y hover en filas</li>
 </ol>
+<h3>¿Para qué sirve?</h3>
+<ul>
+  <li>Comparar saldos entre cuentas</li>
+  <li>Ver qué cuenta tiene más oro, karma, o Aclamación Astral</li>
+  <li>Identificar cuentas con saldo bajo para farmear</li>
+</ul>
 
 <!-- ========== CUENTAS ========== -->
-<h2 id="cuentas">10. Panel de Cuentas</h2>
+<h2 id="cuentas">12. Panel de Cuentas</h2>
 <h3>¿Qué es?</h3>
-<p>Un gestor seguro de <strong>múltiples cuentas de GW2</strong> con cifrado local.</p>
+<p>Un gestor seguro de <strong>múltiples cuentas de GW2</strong> con cifrado local. Diseño "Profile Card" premium con jerarquía visual de 3 zonas.</p>
 <h3>¿Cómo se usa?</h3>
 <ol>
   <li>Usá el <strong>Asistente</strong> (4 pasos) para crear tu archivo .enc desde Excel</li>
   <li>O cargá directamente un archivo .enc con tu contraseña</li>
-  <li>Alterná entre vista tarjetas y tabla</li>
+  <li>Alterná entre vista tarjetas (Profile Card) y vista tabla con zebra striping</li>
+  <li>Las expansiones son colapsables con barra de progreso</li>
+  <li>Twitch y GeForce Now están siempre visibles con íconos de estado</li>
   <li>Clic en cualquier campo para copiarlo al portapapeles</li>
 </ol>
+<h3>¿Para qué sirve?</h3>
+<ul>
+  <li>Gestionar múltiples cuentas sin tener que recordar contraseñas</li>
+  <li>Tener a mano los datos de Twitch y GeForce Now de cada cuenta</li>
+  <li>Ver qué expansiones tiene cada cuenta</li>
+</ul>
 
-<!-- ========== PD ========== -->
-<h2 id="pd">11. Purchase Detail</h2>
+<!-- ========== PURCHASE DETAIL ========== -->
+<h2 id="pd">13. Purchase Detail</h2>
 <h3>¿Qué es?</h3>
 <p>Un panel de <strong>seguimiento de compras del Wizard's Vault</strong> que muestra tus cuentas, items fijados, y progreso.</p>
 <h3>¿Cómo se usa?</h3>
 <ol>
-  <li>Accedé desde la Tienda WV → botón <strong>Detalle de compras</strong></li>
+  <li>Accedé desde la Tienda WV → botón <strong>Compras</strong> en el nav de tabs</li>
   <li>La tabla muestra cada cuenta como fila y cada item fijado como columna</li>
   <li>KPIs superiores: AA disponible, necesaria, y delta</li>
+  <li>Usá los inputs manuales para marcar compras hechas</li>
+  <li>Cada celda tiene una barra de progreso compacta</li>
+  <li>El estado online se detecta automáticamente (actividad en los últimos 20 minutos)</li>
 </ol>
+<h3>¿Para qué sirve?</h3>
+<ul>
+  <li>Ver de un vistazo qué items faltan comprar en cada cuenta</li>
+  <li>Planificar cuánto AA necesitás farmear</li>
+  <li>Identificar cuentas con déficit de AA</li>
+</ul>
 
 <!-- ========== WV OBJECTIVES DASHBOARD ========== -->
-<h2 id="wv-dashboard">12. Dashboard de Objetivos WV</h2>
+<h2 id="wv-dashboard">14. Dashboard de Objetivos WV</h2>
 <h3>¿Qué es?</h3>
 <p>Un panel que compara los <strong>objetivos semanales del Wizard's Vault</strong> de todas tus cuentas en una sola tabla. Cada celda muestra el estado de un objetivo para una cuenta.</p>
 <h3>¿Cómo se usa?</h3>
@@ -315,7 +490,7 @@
 </ul>
 
 <!-- ========== BACKUP ========== -->
-<h2 id="backup">13. Backup y Restaurar</h2>
+<h2 id="backup">15. Backup y Restaurar</h2>
 <h3>¿Qué es?</h3>
 <p>Un sistema para exportar/importar toda tu configuración entre navegadores.</p>
 <h3>¿Cómo se usa?</h3>
@@ -323,25 +498,45 @@
   <li>Clic en <strong>Backup</strong> → descarga un archivo JSON</li>
   <li>En otro navegador, clic en <strong>Restaurar</strong> → seleccioná el archivo</li>
 </ol>
+<h3>¿Qué datos se guardan?</h3>
+<ul>
+  <li>API Keys (nombres, keys, key seleccionada)</li>
+  <li>Wizard's Vault (pins y marcas por temporada)</li>
+  <li>Wallet (divisas fijadas, snapshots, vista compacta)</li>
+  <li>Activities (toggles, home nodes marcados)</li>
+  <li>Characters (POIs asignados, historial de ubicaciones)</li>
+  <li>Meta (favoritos, "Hecho hoy")</li>
+  <li>Configuración global (welcome visto)</li>
+</ul>
 
 <!-- ========== GIST ========== -->
-<h2 id="gist">14. Sincronización con GitHub Gist</h2>
+<h2 id="gist">16. Sincronización con GitHub Gist</h2>
 <h3>¿Qué es?</h3>
 <p>Sincronización opcional de configuración en la nube con GitHub Gist.</p>
 <h3>¿Cómo se usa?</h3>
 <ol>
-  <li>Generá un token de GitHub con permiso <code>gist</code></li>
-  <li>En la Bóveda: <strong>Sincronizar</strong> → pegar token → Guardar</li>
-  <li>Usá <strong>Subir</strong> y <strong>Sincronizar desde la nube</strong></li>
+  <li>Generá un token de GitHub con permiso <code>gist</code> en <a href="https://github.com/settings/tokens" target="_blank">GitHub Settings</a></li>
+  <li>En la Bóveda: clic en <strong>Sincronizar</strong> (icono de nube) → pegar token → Guardar</li>
+  <li>Usá <strong>Subir configuración a la nube</strong> para guardar tus datos en el Gist</li>
+  <li>En otro dispositivo, repetí los pasos 1 y 2, luego usá <strong>Sincronizar desde la nube</strong></li>
 </ol>
+<h3>Seguridad</h3>
+<ul>
+  <li>El token se guarda cifrado en tu navegador</li>
+  <li>El Gist es privado, solo vos podés acceder con tu token</li>
+  <li>La app no almacena ninguna información personal en servidores externos</li>
+</ul>
 
 <!-- ========== API KEYS ========== -->
-<h2 id="apikeys">15. API Keys</h2>
+<h2 id="apikeys">17. API Keys</h2>
 <h3>¿Qué son?</h3>
-<p>Claves de acceso para consultar tus datos de GW2.</p>
-<h3>Permisos necesarios</h3>
+<p>Claves de acceso para consultar tus datos de GW2. Se gestionan desde el modal que se abre con el botón "Gestión de API Keys" en el header.</p>
+
+<h3>Permisos necesarios por módulo</h3>
 <table>
-  <thead><tr><th>Módulo</th><th>Permisos requeridos</th></tr></thead>
+  <thead>
+    <tr><th>Módulo</th><th>Permisos requeridos</th></tr>
+  </thead>
   <tbody>
     <tr><td>Cartera, Dashboard</td><td><code>account</code>, <code>wallet</code></td></tr>
     <tr><td>Meta & Eventos</td><td><code>account</code></td></tr>
@@ -351,13 +546,24 @@
     <tr><td>Inventario</td><td><code>account</code>, <code>inventories</code></td></tr>
     <tr><td>Conversor (Transacciones)</td><td><code>account</code>, <code>tradingpost</code></td></tr>
     <tr><td>Raid Tracker</td><td><code>account</code>, <code>progression</code></td></tr>
+    <tr><td>Strike Tracker</td><td><code>account</code>, <code>progression</code></td></tr>
     <tr><td>Purchase Detail</td><td><code>account</code>, <code>wizardsvault</code></td></tr>
   </tbody>
 </table>
 
+<h3>Gestión de API Keys</h3>
+<ul>
+  <li>Agregar: pegá tu API Key, asignale un nombre opcional y guardá</li>
+  <li>Usar: clic en "Usar" en la key que quieras activar</li>
+  <li>Renombrar: clic en "Renombrar" para cambiar el nombre visible</li>
+  <li>Copiar: clic en "Copiar" para copiar la key al portapapeles</li>
+  <li>Eliminar: clic en "Eliminar" para borrar la key de tu navegador</li>
+  <li>Las keys se guardan localmente en tu navegador, nunca se envían a ningún servidor</li>
+</ul>
+
 <hr>
 <div class="footer-note">
-  🐈‍⬛ <strong>Bóveda del Gato Negro</strong> — v6.5.1<br>
+  🐈‍⬛ <strong>Bóveda del Gato Negro</strong> — v6.6.2<br>
   © Comunidad Gato Negro — Herramientas para GW2<br>
   <br>
   Discord: <a href="https://discord.gg/ZGNsfsqyKe">discord.gg/ZGNsfsqyKe</a><br>

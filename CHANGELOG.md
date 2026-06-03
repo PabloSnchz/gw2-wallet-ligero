@@ -8,6 +8,55 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [6.6.2] - 2026-06-03
+
+### Added
+- **Strike Tracker — Seguimiento de Strike Missions (strike-tracker.js v1.0.0)**:
+  - Nuevo módulo que muestra el progreso semanal de Strike Missions (encuentros de incursión)
+  - 15 strikes organizadas por expansión: Core (1), Icebrood Saga (7), EoD (4), SotO (2), VoE (1)
+  - Marcado automático vía API `/v2/account/raids` (mismo endpoint que raids)
+  - KPIs semanales: Strikes completadas, LI farmeables (15), porcentaje de progreso
+  - Grid de 3 columnas optimizado para distribuir el contenido sin huecos vacíos:
+    - Columna 1: Juego base + End of Dragons
+    - Columna 2: Sangre y Hielo (Icebrood Saga)
+    - Columna 3: Secrets of the Obscure + Visions of Eternity
+  - Modal informativo por strike con: Descripción (5+ bullets), Estrategia (5+ bullets), Enlace a video tutorial
+  - Diferenciación visual entre Modo NORMAL (📋), DESAFÍO (⚔️) y LEGENDARIO (🏆)
+  - Reset semanal automático (lunes 07:30 UTC, misma lógica que raids)
+  - Navegación integrada con Raid Tracker mediante botones "Raids" y "Strikes" en el header
+  - Badge de LI disponibles sincronizado automáticamente con Raid Tracker
+  - Escucha `gn:tokenchange` para recargar datos automáticamente
+- **Nueva ruta `#/account/strikes`** en router.js v2.17.0
+- **Nuevo panel `#strikeTrackerPanel`** en index.html
+- **Nuevo evento Analytics**: `view_module` con `module_name: 'strikes'`
+- **Navegación unificada**: Botones Raids/Strikes en el header de ambos módulos con persistencia en localStorage (`raid_strike_view`)
+
+### Changed
+- **raid-tracker.js v1.7.0 → v1.8.0**:
+  - Header rediseñado con título, badge LI a la derecha, botones Raids/Strikes y timer en la misma fila
+  - Eliminado título duplicado del panel (ahora se usa el de index.html)
+  - Agregada función `wireViewToggle()` para navegación entre módulos
+- **router.js v2.16.0 → v2.17.0**:
+  - Agregada ruta `#/account/strikes`
+  - Agregado `strikeTrackerPanel` a `showPanel()`
+  - Agregado caso en `onKeySelectChange()` para recargar al cambiar de key
+  - Agregado `updateSidebarFor('strikes')`
+- **index.html**:
+  - Eliminado título duplicado del panel Raid Tracker (ahora se usa el panel__title del HTML)
+  - Agregado panel `#strikeTrackerPanel` con título y badge LI incorporado
+  - Agregado script `js/strike-tracker.js` después de `raid-tracker.js`
+  - Badge LI movido al título del panel (margen derecho de la misma fila)
+- **Documentación**: ONBOARDING.md, README.md, CHANGELOG.md actualizados a v6.6.2
+
+### Fixed
+- **Raid Tracker**: Eliminado badge LI duplicado que quedaba en el cuerpo del panel
+- **Strike Tracker**: Badge LI ahora se actualiza correctamente desde Raid Tracker
+
+### Removed
+- **Título duplicado en raid-tracker.js**: El título "Seguimiento de incursiones" que creaba el módulo fue eliminado (ahora se usa el del HTML)
+
+---
+
 ## [6.6.1] - 2026-06-02
 
 ### Changed
