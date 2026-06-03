@@ -140,13 +140,14 @@
       else if (view==='welcome'){ /* no sidebar específico para bienvenida */ }
       else if (view==='walletDashboard'){ /* no sidebar específico */ }
       else if (view==='raids'){ /* no sidebar específico para raids */ }
+      else if (view==='strikes'){ /* no sidebar específico para strikes */ }
       else if (view==='inventory'){ /* no sidebar específico para inventario */ }
       else if (view==='inventoryDashboard'){ /* no sidebar específico */ }
     } catch (e) { console.warn('[router] updateSidebarFor error', e); }
   }
 
   function showPanel(idToShow) {
-    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','inventoryPanel','charactersPanel','accountsPanel','welcomePanel','walletDashboardPanel','inventoryDashboardPanel','wvObjectivesDashboardPanel','raidTrackerPanel'].forEach(function(id){
+    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','inventoryPanel','charactersPanel','accountsPanel','welcomePanel','walletDashboardPanel','inventoryDashboardPanel','wvObjectivesDashboardPanel','raidTrackerPanel','strikeTrackerPanel'].forEach(function(id){
       var node=el(id); if (!node) return;
       if (id===idToShow) node.removeAttribute('hidden'); else node.setAttribute('hidden','hidden');
     });
@@ -1539,6 +1540,22 @@
           return;
         }
 
+        if (h === '#/account/strikes') {
+          try {
+            showPanel('strikeTrackerPanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('strikes');
+            if (window.StrikeTracker && typeof window.StrikeTracker.activate === 'function') {
+              window.StrikeTracker.activate();
+            }
+          } catch (e) {
+            console.warn('[router] show strikes error', e);
+          } finally {
+            updateSidebarFor('strikes');
+            setActiveNav(h);
+          }
+          return;
+        }
+
         if (h === '#/cards') {
           try { 
             showPanel('walletPanel');
@@ -1770,6 +1787,12 @@
           window.RaidTracker.refresh(true);
         } else if (window.RaidTracker && typeof window.RaidTracker.activate === 'function') {
           window.RaidTracker.activate();
+        }
+      } else if (h === '#/account/strikes') {
+        if (window.StrikeTracker && typeof window.StrikeTracker.refresh === 'function') {
+          window.StrikeTracker.refresh(true);
+        } else if (window.StrikeTracker && typeof window.StrikeTracker.activate === 'function') {
+          window.StrikeTracker.activate();
         }
       }
 

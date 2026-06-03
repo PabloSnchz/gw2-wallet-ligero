@@ -16,6 +16,7 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 - 🟢 **Estado online basado en actividad reciente** — Detecta cualquier actividad (PvP, PvE, WvW, economía)
 - 📈 **Dashboard de Cartera Multi-Cuenta** — Tabla de todas las cuentas vs divisas seleccionadas, KPIs y ordenamiento dinámico
 - 🎯 **Raid Tracker** — Seguimiento semanal de raids (8 alas, 33 encuentros, marcado automático vía API)
+- ⚔️ **Strike Tracker** — Seguimiento de Strike Missions (15 encuentros, grid optimizado, navegación integrada con Raids)
 - 🔐 **Panel de Cuentas** — Gestión segura de múltiples cuentas con cifrado local y diseño "Profile Card" premium
 - 🧙 **Pantalla de Bienvenida** — Onboarding y accesos rápidos
 - 💾 **Sistema de Backup/Restaurar** — Exporta/importa toda la configuración entre dispositivos
@@ -28,6 +29,55 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 
 👉 **Página oficial (Deploy GitHub Pages):**  
 https://pablosnchz.github.io/gw2-wallet-ligero/
+
+---
+
+## ✨ Novedades principales — v6.6.2
+
+### ⚔️ Strike Tracker — Seguimiento de Strike Missions (strike-tracker.js v1.0.0)
+
+**Nuevo módulo que permite gestionar el progreso semanal de Strike Missions (encuentros de incursión) desde la unificación de febrero de 2026.**
+
+| Característica | Descripción |
+|----------------|-------------|
+| **15 strikes organizadas por expansión** | Core (1), Icebrood Saga (7), EoD (4), SotO (2), VoE (1) |
+| **Marcado automático** | Vía API `/v2/account/raids` (mismo endpoint que raids) |
+| **KPIs semanales** | Strikes completadas, LI farmeables (15), porcentaje de progreso |
+| **Grid de 3 columnas optimizado** | Col1: Juego base + EoD, Col2: Icebrood Saga, Col3: SotO + VoE |
+| **Modal informativo** | Descripción, estrategia (5+ bullets) y enlace a video tutorial por strike |
+| **Diferenciación visual** | Modo NORMAL (📋), DESAFÍO (⚔️), LEGENDARIO (�) |
+| **Navegación integrada** | Botones Raids/Strikes en el header para intercambiar entre módulos |
+| **LI sincronizado** | El badge de LI disponibles se sincroniza automáticamente con Raid Tracker |
+
+**Estructura de strikes por expansión:**
+
+| Expansión | Strikes | Con CM/LM |
+|-----------|---------|-----------|
+| Core Game | Vieja Corte del León | CM ✅ |
+| Icebrood Saga | Shiverpeaks Pass, Voice & Claw, Fraenir, Boneskinner, Whisper of Jormag, Forging Steel, Cold War | — |
+| End of Dragons | Aetherblade Hideout, Xunlai Jade Junkyard, Kaineng Overlook, Harvest Temple | CM ✅ |
+| Secrets of the Obscure | Cosmic Observatory, Temple of Febe | CM + LM ✅ |
+| Visions of Eternity | Guardian's Glade | CM ✅ |
+
+**Acceso:**
+- Botones "Raids" y "Strikes" en el header del panel de Raids
+- El estado de la vista activa se guarda en localStorage (`raid_strike_view`)
+
+**Ruta:** `#/account/strikes`
+
+**Header unificado:**
+
+┌────────────────────────────────────────────────────────────────────────────────┐
+│ 🔥 Seguimiento de Raids [LI Disponible: 0]                                     |
+│ [Raids] [Strikes] [Timer UTC/Local]                                            │
+└────────────────────────────────────────────────────────────────────────────────┘
+
+### 🎨 Mejoras en Raid Tracker (raid-tracker.js v1.8.0)
+
+- **Header rediseñado**: Título, badge LI a la derecha, botones Raids/Strikes y timer en la misma fila
+- **Eliminado título duplicado** del panel (ahora se usa el de index.html)
+- **Navegación integrada** entre Raids y Strikes mediante `wireViewToggle()`
+- **Persistencia de vista activa** en localStorage (`raid_strike_view`)
 
 ---
 
@@ -807,7 +857,8 @@ Definí en `index.html` (antes de router.js):
 | `js/characters-theme.js` | **v1.0.1** | Tema visual de Personajes. **Solo border-left, elimina hover manual** |
 | `js/wv-purchase-detail.js` | **v1.13.1** | Detalle de compras. **Fix estado online (data-token), ícono reloj local** |
 | `js/wallet-dashboard.js` | **v2.5.0** | Dashboard de Cartera. **KPIs con border-left + glow, tabla unificada con zebra** |
-| `js/raid-tracker.js` | **v1.7.0** | **Raid Tracker: 8 alas, 33 encuentros, marcado automático vía API, modal con detalles** |
+| `js/raid-tracker.js` | **v1.8.0** | **Raid Tracker: 8 alas, 33 encuentros, marcado automático vía API, modal con detalles, navegación integrada con Strikes** |
+| `js/strike-tracker.js` | **v1.0.0** | **Strike Tracker: 15 strikes, grid optimizado, KPIs, modal con detalles, navegación integrada con Raids** |
 | `js/analytics.js` | **v1.0.0** | **Eventos personalizados para Google Analytics** |
 | `js/wizards-vault.js` | **v1.3.0** | Módulo Wizard's Vault. **Ícono de recarga forzada de temporada** |
 | `js/accounts-panel.js` | **v2.0.0** | Panel de Cuentas. **Profile Card premium + tabla zebra** |
@@ -839,6 +890,9 @@ Definí en `index.html` (antes de router.js):
 
 ### Archivos nuevos (v6.4.0)
 - `js/inventory-hub.js` — Módulo de Inventario y Personajes (buscador de objetos, KPIs, vistas de sección, modal de ítem)
+
+### Archivos nuevos (v6.6.2)
+- `js/strike-tracker.js` — Módulo de seguimiento de Strike Missions con grid optimizado, KPIs y navegación integrada
 
 ---
 
@@ -1016,6 +1070,15 @@ assets/icons/
 
 ### Raid Tracker (v6.2)
 1. Navegar a **Raids** → verificar 8 alas, KPIs, modal con detalles
+
+### Strike Tracker (v6.6.2)
+1. Navegar a **Raids** → en el header, hacer clic en el botón **Strikes**
+2. Verificar que se muestran las 15 strikes organizadas en 3 columnas
+3. Verificar KPIs: Strikes completadas, LI farmeables (15), porcentaje de progreso
+4. Hacer clic en "Detalle" de cualquier strike → verificar modal con descripción, estrategia y enlaces
+5. Verificar que el badge de LI disponibles muestra el mismo valor que en Raid Tracker
+6. Hacer clic en el botón **Raids** para volver al módulo de raids
+7. Recargar la página → verificar que se mantiene la última vista activa (Raids o Strikes)
 
 ### Google Analytics (v5.9)
 1. Abrir consola (F12) → pestaña Network → buscar peticiones a `google-analytics.com`

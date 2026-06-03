@@ -1,4 +1,4 @@
-# 🐈‍⬛ Briefing para nuevo agente — Bóveda del Gato Negro (v6.6.1)
+# 🐈‍⬛ Briefing para nuevo agente — Bóveda del Gato Negro (v6.6.2)
 
 ## Tu rol
 
@@ -68,7 +68,7 @@ Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No es
 
 ---
 
-## Estado actual del proyecto (v6.6.1)
+## Estado actual del proyecto (v6.6.2)
 
 | Módulo | Estado |
 |--------|--------|
@@ -82,7 +82,8 @@ Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No es
 | Conversor (Modal) | ✅ 3 tabs: Cambio, Transacciones, Populares |
 | Dashboard Cartera | ✅ Estable |
 | Dashboard Inventario | ✅ 3 sets, sistema de tiers, carga en 2 fases, flash ámbar |
-| Raid Tracker | ✅ Estable, método `_debug()` disponible |
+| Raid Tracker | ✅ Estable, método `_debug()` disponible, navegación integrada con Strikes |
+| Strike Tracker | ✅ **NUEVO v6.6.2** — 15 strikes, grid optimizado, navegación integrada con Raids |
 | Panel de Cuentas | ✅ Estable |
 | Bienvenida | ✅ Estable |
 | Purchase Detail | ✅ KPI cards compactas, tabla sin scroll |
@@ -102,6 +103,8 @@ Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No es
 | `wv-objectives-dashboard.js` | v1.0.0 | Dashboard de Objetivos Semanales Multi-Cuenta |
 | `inventory-hub.js` | v1.3.2 | Skeleton loader, búsqueda en banco, filtros peso |
 | `inventory-dashboard.js` | v1.0.0 | Dashboard multi-cuenta con 3 sets, sistema de tiers (T3-T6), carga en 2 fases |
+| `raid-tracker.js` | v1.8.0 | Raid Tracker con header unificado y navegación a Strikes |
+| `strike-tracker.js` | v1.0.0 | **NUEVO** — Strike Missions: 15 strikes, grid optimizado, KPIs, modal con detalles |
 | `wallet-theme.js` | v1.3.1 | Glow neutro para divisas sin color |
 | `app.js` | v2.7.0 | Conversor extraído |
 | `index.html` | — | Sidebar sin conversor, botón PD simplificado |

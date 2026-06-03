@@ -481,12 +481,43 @@
       <!-- El contenido lo llena wallet-dashboard.js dinámicamente -->
     </section>
 
-    <!-- ======= Panel Raid Tracker (NUEVO) ======= -->
-        <!-- ======= Panel Raid Tracker (NUEVO) ======= -->
+    <!-- ======= Panel Raid Tracker ======= -->
     <section id="raidTrackerPanel" class="panel col-main" aria-labelledby="raidTrackerTitle" hidden>
-      <h2 class="panel__title" id="raidTrackerTitle" style="display: flex; align-items: center; gap: 8px;">
+      <h2 class="panel__title" id="raidTrackerTitle" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <img src="assets/icons/raids/raid-icon.png" alt="" width="32" height="32">
+          Seguimiento de Raids
+        </span>
+        <span id="raidLiBadgeContainer" style="display: flex; align-items: center; gap: 6px; background: #1a1c24; padding: 4px 12px; border-radius: 32px;">
+          <img src="https://render.guildwars2.com/file/6D33B7387BAF2E2CC9B5D37D1D1B01246AB6FA22/1302744.png" width="16" height="16" alt="LI" style="filter: brightness(0.9);">
+          <span style="font-size: 0.75rem;">LI Disponible:</span>
+          <strong id="raidLiAvailable" style="font-weight: 700; color: #ffd36b; font-size: 0.9rem;">0</strong>
+        </span>
+      </h2>
+      <div class="panel__body"></div>
+    </section>
+
+    <!-- ======= Panel Strike Tracker (NUEVO) ======= -->
+    <section id="strikeTrackerPanel" class="panel col-main" aria-labelledby="strikeTrackerTitle" hidden>
+      <h2 class="panel__title" id="strikeTrackerTitle" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <img src="assets/icons/raids/raid-icon.png" alt="" width="32" height="32">
+          Seguimiento de Strikes
+        </span>
+        <span id="strikeLiBadgeContainer" style="display: flex; align-items: center; gap: 6px; background: #1a1c24; padding: 4px 12px; border-radius: 32px;">
+          <img src="https://render.guildwars2.com/file/6D33B7387BAF2E2CC9B5D37D1D1B01246AB6FA22/1302744.png" width="16" height="16" alt="LI" style="filter: brightness(0.9);">
+          <span style="font-size: 0.75rem;">LI Disponible:</span>
+          <strong id="strikeLiAvailable" style="font-weight: 700; color: #ffd36b; font-size: 0.9rem;">0</strong>
+        </span>
+      </h2>
+      <div class="panel__body"></div>
+    </section>
+
+    <!-- ======= Panel Strike Tracker (NUEVO) ======= -->
+    <section id="strikeTrackerPanel" class="panel col-main" aria-labelledby="strikeTrackerTitle" hidden>
+      <h2 class="panel__title" id="strikeTrackerTitle" style="display: flex; align-items: center; gap: 8px;">
         <img src="assets/icons/raids/raid-icon.png" alt="" width="32" height="32">
-        Seguimiento de Raids
+        Seguimiento de Strikes
       </h2>
       <div class="panel__body"></div>
     </section>
@@ -768,7 +799,7 @@
                 <span class="side-nav__icon">
                   <img class="icon-img" src="assets/icons/raids/raid-icon.png" alt="Raids" width="28" height="28" loading="lazy" referrerpolicy="no-referrer">
                 </span>
-                <span>Raids</span>
+                <span>Raids y Strikes</span>
               </a>
             </li>
             <!-- ====== FIN NUEVO ====== -->
@@ -978,6 +1009,9 @@
 
   <!-- Raid Tracker -->
   <script defer src="js/raid-tracker.js?v=1.7.0"></script>
+
+  <!-- Strike Tracker (NUEVO) -->
+  <script defer src="js/strike-tracker.js?v=1.0.0"></script>
 
   <!-- Wizard's Vault — UI desacoplada (Fases 1-3) -->
   <script defer src="js/wv-shop-ui.js?v=1.0.2"></script>

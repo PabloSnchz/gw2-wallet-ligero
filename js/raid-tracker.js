@@ -22,7 +22,7 @@
       icon: "assets/icons/raids/wing1.png",
       encounters: [
         { id: "vale_guardian", name: "Guardián del valle", nameEn: "Vale Guardian", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/vale_guardian.png" },
-        { id: "spirit_woods", name: "Bosques Espirituales", nameEn: "Spirit Woods", type: "evento", li: 0, icon: "assets/icons/raids/bosses/spirit_woods.png" },
+        { id: "spirit_woods", name: "Bosques Espirituales", nameEn: "Spirit Woods", type: "evento", li: 1, icon: "assets/icons/raids/bosses/spirit_woods.png" },
         { id: "gorseval", name: "Gorseval el Múltiple", nameEn: "Gorseval the Multifarious", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/gorseval.png" },
         { id: "sabetha", name: "Sabetha la Saboteadora", nameEn: "Sabetha the Saboteur", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/sabetha.png" }
       ]
@@ -35,7 +35,7 @@
       icon: "assets/icons/raids/wing2.png",
       encounters: [
         { id: "slothasor", name: "Perezón", nameEn: "Slothasor", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/slothasor.png" },
-        { id: "bandit_trio", name: "Campamento de Prisioneros", nameEn: "Bandit Trio", type: "evento", li: 0, icon: "assets/icons/raids/bosses/bandit_trio.png" },
+        { id: "bandit_trio", name: "Campamento de Prisioneros", nameEn: "Bandit Trio", type: "evento", li: 1, icon: "assets/icons/raids/bosses/bandit_trio.png" },
         { id: "matthias", name: "Matías Gabrel", nameEn: "Matthias Gabrel", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/matthias.png" }
       ]
     },
@@ -46,9 +46,9 @@
       expansion: "Heart of Thorns",
       icon: "assets/icons/raids/wing3.png",
       encounters: [
-        { id: "siege_the_stronghold", name: "Escolta de Glenna", nameEn: "Siege the Stronghold", type: "evento", li: 0, icon: "assets/icons/raids/bosses/siege_the_stronghold.png" },
+        { id: "siege_the_stronghold", name: "Escolta de Glenna", nameEn: "Siege the Stronghold", type: "evento", li: 1, icon: "assets/icons/raids/bosses/siege_the_stronghold.png" },
         { id: "keep_construct", name: "Ensamblaje de la Fortaleza", nameEn: "Keep Construct", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/keep_construct.png" },
-        { id: "twisted_castle", name: "Castillo Retorcido", nameEn: "Twisted Castle", type: "evento", li: 0, icon: "assets/icons/raids/bosses/twisted_castle.png" },
+        { id: "twisted_castle", name: "Castillo retorcido", nameEn: "Twisted Castle", type: "evento", li: 1, icon: "assets/icons/raids/bosses/twisted_castle.png" },
         { id: "xera", name: "Xera", nameEn: "Xera", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/xera.png" }
       ]
     },
@@ -73,7 +73,7 @@
       icon: "assets/icons/raids/wing5.png",
       encounters: [
         { id: "desmina", name: "Horror sin alma", nameEn: "Soulless Horror", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/desmina.png" },
-        { id: "river_of_souls", name: "Río de Almas", nameEn: "River of Souls", type: "evento", li: 0, icon: "assets/icons/raids/bosses/river_of_souls.png" },
+        { id: "river_of_souls", name: "Río de Almas", nameEn: "River of Souls", type: "evento", li: 1, icon: "assets/icons/raids/bosses/river_of_souls.png" },
         { id: "statues_of_grenth", name: "Estatuas de Grenth", nameEn: "Statues of Grenth", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/statues_of_grenth.png" },
         { id: "dhuum", name: "Dhuum", nameEn: "Dhuum", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/dhuum.png" }
       ]
@@ -103,18 +103,18 @@
         { id: "qadim_the_peerless", name: "Qadim el Simpar", nameEn: "Qadim the Peerless", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/qadim_the_peerless.png" }
       ]
     },
-    {
+        {
       id: 8,
       name: "Monte Balrior",
       nameEn: "Mount Balrior",
       expansion: "Janthir Wilds",
       icon: "assets/icons/raids/wing8.png",
       encounters: [
-        { id: "ura_guardian", name: "Guardián Ura", nameEn: "Ura Guardian", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/ura_guardian.png" },
-        { id: "the_threshold", name: "Mecánica del Límite", nameEn: "The Threshold", type: "evento", li: 0, icon: "assets/icons/raids/bosses/the_threshold.png" },
-        { id: "decimus", name: "Rey Decimus", nameEn: "Decimus the Revenant", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/decimus.png" }
+        { id: "greer", name: "Greer, el Portarruina", nameEn: "Greer, the Blightbringer", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/104013_Greer.png" },
+        { id: "decima", name: "Decima, la Invocatormentas", nameEn: "Decima, the Stormsinger", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/decimus.png" },
+        { id: "ura", name: "Ura, la Aulladora de Vapores", nameEn: "Ura, the Steamshrieker", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/ura_guardian.png" }
       ]
-    }
+    },
   ];
 
   // Datos de recompensas por encuentro
@@ -248,7 +248,19 @@
         { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
       ]
     },
-    "decimus": {
+    "greer": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
+      ]
+    },
+    "decima": {
+      drops: [
+        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
+        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
+      ]
+    },
+    "ura": {
       drops: [
         { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
         { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
@@ -793,24 +805,62 @@
       wiki: "https://wiki.guildwars2.com/wiki/The_Threshold",
       image: "assets/icons/raids/bosses/the_threshold_detail.png"
     },
-    "decimus": {
+    "greer": {
       description: [
-        "• Rey Decimus es el jefe final del ala 8.",
-        "• Tiene mecánicas de invocación de esqueletos.",
-        "• También lanza maldiciones que deben ser limpiadas.",
-        "• Invoca áreas de daño que permanecen en el suelo.",
-        "• En la fase final, las invocaciones son más frecuentes."
+        "• Greer, el Portarruina, es el primer desafío del Monte Balrior.",
+        "• Invoca áreas de putrefacción que dañan constantemente.",
+        "• Lanza proyectiles que aplican condiciones masivas.",
+        "• Tiene una barra de ruptura que debe romperse para evitar un wipe.",
+        "• En la fase final, las áreas de daño cubren la mayor parte del campo."
       ],
       strategy: [
-        "• TANQUE: Mantener a Decimus lejos del grupo.",
-        "• DPS: Priorizar la eliminación de esqueletos.",
-        "• APOYO: Limpiar maldiciones rápidamente.",
-        "• TODOS: Evitar las áreas de daño.",
-        "• CRÍTICO: No dejar esqueletos vivos."
+        "• TANQUE: Mantener a Greer centrado, lejos de las áreas de putrefacción.",
+        "• DPS: Priorizar la ruptura de la barra cuando aparezca.",
+        "• APOYO: Llevar limpieza de condiciones masiva.",
+        "• TODOS: Moverse constantemente para no acumular condiciones.",
+        "• CRÍTICO: Romper la barra antes de que complete su canalización."
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-      wiki: "https://wiki.guildwars2.com/wiki/Decimus",
-      image: "assets/icons/raids/bosses/decimus_detail.png"
+      wiki: "https://wiki.guildwars2.com/wiki/Greer",
+      image: "assets/icons/raids/bosses/greer_detail.png"
+    },
+    "decima": {
+      description: [
+        "• Decima, la Invocatormentas, controla rayos y tormentas eléctricas.",
+        "• Marca jugadores con rayos que siguen su posición.",
+        "• Invoca tormentas estáticas que dañan en área.",
+        "• Tiene un ataque de carga que derriba y daña en línea.",
+        "• En la fase final, aparecen múltiples tormentas simultáneamente."
+      ],
+      strategy: [
+        "• TANQUE: Mantener a Decima mirando hacia fuera del grupo.",
+        "• DPS: Los marcados deben alejarse del grupo para no dañar a otros.",
+        "• APOYO: Curar a los marcados mientras corren.",
+        "• TODOS: Evitar las tormentas estáticas en el suelo.",
+        "• CRÍTICO: Los jugadores marcados no deben apilarse."
+      ],
+      video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Decima",
+      image: "assets/icons/raids/bosses/decima_detail.png"
+    },
+    "ura": {
+      description: [
+        "• Ura, la Aulladora de Vapores, es el jefe final del Monte Balrior.",
+        "• Combina mecánicas de vapor, agua y presión.",
+        "• Invoca válvulas que deben cerrarse antes de que exploten.",
+        "• Tiene un ataque de vapor que cubre toda el área.",
+        "• En la fase final, aparecen múltiples válvulas simultáneamente."
+      ],
+      strategy: [
+        "• TANQUE: Mantener a Ura alejada de las válvulas.",
+        "• DPS: Asignar jugadores para cerrar válvulas.",
+        "• APOYO: Curar a los jugadores que cierran válvulas.",
+        "• TODOS: Cerrar válvulas antes de que exploten.",
+        "• CRÍTICO: Coordinar el cierre de válvulas."
+      ],
+      video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      wiki: "https://wiki.guildwars2.com/wiki/Ura",
+      image: "assets/icons/raids/bosses/ura_detail.png"
     }
   };
 
@@ -965,6 +1015,49 @@
     if (liAvailableEl) liAvailableEl.textContent = state.liAvailable.toLocaleString();
   }
 
+  function wireViewToggle() {
+    var raidsBtn = document.getElementById('viewRaidsBtn');
+    var strikesBtn = document.getElementById('viewStrikesBtn');
+    var raidsPanel = document.getElementById('raidTrackerPanel');
+    var strikesPanel = document.getElementById('strikeTrackerPanel');
+    
+    if (!raidsBtn || !strikesBtn || !raidsPanel || !strikesPanel) return;
+    
+    var activeView = localStorage.getItem('raid_strike_view') || 'raids';
+    
+    function setActiveView(view) {
+      activeView = view;
+      localStorage.setItem('raid_strike_view', view);
+      
+      if (view === 'raids') {
+        raidsPanel.removeAttribute('hidden');
+        if (strikesPanel) strikesPanel.setAttribute('hidden', '');
+        raidsBtn.classList.add('btn--accent');
+        raidsBtn.classList.remove('btn--ghost');
+        strikesBtn.classList.add('btn--ghost');
+        strikesBtn.classList.remove('btn--accent');
+        if (window.RaidTracker && typeof window.RaidTracker.refresh === 'function') {
+          window.RaidTracker.refresh(false);
+        }
+      } else {
+        if (strikesPanel) strikesPanel.removeAttribute('hidden');
+        raidsPanel.setAttribute('hidden', '');
+        strikesBtn.classList.add('btn--accent');
+        strikesBtn.classList.remove('btn--ghost');
+        raidsBtn.classList.add('btn--ghost');
+        raidsBtn.classList.remove('btn--accent');
+        if (window.StrikeTracker && typeof window.StrikeTracker.activate === 'function') {
+          window.StrikeTracker.activate();
+        }
+      }
+    }
+    
+    raidsBtn.addEventListener('click', function() { setActiveView('raids'); });
+    strikesBtn.addEventListener('click', function() { setActiveView('strikes'); });
+    
+    setActiveView(activeView);
+  }
+
   // ========================================================================
   // SKELETON LOADER
   // ========================================================================
@@ -1070,13 +1163,15 @@
     }
     if (!body.querySelector('#raidUtcTime')) {
       body.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
-          <div id="raidLiBadge" style="display: flex; align-items: center; gap: 6px; background: #1a1c24; padding: 6px 14px; border-radius: 32px; font-size: 0.85rem;">
-            <img src="https://render.guildwars2.com/file/6D33B7387BAF2E2CC9B5D37D1D1B01246AB6FA22/1302744.png" width="18" height="18" alt="LI" style="filter: brightness(0.9);">
-            <span>LI disponibles:</span>
-            <strong id="raidLiAvailable" style="font-weight: 700; color: #ffd36b;">0</strong>
+        <!-- Badge LI eliminado (ahora está en el título del panel en index.html) -->
+        
+        <!-- FILA 2: Botones Raids/Strikes a la izquierda, Timer a la derecha -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 8px;">
+            <button id="viewRaidsBtn" class="btn btn--accent" style="padding: 6px 20px; font-size: 0.85rem;">Raids</button>
+            <button id="viewStrikesBtn" class="btn btn--ghost" style="padding: 6px 20px; font-size: 0.85rem;">Strikes</button>
           </div>
-          <div class="meta-clock-bar chips" style="display: inline-flex; gap: 16px; align-items: center; background: #0f1116; padding: 4px 12px; border-radius: 40px; border: 1px solid #2a2c35; font-family: monospace; font-size: 0.85rem; flex-wrap: wrap;">
+          <div class="meta-clock-bar chips" style="display: inline-flex; gap: 16px; align-items: center; background: #0f1116; padding: 4px 12px; border-radius: 40px; border: 1px solid #2a2c35;">
             <div style="display: flex; align-items: center; gap: 6px;" data-tip="Hora del servidor (UTC+0)">
               <img src="assets/icons/460028.png" width="20" height="20" alt="UTC" style="filter: brightness(0.9);">
               <span>UTC</span>
@@ -1102,6 +1197,7 @@
             </div>
           </div>
         </div>
+        
         <div id="raidKPIs" class="raid-kpis"></div>
         <div id="raidWingsGrid" class="raid-wings-grid"></div>
       `;
@@ -1110,22 +1206,41 @@
     return true;
   }
 
-  function renderKPIs(completedCount, totalCount) {
+  function renderKPIs(completedCount, totalCount, liEarned, liTotal) {
     var kpiContainer = document.getElementById('raidKPIs');
     if (!kpiContainer) return;
     var percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+    var liPercentage = liTotal > 0 ? Math.round((liEarned / liTotal) * 100) : 0;
+    
     kpiContainer.innerHTML = `
       <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+        <!-- KPI 1: Encuentros completados -->
         <div style="background: #0f1116; border-radius: 12px; padding: 12px 20px; border-left: 3px solid #a0ffc8; flex: 1;">
-          <div style="color: #a0a6b3; font-size: 12px;">Completados esta semana</div>
+          <div style="color: #a0a6b3; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+            <span>⚔️ Encuentros completados</span>
+          </div>
           <div style="font-size: 28px; font-weight: 800; color: #a0ffc8;">${completedCount} / ${totalCount}</div>
+          <div style="font-size: 10px; color: #6a7080; margin-top: 4px;">Jefes + eventos</div>
         </div>
+        
+        <!-- KPI 2: LI farmeables (solo encuentros que dan LI) -->
+        <div style="background: #0f1116; border-radius: 12px; padding: 12px 20px; border-left: 3px solid #ffd36b; flex: 1;">
+          <div style="color: #a0a6b3; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+            <img src="https://render.guildwars2.com/file/6D33B7387BAF2E2CC9B5D37D1D1B01246AB6FA22/1302744.png" width="14" height="14" alt="LI" style="filter: brightness(0.9);">
+            <span>Conocimiento legendario</span>
+          </div>
+          <div style="font-size: 28px; font-weight: 800; color: #ffd36b;">${liEarned} / ${liTotal}</div>
+          <div style="font-size: 10px; color: #6a7080; margin-top: 4px;">Farmeados esta semana</div>
+        </div>
+        
+        <!-- KPI 3: Progreso semanal (barra) -->
         <div style="background: #0f1116; border-radius: 12px; padding: 12px 20px; border-left: 3px solid #7bc2ff; flex: 1;">
-          <div style="color: #a0a6b3; font-size: 12px;">Progreso semanal</div>
+          <div style="color: #a0a6b3; font-size: 12px;">📊 Progreso semanal</div>
           <div style="font-size: 28px; font-weight: 800; color: #7bc2ff;">${percentage}%</div>
           <div style="margin-top: 8px; height: 4px; background: #2a2c35; border-radius: 2px; overflow: hidden;">
             <div style="width: ${percentage}%; height: 100%; background: linear-gradient(90deg, #7bc2ff, #a0ffc8);"></div>
           </div>
+          <div style="font-size: 10px; color: #6a7080; margin-top: 4px;">${liPercentage}% de LI completados</div>
         </div>
       </div>
     `;
@@ -1347,7 +1462,19 @@
     html += '</div>';
     gridContainer.innerHTML = html;
 
-    renderKPIs(completedCount, totalEncounters);
+    // Calcular LI farmeables (encuentros que dan LI, total 28)
+    var liTotal = 0;
+    var liEarned = 0;
+    for (var w2 = 0; w2 < WINGS.length; w2++) {
+      for (var e2 = 0; e2 < WINGS[w2].encounters.length; e2++) {
+        var enc = WINGS[w2].encounters[e2];
+        if (enc.li === 1) {
+          liTotal++;
+          if (completedSet.has(enc.id)) liEarned++;
+        }
+      }
+    }
+    renderKPIs(completedCount, totalEncounters, liEarned, liTotal);
     updateLiDisplay();
 
     var detailBtns = gridContainer.querySelectorAll('.raid-encounter-detail-btn');
@@ -1639,6 +1766,9 @@
       showSkeleton();
       
       refresh(false);
+      
+      // Configurar botones Raids/Strikes después de que el DOM esté listo
+      wireViewToggle();
     }
 
   function deactivate() {
