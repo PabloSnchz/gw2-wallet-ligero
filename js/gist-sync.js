@@ -325,7 +325,7 @@
     return { success: true, gistId: gistId, updatedAt: updated.updated_at };
   }
   
-  /**
+    /**
    * Descarga la configuración desde el Gist y la aplica
    */
   async function downloadAndSync() {
@@ -348,7 +348,10 @@
     
     // Descargar contenido (FORZANDO RECARGA PARA EVITAR CACHÉ)
     var contentResponse = await fetch(file.raw_url + '?t=' + Date.now());
-    var configData = await contentResponse.json();
+    
+    // CORRECCIÓN PARA EDGE/FIREFOX: Guardamos el texto crudo y lo parseamos ANTES de pasarlo
+    var rawText = await contentResponse.text();
+    var configData = JSON.parse(rawText);
     
     // Importar configuración usando SettingsManager
     var confirmMsg = '¿Sincronizar desde la nube?\n\n' +
