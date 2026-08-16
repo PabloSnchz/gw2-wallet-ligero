@@ -1,5 +1,3 @@
-# 🐈‍⬛ Bóveda del Gato Negro — GW2 Wallet & MetaEventos
-
 <p align="center">
   <a href="https://pablosnchz.github.io/github-repo-traffic-stats/">
     <img src="https://img.shields.io/badge/📊_Historial_de_Tráfico-Ver_Métricas_Completas-blue?style=for-the-badge&logo=github&logoColor=white" alt="Ver tráfico histórico del repositorio">
@@ -7,6 +5,8 @@
 </p>
 
 📈 **¿Quieres ver la evolución del proyecto?** El repositorio cuenta con un sistema de respaldo automático que acumula todas las visitas y clones desde el 19 de febrero de 2026, rompiendo la barrera de los 14 días de GitHub. [Haz clic aquí para ver el panel de métricas](https://pablosnchz.github.io/github-repo-traffic-stats/).
+
+# 🐈‍⬛ Bóveda del Gato Negro — GW2 Wallet & MetaEventos
 
 Aplicación liviana para Guild Wars 2 que permite consultar:
 
