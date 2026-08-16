@@ -102,17 +102,6 @@
       <div style="display: flex; flex-direction: column; gap: 24px;">
 
         
-        <!-- PERFIL CON FOTO (PRUEBA) -->
-        <div style="text-align:center; margin-bottom:20px;">
-            <div style="width:90px; height:90px; border-radius:50%; background:#0a0c10; border:2px solid #ffd966; overflow:hidden; display:flex; align-items:center; justify-content:center; margin:0 auto 12px auto;">
-                <img src="https://raw.githubusercontent.com/PabloSnchz/bio/main/assets/profile.png" alt="Foto de perfil" style="width:100%; height:100%; object-fit:cover;">
-            </div>
-            <h2 style="font-size:1.4rem; color:#ffffff; display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin:0;">
-                <span style="color:#ffd966;">Bóveda del Gato Negro</span>
-            </h2>
-            <div style="color:#a0a0a6; font-size:0.85rem; margin-top:2px;">@pablosnchz</div>
-        </div>
-                
                 <!-- Sección: ¿Qué puedo hacer aquí? -->
                 <div class="card" style="padding: 24px;">
                   <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; color: #e0e4ed;">
