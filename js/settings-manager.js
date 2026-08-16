@@ -451,6 +451,15 @@
    */
   async function importFromData(importData) {
     try {
+      // FIX PARA FIREFOX: Si el dato llegó como string, lo convertimos a objeto real antes de validar
+      if (typeof importData === 'string') {
+        try {
+          importData = JSON.parse(importData);
+        } catch (e) {
+          console.warn('[SettingsManager] No se pudo parsear el string recibido:', e);
+        }
+      }
+
       validateImportData(importData);
       
       importApiKeys(importData.data.apiKeys);
