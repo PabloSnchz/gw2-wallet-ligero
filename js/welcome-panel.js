@@ -317,7 +317,7 @@
                 Link in Bio
               </span>
               <span style="background-color: #E1306C; color: #ffffff; padding: 6px 12px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
-                INSTAGRAM
+                Pablin Schez
               </span>
             </a>
 
