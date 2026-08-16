@@ -274,17 +274,41 @@
             <img src="assets/icons/Welcome/156143.png" width="34" height="34" alt="" style="filter: brightness(0.9); object-fit: contain;">
             Apoyar el proyecto
           </h3>
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 14px;">
-            <a href="${CONFIG.LINKS.paypal}" target="_blank" rel="noopener" style="${CARD_BASE}"${HOVER_ATTRS}>
-              <img src="assets/icons/Welcome/payp.png" width="36" height="36" alt="" style="filter: brightness(0.9);">
-              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.85rem;">PayPal</span>
+          
+          <!-- Fila de botones de acción (PayPal y Ko-fi) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+            <a href="${CONFIG.LINKS.paypal}" target="_blank" rel="noopener" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 0; background: #1a1e24; border: 1px solid #2a2c35; border-radius: 6px; text-decoration: none; transition: all 0.2s ease; color: #e0e4ed; font-weight: 600; font-size: 0.9rem;">
+              <img src="assets/icons/Welcome/payp.png" width="24" height="24" alt="" style="filter: brightness(0.9);">
+              PayPal
             </a>
-            <a href="${CONFIG.LINKS.kofi}" target="_blank" rel="noopener" style="${CARD_BASE}"${HOVER_ATTRS}>
-              <img src="assets/icons/Welcome/kofi.png" width="36" height="36" alt="" style="filter: brightness(0.9);">
-              <span style="color: #e0e4ed; font-weight: 600; font-size: 0.85rem;">Ko-fi</span>
+            <a href="${CONFIG.LINKS.kofi}" target="_blank" rel="noopener" style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 0; background: #1a1e24; border: 1px solid #2a2c35; border-radius: 6px; text-decoration: none; transition: all 0.2s ease; color: #e0e4ed; font-weight: 600; font-size: 0.9rem;">
+              <img src="assets/icons/Welcome/kofi.png" width="24" height="24" alt="" style="filter: brightness(0.9);">
+              Ko-fi
             </a>
           </div>
-          <p class="muted" style="font-weight: 500;">Tu apoyo ayuda a mantener el servidor y desarrollar nuevas funciones.</p>
+          
+          <!-- Texto de apoyo -->
+          <p class="muted" style="font-weight: 500; font-size: 0.9rem; margin: 0 0 14px 0; text-align: center;">
+            Tu apoyo ayuda a mantener el servidor y desarrollar nuevas funciones.
+          </p>
+
+          <!-- BADGE DE MÉTRICAS (Justo debajo del texto) -->
+          <div style="display: flex; justify-content: center;">
+            <a href="https://pablosnchz.github.io/github-repo-traffic-stats/" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; text-decoration: none; border-radius: 4px; overflow: hidden; font-family: system-ui, -apple-system, sans-serif;">
+              <!-- Lado izquierdo (Gris oscuro) -->
+              <span style="background-color: #555555; color: #ffffff; padding: 6px 12px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px; white-space: nowrap;">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 4px;">
+                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                </svg>
+                Historial de Tráfico
+              </span>
+              <!-- Lado derecho (Azul) -->
+              <span style="background-color: #007ec6; color: #ffffff; padding: 6px 12px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
+                VER MÉTRICAS
+              </span>
+            </a>
+          </div>
+
         </div>
       </div>
     `;
