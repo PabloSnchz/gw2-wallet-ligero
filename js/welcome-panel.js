@@ -269,7 +269,7 @@
           </p>
         </div>
 
-                <!-- Sección: Apoyar el proyecto -->
+                        <!-- Sección: Apoyar el proyecto -->
         <div class="card" style="padding: 24px;">
           <h3 style="margin: 0 0 20px 0; display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; color: #e0e4ed;">
             <img src="assets/icons/Welcome/156143.png" width="34" height="34" alt="" style="filter: brightness(0.9); object-fit: contain;">
@@ -293,7 +293,7 @@
             Tu apoyo ayuda a mantener el servidor y desarrollar nuevas funciones.
           </p>
 
-          <!-- FILA DE BADGES (Métricas + Bio, lado a lado) -->
+          <!-- FILA DE BADGES (Métricas + Bio con foto, lado a lado) -->
           <div style="display: flex; justify-content: center; align-items: center; gap: 14px; flex-wrap: wrap;">
             
             <!-- Badge de Métricas (Izquierda) -->
@@ -309,12 +309,11 @@
               </span>
             </a>
 
-            <!-- Badge de Bio / Instagram (Derecha) -->
+            <!-- Badge de Bio / Instagram (Derecha) CON TU FOTO -->
             <a href="https://pablosnchz.github.io/bio/" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; text-decoration: none; border-radius: 4px; overflow: hidden; font-family: system-ui, -apple-system, sans-serif;">
-              <span style="background-color: #555555; color: #ffffff; padding: 6px 12px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px; white-space: nowrap;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
-                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
-                </svg>
+              <span style="background-color: #555555; color: #ffffff; padding: 4px 8px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 6px; letter-spacing: 0.5px; white-space: nowrap;">
+                <!-- TU FOTO EN EL BADGE (tamaño reducido para que encaje) -->
+                <img src="https://raw.githubusercontent.com/PabloSnchz/bio/main/assets/profile.png" alt="Foto perfil" style="width:20px; height:20px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.3);">
                 Link in Bio
               </span>
               <span style="background-color: #E1306C; color: #ffffff; padding: 6px 12px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
