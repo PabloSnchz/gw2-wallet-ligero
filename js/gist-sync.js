@@ -190,7 +190,7 @@
     });
     
     if (!response.ok) {
-      if (response.status === 404) {
+      if (response.status === 404) {.
         // Gist no existe, limpiar ID guardado
         localStorage.removeItem(CONFIG.STORAGE_GIST_ID_KEY);
         state.gistId = null;
@@ -325,7 +325,7 @@
     return { success: true, gistId: gistId, updatedAt: updated.updated_at };
   }
   
-  /**
+    /**
    * Descarga la configuración desde el Gist y la aplica
    */
   async function downloadAndSync() {
@@ -346,8 +346,8 @@
       throw new Error('El Gist no contiene el archivo de configuración');
     }
     
-    // Descargar contenido
-    var contentResponse = await fetch(file.raw_url);
+    // Descargar contenido (FORZANDO RECARGA PARA EVITAR CACHÉ)
+    var contentResponse = await fetch(file.raw_url + '?t=' + Date.now());
     var configData = await contentResponse.json();
     
     // Importar configuración usando SettingsManager
