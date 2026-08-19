@@ -312,19 +312,31 @@
             var fp = fpToken(token);
             Promise.all([
               root.GW2Api.getAccountBank(token, { nocache: !!forceNoCache }),
-              root.GW2Api.getAccountMaterials(token, { nocache: !!forceNoCache })
+              root.GW2Api.getAccountMaterials(token, { nocache: !!forceNoCache }),
+              root.GW2Api.getAccountInfo(token, { nocache: !!forceNoCache }).catch(function() { return null; })
             ])
               .then(function(results) {
+                var bankData = Array.isArray(results[0]) ? results[0] : [];
+                var materialsData = Array.isArray(results[1]) ? results[1] : [];
+                var accountInfo = results[2];
+                
+                // Si getAccountInfo falló (devuelve null), la cuenta no tiene acceso al juego
+                var error = null;
+                if (!accountInfo) {
+                  error = 'account does not have game access';
+                }
+                
                 out.push({
                   token: token,
                   fp: fp,
                   label: label,
                   tag: k.tag || null,
-                  bank: Array.isArray(results[0]) ? results[0] : [],
-                  materials: Array.isArray(results[1]) ? results[1] : [],
+                  bank: bankData,
+                  materials: materialsData,
                   activeCharName: null,
                   activeCharBags: [],
-                  _charLoading: true
+                  _charLoading: true,
+                  error: error
                 });
               })
               .catch(function(e) {
@@ -338,7 +350,8 @@
                   materials: [],
                   activeCharName: null,
                   activeCharBags: [],
-                  _charLoading: true
+                  _charLoading: true,
+                  error: e.message || 'Error al cargar inventario'
                 });
               })
               .finally(function() { ACTIVE--; next(); });
@@ -1076,6 +1089,14 @@
       var tag = keyItem ? keyItem.tag : null;
       var tagIcon = tag ? getAccountTypeIcon(tag) : '';
 
+      // Indicador de error si la cuenta tiene un problema (ej: sin acceso al juego)
+      var errorIndicator = '';
+      if (acc.error) {
+        errorIndicator = '<span title="' + esc(acc.error) + '" style="display:inline-flex;align-items:center;cursor:help;margin-left:4px;">' +
+          '<img src="assets/icons/Welcome/156107.png" width="14" height="14" alt="⚠" style="filter:brightness(0.8);">' +
+          '</span>';
+      }
+
       var charInfo = '';
       if (acc._charLoading) {
         charInfo = '<div class="id-char-info" style="font-size:0.6rem;color:#5a6072;margin-top:1px;"><img src="assets/icons/Cuentas/358353.png" width="14" height="14" alt="" style="vertical-align:middle;animation:charPulse 2s ease-in-out infinite;"> <span style="color:#5a6072;">cargando...</span></div>';
@@ -1087,7 +1108,7 @@
         '<td style="min-width:140px;">' +
           '<div style="display:flex;align-items:center;gap:8px;">' +
             (tagIcon ? '<img src="' + tagIcon + '" width="20" height="20" alt="" style="border-radius:6px;flex-shrink:0;" loading="lazy">' : '') +
-            '<div><strong>' + esc(acc.label) + '</strong>' + charInfo + '</div>' +
+            '<div><strong>' + esc(acc.label) + '</strong>' + errorIndicator + charInfo + '</div>' +
           '</div>' +
         '</td>'
       );

@@ -441,8 +441,8 @@
         html += '<td style="position:sticky;left:0;background:#0e0f12;z-index:1;padding:8px 10px;white-space:nowrap;display:flex;align-items:center;gap:10px;min-width:160px;">' +
           getAccountIcon(acc.tag, acc.token) +
           '<strong style="color:#cfd2d8;">' + esc(acc.name) + '</strong>' +
-          // Tag se identifica por el ícono de cuenta, no hace falta texto
-          (acc.error ? ' <span class="muted" style="font-size:0.7rem;" title="' + esc(acc.error) + '">⚠️</span>' : '') +
+          // Indicador de error con ícono local (consistente con Wallet e Inventory)
+          (acc.error ? ' <span title="' + esc(acc.error) + '" style="display:inline-flex;align-items:center;cursor:help;margin-left:4px;"><img src="assets/icons/Welcome/156107.png" width="14" height="14" alt="⚠" style="filter:brightness(0.8);"></span>' : '') +
           '</td>';
         objectives.forEach(function (obj) {
           html += renderCell(acc, obj);

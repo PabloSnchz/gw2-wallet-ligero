@@ -169,10 +169,10 @@
           map[entry.id] = entry.value;
         });
       }
-      return map;
+      return { wallet: map, error: null };
     } catch(e) {
       console.warn(LOG, 'Error loading wallet for token', e);
-      return {};
+      return { wallet: {}, error: e.message || 'Error al cargar wallet' };
     }
   }
 
@@ -197,12 +197,13 @@
             var label = k.label || ('Key ' + fpToken(token));
             var fp = fpToken(token);
             loadWalletForAccount(token, forceNoCache)
-              .then(function(walletMap) {
+              .then(function(result) {
                 out.push({
                   token: token,
                   fp: fp,
                   label: label,
-                  wallet: walletMap
+                  wallet: result.wallet || {},
+                  error: result.error || null
                 });
               })
               .catch(function(e) {
@@ -211,7 +212,8 @@
                   token: token,
                   fp: fp,
                   label: label,
-                  wallet: {}
+                  wallet: {},
+                  error: e.message || 'Error al cargar wallet'
                 });
               })
               .finally(function() { ACTIVE--; next(); });
@@ -494,10 +496,19 @@
           var tag = keyItem ? keyItem.tag : null;
           var icon = getAccountIcon(tag);
 
+          // Indicador de error si la cuenta tiene un problema (ej: sin acceso al juego)
+          var errorIndicator = '';
+          if (acc.error) {
+            errorIndicator = '<span title="' + esc(acc.error) + '" style="display:inline-flex;align-items:center;cursor:help;margin-left:6px;">' +
+              '<img src="assets/icons/Welcome/156107.png" width="16" height="16" alt="⚠" style="filter:brightness(0.8);">' +
+              '</span>';
+          }
+
           cells.push(
             '<td style="display:flex;align-items:center;gap:10px;min-width:160px;">' +
               '<img src="' + icon + '" width="28" height="28" alt="" style="border-radius:8px;filter:brightness(0.9);flex-shrink:0;" loading="lazy">' +
               '<strong>' + esc(acc.label) + '</strong>' +
+              errorIndicator +
             '</td>'
           );
       selectedCurrencies.forEach(function(cur) {
