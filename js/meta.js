@@ -5,7 +5,7 @@
   const $  = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => Array.from((r||document).querySelectorAll(s));
 
-  console.info('%cMetaEventos meta.js v3.3.1 — Sin marcado manual (solo API)',
+  console.info('%cMetaEventos meta.js v3.4.0 — Sin marcado manual (solo API)',
     'color:#7dd3fc; font-weight:700');
 
   // --------- Elementos del DOM ----------

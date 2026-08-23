@@ -103,7 +103,7 @@ Agregado método `_debug()` a `RaidTracker` (v1.7.0). Expone: version, inited, a
 |---------|:---:|:---:|
 | `inventory-dashboard.js` | — | **v1.0.0** |
 | `inventory-sets.json` | v1 (2 sets) | **v2 (3 sets + sistema de tiers)** |
-| `raid-tracker.js` | v1.7.0 | **v1.7.0** (+ `_debug()`) |
+| `raid-tracker.js` | v1.7.0 | **v1.8.0** (+ `_debug()` + navegación con Strikes) |
 | `router.js` | v2.16.0 | **v2.17.0** |
 
 ### Archivos nuevos (v6.6.0)

@@ -1,6 +1,6 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.16.0 (2026-05-04) — Sidebar sin conversor + InventoryHub
+ * v2.17.0 (2026-06-03) — Soporte Strike Tracker + F5 fix + skeleton ampliado
  *
  * Cambios v2.16.0:
  *  - Eliminada referencia a asideConvSection en updateSidebarFor
@@ -23,7 +23,7 @@
 (function () {
   'use strict';
 
-  console.info('[WV] router-wv.js v2.15.0 — Fases 1-3 completas + fixes');
+  console.info('[WV] router-wv.js v2.17.0 — Fases 1-3 completas + Strike Tracker + fixes');
 
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -120,7 +120,8 @@
           '#/welcome':'welcome',
           '#/wallet/dashboard':'walletDashboard',
           '#/inventory/dashboard':'inventoryDashboard',
-          '#/account/raids':'raids'
+          '#/account/raids':'raids',
+          '#/account/strikes':'strikes'
         };
         var dv = map[h]; if (dv) found = links.find(function (a) { return (a.getAttribute('data-view')||'').trim().toLowerCase()===dv; }) || null;
       }
