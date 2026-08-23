@@ -131,6 +131,7 @@ p, li, span {
   border-color: var(--bd-2);
   box-shadow: var(--elev-hover);
 }
+.card--compact{ min-height:0; padding-right:12px }
 
 /* Comodines de layout para tarjetas (no invasivos) */
 .card .card__head { display:flex; align-items:flex-start; justify-content:space-between; gap: var(--gap-md); }

@@ -1,6 +1,6 @@
 /*!
  * Wallet Theme (divisas) — outline + halo por color + título tintado + badges de categorías + card canónica
- * v1.3.0 (2026-03-21)
+ * v1.3.1 (2026-03-21)
  *
  * Cambios 1.3.0:
  *  - Migración de tarjetas a clase .card canónica (hereda hover con glow, gradiente)
@@ -21,7 +21,7 @@
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
 
-  console.info('[WalletTheme] wallet-theme.js v1.3.0 — card canónica + badges de categorías');
+  console.info('[WalletTheme] wallet-theme.js v1.3.1 — card canónica + badges de categorías');
 
   // === DEBUG opcional ===
   var DEBUG = false;

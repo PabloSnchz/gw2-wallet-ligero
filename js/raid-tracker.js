@@ -1,7 +1,7 @@
 /*!
  * js/raid-tracker.js — Seguimiento de Raids Semanales
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.7.0 (2026-04-23) — Modal con tabs funcionando + LI disponibles (ID 70)
+ * Versión: 1.8.0 (2026-04-23) — Modal con tabs funcionando + LI disponibles (ID 70)
  */
 
 (function (root) {

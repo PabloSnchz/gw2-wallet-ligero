@@ -1,3 +1,7 @@
+/* ==========================================================================
+   Bóveda del Gato Negro — Main CSS v2.6.0
+   ========================================================================== */
+
 :root{
   --bg:#0e0e10; --panel:#141418; --panel-border:#242428; --panel-outline:#1d1d20;
   --text:#e9e9ee; --muted:#a0a0a6; --btn:#1c1c20; --btn-border:#2a2a2f; --btn-hover:#24242a;
@@ -88,6 +92,7 @@ select:focus, input:focus{ outline:2px solid #ffffff10; border-color:#334155 }
 /* Tarjetas Wallet */
 .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:12px }
 .card{ background:#15151a; border-radius:10px; display:grid; grid-template-rows:auto auto auto; padding:10px 12px 10px; padding-right:60px; position:relative; min-height:126px }
+.card--compact{ min-height:0; padding-right:12px }
 .card__head{ display:flex; align-items:center; gap:10px; padding-bottom:6px; border-bottom:1px solid #202027; min-height:28px; padding-right:6px }
 .card__title{ margin:0; font-weight:700; color:#f0f0f4; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1 1 auto; min-width:0 }
 .card__amount-wrap{ margin-left:auto; display:flex; align-items:center; gap:6px; white-space:nowrap; max-width:44%; justify-content:flex-end }
