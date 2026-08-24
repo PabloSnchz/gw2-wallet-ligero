@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/inventory-hub.js — Inventario y Personajes (Hub principal)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
  * Versión: 1.3.1 (2026-05-03)
@@ -184,14 +184,14 @@
     } catch(_) { return 'rgba(255,255,255,' + alpha + ')'; }
   }
   function formatCoins(copper) {
-    if (!copper || copper <= 0) return '<span style="color:#9aa2b8;">—</span>';
+    if (!copper || copper <= 0) return '<span style="color:var(--muted);">—</span>';
     var g = Math.floor(copper / 10000);
     var s = Math.floor((copper % 10000) / 100);
     var c = copper % 100;
     var parts = [];
-    if (g > 0) parts.push('<span style="color:#f4c542;font-weight:600;">' + g + '</span> <span style="color:#9aa2b8;">o</span>');
-    if (s > 0) parts.push('<span style="color:#e0e0e0;font-weight:500;">' + s + '</span> <span style="color:#9aa2b8;">p</span>');
-    if (c > 0 || parts.length === 0) parts.push('<span style="color:#b87333;font-weight:500;">' + c + '</span> <span style="color:#9aa2b8;">c</span>');
+    if (g > 0) parts.push('<span style="color:#f4c542;font-weight:600;">' + g + '</span> <span style="color:var(--muted);">o</span>');
+    if (s > 0) parts.push('<span style="color:#e0e0e0;font-weight:500;">' + s + '</span> <span style="color:var(--muted);">p</span>');
+    if (c > 0 || parts.length === 0) parts.push('<span style="color:#b87333;font-weight:500;">' + c + '</span> <span style="color:var(--muted);">c</span>');
     return parts.join(' ');
   }
 
@@ -344,26 +344,26 @@
     container.style.marginBottom = '16px';
 
     var kpis = [
-      { icon: CONFIG.ICONS.materials, label: 'Materiales', value: fmtInt(state.kpis.materialsCount), color: '#a0ffc8', section: 'materials' },
-      { icon: CONFIG.ICONS.bank, label: 'Banco', value: state.kpis.bankUsed + ' / ' + state.kpis.bankTotal, color: '#7bc2ff', section: 'bank' },
+      { icon: CONFIG.ICONS.materials, label: 'Materiales', value: fmtInt(state.kpis.materialsCount), color: 'var(--color-green)', section: 'materials' },
+      { icon: CONFIG.ICONS.bank, label: 'Banco', value: state.kpis.bankUsed + ' / ' + state.kpis.bankTotal, color: 'var(--color-blue)', section: 'bank' },
       { icon: CONFIG.ICONS.legendary, label: 'Legendarios', value: fmtInt(state.kpis.armoryCount), color: '#974EFF', section: 'armory' },
-      { icon: CONFIG.ICONS.character, label: 'Personajes', value: fmtInt(state.kpis.characterCount), color: '#ffd36b', section: null },
-      { icon: CONFIG.ICONS.characters, label: 'Ver Personajes', value: '→', color: '#ffd966', isLink: true }
+      { icon: CONFIG.ICONS.character, label: 'Personajes', value: fmtInt(state.kpis.characterCount), color: 'var(--color-amber)', section: null },
+      { icon: CONFIG.ICONS.characters, label: 'Ver Personajes', value: '→', color: 'var(--color-amber)', isLink: true }
     ];
 
     container.innerHTML = kpis.map(function(kpi) {
-      var cardStyle = 'background:#0f1116;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;border-left:3px solid ' + kpi.color + ';';
+      var cardStyle = 'background:var(--bg-1);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;border-left:3px solid ' + kpi.color + ';';
       if (kpi.section) cardStyle += 'cursor:pointer;';
       return '<div class="inv-kpi-card"' +
         (kpi.section ? ' data-section="' + kpi.section + '"' : '') +
         (kpi.isLink ? ' id="invGoToChars"' : '') +
         ' style="' + cardStyle + '">' +
-        '<div style="width:40px;height:40px;border-radius:10px;background:#0a0c10;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+        '<div style="width:40px;height:40px;border-radius:10px;background:var(--bg-0);display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
           '<img src="' + kpi.icon + '" width="24" height="24" alt="">' +
         '</div>' +
         '<div style="flex:1;min-width:0;">' +
-          '<div style="font-size:0.7rem;color:#9aa2b8;text-transform:uppercase;letter-spacing:0.5px;">' + esc(kpi.label) + '</div>' +
-          '<div style="font-size:1.1rem;font-weight:700;color:#e0e4ed;">' + kpi.value + '</div>' +
+          '<div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">' + esc(kpi.label) + '</div>' +
+          '<div style="font-size:1.1rem;font-weight:700;color:var(--tx-1);">' + kpi.value + '</div>' +
         '</div>' +
       '</div>';
     }).join('');
@@ -383,9 +383,9 @@
       '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
         '<div style="position:relative;flex:1;min-width:200px;">' +
           '<img src="' + CONFIG.ICONS.search + '" width="14" height="14" alt="" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:0.4;pointer-events:none;">' +
-          '<input type="text" id="invSearchInput" placeholder="Buscar en inventario..." value="' + esc(state.filters.q) + '" style="width:100%;padding:9px 12px 9px 34px;background:#1a1c24;border:1px solid #2a2c35;border-radius:20px;color:#e0e4ed;font-size:0.82rem;transition:border-color 0.15s ease,box-shadow 0.15s ease;" onfocus="this.style.borderColor=\'#5276ff\';this.style.boxShadow=\'0 0 0 2px rgba(82,118,255,0.15)\'" onblur="this.style.borderColor=\'#2a2c35\';this.style.boxShadow=\'none\'">' +
+          '<input type="text" id="invSearchInput" placeholder="Buscar en inventario..." value="' + esc(state.filters.q) + '" style="width:100%;padding:9px 12px 9px 34px;background:var(--bg-1);border:1px solid var(--bd-1);border-radius:20px;color:var(--tx-1);font-size:0.82rem;transition:border-color 0.15s ease,box-shadow 0.15s ease;" onfocus="this.style.borderColor=\'var(--acc-1)\';this.style.boxShadow=\'0 0 0 2px rgba(82,118,255,0.15)\'" onblur="this.style.borderColor=\'var(--bd-1)\';this.style.boxShadow=\'none\'">' +
         '</div>' +
-        '<select id="invRarityFilter" style="background:#1a1c24;border:1px solid #2a2c35;border-radius:20px;color:#e0e4ed;padding:8px 32px 8px 12px;font-size:0.78rem;cursor:pointer;transition:border-color 0.15s ease;appearance:none;background-image:url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="%239aa2b8"/></svg>\');background-repeat:no-repeat;background-position:right 10px center;"><option value="">Todas las rarezas</option>' + rarityOptions + '</select>' +
+        '<select id="invRarityFilter" style="background:var(--bg-1);border:1px solid var(--bd-1);border-radius:20px;color:var(--tx-1);padding:8px 32px 8px 12px;font-size:0.78rem;cursor:pointer;transition:border-color 0.15s ease;appearance:none;background-image:url(\'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="%239aa2b8"/></svg>\');background-repeat:no-repeat;background-position:right 10px center;"><option value="">Todas las rarezas</option>' + rarityOptions + '</select>' +
         '<button id="invDashboardBtn" class="btn btn--ghost" title="Dashboard Multi-Cuenta de Inventario" style="display:inline-flex;align-items:center;gap:5px;padding:8px 14px;font-size:0.78rem;transition:all 0.15s ease;">' +
           '<img src="assets/icons/733322.png" width="14" height="14" alt="" style="opacity:0.7;"> Dashboard' +
         '</button>' +
@@ -403,20 +403,20 @@
       container.innerHTML = '<div style="display:flex;flex-direction:column;gap:16px;">' +
         // Skeleton KPIs
         '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:8px;">' +
-          Array(5).fill('<div style="height:64px;background:linear-gradient(90deg,#1a1c24 25%,#252830 50%,#1a1c24 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:10px;border-left:3px solid #2a2c35;"></div>').join('') +
+          Array(5).fill('<div style="height:64px;background:linear-gradient(90deg,var(--bg-1) 25%,var(--bg-2) 50%,var(--bg-1) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:10px;border-left:3px solid var(--bd-1);"></div>').join('') +
         '</div>' +
         // Skeleton secciones
         Array(3).fill(
           '<div>' +
-            '<div style="height:20px;width:120px;background:linear-gradient(90deg,#1a1c24 25%,#252830 50%,#1a1c24 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:6px;margin-bottom:8px;"></div>' +
+            '<div style="height:20px;width:120px;background:linear-gradient(90deg,var(--bg-1) 25%,var(--bg-2) 50%,var(--bg-1) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:6px;margin-bottom:8px;"></div>' +
             '<div style="display:flex;gap:8px;margin-bottom:8px;">' +
-              Array(4).fill('<div style="height:22px;width:70px;background:linear-gradient(90deg,#1a1c24 25%,#252830 50%,#1a1c24 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:12px;"></div>').join('') +
+              Array(4).fill('<div style="height:22px;width:70px;background:linear-gradient(90deg,var(--bg-1) 25%,var(--bg-2) 50%,var(--bg-1) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:12px;"></div>').join('') +
             '</div>' +
             '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">' +
-              Array(5).fill('<div style="height:40px;background:linear-gradient(90deg,#1a1c24 25%,#252830 50%,#1a1c24 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:8px;border-left:3px solid #2a2c35;"></div>').join('') +
+              Array(5).fill('<div style="height:40px;background:linear-gradient(90deg,var(--bg-1) 25%,var(--bg-2) 50%,var(--bg-1) 75%);background-size:200% 100%;animation:shimmer 1.2s infinite;border-radius:8px;border-left:3px solid var(--bd-1);"></div>').join('') +
             '</div>' +
           '</div>'
-        ).join('<div style="height:1px;background:#1f2026;margin:4px 0;"></div>') +
+        ).join('<div style="height:1px;background:var(--bd-1);margin:4px 0;"></div>') +
       '</div>';
       return;
     }
@@ -452,15 +452,15 @@
       if (!sec) return;
       if (loc === 'armory' && sec.allItems.length === 0 && Object.keys(sec.groups).length === 0) return;
 
-      html += '<div class="inv-section-header" data-section="' + loc + '" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;border-radius:10px;transition:all 0.15s ease;background:#0a0c10;border:1px solid #1a1c24;margin-top:4px;">' +
-        '<div style="width:32px;height:32px;border-radius:8px;background:#0f1116;display:flex;align-items:center;justify-content:center;border:1px solid #1f2026;">' +
+      html += '<div class="inv-section-header" data-section="' + loc + '" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:8px 12px;border-radius:10px;transition:all 0.15s ease;background:var(--bg-0);border:1px solid var(--bg-1);margin-top:4px;">' +
+        '<div style="width:32px;height:32px;border-radius:8px;background:var(--bg-1);display:flex;align-items:center;justify-content:center;border:1px solid var(--bd-1);">' +
           '<img src="' + (locIcons[loc] || '') + '" width="18" height="18" alt="">' +
         '</div>' +
         '<div style="flex:1;">' +
-          '<strong style="font-size:0.85rem;color:#e0e4ed;">' + esc(sec.label) + '</strong>' +
-          '<div style="font-size:0.65rem;color:#9aa2b8;">' + esc(Object.keys(sec.groups).length + ' rarezas') + '</div>' +
+          '<strong style="font-size:0.85rem;color:var(--tx-1);">' + esc(sec.label) + '</strong>' +
+          '<div style="font-size:0.65rem;color:var(--muted);">' + esc(Object.keys(sec.groups).length + ' rarezas') + '</div>' +
         '</div>' +
-        '<span style="color:#5276ff;font-size:0.7rem;font-weight:600;">Explorar →</span>' +
+        '<span style="color:var(--acc-1);font-size:0.7rem;font-weight:600;">Explorar →</span>' +
       '</div>';
 
       var groupKeys = Object.keys(sec.groups);
@@ -476,9 +476,9 @@
           var isActive = state.filters.rarity === rarity;
           html += '<div class="inv-rarity-chip" data-rarity="' + esc(rarity) + '" style="' +
             'display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;' +
-            'background:' + (isActive ? hexToRGBA(rarityColor, 0.12) : '#1a1c24') + ';' +
-            'border:1px solid ' + (isActive ? rarityColor : '#2a2c35') + ';' +
-            'color:' + (isActive ? rarityColor : '#b4bad0') + ';font-size:0.75rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.15s ease;' +
+            'background:' + (isActive ? hexToRGBA(rarityColor, 0.12) : 'var(--bg-1)') + ';' +
+            'border:1px solid ' + (isActive ? rarityColor : 'var(--bd-1)') + ';' +
+            'color:' + (isActive ? rarityColor : 'var(--tx-3)') + ';font-size:0.75rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.15s ease;' +
             '">' +
             '<span style="color:' + rarityColor + ';">' + esc(rarity) + '</span>' +
             '<span style="opacity:0.6;">' + fmtInt(g.types) + 't</span>' +
@@ -506,16 +506,16 @@
 
           html += '<div class="inv-item-card" data-entry="' + esc(JSON.stringify({ location: entry.location, itemId: entry.item.id, slot: entry.slot })) + '" style="' +
             'display:flex;align-items:center;gap:6px;padding:4px 8px;min-width:0;' +
-            'background:#0f1116;border:1px solid rgba(255,255,255,0.08);border-radius:8px;' +
+            'background:var(--bg-1);border:1px solid rgba(255,255,255,0.08);border-radius:8px;' +
             'border-left:3px solid ' + rarityColor + ';cursor:pointer;' +
             '">' +
-            '<div style="width:28px;height:28px;border-radius:6px;background:#0a0c10;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">' +
+            '<div style="width:28px;height:28px;border-radius:6px;background:var(--bg-0);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">' +
               (icon ? '<img src="' + esc(icon) + '" width="22" height="22" alt="" loading="lazy" style="border-radius:3px;">' : '<span style="font-size:0.7rem;">📦</span>') +
             '</div>' +
             '<div style="min-width:0;flex:1;">' +
               '<div style="font-weight:600;font-size:0.7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(name) + '">' + esc(name) + '</div>' +
             '</div>' +
-            (count > 1 ? '<span style="font-weight:700;color:#ffd36b;font-size:0.7rem;flex-shrink:0;">×' + fmtInt(count) + '</span>' : '') +
+            (count > 1 ? '<span style="font-weight:700;color:var(--color-amber);font-size:0.7rem;flex-shrink:0;">×' + fmtInt(count) + '</span>' : '') +
           '</div>';
         });
         html += '</div>';
@@ -559,9 +559,9 @@
         // Actualizar estilo de chips
         armorFilters.forEach(function(c) {
           var isActive = c.getAttribute('data-weight') === weight;
-          c.style.background = isActive ? 'rgba(123,194,255,0.12)' : '#1a1c24';
-          c.style.borderColor = isActive ? 'rgba(123,194,255,0.3)' : '#2a2c35';
-          c.style.color = isActive ? '#7bc2ff' : '#b4bad0';
+          c.style.background = isActive ? 'rgba(123,194,255,0.12)' : 'var(--bg-1)';
+          c.style.borderColor = isActive ? 'rgba(123,194,255,0.3)' : 'var(--bd-1)';
+          c.style.color = isActive ? 'var(--color-blue)' : 'var(--tx-3)';
         });
 
         // Filtrar items en la misma categoría
@@ -654,7 +654,7 @@
         '<div style="flex:1;"></div>' +
         '<div style="position:relative;">' +
           '<img src="' + CONFIG.ICONS.search + '" width="14" height="14" alt="" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);opacity:0.5;">' +
-          '<input type="text" id="invSectionSearch" placeholder="Buscar en ' + esc(label.toLowerCase()) + '..." style="padding:6px 10px 6px 28px;background:#1a1c24;border:1px solid #2a2c35;border-radius:20px;color:#e0e4ed;font-size:0.8rem;width:200px;">' +
+          '<input type="text" id="invSectionSearch" placeholder="Buscar en ' + esc(label.toLowerCase()) + '..." style="padding:6px 10px 6px 28px;background:var(--bg-1);border:1px solid var(--bd-1);border-radius:20px;color:var(--tx-1);font-size:0.8rem;width:200px;">' +
         '</div>' +
       '</div>' +
       '<div id="invSectionContent"></div>';
@@ -719,10 +719,10 @@
 
       html += '<div style="margin-bottom:16px;">' +
         '<div style="margin-bottom:6px;">' +
-          '<div style="font-size:0.8rem;font-weight:600;color:#b4bad0;">' + esc(cat.label) + ' (' + items.length + ')</div>' +
+          '<div style="font-size:0.8rem;font-weight:600;color:var(--tx-3);">' + esc(cat.label) + ' (' + items.length + ')</div>' +
           '<div class="muted" style="font-size:0.65rem;">' + esc(cat.desc) + '</div>' +
         '</div>' +
-        '<div style="border-bottom:1px solid #1f2026;margin-bottom:8px;"></div>' +
+        '<div style="border-bottom:1px solid var(--bd-1);margin-bottom:8px;"></div>' +
         '<div class="inv-items-grid">';
 
       items.sort(function(a, b) {
@@ -739,16 +739,16 @@
 
         html += '<div class="inv-item-card" data-entry="' + esc(JSON.stringify({ location: 'materials', itemId: entry.material.id })) + '" style="' +
           'display:flex;align-items:center;gap:8px;padding:6px 10px;min-width:0;' +
-          'background:#0f1116;border:1px solid rgba(255,255,255,0.08);border-radius:8px;' +
+          'background:var(--bg-1);border:1px solid rgba(255,255,255,0.08);border-radius:8px;' +
           'border-left:3px solid ' + rarityColor + ';cursor:pointer;' +
           '">' +
-          '<div style="width:32px;height:32px;border-radius:6px;background:#0a0c10;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">' +
+          '<div style="width:32px;height:32px;border-radius:6px;background:var(--bg-0);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">' +
             (icon ? '<img src="' + esc(icon) + '" width="24" height="24" alt="" loading="lazy" style="border-radius:4px;">' : '<span style="font-size:0.8rem;">📦</span>') +
           '</div>' +
           '<div style="min-width:0;flex:1;">' +
             '<div style="font-weight:600;font-size:0.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(name) + '">' + esc(name) + '</div>' +
           '</div>' +
-          '<span style="font-weight:700;color:#ffd36b;font-size:0.8rem;flex-shrink:0;">×' + fmtInt(count) + '</span>' +
+          '<span style="font-weight:700;color:var(--color-amber);font-size:0.8rem;flex-shrink:0;">×' + fmtInt(count) + '</span>' +
         '</div>';
       });
 
@@ -773,9 +773,9 @@
         // Actualizar estilo de chips
         armorFilters.forEach(function(c) {
           var isActive = c.getAttribute('data-weight') === weight;
-          c.style.background = isActive ? 'rgba(123,194,255,0.12)' : '#1a1c24';
-          c.style.borderColor = isActive ? 'rgba(123,194,255,0.3)' : '#2a2c35';
-          c.style.color = isActive ? '#7bc2ff' : '#b4bad0';
+          c.style.background = isActive ? 'rgba(123,194,255,0.12)' : 'var(--bg-1)';
+          c.style.borderColor = isActive ? 'rgba(123,194,255,0.3)' : 'var(--bd-1)';
+          c.style.color = isActive ? 'var(--color-blue)' : 'var(--tx-3)';
         });
 
         // Filtrar items en la misma categoría
@@ -860,7 +860,7 @@
 
     pageItems.forEach(function(item, idx) {
       var slotNum = (bankIndices[idx] != null ? bankIndices[idx] : start + idx) + 1;
-      var slotStyle = 'aspect-ratio:1;background:#0a0c10;border:1px solid #1f2026;border-radius:8px;display:flex;align-items:center;justify-content:center;';
+      var slotStyle = 'aspect-ratio:1;background:var(--bg-0);border:1px solid var(--bd-1);border-radius:8px;display:flex;align-items:center;justify-content:center;';
 
       if (item && item.id) {
         var meta = state.itemsById.get(item.id);
@@ -873,18 +873,18 @@
         // Resaltar si matchea la búsqueda
         var highlightStyle = '';
         if (searchQ && name.toLowerCase().includes(searchQ)) {
-          highlightStyle = 'box-shadow:0 0 0 2px #ffd36b;z-index:1;';
+          highlightStyle = 'box-shadow:0 0 0 2px var(--color-amber);z-index:1;';
         }
 
         html += '<div class="inv-bank-slot" data-entry="' + esc(JSON.stringify({ location: 'bank', itemId: item.id, slot: slotNum - 1 })) + '" ' +
           'style="' + slotStyle + 'cursor:pointer;border-color:' + hexToRGBA(rarityColor, 0.4) + ';position:relative;overflow:hidden;' + highlightStyle + '"' +
           'title="' + esc(name) + (count > 1 ? ' ×' + count : '') + ' (Slot ' + slotNum + ')">' +
           (icon ? '<img src="' + esc(icon) + '" alt="" loading="lazy" style="width:80%;height:80%;object-fit:contain;border-radius:4px;">' : '<span style="font-size:0.7rem;">📦</span>') +
-          (count > 1 ? '<span style="position:absolute;bottom:1px;right:2px;font-size:0.6rem;color:#ffd36b;font-weight:700;background:rgba(0,0,0,0.85);padding:1px 3px;border-radius:3px;">' + count + '</span>' : '') +
+          (count > 1 ? '<span style="position:absolute;bottom:1px;right:2px;font-size:0.6rem;color:var(--color-amber);font-weight:700;background:rgba(0,0,0,0.85);padding:1px 3px;border-radius:3px;">' + count + '</span>' : '') +
         '</div>';
       } else {
         var isEmpty = item === null;
-        html += '<div style="' + slotStyle + 'opacity:' + (isEmpty ? '0.2' : '0.08') + ';font-size:0.5rem;color:#9aa2b8;">' + (isEmpty ? slotNum : '') + '</div>';
+        html += '<div style="' + slotStyle + 'opacity:' + (isEmpty ? '0.2' : '0.08') + ';font-size:0.5rem;color:var(--muted);">' + (isEmpty ? slotNum : '') + '</div>';
       }
     });
 
@@ -997,14 +997,14 @@
         if (catItems.length === 0) return;
 
         html += '<div class="inv-armory-cat" data-cat-key="' + cat.key + '" style="margin-bottom:16px;">' +
-          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:4px 0;border-bottom:1px solid #1f2026;flex-wrap:wrap;gap:8px;">' +
-            '<span style="font-size:0.8rem;font-weight:600;color:#b4bad0;">' + esc(cat.label) + ' (' + catItems.length + ')</span>' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:4px 0;border-bottom:1px solid var(--bd-1);flex-wrap:wrap;gap:8px;">' +
+            '<span style="font-size:0.8rem;font-weight:600;color:var(--tx-3);">' + esc(cat.label) + ' (' + catItems.length + ')</span>' +
             (cat.key === 'armors' ?
               '<div class="inv-armor-filters" style="display:flex;gap:6px;">' +
-                '<button class="inv-armor-chip active" data-weight="all" style="padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;background:rgba(123,194,255,0.12);border:1px solid rgba(123,194,255,0.3);color:#7bc2ff;cursor:pointer;transition:all 0.15s ease;">Todas</button>' +
-                '<button class="inv-armor-chip" data-weight="Heavy" style="padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;background:#1a1c24;border:1px solid #2a2c35;color:#b4bad0;cursor:pointer;transition:all 0.15s ease;">Pesada</button>' +
-                '<button class="inv-armor-chip" data-weight="Medium" style="padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;background:#1a1c24;border:1px solid #2a2c35;color:#b4bad0;cursor:pointer;transition:all 0.15s ease;">Media</button>' +
-                '<button class="inv-armor-chip" data-weight="Light" style="padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;background:#1a1c24;border:1px solid #2a2c35;color:#b4bad0;cursor:pointer;transition:all 0.15s ease;">Ligera</button>' +
+                '<button class="inv-armor-chip active" data-weight="all" style="padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;background:rgba(123,194,255,0.12);border:1px solid rgba(123,194,255,0.3);color:var(--color-blue);cursor:pointer;transition:all 0.15s ease;">Todas</button>' +
+                '<button class="inv-armor-chip" data-weight="Heavy" style="padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;background:var(--bg-1);border:1px solid var(--bd-1);color:var(--tx-3);cursor:pointer;transition:all 0.15s ease;">Pesada</button>' +
+                '<button class="inv-armor-chip" data-weight="Medium" style="padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;background:var(--bg-1);border:1px solid var(--bd-1);color:var(--tx-3);cursor:pointer;transition:all 0.15s ease;">Media</button>' +
+                '<button class="inv-armor-chip" data-weight="Light" style="padding:3px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;background:var(--bg-1);border:1px solid var(--bd-1);color:var(--tx-3);cursor:pointer;transition:all 0.15s ease;">Ligera</button>' +
               '</div>' : '') +
           '</div>' +
           '<div class="inv-items-grid">';
@@ -1019,15 +1019,15 @@
           var weightClass = (meta && meta.details && meta.details.weight_class) ? meta.details.weight_class : '';
           html += '<div class="inv-item-card" data-entry="' + esc(JSON.stringify({ location: 'armory', itemId: entry.item.id })) + '" data-weight="' + weightClass + '" style="' +
             'display:flex;align-items:center;gap:6px;padding:6px 10px;min-width:0;' +
-            'background:#0f1116;border:1px solid rgba(255,255,255,0.08);border-radius:8px;' +
+            'background:var(--bg-1);border:1px solid rgba(255,255,255,0.08);border-radius:8px;' +
             'border-left:3px solid ' + rarityColor + ';cursor:pointer;' +
             '">' +
-            '<div style="width:32px;height:32px;border-radius:6px;background:#0a0c10;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">' +
+            '<div style="width:32px;height:32px;border-radius:6px;background:var(--bg-0);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">' +
               (icon ? '<img src="' + esc(icon) + '" width="24" height="24" alt="" loading="lazy" style="border-radius:4px;">' : '<span style="font-size:0.8rem;">📦</span>') +
             '</div>' +
             '<div style="min-width:0;flex:1;">' +
               '<div style="font-weight:600;font-size:0.8rem;color:' + rarityColor + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(name) + '">' + esc(name) + '</div>' +
-              '<div style="font-size:0.65rem;color:#9aa2b8;">' + esc(type) + '</div>' +
+              '<div style="font-size:0.65rem;color:var(--muted);">' + esc(type) + '</div>' +
             '</div>' +
           '</div>';
         });
@@ -1054,9 +1054,9 @@
         // Actualizar estilo de chips
         armorFilters.forEach(function(c) {
           var isActive = c.getAttribute('data-weight') === weight;
-          c.style.background = isActive ? 'rgba(123,194,255,0.12)' : '#1a1c24';
-          c.style.borderColor = isActive ? 'rgba(123,194,255,0.3)' : '#2a2c35';
-          c.style.color = isActive ? '#7bc2ff' : '#b4bad0';
+          c.style.background = isActive ? 'rgba(123,194,255,0.12)' : 'var(--bg-1)';
+          c.style.borderColor = isActive ? 'rgba(123,194,255,0.3)' : 'var(--bd-1)';
+          c.style.color = isActive ? 'var(--color-blue)' : 'var(--tx-3)';
         });
 
         // Filtrar items en la misma categoría
@@ -1235,7 +1235,7 @@
         '</header>' +
         '<div class="modal__body" style="max-height:65vh;overflow-y:auto;">' +
           (description ? '<div class="muted" style="font-size:0.8rem;margin-bottom:12px;line-height:1.5;">"' + esc(description) + '"</div>' : '') +
-          '<div style="background:#0f1116;border-radius:10px;padding:10px 14px;">' +
+          '<div style="background:var(--bg-1);border-radius:10px;padding:10px 14px;">' +
             detailRows +
           '</div>' +
           '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">' +
@@ -1277,7 +1277,7 @@
   }
 
   function detailRow(label, value, isSub) {
-    return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1f2026;' + (isSub ? 'padding-left:16px;' : '') + '">' +
+    return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bd-1);' + (isSub ? 'padding-left:16px;' : '') + '">' +
       '<span class="muted" style="font-size:0.7rem;' + (isSub ? 'opacity:0.6;' : '') + '">' + esc(label) + '</span>' +
       '<span style="font-size:0.75rem;text-align:right;max-width:60%;">' + value + '</span>' +
     '</div>';
@@ -1316,15 +1316,15 @@
       style.id = 'inv-styles';
       style.textContent =
         '.inv-rarity-row{display:flex;gap:8px;overflow-x:auto;padding:4px 0;scrollbar-width:thin;}' +
-        '.inv-rarity-chip:hover{background:#252830!important;border-color:#3a3e4a!important;}' +
+        '.inv-rarity-chip:hover{background:var(--bg-2)!important;border-color:var(--bd-2)!important;}' +
         '.inv-items-grid{display:grid;grid-template-columns:repeat(' + CONFIG.ITEMS_PER_ROW + ', 1fr);gap:6px;}' +
-        '.inv-item-card:hover{background:#1a1d28!important;}' +
-        '.inv-section-header:hover{background:#1a1d28!important;}' +
-        '.inv-bank-slot:hover{background:#1a1d28!important;border-color:#3a4c7a!important;transform:scale(1.05);}' +
+        '.inv-item-card:hover{background:var(--bg-2)!important;}' +
+        '.inv-section-header:hover{background:var(--bg-2)!important;}' +
+        '.inv-bank-slot:hover{background:var(--bg-2)!important;border-color:var(--acc-1)!important;transform:scale(1.05);}' +
         '@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}' +
         '.inv-rarity-row::-webkit-scrollbar{height:4px;}' +
-        '.inv-rarity-row::-webkit-scrollbar-track{background:#0a0c10;border-radius:2px;}' +
-        '.inv-rarity-row::-webkit-scrollbar-thumb{background:#2a2c35;border-radius:2px;}';
+        '.inv-rarity-row::-webkit-scrollbar-track{background:var(--bg-0);border-radius:2px;}' +
+        '.inv-rarity-row::-webkit-scrollbar-thumb{background:var(--bd-1);border-radius:2px;}';
       document.head.appendChild(style);
     }
 

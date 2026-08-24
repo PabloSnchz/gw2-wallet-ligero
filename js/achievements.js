@@ -1,4 +1,4 @@
-/* ===========================================================================
+﻿/* ===========================================================================
  * js/achievements.js — Logros enfocado en "próximo a completar"
  * Versión: 3.2.0 (2026-04-28)
  *  - Grid único de pendientes (sin completados, sin resumen duplicado)
@@ -282,19 +282,19 @@
       if (document.getElementById('ach-kpi-styles')) return;
       var css = `
         .ach-kpi{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:8px 0 6px}
-        .ach-kpi__tile{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:#0f1013;border:1px solid #26262b}
+        .ach-kpi__tile{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;background:var(--bg-1);border:1px solid var(--bd-1)}
         .ach-kpi__tile--pot{
-          border-left:3px solid #a0ffc8;
-          background:linear-gradient(135deg, #0d1a14 0%, #0f1116 100%);
+          border-left:3px solid var(--color-green);
+          background:linear-gradient(135deg, #0d1a14 0%, var(--bg-1) 100%);
           box-shadow:0 0 10px rgba(160,255,200,0.08);
           margin-left:auto;
           cursor:default;
         }
         .ach-kpi__num{font-size:16px;font-weight:700;color:#ffd27a}
-        .ach-kpi__lbl{font-size:12px;color:#cfd2d8}
+        .ach-kpi__lbl{font-size:12px;color:var(--tx-2)}
         .ach-kpi__sep{opacity:.5}
-        .ach-kpi__icon img{vertical-align:middle;border-radius:4px;box-shadow:0 0 0 1px #2a2a2f inset}
-        .ach-kpi__delta{font-size:12px;color:#a0ffc8;background:#12261b;border:1px solid #265a3c;border-radius:999px;padding:2px 6px}
+        .ach-kpi__icon img{vertical-align:middle;border-radius:4px;box-shadow:0 0 0 1px var(--bd-1) inset}
+        .ach-kpi__delta{font-size:12px;color:var(--color-green);background:#12261b;border:1px solid #265a3c;border-radius:999px;padding:2px 6px}
         @media (prefers-color-scheme: light){ .ach-kpi__num{color:#a26a00} }
       `;
       var s = document.createElement('style'); s.id='ach-kpi-styles'; s.textContent=css;
@@ -342,8 +342,8 @@
       
       var chip = document.createElement('span');
       chip.className = 'ach-potential';
-      chip.style.cssText = 'display:inline-flex;align-items:center;gap:8px;padding:5px 14px;background:#0f1116;border:1px solid #1e2028;border-radius:20px;font-size:0.75rem;white-space:nowrap;';
-      chip.innerHTML = '<img src="assets/icons/155059.png" width="16" height="16" alt="" style="border-radius:3px;filter:brightness(0.9);"><span style="color:#9aa2b8;">AP potenciales (≥ ' + Math.round(state.pct*100) + '%)</span><span style="color:#a0ffc8;font-weight:700;">+' + fmtInt(apPot) + '</span>';
+      chip.style.cssText = 'display:inline-flex;align-items:center;gap:8px;padding:5px 14px;background:var(--bg-1);border:1px solid var(--bd-1);border-radius:20px;font-size:0.75rem;white-space:nowrap;';
+      chip.innerHTML = '<img src="assets/icons/155059.png" width="16" height="16" alt="" style="border-radius:3px;filter:brightness(0.9);"><span style="color:var(--muted);">AP potenciales (≥ ' + Math.round(state.pct*100) + '%)</span><span style="color:var(--color-green);font-weight:700;">+' + fmtInt(apPot) + '</span>';
       
       // Insertarlo justo después del <h3>, dentro del panel-head
       h3.insertAdjacentElement('afterend', chip);
@@ -422,7 +422,7 @@
         default:
           return '';
       }
-      return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;color:#d0d4e0;margin-right:10px;" title="'+esc(label)+'">' +
+      return '<span style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;color:var(--tx-2);margin-right:10px;" title="'+esc(label)+'">' +
         '<img src="'+esc(icon)+'" width="22" height="22" alt="" style="border-radius:4px;filter:brightness(0.95);flex-shrink:0;">' +
         '<span style="font-weight:500;">'+esc(label)+'</span>'+
         '</span>';
@@ -538,10 +538,10 @@
       .ach-mini-item{display:grid;gap:2px}
       .ach-mini-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
       .ach-mini-name{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-      .ach-mini-next{font-size:12px;color:#a0a0a6}
+      .ach-mini-next{font-size:12px;color:var(--muted)}
       .ach-cats-chips{display:flex;flex-wrap:wrap;gap:6px}
-      .ach-chip{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px; background:#10131a;border:1px solid #253045;color:#bcd0ff;font-size:12px;cursor:pointer}
-      .ach-chip:hover{border-color:#355180}
+      .ach-chip{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px; background:var(--bg-1);border:1px solid var(--bd-1);color:var(--acc-2);font-size:12px;cursor:pointer}
+      .ach-chip:hover{border-color:var(--acc-1)}
     `;
     var s = document.createElement('style'); s.id='ach-aside-styles'; s.textContent=css;
     document.head.appendChild(s);
@@ -615,7 +615,7 @@
       el.asideCats.innerHTML = sliced.map(function(c){
         var icon = iconImg(c.icon, 16, c.name, 'margin-right:6px;border-radius:3px');
         var active = (String(state.cat) === String(c.id));
-        return '<button class="ach-chip" data-cid="'+esc(String(c.id))+'" title="'+esc(c.name||'')+'"'+(active?' style="outline:1px solid #355180"':'')+'>'+icon+esc(c.name||('#'+c.id))+'</button>';
+        return '<button class="ach-chip" data-cid="'+esc(String(c.id))+'" title="'+esc(c.name||'')+'"'+(active?' style="outline:1px solid var(--acc-1)"':'')+'>'+icon+esc(c.name||('#'+c.id))+'</button>';
       }).join('');
       el.asideCats.querySelectorAll('.ach-chip').forEach(function(btn){
         btn.addEventListener('click', function(){
@@ -636,7 +636,7 @@
       .ach-toolbar{
         display:flex; flex-wrap:wrap; gap:10px; align-items:center;
         margin:10px 0 0; padding:10px 12px;
-        background:#0f1116; border:1px solid #26262b; border-radius:40px;
+        background:var(--bg-1); border:1px solid var(--bd-1); border-radius:40px;
       }
       .ach-toolbar .group{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
       .ach-toolbar input[type="text"]{min-width:200px}
@@ -651,19 +651,19 @@
       .a-meta .cats{ flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; overflow-wrap:anywhere; }
       .a-actions{ display:flex; gap:8px; flex-wrap:wrap; }
       .a-actions .btn{ white-space:nowrap; flex:0 0 auto; }
-      .ach-progline{ display:grid; grid-template-columns:1fr auto; align-items:center; gap:8px; color:#cfd2d8; font-size:12px; margin-top:2px; }
-      .ach-prog{ position:relative; height:8px; background:#16161a; border:1px solid #2d2a2f; border-radius:999px; overflow:hidden; width:100%; box-sizing:border-box; }
+      .ach-progline{ display:grid; grid-template-columns:1fr auto; align-items:center; gap:8px; color:var(--tx-2); font-size:12px; margin-top:2px; }
+      .ach-prog{ position:relative; height:8px; background:var(--bg-0); border:1px solid var(--bd-1); border-radius:999px; overflow:hidden; width:100%; box-sizing:border-box; }
       .ach-prog__bar{ position:absolute; left:0; top:0; bottom:0; width:0; transition:width .18s ease; background:linear-gradient(90deg, #f81313 0%, #ff4000 100%); }
       .ach-prog__bar.ach-prog--80{  background: linear-gradient(90deg, #ff4000 0%, #ffa733 100%); }
       .ach-prog__bar.ach-prog--90{  background: linear-gradient(90deg, #ffa733 0%, #f6e100 100%); }
       .ach-prog__bar.ach-prog--done{background: linear-gradient(90deg, #7ff600 0%, #04ff4b 100%); }
       .ach-custom-select { position:relative; display:inline-block; }
-      .ach-select-btn { display:flex; align-items:center; gap:6px; padding:5px 10px; background:#1a1c24; border:1px solid #2a2c35; border-radius:20px; color:#e0e4ed; font-size:0.75rem; cursor:pointer; min-width:130px; }
-      .ach-select-btn:hover { border-color:#3a3e4a; background:#20222c; }
-      .ach-select-list { display:none; position:absolute; top:100%; left:0; z-index:50; background:#1a1c24; border:1px solid #2a2c35; border-radius:8px; padding:4px; min-width:160px; margin-top:4px; max-height:250px; overflow-y:auto; }
-      .ach-select-option { display:flex; align-items:center; gap:8px; padding:6px 10px; cursor:pointer; border-radius:6px; color:#b4bad0; font-size:0.75rem; }
-      .ach-select-option:hover { background:#252830; color:#e0e4ed; }
-      .ach-select-option.active { background:#1a2a3a; color:#7bc2ff; }
+      .ach-select-btn { display:flex; align-items:center; gap:6px; padding:5px 10px; background:var(--bg-1); border:1px solid var(--bd-1); border-radius:20px; color:var(--tx-1); font-size:0.75rem; cursor:pointer; min-width:130px; }
+      .ach-select-btn:hover { border-color:var(--bd-2); background:var(--bg-2); }
+      .ach-select-list { display:none; position:absolute; top:100%; left:0; z-index:50; background:var(--bg-1); border:1px solid var(--bd-1); border-radius:8px; padding:4px; min-width:160px; margin-top:4px; max-height:250px; overflow-y:auto; }
+      .ach-select-option { display:flex; align-items:center; gap:8px; padding:6px 10px; cursor:pointer; border-radius:6px; color:var(--tx-3); font-size:0.75rem; }
+      .ach-select-option:hover { background:var(--bg-2); color:var(--tx-1); }
+      .ach-select-option.active { background:var(--color-blue-bg); color:var(--color-blue); }
     `;
     var s = document.createElement('style'); s.id='ach-toolbar-styles'; s.textContent=css;
     document.head.appendChild(s);
@@ -700,12 +700,12 @@
     tb.className = 'ach-toolbar';
     tb.innerHTML = [
       '<div class="group">',
-        '<strong style="margin-right:6px;color:#b4bad0;">Logros:</strong>',
+        '<strong style="margin-right:6px;color:var(--tx-3);">Logros:</strong>',
         '<input type="text" id="achSearch_alt" placeholder="Buscar logro…">',
       '</div>',
       '<div class="group">',
         // Dropdown Umbral
-        '<label style="color:#b4bad0;font-size:0.8rem;">Umbral:</label>',
+        '<label style="color:var(--tx-3);font-size:0.8rem;">Umbral:</label>',
         '<div class="ach-custom-select">',
           '<button class="ach-select-btn" data-dropdown="achDropdownPct">',
             '<span class="ach-select-btn-text">≥ 80%</span>',
@@ -718,7 +718,7 @@
           '</div>',
         '</div>',
         // Dropdown Categoría
-        '<label style="color:#b4bad0;font-size:0.8rem;">Categoría:</label>',
+        '<label style="color:var(--tx-3);font-size:0.8rem;">Categoría:</label>',
         '<div class="ach-custom-select" id="achCatDropdown">',
           '<button class="ach-select-btn" data-dropdown="achDropdownCat">',
             '<span class="ach-select-btn-text">Todas</span>',
@@ -729,7 +729,7 @@
           '</div>',
         '</div>',
         // Dropdown Recompensa
-        '<label style="color:#b4bad0;font-size:0.8rem;">Recompensa:</label>',
+        '<label style="color:var(--tx-3);font-size:0.8rem;">Recompensa:</label>',
         '<div id="achRewardDropdown" class="ach-custom-select">',
           '<button id="achRewardBtn" class="ach-select-btn">',
             '<span id="achRewardBtnText">Todas</span>',
@@ -770,7 +770,7 @@
     var html = '<div class="ach-select-option" data-value="">Todas</div>';
     categories.forEach(function(c) {
       var icon = iconImg(c.icon, 16, c.name, 'margin-right:6px;border-radius:3px');
-      html += '<div class="ach-select-option" data-value="' + esc(String(c.id)) + '" style="display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;border-radius:6px;color:#b4bad0;font-size:0.75rem;">' + icon + esc(c.name || ('#' + c.id)) + '</div>';
+      html += '<div class="ach-select-option" data-value="' + esc(String(c.id)) + '" style="display:flex;align-items:center;gap:8px;padding:6px 10px;cursor:pointer;border-radius:6px;color:var(--tx-3);font-size:0.75rem;">' + icon + esc(c.name || ('#' + c.id)) + '</div>';
     });
     list.innerHTML = html;
   }

@@ -1,10 +1,10 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="dark light"/>
-  <meta name="theme-color" content="#111218"/>
+  <meta name="theme-color" content="var(--bg-1)"/>
   <title>Bóveda del Gato Negro — v6.6.2</title>
 
   <!-- Fuente hero: Cinzel Decorative -->
@@ -18,240 +18,9 @@
   <!-- CSS principal -->
   <link rel="stylesheet" href="css/main.css?v=2.6.0"/>
   <link rel="stylesheet" href="css/theme-polish.css?v=2.1.0">
+  <link rel="stylesheet" href="css/themes/boveda.css?v=1.0.0" id="themeStylesheet">
   
-  <!-- Estilos para header compacto -->
-  <style>
-    /* Header compacto */
-    .an-header--compact {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: #0e0e10;
-      border-bottom: 1px solid #1a1a1d;
-    }
 
-    .an-header--compact .an-utilbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 16px;
-      background: #0b0b0c;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .brand-compact {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .brand-logo-compact {
-      width: 32px;
-      height: 32px;
-      object-fit: contain;
-      border-radius: 6px;
-    }
-
-    .brand-name {
-      font-family: "Cinzel Decorative", serif;
-      font-weight: 700;
-      font-size: 1rem;
-      color: #fbe6b2;
-      text-shadow: 0 0 4px rgba(255,230,180,0.4);
-      white-space: nowrap;
-    }
-
-    /* Responsive: en móvil, el utilbar se apila */
-    @media (max-width: 900px) {
-      .an-header--compact .an-utilbar {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      
-      .an-header--compact .an-util-left,
-      .an-header--compact .an-util-right {
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-      
-      .brand-name {
-        font-size: 0.9rem;
-      }
-    }
-
-    /* Chip de ID de cuenta */
-    .side-label { font-size:12px; color:#a0a0a6; }
-    .side-chip {
-      display:inline-flex; align-items:center;
-      padding:3px 8px; border-radius:999px;
-      background:#10131a; border:1px solid #253045;
-      color:#bcd0ff; font-size:12px;
-    }
-    .side-account-item { display:grid; gap:4px; }
-
-    /* Ícono de cuenta (sección superior) - sin fondo */
-    #sideAccountPanel .side-head-icon {
-      width: 32px;
-      height: 32px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-right: 8px;
-    }
-    #sideAccountPanel .side-head-icon img {
-      width: 28px !important;
-      height: 28px !important;
-      object-fit: contain;
-    }
-
-    /* Ícono de navegación (encabezado) */
-    #sideNavPanel .side-head-icon {
-      width: 32px;
-      height: 32px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-right: 8px;
-    }
-    #sideNavPanel .side-head-icon img {
-      width: 28px !important;
-      height: 28px !important;
-      object-fit: contain;
-    }
-
-    /* Navegación lateral - íconos sin fondo */
-    .side-nav { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
-    .side-nav__link {
-      display:flex; align-items:center; gap:14px;
-      padding:10px 12px; border-radius:12px;
-      background:#111218; border:1px solid #1f2026; 
-      color:#dfe3ea;
-      text-decoration:none; transition:all .2s ease;
-      font-weight:500;
-    }
-    .side-nav__link:hover { 
-      background:#1a1d28; 
-      border-color:#3a4c7a; 
-      transform:translateX(2px);
-    }
-    .side-nav__icon { 
-      width: 32px; 
-      height: 32px; 
-      display: inline-flex; 
-      align-items: center;
-      justify-content: center;
-    }
-    .side-nav__icon img {
-      width: 28px !important;
-      height: 28px !important;
-      object-fit: contain;
-      filter: brightness(0.95);
-    }
-    .side-nav__link span:last-child {
-      font-size: 0.95rem;
-      font-weight: 500;
-      letter-spacing: 0.3px;
-    }
-    .side-nav__link.is-active {
-      border-color:#5a7bc2;
-      background: linear-gradient(135deg, #1a1f2e 0%, #151a28 100%);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-
-    /* Estilo para íconos en títulos de paneles */
-    .panel__title img {
-      vertical-align: middle;
-      margin-right: 8px;
-      transition: filter 0.2s ease;
-    }
-    .panel__title:hover img {
-      filter: brightness(1.1);
-    }
-    .panel-head__title img {
-      vertical-align: middle;
-      margin-right: 8px;
-      transition: filter 0.2s ease;
-    }
-    .panel-head__title:hover img {
-      filter: brightness(1.1);
-    }
-
-    /* Tooltip de información para WV */
-  .wv-sync-tip {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: help;
-    margin-left: 8px;
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
-  }
-  .wv-sync-tip:hover {
-    opacity: 1;
-  }
-  .wv-sync-tip img {
-    display: block;
-  }
-
-  /* Asegurar que el panel-head contenga el ícono correctamente */
-  #wvPanel .panel-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
-    width: 100%;
-    overflow-x: hidden;
-  }
-
-  /* El ícono no debe empujar el contenido */
-  .wv-sync-tip {
-    margin-left: auto;
-    flex-shrink: 0;
-  }
-
-  /* Asegurar que todo el contenido del panel no desborde */
-  #wvPanel {
-    overflow-x: hidden;
-    width: 100%;
-    padding: 0 12px;
-  }
-
-/* Asegurar que el título no se rompa */
-#wvPanel .panel-head__title {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-}
-
-.wv-sync-tip {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 4px;
-  cursor: help;
-  opacity: 0.7;
-  transition: opacity 0.2s ease;
-}
-
-.wv-sync-tip:hover {
-  opacity: 1;
-}
-
-.wv-sync-tip img {
-  display: block;
-}
-
-/* Margen interior para header y tabs de WV */
-#wvPanel .panel-head,
-#wvPanel .wv-season,
-#wvPanel .tabs {
-  padding-left: 12px;
-  padding-right: 12px;
-}
-
-  </style>
     <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-LB782QT9TR"></script>
   <script>
@@ -263,11 +32,181 @@
 
   <!-- Eventos personalizados -->
   <script src="js/analytics.js"></script>
+
+  <!-- Selector de Temas -->
+  <script defer src="js/theme-selector.js?v=1.0.0"></script>
+
+  <!-- ======================================================================
+       ESTILOS INLINE CONSOLIDADOS v6.6.2
+       (Header + Sidebar + WV + Purchase Detail + Activities + Home Nodes)
+       ====================================================================== -->
+  <style>
+    /* ============ HEADER COMPACTO ============ */
+    .an-header--compact {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--bg); border-bottom: 1px solid var(--bd-1);
+    }
+    .an-header--compact .an-utilbar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 16px; background: var(--bg-0); flex-wrap: wrap; gap: 8px;
+    }
+    .brand-compact { display: inline-flex; align-items: center; gap: 8px; }
+    .brand-logo-compact { width: 32px; height: 32px; object-fit: contain; border-radius: 6px; }
+    .brand-name {
+      font-family: "Cinzel Decorative", serif; font-weight: 700; font-size: 1rem;
+      color: var(--gn-gold); text-shadow: 0 0 4px rgba(255,230,180,0.4); white-space: nowrap;
+    }
+    @media (max-width: 900px) {
+      .an-header--compact .an-utilbar { flex-direction: column; align-items: stretch; }
+      .an-header--compact .an-util-left,
+      .an-header--compact .an-util-right { flex-wrap: wrap; justify-content: center; }
+      .brand-name { font-size: 0.9rem; }
+    }
+
+    /* ============ SIDEBAR ============ */
+    .side-label { font-size:12px; color:var(--muted); }
+    .side-chip {
+      display:inline-flex; align-items:center; padding:3px 8px;
+      border-radius:999px; background:var(--bg-1); border:1px solid var(--bd-1);
+      color:var(--acc-2); font-size:12px;
+    }
+    .side-account-item { display:grid; gap:4px; }
+    #sideAccountPanel .side-head-icon,
+    #sideNavPanel .side-head-icon {
+      width: 32px; height: 32px; display: inline-flex;
+      align-items: center; justify-content: center; margin-right: 8px;
+    }
+    #sideAccountPanel .side-head-icon img,
+    #sideNavPanel .side-head-icon img {
+      width: 28px !important; height: 28px !important; object-fit: contain;
+    }
+    .side-nav { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+    .side-nav__link {
+      display:flex; align-items:center; gap:14px; padding:10px 12px;
+      border-radius:12px; background:var(--bg-1); border:1px solid var(--bd-1);
+      color:var(--tx-2); text-decoration:none; transition:all .2s ease; font-weight:500;
+    }
+    .side-nav__link:hover {
+      background:var(--bg-2); border-color:var(--acc-1); transform:translateX(2px);
+    }
+    .side-nav__icon { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; }
+    .side-nav__icon img {
+      width: 28px !important; height: 28px !important; object-fit: contain; filter: brightness(0.95);
+    }
+    .side-nav__link span:last-child { font-size: 0.95rem; font-weight: 500; letter-spacing: 0.3px; }
+    .side-nav__link.is-active {
+      border-color:var(--acc-1);
+      background: linear-gradient(135deg, var(--bg-2) 0%, var(--bg-1) 100%);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    /* ============ TÍTULOS DE PANELES ============ */
+    .panel__title img, .panel-head__title img {
+      vertical-align: middle; margin-right: 8px; transition: filter 0.2s ease;
+    }
+    .panel__title:hover img, .panel-head__title:hover img { filter: brightness(1.1); }
+
+    /* ============ WV TOOLTIP + HEADER ============ */
+    .wv-sync-tip {
+      display: inline-flex; align-items: center; margin-left: 4px;
+      cursor: help; opacity: 0.7; transition: opacity 0.2s ease;
+    }
+    .wv-sync-tip:hover { opacity: 1; }
+    .wv-sync-tip img { display: block; }
+    #wvPanel .panel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 8px; width: 100%; overflow-x: hidden;
+    }
+    #wvPanel { overflow-x: hidden; width: 100%; padding: 0 12px; }
+    #wvPanel .panel-head__title {
+      display: inline-flex; align-items: center; gap: 8px; margin: 0;
+    }
+    #wvPanel .panel-head,
+    #wvPanel .wv-season,
+    #wvPanel .tabs { padding-left: 12px; padding-right: 12px; }
+
+    /* ============ BOTONES DE NAV WV ============ */
+    #wvTabBtnObjDashboard, #wvTabBtnPurchaseDetail,
+    #wvTabBtnRefreshDashboard, #wvTabBtnBackToWV, #wvTabBtnSyncObjectives {
+      display: inline-flex !important;
+    }
+    #wvTabBtnObjDashboard[hidden], #wvTabBtnPurchaseDetail[hidden],
+    #wvTabBtnRefreshDashboard[hidden], #wvTabBtnBackToWV[hidden], #wvTabBtnSyncObjectives[hidden] {
+      display: none !important;
+    }
+
+    /* ============ WVPD TOOLBAR ============ */
+    .wvpd-iconbtn {
+      background: none !important; border: none !important; padding: 0 !important;
+      margin: 0 0 0 auto !important; width: auto !important; height: auto !important;
+      display: inline-flex !important; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .wvpd-iconbtn img {
+      width: 40px !important; height: 40px !important; display: block !important;
+      border-radius: 8px !important; box-shadow: none !important;
+      background: transparent !important; pointer-events: none;
+    }
+    .wvpd-iconbtn:hover img { filter: brightness(1.08); }
+    .wvpd-number--amber { color:#ffd36b !important; font-weight:700; }
+    .wvpd-number--red { color:#ff9d9d !important; font-weight:700; }
+    .wvpd-green { color:#a0ffc8 !important; font-weight:700; }
+    .wvpd-label--red { color:#ff9d9d !important; }
+    #wvpdUsefulContent .wvpd-li > :last-child { color:#ffd36b !important; font-weight:700; }
+    #wvpdTopAccounts .wvpd-li .wvpd-li__delta { color:#ff9d9d !important; font-weight:700; }
+    #wvpdTopItems .wvpd-li .wvpd-li__rest { color:#ffd36b !important; font-weight:700; }
+    #wvPDPanel .wvpd-banner__icon img { width: 50px !important; height: 50px !important; }
+    #wvPDPanel .wvpd-banner__icon {
+      width: 56px !important; height: 56px !important;
+      display: inline-flex !important; align-items: center; justify-content: center;
+    }
+
+    /* ============ ACTIVITIES ============ */
+    #activitiesPanel .card {
+      background:var(--gw-card-bg); border-radius:10px; padding:10px;
+      box-shadow:inset 0 0 0 1px var(--bd-1);
+    }
+    #activitiesPanel .muted { color:var(--gw-muted); }
+    #activitiesPanel .btn[disabled] { opacity:.5; cursor:not-allowed; }
+    #activitiesPanel .panel-head__title img { margin-right:6px; border-radius:4px; }
+    #activitiesPanel .node-icon { background:var(--bg-2); }
+
+    /* ============ HOME NODES ============ */
+    #homeNodesGrid .gw-node-ico {
+      width:22px; height:22px; border-radius:4px;
+      display:inline-flex; align-items:center; justify-content:center;
+      background:linear-gradient(180deg,var(--bg-2),var(--bg-0));
+      box-shadow:0 0 0 1px rgba(46,68,97,.55) inset,0 0 10px rgba(30,55,88,.38);
+      overflow:hidden;
+    }
+    :root {
+      --gw-mining-bg:linear-gradient(180deg,#1c2432,#0d1622);
+      --gw-logging-bg:linear-gradient(180deg,#1e2a21,#0f1a13);
+      --gw-harvest-bg:linear-gradient(180deg,#1c2230,#111827);
+    }
+    #homeNodesGrid .gw-node--mining .gw-node-ico {
+      background:var(--gw-mining-bg);
+      box-shadow:0 0 0 1px rgba(70,120,180,.6) inset, 0 0 10px rgba(70,120,180,.35);
+    }
+    #homeNodesGrid .gw-node--logging .gw-node-ico {
+      background:var(--gw-logging-bg);
+      box-shadow:0 0 0 1px rgba(84,124,90,.6) inset, 0 0 10px rgba(72,112,86,.35);
+    }
+    #homeNodesGrid .gw-node--harvest .gw-node-ico {
+      background:var(--gw-harvest-bg);
+      box-shadow:0 0 0 1px rgba(90,84,160,.6) inset, 0 0 10px rgba(90,84,160,.35);
+    }
+    #homeNodesGrid .gw-node-ico > img { width:22px; height:22px; display:block; }
+    #homeNodesGrid .gw-node-ico[data-fallback] {
+      font-size:13px; font-weight:700; color:var(--acc-2); line-height:1;
+    }
+    #homeNodesGrid .gw-node--logging .gw-node-ico[data-fallback] { color:var(--color-green); }
+    #homeNodesGrid .gw-node--harvest .gw-node-ico[data-fallback] { color:var(--acc-2); }
+  </style>
 </head>
 <body class="dense">
 
   <noscript>
-    <div class="noscript" role="alert" style="margin:8px; padding:10px; border:1px solid #382b2b; border-radius:8px; background:#1c1414; color:#f5dada;">
+    <div class="noscript" role="alert" style="margin:8px; padding:10px; border:1px solid var(--color-red-bg); border-radius:8px; background:#1c1414; color:#f5dada;">
       Esta aplicación requiere JavaScript para funcionar correctamente. Por favor activalo en tu navegador.
     </div>
   </noscript>
@@ -288,7 +227,7 @@
         <a class="an-util-link an-home-link" href="#/welcome" title="Inicio">
           <img src="assets/icons/Welcome/3380755.png" width="16" height="16" alt="Inicio" style="vertical-align: middle;">
         </a>
-        
+
         <span class="an-sep">|</span>
         
         <!-- Guía de usuario (modal) -->
@@ -479,7 +418,7 @@
           <img src="assets/icons/raids/raid-icon.png" alt="" width="32" height="32">
           Seguimiento de Raids
         </span>
-        <span id="raidLiBadgeContainer" style="display: flex; align-items: center; gap: 6px; background: #1a1c24; padding: 4px 12px; border-radius: 32px;">
+        <span id="raidLiBadgeContainer" style="display: flex; align-items: center; gap: 6px; background: var(--bg-1); padding: 4px 12px; border-radius: 32px;">
           <img src="https://render.guildwars2.com/file/6D33B7387BAF2E2CC9B5D37D1D1B01246AB6FA22/1302744.png" width="16" height="16" alt="LI" style="filter: brightness(0.9);">
           <span style="font-size: 0.75rem;">LI Disponible:</span>
           <strong id="raidLiAvailable" style="font-weight: 700; color: #ffd36b; font-size: 0.9rem;">0</strong>
@@ -495,7 +434,7 @@
           <img src="assets/icons/raids/raid-icon.png" alt="" width="32" height="32">
           Seguimiento de Strikes
         </span>
-        <span id="strikeLiBadgeContainer" style="display: flex; align-items: center; gap: 6px; background: #1a1c24; padding: 4px 12px; border-radius: 32px;">
+        <span id="strikeLiBadgeContainer" style="display: flex; align-items: center; gap: 6px; background: var(--bg-1); padding: 4px 12px; border-radius: 32px;">
           <img src="https://render.guildwars2.com/file/6D33B7387BAF2E2CC9B5D37D1D1B01246AB6FA22/1302744.png" width="16" height="16" alt="LI" style="filter: brightness(0.9);">
           <span style="font-size: 0.75rem;">LI Disponible:</span>
           <strong id="strikeLiAvailable" style="font-weight: 700; color: #ffd36b; font-size: 0.9rem;">0</strong>
@@ -861,7 +800,7 @@
         </p>
 
         <div id="keysList" class="keys-list"></div>
-        <hr style="border-color:#242428">
+        <hr style="border-color:var(--bd-1)">
 
         <form id="keysForm" class="keys-form">
           <div class="field">
@@ -897,7 +836,7 @@
       </header>
 
       <div class="modal__body">
-        <div id="gistSyncStatus" class="muted" style="margin-bottom: 16px; padding: 8px; background: #0f1116; border-radius: 8px;">
+        <div id="gistSyncStatus" class="muted" style="margin-bottom: 16px; padding: 8px; background: var(--bg-1); border-radius: 8px;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <img src="assets/icons/Welcome/544515.png" width="16" height="16" alt="">
             <span id="gistStatusText">Verificando estado...</span>
@@ -923,7 +862,7 @@
           </button>
         </div>
 
-        <hr style="border-color: #2a2c35; margin: 16px 0;">
+        <hr style="border-color: var(--bd-1); margin: 16px 0;">
 
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
           <button id="gistUploadBtn" class="btn" style="display: inline-flex; align-items: center; gap: 6px;">
@@ -1022,51 +961,7 @@
   <script src="js/characters-theme.js?v=1.0.1"></script>
   <script src="js/wv-theme.js?v=1.0.1"></script>
   
-<style>
-  #wvTabBtnObjDashboard { display: inline-flex !important; }
-  #wvTabBtnObjDashboard[hidden] { display: none !important; }
-  #wvTabBtnPurchaseDetail { display: inline-flex !important; }
-  #wvTabBtnPurchaseDetail[hidden] { display: none !important; }
-  #wvTabBtnRefreshDashboard { display: inline-flex !important; }
-  #wvTabBtnRefreshDashboard[hidden] { display: none !important; }
-  #wvTabBtnBackToWV { display: inline-flex !important; }
-  #wvTabBtnBackToWV[hidden] { display: none !important; }
-  #wvTabBtnSyncObjectives { display: inline-flex !important; }
-  #wvTabBtnSyncObjectives[hidden] { display: none !important; }
 
-  /* --- Botón de acceso al dashboard en toolbar --- */
-  .wvpd-iconbtn{
-    background: none !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 0 0 auto !important;
-    width: auto !important;
-    height: auto !important;
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-  }
-  .wvpd-iconbtn img{
-    width: 40px !important;
-    height: 40px !important;
-    display: block !important;
-    border-radius: 8px !important;
-    box-shadow: none !important;
-    background: transparent !important;
-    pointer-events: none;
-  }
-  .wvpd-iconbtn:hover img{ filter: brightness(1.08); }
-
-  .wvpd-number--amber { color:#ffd36b !important; font-weight:700; }
-  .wvpd-number--red   { color:#ff9d9d !important; font-weight:700; }
-  .wvpd-green         { color:#a0ffc8 !important; font-weight:700; }
-  .wvpd-label--red    { color:#ff9d9d !important; }
-
-  #wvpdUsefulContent .wvpd-li > :last-child { color:#ffd36b !important; font-weight:700; }
-  #wvpdTopAccounts .wvpd-li .wvpd-li__delta { color:#ff9d9d !important; font-weight:700; }
-  #wvpdTopItems .wvpd-li .wvpd-li__rest { color:#ffd36b !important; font-weight:700; }
-</style>
   
 <script>
   (function () {
@@ -1083,48 +978,9 @@
     });
   })();
 </script>
-<style>
-  #wvPDPanel .wvpd-banner__icon img {
-    width: 50px !important;
-    height: 50px !important;
-  }
-  #wvPDPanel .wvpd-banner__icon {
-    width: 56px !important;
-    height: 56px !important;
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-  }
-</style>
-<style>
-  #activitiesPanel .card{
-    background:#0f1420;border-radius:10px;padding:10px;box-shadow:inset 0 0 0 1px #1f2a3b;
-  }
-  #activitiesPanel .muted{ color:#9aa7bd; }
-  #activitiesPanel .btn[disabled]{ opacity:.5; cursor:not-allowed; }
-  #activitiesPanel .panel-head__title img{ margin-right:6px; border-radius:4px;}
-  #activitiesPanel .node-icon{ background:#203049; }
-</style>
-<style>
-  #homeNodesGrid .gw-node-ico{
-    width:22px;height:22px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;
-    background:linear-gradient(180deg,#263142,#1a2331);
-    box-shadow:0 0 0 1px rgba(46,68,97,.55) inset,0 0 10px rgba(30,55,88,.38);
-    overflow:hidden;
-  }
-  :root{
-    --gw-mining-bg:linear-gradient(180deg,#1c2432,#0d1622);
-    --gw-logging-bg:linear-gradient(180deg,#1e2a21,#0f1a13);
-    --gw-harvest-bg:linear-gradient(180deg,#1c2230,#111827);
-  }
-  #homeNodesGrid .gw-node--mining .gw-node-ico{ background:var(--gw-mining-bg);  box-shadow:0 0 0 1px rgba(70,120,180,.6) inset, 0 0 10px rgba(70,120,180,.35); }
-  #homeNodesGrid .gw-node--logging .gw-node-ico{ background:var(--gw-logging-bg); box-shadow:0 0 0 1px rgba(84,124,90,.6) inset, 0 0 10px rgba(72,112,86,.35); }
-  #homeNodesGrid .gw-node--harvest .gw-node-ico{ background:var(--gw-harvest-bg); box-shadow:0 0 0 1px rgba(90,84,160,.6) inset, 0 0 10px rgba(90,84,160,.35); }
-  #homeNodesGrid .gw-node-ico > img{ width:22px; height:22px; display:block; }
-  #homeNodesGrid .gw-node-ico[data-fallback]{ font-size:13px; font-weight:700; color:#cfe6ff; line-height:1; }
-  #homeNodesGrid .gw-node--logging .gw-node-ico[data-fallback]{ color:#cfead3; }
-  #homeNodesGrid .gw-node--harvest .gw-node-ico[data-fallback]{ color:#e3dcff; }
-</style>
+
+
+
 
 <script>
 (function(){
@@ -1429,17 +1285,17 @@
     </header>
     <div class="modal__body" style="display:flex;flex-direction:column;gap:16px;">
       <p class="muted" style="margin:0;">Elegí la guía que mejor se adapte a lo que necesitás:</p>
-      <a href="docs/user-guide.html" target="_blank" style="display:flex;align-items:center;gap:14px;padding:16px;background:#0f1116;border:1px solid #2a2c35;border-radius:12px;text-decoration:none;transition:all 0.15s ease;" onmouseover="this.style.borderColor='#5276ff';this.style.boxShadow='0 0 12px rgba(82,118,255,0.15)'" onmouseout="this.style.borderColor='#2a2c35';this.style.boxShadow='none'">
+      <a href="docs/user-guide.html" target="_blank" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg-1);border:1px solid var(--bd-1);border-radius:12px;text-decoration:none;transition:all 0.15s ease;" onmouseover="this.style.borderColor='#5276ff';this.style.boxShadow='0 0 12px rgba(82,118,255,0.15)'" onmouseout="this.style.borderColor='var(--bd-1)';this.style.boxShadow='none'">
         <img src="assets/icons/Welcome/102367.png" width="32" height="32" alt="" style="flex-shrink:0;">
         <div>
-          <div style="font-weight:600;color:#e0e4ed;font-size:0.95rem;">Guía básica</div>
+          <div style="font-weight:600;color:var(--tx-1);font-size:0.95rem;">Guía básica</div>
           <div class="muted" style="font-size:0.75rem;">Primeros pasos, cómo empezar, funcionalidades principales</div>
         </div>
       </a>
-      <a href="docs/user-guide-avanzado.html" target="_blank" style="display:flex;align-items:center;gap:14px;padding:16px;background:#0f1116;border:1px solid #2a2c35;border-radius:12px;text-decoration:none;transition:all 0.15s ease;" onmouseover="this.style.borderColor='#5276ff';this.style.boxShadow='0 0 12px rgba(82,118,255,0.15)'" onmouseout="this.style.borderColor='#2a2c35';this.style.boxShadow='none'">
+      <a href="docs/user-guide-avanzado.html" target="_blank" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg-1);border:1px solid var(--bd-1);border-radius:12px;text-decoration:none;transition:all 0.15s ease;" onmouseover="this.style.borderColor='#5276ff';this.style.boxShadow='0 0 12px rgba(82,118,255,0.15)'" onmouseout="this.style.borderColor='var(--bd-1)';this.style.boxShadow='none'">
         <img src="assets/icons/Welcome/102361.png" width="32" height="32" alt="" style="flex-shrink:0;">
         <div>
-          <div style="font-weight:600;color:#e0e4ed;font-size:0.95rem;">Guía avanzada</div>
+          <div style="font-weight:600;color:var(--tx-1);font-size:0.95rem;">Guía avanzada</div>
           <div class="muted" style="font-size:0.75rem;">Qué es, cómo se usa y para qué sirve cada módulo en detalle</div>
         </div>
       </a>

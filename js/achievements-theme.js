@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * Achievements Theme — diseño sobrio con borde izquierdo de color
  * v1.1.1 (2026-05-02)
  *
@@ -9,7 +9,7 @@
  *  - Mismo patrón que wallet-theme.js v1.3.0 y meta-theme.js v1.4.2
  *
  * Cambios v1.1.0:
- *  - Títulos en blanco (#e0e4ed) en vez del color de la categoría
+ *  - Títulos en blanco (var(--tx-1)) en vez del color de la categoría
  *  - Borde general neutro + glow unificado suave
  *  - El color de la categoría se conserva solo en el borde izquierdo (3px)
  *  - Misma receta visual que Meta Theme v1.4.1
@@ -74,14 +74,14 @@
       return '#ffd3b3';
 
     if (/fractal|fractales|undaunting|mistlock|fracto/i.test(n))
-      return '#bcd0ff';
+      return 'var(--acc-2)';
 
     // Core / General / Historia / Mapas Tyria
     if (/core|tyria|historia|story|explor|aventura|colecci|world completion|map completion/i.test(n))
-      return '#bcd0ff';
+      return 'var(--acc-2)';
 
     // Fallback general
-    return '#bcd0ff';
+    return 'var(--acc-2)';
   }
 
   function readCategoryName(card){

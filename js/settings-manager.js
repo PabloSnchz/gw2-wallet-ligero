@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/settings-manager.js — Gestión de Exportación/Importación de configuración
  * v1.0.2 (2026-03-28)
  * 

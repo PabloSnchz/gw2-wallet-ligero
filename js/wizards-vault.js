@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/wizards-vault.js — Módulo Wizard's Vault (season, objetivos, cuenta, listados, shop)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
  * Versión: 1.3.0 (2026-03-30) — Botón de recarga forzada de temporada

@@ -105,6 +105,8 @@ Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No es
 | `inventory-dashboard.js` | v1.0.0 | Dashboard multi-cuenta con 3 sets, sistema de tiers (T3-T6), carga en 2 fases |
 | `raid-tracker.js` | v1.8.0 | Raid Tracker con header unificado y navegación a Strikes |
 | `strike-tracker.js` | v1.0.0 | **NUEVO** — Strike Missions: 15 strikes, grid optimizado, KPIs, modal con detalles |
+| `theme-selector.js` | v1.0.0 | Selector de temas con modal, 18 temas + aleatorio, persistencia |
+| `css/themes/` | v1.0.0 | 18 temas con variables CSS |
 | `wallet-theme.js` | v1.3.1 | Glow neutro para divisas sin color |
 | `app.js` | v2.7.0 | Conversor extraído |
 | `index.html` | — | Sidebar sin conversor, botón PD simplificado |

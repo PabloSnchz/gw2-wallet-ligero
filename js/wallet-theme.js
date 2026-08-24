@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * Wallet Theme (divisas) — outline + halo por color + título tintado + badges de categorías + card canónica
  * v1.3.1 (2026-03-21)
  *

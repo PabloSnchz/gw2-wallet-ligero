@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/wv-purchase-detail.js — Vista de Detalle de Compras (Wizard's Vault)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
  * Versión: 1.13.1 (2026-04-05) — Estado online basado en last_modified
@@ -90,11 +90,11 @@
       
       .wvpd-dash{ display:grid; gap:10px; margin-bottom:12px; }
       .wvpd-dash__grid{ display:grid; gap:10px; grid-template-columns: repeat(3, minmax(0,1fr)); }
-      .wvpd-card{ background: linear-gradient(180deg, #0f1116 0%, #0d0f14 100%); border:1px solid #26262b; border-radius:12px; padding:10px 12px; }}
+      .wvpd-card{ background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%); border:1px solid var(--bd-1); border-radius:12px; padding:10px 12px; }
       
       /* ====== Skeleton Loader ====== */
       .wvpd-skeleton {
-        background: linear-gradient(90deg, #1a1c24 25%, #252830 50%, #1a1c24 75%);
+        background: linear-gradient(90deg, var(--bg-1) 25%, var(--bg-2) 50%, var(--bg-1) 75%);
         background-size: 200% 100%;
         animation: wvpdShimmer 1.2s infinite;
         border-radius: 8px;
@@ -105,7 +105,7 @@
       }
       .wvpd-skeleton-bar {
         height: 24px;
-        background: linear-gradient(90deg, #1a1c24 25%, #252830 50%, #1a1c24 75%);
+        background: linear-gradient(90deg, var(--bg-1) 25%, var(--bg-2) 50%, var(--bg-1) 75%);
         background-size: 200% 100%;
         animation: wvpdShimmer 1.2s infinite;
         border-radius: 6px;
@@ -131,22 +131,22 @@
         border-left-color: transparent;
       }
       .wvpd-kpi--ok { 
-        border-left-color: #a0ffc8;
+        border-left-color: var(--color-green);
         box-shadow: 0 0 6px rgba(160, 255, 200, 0.2);
       }
       .wvpd-kpi--warn { 
-        border-left-color: #ffd36b;
+        border-left-color: var(--color-amber);
         box-shadow: 0 0 6px rgba(255, 211, 107, 0.2);
       }
       .wvpd-kpi--bad { 
-        border-left-color: #ff9d9d;
+        border-left-color: var(--color-red);
         box-shadow: 0 0 6px rgba(255, 157, 157, 0.2);
       }
-      .wvpd-kpi__lbl{ color:#b4bad0; font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:8px; text-transform:uppercase; letter-spacing:0.5px; }
+      .wvpd-kpi__lbl{ color:var(--tx-3); font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:8px; text-transform:uppercase; letter-spacing:0.5px; }
       .wvpd-kpi__val{ font-size:20px; font-weight:800; letter-spacing:0.2px; }
-      .wvpd-kpi--ok .wvpd-kpi__val{ color:#a0ffc8; }
-      .wvpd-kpi--warn .wvpd-kpi__val{ color:#ffd36b; }
-      .wvpd-kpi--bad .wvpd-kpi__val{ color:#ff9d9d; }
+      .wvpd-kpi--ok .wvpd-kpi__val{ color:var(--color-green); }
+      .wvpd-kpi--warn .wvpd-kpi__val{ color:var(--color-amber); }
+      .wvpd-kpi--bad .wvpd-kpi__val{ color:var(--color-red); }
       
       .wvpd-rows{ display:grid; gap:8px; grid-template-columns: 1.2fr 1.8fr; }
       @media (max-width: 980px){ .wvpd-rows{ grid-template-columns: 1fr; } }
@@ -155,10 +155,10 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background: #0c0e14;
+        background: var(--bg-0);
         padding: 4px 12px;
         border-radius: 20px;
-        border: 1px solid #2a2c35;
+        border: 1px solid var(--bd-1);
       }
       .wvpd-rot__pill .clock-ico {
         display: inline-flex;
@@ -172,8 +172,8 @@
       .wvpd-cols{ display:flex; gap:10px; flex-wrap:wrap; }
       .wvpd-col{ flex:1 1 240px; min-width:220px; }
       .wvpd-list{ margin:0; padding:0; list-style:none; display:grid; gap:6px; }
-      .wvpd-li{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:#0c0e13; border:1px solid #222631; border-radius:10px; padding:8px 10px; transition: all 0.15s ease; }
-      .wvpd-li:hover { background: #11131c; border-color: #2e3342; }
+      .wvpd-li{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--bg-0); border:1px solid var(--bg-2); border-radius:10px; padding:8px 10px; transition: all 0.15s ease; }
+      .wvpd-li:hover { background: var(--bg-2); border-color: var(--bd-2); }
       .wvpd-li__icon img{ width:22px; height:22px; border-radius:6px; }
       
       /* ====== Header rediseñado ====== */
@@ -182,8 +182,8 @@
         align-items:center; 
         justify-content:space-between; 
         gap:8px; 
-        background: linear-gradient(135deg, #0f1118 0%, #0b0d12 100%);
-        border: 1px solid #2a2c35;
+        background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-0) 100%);
+        border: 1px solid var(--bd-1);
         border-radius: 16px;
         padding: 12px 16px;
         margin-bottom: 16px;
@@ -196,12 +196,12 @@
         backdrop-filter: blur(4px);
         border-radius: 12px;
         padding: 8px 12px;
-        border-left: 3px solid #7bc2ff;
+        border-left: 3px solid var(--color-blue);
       }
       .wvpd-banner__icon img, .wvpd-banner__icon svg { width: 32px; height: 32px; border-radius: 8px; }
-      .wvpd-banner__title { font-weight: 700; font-size: 1rem; color: #e8ecf5; }
-      .wvpd-help { font-size: 0.7rem; color: #8e94a8; }
-      .wvpd-stickyhint { font-size: 0.7rem; color: #6a7080; background: #0c0e14; padding: 4px 10px; border-radius: 20px; }
+      .wvpd-banner__title { font-weight: 700; font-size: 1rem; color: var(--tx-1); }
+      .wvpd-help { font-size: 0.7rem; color: var(--muted); }
+      .wvpd-stickyhint { font-size: 0.7rem; color: var(--tx-3); background: var(--bg-0); padding: 4px 10px; border-radius: 20px; }
       
       /* ====== Filtros mejorados ====== */
       .wvpd-filters{ 
@@ -210,46 +210,46 @@
         flex-wrap: wrap; 
         align-items: center;
         margin: 12px 0 8px; 
-        background: #0c0e14;
+        background: var(--bg-0);
         padding: 8px 16px;
         border-radius: 40px;
         width: fit-content;
       }
       .wvpd-filters input, 
       .wvpd-filters select {
-        background: #1a1c24;
-        border: 1px solid #2a2c35;
+        background: var(--bg-1);
+        border: 1px solid var(--bd-1);
         border-radius: 20px;
         padding: 6px 12px;
-        color: #e0e4ed;
+        color: var(--tx-1);
         font-size: 0.8rem;
       }
       .wvpd-filters input:focus, 
       .wvpd-filters select:focus {
         outline: none;
-        border-color: #5a6e9a;
+        border-color: var(--acc-1);
       }
       .wvpd-filters label {
         display: inline-flex;
         align-items: center;
         gap: 6px;
         font-size: 0.8rem;
-        color: #b4bad0;
+        color: var(--tx-3);
         cursor: pointer;
       }
       .wvpd-filters button {
-        background: #1a1c24;
-        border: 1px solid #2a2c35;
+        background: var(--bg-1);
+        border: 1px solid var(--bd-1);
         border-radius: 20px;
         padding: 6px 12px;
-        color: #e0e4ed;
+        color: var(--tx-1);
         font-size: 0.8rem;
         cursor: pointer;
         transition: all 0.15s ease;
       }
       .wvpd-filters button:hover {
-        background: #252830;
-        border-color: #3a3e4a;
+        background: var(--bg-2);
+        border-color: var(--bd-2);
       }
       
       /* ====== Status bar con timestamp ====== */
@@ -261,33 +261,33 @@
         font-size: 0.75rem;
       }
       .wvpd-status-msg {
-        color: #9aa2b5;
+        color: var(--muted);
       }
       .wvpd-status-msg.error {
-        color: #ff9d9d;
+        color: var(--color-red);
       }
       .wvpd-timestamp {
-        color: #6a7080;
+        color: var(--tx-3);
         font-family: monospace;
         font-size: 0.7rem;
       }
       
-      .wvpd-tablewrap{ overflow:auto; border:1px solid #26262b; border-radius:12px; margin-top: 8px; margin-left: -8px; margin-right: -8px; width: calc(100% + 16px); }
+      .wvpd-tablewrap{ overflow:auto; border:1px solid var(--bd-1); border-radius:12px; margin-top: 8px; margin-left: -8px; margin-right: -8px; width: calc(100% + 16px); }
       table.wvpd{ border-collapse:separate; border-spacing:0; width:100%; }
-      table.wvpd th, table.wvpd td{ padding:6px 8px; border-bottom:1px solid #24252a; white-space:nowrap; vertical-align: middle; }
+      table.wvpd th, table.wvpd td{ padding:6px 8px; border-bottom:1px solid var(--bd-1); white-space:nowrap; vertical-align: middle; }
       table.wvpd thead th{ 
         position:sticky; 
         top:0; 
-        background: #0f1118; 
+        background: var(--bg-1); 
         z-index:2;
         font-weight: 600;
         font-size: 0.75rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        color: #9aa2b8;
-        border-bottom: 1px solid #2a2c35;
+        color: var(--muted);
+        border-bottom: 1px solid var(--bd-1);
       }
-      table.wvpd th:first-child, table.wvpd td:first-child{ position:sticky; left:0; background:#0e1116; z-index:1; }
+      table.wvpd th:first-child, table.wvpd td:first-child{ position:sticky; left:0; background:var(--bg-0); z-index:1; }
       .wvpd-th-item {
         min-width: 50px;
       }
@@ -297,8 +297,8 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background: #1a1c24;
-        border: 1px solid #2a2c35;
+        background: var(--bg-1);
+        border: 1px solid var(--bd-1);
         border-radius: 24px;
         padding: 4px 12px;
         font-weight: 500;
@@ -308,7 +308,7 @@
         white-space: nowrap;
       }
       .wvpd-header-pill .wvpd-header-label {
-        color: #b4bad0;
+        color: var(--tx-3);
       }
       .wvpd-header-icon {
         display: inline-flex;
@@ -332,15 +332,15 @@
       }
 
       /* ====== Colores canónicos para PD ====== */
-      .wvpd-green{ color:#a0ffc8 !important; font-weight:700; }
-      .wvpd-red{   color:#ff9d9d !important; font-weight:700; }
-      .wvpd-acc--red{ color:#ff9d9d !important; font-weight:800; }
-      .wvpd-acc--yellow{ color:#ffd36b !important; font-weight:800; }
-      .wvpd-acc--green{ color:#a0ffc8 !important; font-weight:900; }
+      .wvpd-green{ color:var(--color-green) !important; font-weight:700; }
+      .wvpd-red{   color:var(--color-red) !important; font-weight:700; }
+      .wvpd-acc--red{ color:var(--color-red) !important; font-weight:800; }
+      .wvpd-acc--yellow{ color:var(--color-amber) !important; font-weight:800; }
+      .wvpd-acc--green{ color:var(--color-green) !important; font-weight:900; }
 
       /* Delta en Top cuentas */
-      .wvpd-li__delta--bad{ color:#ff9d9d !important; font-weight:700; }
-      .wvpd-li__delta--ok{  color:#a0ffc8 !important; font-weight:700; }
+      .wvpd-li__delta--bad{ color:var(--color-red) !important; font-weight:700; }
+      .wvpd-li__delta--ok{  color:var(--color-green) !important; font-weight:700; }
       
       /* ====== Badges con hover ====== */
       .badge {
@@ -359,24 +359,24 @@
         filter: brightness(1.1);
       }
       .badge--success {
-        background: #1a3a2a;
-        color: #a0ffc8;
-        border: 1px solid #2a6a4a;
+        background: var(--color-green-bg);
+        color: var(--color-green);
+        border: 1px solid var(--color-green);
       }
       .badge--warning {
-        background: #3a2a1a;
-        color: #ffd966;
-        border: 1px solid #aa8a3a;
+        background: var(--color-amber-bg);
+        color: var(--color-amber);
+        border: 1px solid var(--color-amber);
       }
       .badge--info {
-        background: #1a2a3a;
-        color: #7bc2ff;
-        border: 1px solid #3a6a9a;
+        background: var(--color-blue-bg);
+        color: var(--color-blue);
+        border: 1px solid var(--color-blue);
       }
       .badge--infinite {
-        background: #1a2a2a;
-        color: #7bc2ff;
-        border: 1px solid #2a6a6a;
+        background: var(--color-blue-bg);
+        color: var(--color-blue);
+        border: 1px solid var(--color-blue);
       }
       
       /* ====== Barra de progreso ultra compacta ====== */
@@ -394,13 +394,13 @@
       }
       .wvpd-item-progress__bar {
         height: 4px;
-        background: #2a2c35;
+        background: var(--bd-1);
         border-radius: 2px;
         overflow: hidden;
       }
       .wvpd-item-progress__fill {
         height: 100%;
-        background: linear-gradient(90deg, #7bc2ff, #a0ffc8);
+        background: linear-gradient(90deg, var(--color-blue), var(--color-green));
         border-radius: 2px;
         transition: width 0.2s ease;
       }
@@ -412,38 +412,38 @@
         gap: 8px;
         margin-top: 8px;
         padding-top: 8px;
-        border-top: 1px solid #2a2c35;
+        border-top: 1px solid var(--bd-1);
       }
       .wvpd-manual-input label {
         font-size: 0.65rem;
-        color: #9aa2b8;
+        color: var(--muted);
       }
       .wvpd-manual-input input {
         width: 80px;
-        background: #1a1c24;
-        border: 1px solid #2a2c35;
+        background: var(--bg-1);
+        border: 1px solid var(--bd-1);
         border-radius: 6px;
         padding: 4px 6px;
-        color: #e0e4ed;
+        color: var(--tx-1);
         font-size: 0.7rem;
         text-align: center;
       }
       .wvpd-manual-input input:focus {
         outline: none;
-        border-color: #5a6e9a;
+        border-color: var(--acc-1);
       }
       .wvpd-manual-input .btn-max {
         padding: 4px 8px;
         font-size: 0.65rem;
-        background: #1a1c24;
-        border: 1px solid #2a2c35;
+        background: var(--bg-1);
+        border: 1px solid var(--bd-1);
         border-radius: 6px;
-        color: #ffd36b;
+        color: var(--color-amber);
         cursor: pointer;
       }
       .wvpd-manual-input .btn-max:hover {
-        background: #252830;
-        border-color: #3a3e4a;
+        background: var(--bg-2);
+        border-color: var(--bd-2);
       }
       
       /* ====== Progreso semanal en celda de cuenta ====== */
@@ -466,19 +466,19 @@
       .wvpd-account-progress__bar {
         flex: 1;
         height: 3px;
-        background: #2a2c35;
+        background: var(--bd-1);
         border-radius: 2px;
         overflow: hidden;
       }
       .wvpd-account-progress__fill {
         height: 100%;
-        background: linear-gradient(90deg, #7bc2ff, #a0ffc8);
+        background: linear-gradient(90deg, var(--color-blue), var(--color-green));
         border-radius: 2px;
         transition: width 0.2s ease;
       }
       .wvpd-account-progress__text {
         font-size: 0.6rem;
-        color: #9aa2b8;
+        color: var(--muted);
         min-width: 28px;
         text-align: right;
       }
@@ -488,16 +488,16 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        background: #1a1c24;
-        border: 1px solid #2a2c35;
+        background: var(--bg-1);
+        border: 1px solid var(--bd-1);
         border-radius: 24px;
         padding: 4px 12px;
         white-space: nowrap;
         transition: all 0.15s ease;
       }
       .wvpd-account-pill:hover {
-        background: #20222c;
-        border-color: #3a3e4a;
+        background: var(--bg-2);
+        border-color: var(--bd-2);
       }
 
       /* Tooltip mejorado para badges */
@@ -511,14 +511,14 @@
         bottom: 125%;
         left: 50%;
         transform: translateX(-50%);
-        background: #0c0e14;
-        color: #e0e4ed;
+        background: var(--bg-0);
+        color: var(--tx-1);
         font-size: 0.7rem;
         padding: 4px 8px;
         border-radius: 8px;
         white-space: nowrap;
         z-index: 1000;
-        border: 1px solid #3a3e4a;
+        border: 1px solid var(--bd-2);
         pointer-events: none;
       }
       
@@ -526,16 +526,16 @@
       .wv-season {
         margin: 4px 0 12px 0;
         padding: 8px 12px;
-        background: #0f1116;
+        background: var(--bg-1);
         border-radius: 12px;
-        border-left: 3px solid #7bc2ff;
+        border-left: 3px solid var(--color-blue);
       }
       .wv-season strong {
         font-size: 0.9rem;
       }
       .wv-season span {
         font-size: 0.75rem;
-        color: #9aa2b8;
+        color: var(--muted);
         margin-left: 12px;
       }
       
@@ -548,16 +548,16 @@
         flex-shrink: 0;
       }
       .wvpd-online-dot--green {
-        background-color: #a0ffc8;
-        box-shadow: 0 0 4px #a0ffc8;
+        background-color: var(--color-green);
+        box-shadow: 0 0 4px var(--color-green);
       }
       .wvpd-online-dot--red {
-        background-color: #ff9d9d;
-        box-shadow: 0 0 4px #ff9d9d;
+        background-color: var(--color-red);
+        box-shadow: 0 0 4px var(--color-red);
       }
       .wvpd-online-info {
         font-size: 0.65rem;
-        color: #9aa2b8;
+        color: var(--muted);
         margin-top: 2px;
       }
     `;
@@ -785,7 +785,7 @@
         onlineBtn.style.display = 'inline-flex';
         onlineBtn.style.alignItems = 'center';
         onlineBtn.style.gap = '6px';
-        onlineBtn.innerHTML = '<span class="wvpd-online-dot wvpd-online-dot--green" style="width:10px;height:10px;display:inline-block;border-radius:50%;background-color:#a0ffc8;box-shadow:0 0 4px #a0ffc8;"></span> Online';
+        onlineBtn.innerHTML = '<span class="wvpd-online-dot wvpd-online-dot--green" style="width:10px;height:10px;display:inline-block;border-radius:50%;background-color:var(--color-green);box-shadow:0 0 4px var(--color-green);"></span> Online';
         onlineBtn.addEventListener('click', function(ev) {
           ev.preventDefault();
           // ✅ Usar el método público expuesto
@@ -1379,7 +1379,7 @@ function hidePanel(){
             totalItems += left * (row.item_count || 1);
           }
         }
-        var totalItemsText = totalItems > 1 ? (' → <span style="color:#b4bad0;font-weight:700;">' + fmtInt(totalItems) + ' uds</span>') : '';
+        var totalItemsText = totalItems > 1 ? (' → <span style="color:var(--tx-3);font-weight:700;">' + fmtInt(totalItems) + ' uds</span>') : '';
         return '<li class="wvpd-li" title="'+esc(name)+'">'+
                  '<span class="wvpd-li__left">'+icon+'<span class="wvpd-li__name" style="display:none">'+esc(name)+'</span></span>'+
                  '<span class="wvpd-li__rest">' + fmtInt(aaNeeded) + ' AA' + totalItemsText + '</span>'+
@@ -1406,7 +1406,7 @@ function hidePanel(){
     const isCompleted = left === 0;
     const statusIcon = isCompleted ? '✅' : '⚠️';
     const statusText = isCompleted ? 'Completado' : 'Pendiente';
-    const statusColor = isCompleted ? '#a0ffc8' : '#ffd36b';
+    const statusColor = isCompleted ? 'var(--color-green)' : 'var(--color-amber)';
     const pendingText = `${fmtInt(left)} (${fmtInt(totalRemainingAA)} AA)`;
     
     return `
@@ -1703,7 +1703,7 @@ function hidePanel(){
     const isCompleted = left === 0;
     const statusIcon = isCompleted ? '✅' : '⚠️';
     const statusText = isCompleted ? 'Completado' : 'Pendiente';
-    const statusColor = isCompleted ? '#a0ffc8' : '#ffd36b';
+    const statusColor = isCompleted ? 'var(--color-green)' : 'var(--color-amber)';
     
     const existingProgress = card.querySelector('.wvpd-item-progress');
     if (existingProgress) {
@@ -1739,7 +1739,7 @@ function hidePanel(){
     const isCompleted = left === 0;
     const statusIcon = isCompleted ? '✅' : '⚠️';
     const statusText = isCompleted ? 'Completado' : 'Pendiente';
-    const statusColor = isCompleted ? '#a0ffc8' : '#ffd36b';
+    const statusColor = isCompleted ? 'var(--color-green)' : 'var(--color-amber)';
     
     const statusDiv = cardElement.querySelector('.wvpd-item-progress__status');
     if (statusDiv) {
@@ -1870,7 +1870,7 @@ function hidePanel(){
             const isCompleted = left === 0;
             const statusIcon = isCompleted ? '✅' : '⚠️';
             const statusText = isCompleted ? 'Completado' : 'Pendiente';
-            const statusColor = isCompleted ? '#a0ffc8' : '#ffd36b';
+            const statusColor = isCompleted ? 'var(--color-green)' : 'var(--color-amber)';
             
             const existingProgress = card.querySelector('.wvpd-item-progress');
             if (existingProgress) {
@@ -1908,7 +1908,7 @@ function hidePanel(){
             const isCompleted = left === 0;
             const statusIcon = isCompleted ? '✅' : '⚠️';
             const statusText = isCompleted ? 'Completado' : 'Pendiente';
-            const statusColor = isCompleted ? '#a0ffc8' : '#ffd36b';
+            const statusColor = isCompleted ? 'var(--color-green)' : 'var(--color-amber)';
             
             const existingProgress = card.querySelector('.wvpd-item-progress');
             if (existingProgress) {
@@ -1964,7 +1964,7 @@ function hidePanel(){
       const isCompleted = left === 0;
       const statusIcon = isCompleted ? '✅' : '⚠️';
       const statusText = isCompleted ? 'Completado' : 'Pendiente';
-      const statusColor = isCompleted ? '#a0ffc8' : '#ffd36b';
+      const statusColor = isCompleted ? 'var(--color-green)' : 'var(--color-amber)';
       
       let bodyDiv = card.querySelector('.wv-card__body');
       if (!bodyDiv) {

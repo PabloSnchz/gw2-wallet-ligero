@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/accounts-panel.js — Panel de Cuentas (cifrado local)
  * v2.0.0 (2026-05-03) — Rediseño "Profile Card" premium
  *
@@ -33,9 +33,9 @@
     },
     
     TYPE_COLORS: {
-      main: '#ffd966',
+      main: 'var(--color-amber)',
       alter: '#b19cd9',
-      f2p: '#7bc2ff'
+      f2p: 'var(--color-blue)'
     },
     
     TYPE_BG: {
@@ -292,8 +292,8 @@
     if (twitchLinked) {
       var tu = services.twitch?.username || '';
       var te = services.twitch?.email || '';
-      if (tu) twitchHtml += '<div style="font-size:0.7rem;color:#9aa2b8;cursor:pointer;margin-top:2px;" data-copy="' + esc(tu) + '" data-field="Usuario Twitch">@' + esc(tu) + '</div>';
-      if (te) twitchHtml += '<div style="font-size:0.68rem;color:#6a7080;cursor:pointer;" data-copy="' + esc(te) + '" data-field="Email Twitch">' + esc(te) + '</div>';
+      if (tu) twitchHtml += '<div style="font-size:0.7rem;color:var(--muted);cursor:pointer;margin-top:2px;" data-copy="' + esc(tu) + '" data-field="Usuario Twitch">@' + esc(tu) + '</div>';
+      if (te) twitchHtml += '<div style="font-size:0.68rem;color:var(--tx-3);cursor:pointer;" data-copy="' + esc(te) + '" data-field="Email Twitch">' + esc(te) + '</div>';
       if (services.twitch?.password) {
         twitchHtml += '<div style="display:flex;align-items:center;gap:4px;margin-top:2px;"><span style="font-family:monospace;font-size:0.68rem;cursor:pointer;" data-copy="' + esc(services.twitch.password) + '" data-field="Pass Twitch">' + twitchPassDisplay + '</span><button class="btn-ghost toggle-twitch-password" data-id="' + acc.id + '" style="padding:0 2px;display:inline-flex;"><img src="' + CONFIG.CARD_ICONS.eye + '" width="10" height="10"></button></div>';
       }
@@ -308,7 +308,7 @@
       '</div></div>';
 
     // Notas
-    var notesHtml = acc.notes ? '<div style="display:flex;align-items:flex-start;gap:6px;font-size:0.78rem;color:#9aa2b8;margin-top:4px;"><img src="' + CONFIG.CARD_ICONS.note + '" width="14" height="14" style="flex-shrink:0;margin-top:1px;"><span style="overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">' + esc(acc.notes) + '</span></div>' : '';
+    var notesHtml = acc.notes ? '<div style="display:flex;align-items:flex-start;gap:6px;font-size:0.78rem;color:var(--muted);margin-top:4px;"><img src="' + CONFIG.CARD_ICONS.note + '" width="14" height="14" style="flex-shrink:0;margin-top:1px;"><span style="overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">' + esc(acc.notes) + '</span></div>' : '';
 
     // API Key
     var apiKeyValue = acc.apiKey?.value || acc.apiKey || '';
@@ -317,11 +317,11 @@
       // VISTA COMPACTA
       return '<article class="card account-card" style="border-left:3px solid ' + bLeft + ';cursor:pointer;" data-account-id="' + acc.id + '" data-toggle-expand-name>' +
         '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;">' +
-          '<div style="width:36px;height:36px;border-radius:10px;background:#0f1116;display:flex;align-items:center;justify-content:center;box-shadow:' + iGlow + ';flex-shrink:0;"><img src="' + displayIcon + '" width="24" height="24" style="filter:brightness(0.9);"></div>' +
+          '<div style="width:36px;height:36px;border-radius:10px;background:var(--bg-1);display:flex;align-items:center;justify-content:center;box-shadow:' + iGlow + ';flex-shrink:0;"><img src="' + displayIcon + '" width="24" height="24" style="filter:brightness(0.9);"></div>' +
           '<div style="flex:1;min-width:0;">' +
-            '<div style="font-weight:700;font-size:0.9rem;color:#e0e4ed;">' + esc(acc.name || 'Cuenta') + '</div>' +
-            '<div style="font-size:0.7rem;color:#9aa2b8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(login.email || '—') + '</div>' +
-            '<div style="font-size:0.65rem;color:#6a7080;display:flex;gap:8px;flex-wrap:wrap;margin-top:2px;">' +
+            '<div style="font-weight:700;font-size:0.9rem;color:var(--tx-1);">' + esc(acc.name || 'Cuenta') + '</div>' +
+            '<div style="font-size:0.7rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(login.email || '—') + '</div>' +
+            '<div style="font-size:0.65rem;color:var(--tx-3);display:flex;gap:8px;flex-wrap:wrap;margin-top:2px;">' +
               '<span>🆔 ' + esc(gw2.accountName || '—') + '</span>' +
               '<span>🏆 ' + fmtNumber(gw2.achievementPoints) + ' AP</span>' +
               '<span>📦 ' + expOwned + '/' + expTotal + ' exp</span>' +
@@ -340,9 +340,9 @@
       '<div style="padding:16px;">' +
         // HEADER: ícono + nombre + email
         '<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">' +
-          '<div style="width:52px;height:52px;border-radius:14px;background:#0f1116;display:flex;align-items:center;justify-content:center;box-shadow:' + iGlow + ';flex-shrink:0;"><img src="' + displayIcon + '" width="34" height="34" style="filter:brightness(0.9);"></div>' +
+          '<div style="width:52px;height:52px;border-radius:14px;background:var(--bg-1);display:flex;align-items:center;justify-content:center;box-shadow:' + iGlow + ';flex-shrink:0;"><img src="' + displayIcon + '" width="34" height="34" style="filter:brightness(0.9);"></div>' +
           '<div style="flex:1;min-width:0;">' +
-            '<div style="font-weight:700;font-size:1.05rem;color:#e0e4ed;cursor:pointer;" data-account-id="' + acc.id + '" data-toggle-expand-name>' + esc(acc.name || 'Cuenta') + '</div>' +
+            '<div style="font-weight:700;font-size:1.05rem;color:var(--tx-1);cursor:pointer;" data-account-id="' + acc.id + '" data-toggle-expand-name>' + esc(acc.name || 'Cuenta') + '</div>' +
             '<div style="font-size:0.82rem;color:' + typeColor + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;" data-copy="' + esc(login.email || '') + '" data-field="Email">' + esc(login.email || '—') + '</div>' +
             (tagIconsHtml ? '<div style="display:flex;align-items:center;gap:5px;margin-top:4px;">' + tagIconsHtml + '</div>' : '') +
           '</div>' +
@@ -354,7 +354,7 @@
           '<div style="display:flex;align-items:center;gap:6px;"><img src="' + CONFIG.CARD_ICONS.gw2id + '" width="16" height="16"><span>' + esc(gw2.accountName || '—') + '</span></div>' +
           '<div style="display:flex;align-items:center;gap:6px;"><img src="' + CONFIG.CARD_ICONS.trophy + '" width="16" height="16"><strong>' + fmtNumber(gw2.achievementPoints) + '</strong> AP</div>' +
           '<div style="display:flex;align-items:center;gap:6px;"><img src="' + CONFIG.CARD_ICONS.calendar + '" width="16" height="16"><span>' + formatDate(gw2.created) + '</span></div>' +
-          '<div style="display:flex;align-items:center;gap:6px;font-size:0.7rem;color:#9aa2b8;">(' + formatAgeDays(gw2.created) + ')</div>' +
+          '<div style="display:flex;align-items:center;gap:6px;font-size:0.7rem;color:var(--muted);">(' + formatAgeDays(gw2.created) + ')</div>' +
           '<div style="display:flex;align-items:center;gap:6px;margin-top:6px;"><img src="' + CONFIG.CARD_ICONS.lock + '" width="16" height="16"><span style="font-family:monospace;cursor:pointer;" data-copy="' + esc(login.password || '') + '" data-field="Contraseña">' + passwordDisplay + '</span><button class="btn-ghost toggle-password" data-id="' + acc.id + '" style="padding:0 2px;display:inline-flex;"><img src="' + CONFIG.CARD_ICONS.eye + '" width="12" height="12"></button></div>' +
           (login.gmailPassword ? '<div style="display:flex;align-items:center;gap:6px;margin-top:6px;"><img src="' + CONFIG.CARD_ICONS.gmailPass + '" width="16" height="16"><span style="font-family:monospace;cursor:pointer;" data-copy="' + esc(login.gmailPassword) + '" data-field="Gmail Pass">' + gmailDisplay + '</span></div>' : '<div></div>') +
         '</div>' +
@@ -380,12 +380,12 @@
           '</div>' +
           '<div id="section-' + acc.id + '-expansions" style="' + (state.expandedAccounts[acc.id]?.expansions ? '' : 'display:none;') + 'margin-top:6px;padding-left:20px;">' +
             '<div style="display:flex;gap:4px;flex-wrap:wrap;">' + expIcons + '</div>' +
-            '<div style="height:4px;background:#2a2c35;border-radius:2px;margin-top:6px;overflow:hidden;"><div style="width:' + expPercent + '%;height:100%;background:linear-gradient(90deg, ' + typeColor + ', ' + hexToRGBA(typeColor, 0.6) + ');border-radius:2px;transition:width 0.3s ease;"></div></div>' +
+            '<div style="height:4px;background:var(--bd-1);border-radius:2px;margin-top:6px;overflow:hidden;"><div style="width:' + expPercent + '%;height:100%;background:linear-gradient(90deg, ' + typeColor + ', ' + hexToRGBA(typeColor, 0.6) + ');border-radius:2px;transition:width 0.3s ease;"></div></div>' +
           '</div>' +
         '</div>' : '') +
 
         // GW2 AVANZADO
-        '<div style="font-size:0.72rem;color:#9aa2b8;display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">' +
+        '<div style="font-size:0.72rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">' +
           '<span><img src="' + CONFIG.CARD_ICONS.character + '" width="14" height="14" style="vertical-align:middle;"> ' + (gw2.characterSlots || '—') + ' chars</span>' +
           '<span><img src="' + CONFIG.CARD_ICONS.bag + '" width="14" height="14" style="vertical-align:middle;"> ' + (gw2.bagSlots || '—') + ' bags</span>' +
           '<span><img src="' + CONFIG.CARD_ICONS.bank + '" width="14" height="14" style="vertical-align:middle;"> ' + (gw2.bankSlots || '—') + ' bancos</span>' +
@@ -462,7 +462,7 @@
       }
     }
 
-    var apColor = gw2.achievementPoints > 20000 ? getTypeColor(acc) : '#cfd2d8';
+    var apColor = gw2.achievementPoints > 20000 ? getTypeColor(acc) : 'var(--tx-2)';
 
     return '<tr data-id="' + acc.id + '" style="border-left:3px solid ' + bLeft + ';">' +
       '<td style="width:40px;text-align:center;"><img src="' + randIcon + '" width="28" height="28" alt="" style="border-radius:8px;filter:brightness(0.9);vertical-align:middle;"></td>' +
@@ -489,14 +489,14 @@
     container.innerHTML = '<div style="overflow-x:auto;border-radius:12px;border:1px solid rgba(255,255,255,0.08);width:100%;">' +
       '<table style="width:100%;min-width:1000px;border-collapse:separate;border-spacing:0;table-layout:fixed;">' +
       '<thead>' +
-      '<tr style="background:#0a0c10;">' +
-        '<th style="width:48px;padding:11px 8px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:#b4bad0;border-bottom:2px solid #2a2c35;font-weight:700;"></th>' +
-        '<th style="width:16%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:#b4bad0;border-bottom:2px solid #2a2c35;text-align:left;font-weight:700;">Cuenta</th>' +
-        '<th style="width:30%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:#b4bad0;border-bottom:2px solid #2a2c35;text-align:left;font-weight:700;">Credenciales</th>' +
-        '<th style="width:18%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:#b4bad0;border-bottom:2px solid #2a2c35;text-align:left;font-weight:700;">GW2 ID</th>' +
-        '<th style="width:10%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:#b4bad0;border-bottom:2px solid #2a2c35;text-align:right;font-weight:700;">AP</th>' +
-        '<th style="width:8%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:#b4bad0;border-bottom:2px solid #2a2c35;text-align:right;font-weight:700;">Leg.</th>' +
-        '<th style="width:18%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:#b4bad0;border-bottom:2px solid #2a2c35;text-align:center;font-weight:700;">Tags</th>' +
+      '<tr style="background:var(--bg-0);">' +
+        '<th style="width:48px;padding:11px 8px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:var(--tx-3);border-bottom:2px solid var(--bd-1);font-weight:700;"></th>' +
+        '<th style="width:16%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:var(--tx-3);border-bottom:2px solid var(--bd-1);text-align:left;font-weight:700;">Cuenta</th>' +
+        '<th style="width:30%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:var(--tx-3);border-bottom:2px solid var(--bd-1);text-align:left;font-weight:700;">Credenciales</th>' +
+        '<th style="width:18%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:var(--tx-3);border-bottom:2px solid var(--bd-1);text-align:left;font-weight:700;">GW2 ID</th>' +
+        '<th style="width:10%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:var(--tx-3);border-bottom:2px solid var(--bd-1);text-align:right;font-weight:700;">AP</th>' +
+        '<th style="width:8%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:var(--tx-3);border-bottom:2px solid var(--bd-1);text-align:right;font-weight:700;">Leg.</th>' +
+        '<th style="width:18%;padding:11px 12px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.6px;color:var(--tx-3);border-bottom:2px solid var(--bd-1);text-align:center;font-weight:700;">Tags</th>' +
       '</tr>' +
       '</thead>' +
       '<tbody>' + accounts.map(renderTableRow).join('') + '</tbody>' +
@@ -509,7 +509,7 @@
     if (styleEl) styleEl.remove();
     styleEl = document.createElement('style');
     styleEl.id = 'accountsTableHover';
-    styleEl.textContent = '#accountsList table tbody tr:hover { background: #1a1d28; } #accountsList table tbody td { padding: 10px 12px; border-bottom: 1px solid #1f2026; vertical-align: middle; color:#cfd2d8; } #accountsList table tbody tr:nth-child(even) { background: #0c0e14; } #accountsList table tbody tr:nth-child(even):hover { background: #1a1d28; }';
+    styleEl.textContent = '#accountsList table tbody tr:hover { background: var(--bg-2); } #accountsList table tbody td { padding: 10px 12px; border-bottom: 1px solid var(--bd-1); vertical-align: middle; color:var(--tx-2); } #accountsList table tbody tr:nth-child(even) { background: var(--bg-0); } #accountsList table tbody tr:nth-child(even):hover { background: var(--bg-2); }';
     document.head.appendChild(styleEl);
   }
 
@@ -523,11 +523,11 @@
     var farm = accounts.filter(function(a){return getAccountTypeTags(a).indexOf('farming')!==-1;}).length;
     var wk = accounts.filter(function(a){return getAccountTypeTags(a).indexOf('weekly')!==-1;}).length;
     var tx = accounts.filter(function(a){return getAccountTypeTags(a).indexOf('taxi')!==-1;}).length;
-    c.innerHTML = '<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;background:#1a1e2a;border-radius:12px;">'+
-      '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/1770683.png" width="20" height="20"><strong>Total:</strong> '+total+' cuentas</div><span style="color:#c5c5c5;margin:0 -6px;">|</span>'+
+    c.innerHTML = '<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;padding:12px 16px;background:var(--bg-2);border-radius:12px;">'+
+      '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/1770683.png" width="20" height="20"><strong>Total:</strong> '+total+' cuentas</div><span style="color:var(--tx-2);margin:0 -6px;">|</span>'+
       '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/547827.png" width="20" height="20"><strong>Principales:</strong> '+mains+'</div>'+
       '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/157375.png" width="20" height="20"><strong>Alternativas:</strong> '+alters+'</div>'+
-      '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/102538.png" width="20" height="20"><strong>F2P:</strong> '+f2ps+'</div><span style="color:#c5c5c5;margin:0 -6px;">|</span>'+
+      '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/102538.png" width="20" height="20"><strong>F2P:</strong> '+f2ps+'</div><span style="color:var(--tx-2);margin:0 -6px;">|</span>'+
       '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/1716669.png" width="20" height="20"><strong>Llaves:</strong> '+ks+'</div>'+
       '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/157332.png" width="20" height="20"><strong>Farming:</strong> '+farm+'</div>'+
       '<div style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Cuentas/240679.png" width="20" height="20"><strong>Weekly:</strong> '+wk+'</div>'+
@@ -593,14 +593,14 @@
             <div style="display: flex; align-items: center; gap: 12px;">
               <img src="assets/icons/Welcome/2604904.png" width="40" height="40" alt="" style="filter: brightness(0.9);">
               <div>
-                <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #e0e4ed;">Asistente de cuentas</h3>
+                <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--tx-1);">Asistente de cuentas</h3>
                 <div class="muted" style="font-size: 0.8rem;">Guía paso a paso para crear tu archivo seguro</div>
               </div>
             </div>
-            <div style="font-size: 0.8rem; color: #b4bad0; display: flex; flex-direction: column; gap: 10px; line-height: 1.5;">
+            <div style="font-size: 0.8rem; color: var(--tx-3); display: flex; flex-direction: column; gap: 10px; line-height: 1.5;">
             <div style="display: flex; align-items: flex-start; gap: 8px;">
               <img src="assets/icons/Welcome/733266.png" width="18" height="18" alt="" style="margin-top: 3px; flex-shrink: 0;">
-              <span>Creá tu archivo <code style="background:#1a1c24;padding:1px 6px;border-radius:4px;">.enc</code> desde una plantilla Excel. El asistente te guía en <strong>4 pasos simples</strong>.</span>
+              <span>Creá tu archivo <code style="background:var(--bg-1);padding:1px 6px;border-radius:4px;">.enc</code> desde una plantilla Excel. El asistente te guía en <strong>4 pasos simples</strong>.</span>
             </div>
             <div style="display: flex; align-items: flex-start; gap: 8px;">
               <img src="assets/icons/Welcome/544515.png" width="18" height="18" alt="" style="margin-top: 3px; flex-shrink: 0;">
@@ -610,7 +610,7 @@
               <img src="assets/icons/Cuentas/GW2free.png" width="18" height="18" alt="" style="margin-top: 3px; flex-shrink: 0;">
               <span><strong>Todo ocurre en tu navegador.</strong> No hay servidores, ni bases de datos, ni terceros involucrados. Tus datos nunca salen de tu PC.</span>
             </div>
-            <div style="display: flex; align-items: flex-start; gap: 8px; margin-top: 4px; padding-top: 10px; border-top: 1px solid #1e2028;">
+            <div style="display: flex; align-items: flex-start; gap: 8px; margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--bd-1);">
               <img src="assets/icons/Welcome/discord.png" width="18" height="18" alt="" style="margin-top: 3px; flex-shrink: 0;">
               <span>¿Dudas? Somos la <strong>Comunidad Gato Negro</strong>, desarrolladores reconocidos dentro de Guild Wars 2. Buscanos en Discord o YouTube como <strong>@pablinschez</strong>.</span>
             </div>
@@ -625,15 +625,15 @@
           <div class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 14px;">
             <div style="display: flex; align-items: center; gap: 12px;">
               <img src="assets/icons/Welcome/733266.png" width="36" height="36" alt="" style="filter: brightness(0.9);">
-              <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #e0e4ed;">Acceso a cuentas</h3>
+              <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--tx-1);">Acceso a cuentas</h3>
             </div>
             
             ${hasStoredFile ? `
-            <div style="background: #0a0c10; border-radius: 10px; padding: 14px; border: 1px solid #1e2028;">
+            <div style="background: var(--bg-0); border-radius: 10px; padding: 14px; border: 1px solid var(--bd-1);">
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
                 <img src="assets/icons/Welcome/102353.png" width="18" height="18" alt="" style="filter: brightness(0.9);">
                 <span style="font-weight: 600; font-size: 0.85rem;">Último archivo:</span>
-                <span style="color: #ffd966;">${esc(lastFile.name)}</span>
+                <span style="color: var(--color-amber);">${esc(lastFile.name)}</span>
               </div>
               <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <input type="password" id="accountsPasswordInput" placeholder="Contraseña de descifrado" style="flex: 1; min-width: 140px;">
@@ -644,9 +644,9 @@
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 12px;">
-              <div style="flex: 1; height: 1px; background: #2a2c35;"></div>
+              <div style="flex: 1; height: 1px; background: var(--bd-1);"></div>
               <span class="muted" style="font-size: 0.75rem; white-space: nowrap;">o cargá un archivo nuevo</span>
-              <div style="flex: 1; height: 1px; background: #2a2c35;"></div>
+              <div style="flex: 1; height: 1px; background: var(--bd-1);"></div>
             </div>
             ` : ''}
 
@@ -659,7 +659,7 @@
               <input type="file" id="accountsFileInput" accept=".enc" style="display: none;">
             </div>
               ${!hasStoredFile ? `
-              <div style="display: flex; align-items: center; gap: 10px; background: #0a0c10; border-radius: 8px; padding: 8px 12px; border: 1px solid #1e2028;">
+              <div style="display: flex; align-items: center; gap: 10px; background: var(--bg-0); border-radius: 8px; padding: 8px 12px; border: 1px solid var(--bd-1);">
                 <img src="assets/icons/Cuentas/733265.png" width="20" height="20" alt="" style="filter: brightness(0.9); flex-shrink: 0;">
                 <input type="password" id="accountsPasswordInput" placeholder="Contraseña de descifrado" style="flex: 1; min-width: 0;">
               </div>
@@ -686,14 +686,14 @@
         useStoredBtn.onclick = async function() {
           var password = passwordInput.value;
           if (!password) {
-            if (statusEl) { statusEl.textContent = '⚠️ Ingresá la contraseña'; statusEl.style.color = '#ffd966'; }
+            if (statusEl) { statusEl.textContent = '⚠️ Ingresá la contraseña'; statusEl.style.color = 'var(--color-amber)'; }
             return;
           }
-          if (statusEl) { statusEl.textContent = '🔓 Descifrando archivo guardado...'; statusEl.style.color = '#ffd966'; }
+          if (statusEl) { statusEl.textContent = '🔓 Descifrando archivo guardado...'; statusEl.style.color = 'var(--color-amber)'; }
           var success = await loadFromStoredFile(password);
           if (!success && statusEl) {
             statusEl.textContent = '❌ Contraseña incorrecta. Probá con otro archivo.';
-            statusEl.style.color = '#f28b82';
+            statusEl.style.color = 'var(--color-red)';
           }
         };
       }
@@ -704,16 +704,16 @@
           var password = passwordInput.value;
           if (!file) { if (statusEl) statusEl.textContent = '⚠️ Seleccioná un archivo'; return; }
           if (!password) { if (statusEl) statusEl.textContent = '⚠️ Ingresá la contraseña'; return; }
-          if (statusEl) { statusEl.textContent = '🔓 Descifrando archivo...'; statusEl.style.color = '#ffd966'; }
+          if (statusEl) { statusEl.textContent = '🔓 Descifrando archivo...'; statusEl.style.color = 'var(--color-amber)'; }
           var success = await loadFromFile(file, password, true);
           if (success && statusEl) {
             statusEl.textContent = '✅ Archivo cargado correctamente';
-            statusEl.style.color = '#a7f3d0';
+            statusEl.style.color = 'var(--color-green)';
             fileInput.value = '';
             passwordInput.value = '';
           } else if (statusEl) {
             statusEl.textContent = '❌ Error al descifrar. Verificá la contraseña o el archivo.';
-            statusEl.style.color = '#f28b82';
+            statusEl.style.color = 'var(--color-red)';
           }
         };
       }
@@ -737,7 +737,7 @@
         var nameSpan = document.getElementById('accountsFileName');
         if (nameSpan) {
           nameSpan.textContent = fileName;
-          nameSpan.style.color = '#a0ffc8';
+          nameSpan.style.color = 'var(--color-green)';
         }
       });
     }
@@ -751,21 +751,21 @@
     var ex = document.getElementById('accountsWizardModal'); if(ex){ex.hidden=false;return;}
     var m = document.createElement('div'); m.id='accountsWizardModal'; m.className='modal'; m.setAttribute('role','dialog'); m.setAttribute('aria-modal','true'); m.hidden=false;
     m.innerHTML = '<div class="modal__backdrop" data-close="1"></div><div class="modal__dialog" style="max-width:800px;width:90%;"><div class="modal__header"><h3 id="wizardTitle"><img src="assets/icons/Welcome/2604904.png" width="28" height="28">Asistente de cuentas</h3><button type="button" class="modal__close" data-close="1">✕</button></div><div class="modal__body" style="max-height:70vh;overflow-y:auto;">'+
-      '<div style="background:#0a0c10;border-radius:8px;padding:12px;margin-bottom:20px;"><div style="display:flex;gap:12px;"><img src="assets/icons/Welcome/733266.png" width="28" height="28"><div><strong style="color:#a7f3d0;">Tus datos están seguros</strong><p class="muted" style="margin:4px 0 0;">Todo el proceso ocurre en tu navegador. <strong>Ningún dato sale de tu computadora.</strong></p></div></div></div>'+
+      '<div style="background:var(--bg-0);border-radius:8px;padding:12px;margin-bottom:20px;"><div style="display:flex;gap:12px;"><img src="assets/icons/Welcome/733266.png" width="28" height="28"><div><strong style="color:var(--color-green);">Tus datos están seguros</strong><p class="muted" style="margin:4px 0 0;">Todo el proceso ocurre en tu navegador. <strong>Ningún dato sale de tu computadora.</strong></p></div></div></div>'+
       '<div style="margin-bottom:24px;"><h4 style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Welcome/102619.png" width="20" height="20">PASO 1: Descargar plantilla</h4><p class="muted">Completá solo lo que quieras.</p><button id="wizardDownloadTemplate" class="btn btn--accent"><img src="assets/icons/Welcome/563464.png" width="16" height="16">Descargar plantilla Excel</button></div>'+
       '<div style="margin-bottom:24px;"><h4 style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Welcome/102620.png" width="20" height="20">PASO 2: Subir Excel → Generar JSON</h4><div style="display:flex;gap:12px;"><input type="file" id="wizardExcelFile" accept=".xlsx,.xls" style="flex:2;"><button id="wizardExcelToJson" class="btn"><img src="assets/icons/Welcome/102609.png" width="16" height="16">Generar JSON</button></div><div id="wizardStep2Status" class="muted" style="margin-top:8px;"></div></div>'+
       '<div style="margin-bottom:24px;"><h4 style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Welcome/1770705.png" width="20" height="20">PASO 3: Enriquecer con API</h4><div style="display:flex;gap:12px;"><input type="file" id="wizardJsonFile" accept=".json" style="flex:2;"><button id="wizardEnrich" class="btn"><img src="assets/icons/Welcome/102449.png" width="16" height="16">Enriquecer con GW2 API</button></div><div id="wizardStep3Status" class="muted" style="margin-top:8px;"></div></div>'+
       '<div style="margin-bottom:24px;"><h4 style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Welcome/544515.png" width="20" height="20">PASO 4: Cifrar</h4><div style="display:flex;gap:12px;align-items:flex-end;"><input type="file" id="wizardEncryptFile" accept=".json" style="flex:2;"><input type="password" id="wizardPassword" placeholder="Contraseña" style="flex:1;"><button id="wizardEncrypt" class="btn btn--accent"><img src="assets/icons/Welcome/733266.png" width="16" height="16">Crear archivo .enc</button></div><div id="wizardStep4Status" class="muted" style="margin-top:8px;"></div></div>'+
-      '<hr style="border-color:#2a2c35;"><div><h4 style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Welcome/102353.png" width="20" height="20">¿Ya tenés tu archivo .enc?</h4><div style="display:flex;gap:12px;"><button id="wizardCloseAndLoad" class="btn"><img src="assets/icons/Welcome/528726.png" width="16" height="16">Ir al panel para cargarlo</button><button id="wizardClose" class="btn btn--ghost"><img src="assets/icons/Welcome/156107.png" width="16" height="16">Cerrar</button></div></div>'+
+      '<hr style="border-color:var(--bd-1);"><div><h4 style="display:flex;align-items:center;gap:8px;"><img src="assets/icons/Welcome/102353.png" width="20" height="20">¿Ya tenés tu archivo .enc?</h4><div style="display:flex;gap:12px;"><button id="wizardCloseAndLoad" class="btn"><img src="assets/icons/Welcome/528726.png" width="16" height="16">Ir al panel para cargarlo</button><button id="wizardClose" class="btn btn--ghost"><img src="assets/icons/Welcome/156107.png" width="16" height="16">Cerrar</button></div></div>'+
     '</div></div>';
     document.body.appendChild(m);
     m.addEventListener('click',function(e){ if(e.target.getAttribute('data-close')==='1') m.hidden=true; });
     document.getElementById('wizardClose')?.addEventListener('click',function(){m.hidden=true;});
     document.getElementById('wizardCloseAndLoad')?.addEventListener('click',function(){m.hidden=true;render();});
     document.getElementById('wizardDownloadTemplate')?.addEventListener('click',generateExcelTemplate);
-    document.getElementById('wizardExcelToJson')?.addEventListener('click',async function(){var fi=document.getElementById('wizardExcelFile'),sd=document.getElementById('wizardStep2Status');if(!fi.files.length){sd.textContent='⚠️ Seleccioná un archivo Excel.';return;} sd.textContent='📖 Leyendo...';try{var jd=await parseExcelToJSON(fi.files[0]);downloadFile(JSON.stringify(jd,null,2),'cuentas.json','application/json');sd.textContent='✅ cuentas.json generado';sd.style.color='#a7f3d0';}catch(e){sd.textContent='❌ '+e.message;sd.style.color='#f28b82';}});
-    document.getElementById('wizardEnrich')?.addEventListener('click',async function(){var fi=document.getElementById('wizardJsonFile'),sd=document.getElementById('wizardStep3Status');if(!fi.files.length){sd.textContent='⚠️ Seleccioná un archivo JSON.';return;} sd.textContent='🌐 Enriqueciendo...';try{var fc=await readFileAsText(fi.files[0]),data=JSON.parse(fc),enriched=await enrichWithGW2API(data);downloadFile(JSON.stringify(enriched,null,2),'cuentas-enriquecidas.json','application/json');sd.textContent='✅ cuentas-enriquecidas.json';sd.style.color='#a7f3d0';}catch(e){sd.textContent='❌ '+e.message;sd.style.color='#f28b82';}});
-    document.getElementById('wizardEncrypt')?.addEventListener('click',function(){var fi=document.getElementById('wizardEncryptFile'),pw=document.getElementById('wizardPassword').value,sd=document.getElementById('wizardStep4Status');if(!fi.files.length){sd.textContent='⚠️ Seleccioná un archivo JSON.';return;}if(!pw){sd.textContent='⚠️ Ingresá una contraseña.';return;}sd.textContent='🔐 Cifrando...';var r=new FileReader();r.onload=function(e){try{var enc=CryptoJS.AES.encrypt(e.target.result,pw).toString();downloadFile(enc,'gw2-cuentas.enc','text/plain');if(typeof Analytics!=='undefined')Analytics.encryptAccountsFile();sd.textContent='✅ gw2-cuentas.enc';sd.style.color='#a7f3d0';document.getElementById('wizardPassword').value='';}catch(err){sd.textContent='❌ '+err.message;sd.style.color='#f28b82';}};r.readAsText(fi.files[0]);});
+    document.getElementById('wizardExcelToJson')?.addEventListener('click',async function(){var fi=document.getElementById('wizardExcelFile'),sd=document.getElementById('wizardStep2Status');if(!fi.files.length){sd.textContent='⚠️ Seleccioná un archivo Excel.';return;} sd.textContent='📖 Leyendo...';try{var jd=await parseExcelToJSON(fi.files[0]);downloadFile(JSON.stringify(jd,null,2),'cuentas.json','application/json');sd.textContent='✅ cuentas.json generado';sd.style.color='var(--color-green)';}catch(e){sd.textContent='❌ '+e.message;sd.style.color='var(--color-red)';}});
+    document.getElementById('wizardEnrich')?.addEventListener('click',async function(){var fi=document.getElementById('wizardJsonFile'),sd=document.getElementById('wizardStep3Status');if(!fi.files.length){sd.textContent='⚠️ Seleccioná un archivo JSON.';return;} sd.textContent='🌐 Enriqueciendo...';try{var fc=await readFileAsText(fi.files[0]),data=JSON.parse(fc),enriched=await enrichWithGW2API(data);downloadFile(JSON.stringify(enriched,null,2),'cuentas-enriquecidas.json','application/json');sd.textContent='✅ cuentas-enriquecidas.json';sd.style.color='var(--color-green)';}catch(e){sd.textContent='❌ '+e.message;sd.style.color='var(--color-red)';}});
+    document.getElementById('wizardEncrypt')?.addEventListener('click',function(){var fi=document.getElementById('wizardEncryptFile'),pw=document.getElementById('wizardPassword').value,sd=document.getElementById('wizardStep4Status');if(!fi.files.length){sd.textContent='⚠️ Seleccioná un archivo JSON.';return;}if(!pw){sd.textContent='⚠️ Ingresá una contraseña.';return;}sd.textContent='🔐 Cifrando...';var r=new FileReader();r.onload=function(e){try{var enc=CryptoJS.AES.encrypt(e.target.result,pw).toString();downloadFile(enc,'gw2-cuentas.enc','text/plain');if(typeof Analytics!=='undefined')Analytics.encryptAccountsFile();sd.textContent='✅ gw2-cuentas.enc';sd.style.color='var(--color-green)';document.getElementById('wizardPassword').value='';}catch(err){sd.textContent='❌ '+err.message;sd.style.color='var(--color-red)';}};r.readAsText(fi.files[0]);});
   }
 
   function downloadFile(content, filename, mimeType) { var blob = new Blob([content],{type:mimeType}), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }

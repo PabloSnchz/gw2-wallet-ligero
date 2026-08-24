@@ -8,6 +8,30 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [6.7.0] - 2026-06-XX
+
+### Added
+- **Selector de Temas (theme-selector.js v1.0.0)**:
+  - Modal de selección con 18 temas + modo aleatorio
+  - Persistencia en localStorage (`gn_theme`)
+  - Botón en el header (`an-util-left`, después de Home)
+  - Cada tema en archivo separado `css/themes/*.css`
+  - Temas: Bóveda, Catppuccin, Cyberpunk, Discord, Dracula, Everforest, Fluent, Glassmorphism, Gruvbox, macOS, Material Dark, Nord, Notion, One Dark, PS5, Solarized Dark, Steam, Tokyo Night
+- **18 archivos de tema** en `css/themes/`
+
+### Changed
+- **main.css v2.7.0**: Todos los colores hex → variables CSS
+- **theme-polish.css v2.2.0**: Todos los colores hex → variables CSS
+- **24 archivos JS**: Colores hex hardcodeados → variables CSS
+- **index.html**: Bloque `<style>` consolidado con variables + `<link>` a boveda.css + `<script>` theme-selector
+
+### Fixed
+- Typo `bobeda.css` → `boveda.css`
+- Llave extra `}` en CSS inyectado de wv-purchase-detail.js
+- Llamada faltante a `injectStyles()` en wv-tabs-skin.js
+
+---
+
 ## [6.6.2] - 2026-06-03
 
 ### Added

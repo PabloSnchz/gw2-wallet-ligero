@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * Activities Theme — migración a componentes canónicos (estilo Purchase Detail)
  * v2.6.0 (2026-03-23)
  *
@@ -281,10 +281,10 @@
     clockBar.style.flexWrap = 'wrap';
     clockBar.style.gap = '16px';
     clockBar.style.alignItems = 'center';
-    clockBar.style.background = '#0f1116';
+    clockBar.style.background = 'var(--bg-1)';
     clockBar.style.padding = '8px 16px';
     clockBar.style.borderRadius = '40px';
-    clockBar.style.border = '1px solid #2a2c35';
+    clockBar.style.border = '1px solid var(--bd-1)';
     clockBar.style.fontFamily = 'monospace';
     clockBar.style.fontSize = '0.85rem';
     
@@ -299,7 +299,7 @@
         <span>Local</span>
         <strong id="activitiesLocalTime">--:--:--</strong>
       </div>
-      <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
+      <div style="width: 1px; height: 24px; background: var(--bd-1);"></div>
       <div style="display: flex; align-items: center; gap: 6px;" data-tip="Reset diario a las 00:00 UTC">
         <img src="${ICON_DAILY}" width="24" height="24" alt="Reset diario" style="filter: brightness(0.9);">
         <span>Reset diario</span>
@@ -657,7 +657,7 @@
           width: 44px;
           height: 44px;
           border-radius: 10px;
-          background: #0f1116;
+          background: var(--bg-1);
           font-size: 24px;
           flex-shrink: 0;
         ">${iconChar}</div>
@@ -688,9 +688,9 @@
               justify-content: center;
               width: 80px;
               height: 80px;
-              background: #0f1116;
+              background: var(--bg-1);
               border-radius: 16px;
-              border: 1px solid #2a2c35;
+              border: 1px solid var(--bd-1);
               box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             ">
               <img src="${escapeHtml(itemIcon)}" alt="${escapeHtml(displayName)}" style="
@@ -724,7 +724,7 @@
         ${itemIconHtml}
         ${(item.category === 'api' && isUnlocked) ? `
         <div style="margin-top: 4px; display: flex; justify-content: flex-end;">
-          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 3px 10px; border-radius: 20px; background: #0f1116;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 3px 10px; border-radius: 20px; background: var(--bg-1);">
             <input type="checkbox" class="node-checkbox" data-node-id="${escapeHtml(nodeId)}" ${isChecked ? 'checked' : ''} style="margin: 0;">
             <span style="font-size: 0.75rem;">Recolectado hoy</span>
           </label>
@@ -778,15 +778,15 @@
             ${completed === totalUnlocked ? '✅ Completado' : (completed > 0 ? '⏳ En progreso' : '📋 Pendiente')}
           </span>
         </div>
-        <div style="margin-top: 4px; font-size: 0.7rem; color: #a0a0a6;">
+        <div style="margin-top: 4px; font-size: 0.7rem; color: var(--muted);">
           🔓 Total desbloqueados: ${totalUnlocked} / ${ALL_DISPLAY_ITEMS.filter(i => i.category === 'api').length}
         </div>
       `;
       counterEl.style.fontSize = '0.8rem';
       counterEl.style.padding = '8px 12px';
-      counterEl.style.background = '#0f1116';
+      counterEl.style.background = 'var(--bg-1)';
       counterEl.style.borderRadius = '12px';
-      counterEl.style.border = '1px solid #2a2c35';
+      counterEl.style.border = '1px solid var(--bd-1)';
       counterEl.style.marginBottom = '16px';
     }
   }
@@ -829,12 +829,12 @@
     filterBar.style.flexWrap = 'wrap';
     filterBar.style.gap = '8px';
     filterBar.style.alignItems = 'center';
-    filterBar.style.background = '#0f1116';
+    filterBar.style.background = 'var(--bg-1)';
     filterBar.style.padding = '8px 12px';
     filterBar.style.borderRadius = '40px';
     filterBar.innerHTML = `
       <div style="flex: 1; min-width: 180px;">
-        <input type="text" id="homeNodesSearch" placeholder="Buscar..." style="width: 100%; background: #1a1c24; border: 1px solid #2a2c35; border-radius: 20px; padding: 6px 12px 6px 32px; color: #e0e4ed; background-image: url('assets/icons/Welcome/3124974.png'); background-repeat: no-repeat; background-position: 8px center; background-size: 14px;">
+        <input type="text" id="homeNodesSearch" placeholder="Buscar..." style="width: 100%; background: var(--bg-1); border: 1px solid var(--bd-1); border-radius: 20px; padding: 6px 12px 6px 32px; color: var(--tx-1); background-image: url('assets/icons/Welcome/3124974.png'); background-repeat: no-repeat; background-position: 8px center; background-size: 14px;">
       </div>
       <div class="chip" style="padding: 0;">
         <button data-category="all" class="btn btn--ghost filter-category-btn active" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/156108.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Todos</button>
@@ -848,7 +848,7 @@
       <div class="chip" style="padding: 0;">
         <button data-category="non-api" class="btn btn--ghost filter-category-btn" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/1716669.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Contratos (4)</button>
       </div>
-      <div style="width: 1px; height: 28px; background: #2a2c35; margin: 0 4px;"></div>
+      <div style="width: 1px; height: 28px; background: var(--bd-1); margin: 0 4px;"></div>
       <div class="chip" style="padding: 0;">
         <button data-type="all" class="btn btn--ghost filter-type-btn active" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/156108.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Todos</button>
       </div>
@@ -861,7 +861,7 @@
       <div class="chip" style="padding: 0;">
         <button data-type="harvest" class="btn btn--ghost filter-type-btn" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/157332.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Cosecha</button>
       </div>
-      <div style="width: 1px; height: 28px; background: #2a2c35; margin: 0 4px;"></div>
+      <div style="width: 1px; height: 28px; background: var(--bd-1); margin: 0 4px;"></div>
       <div class="chip" style="padding: 0;">
         <button data-status="all" class="btn btn--ghost filter-status-btn active" style="border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;"><img src="assets/icons/Welcome/156108.png" width="14" height="14" alt="" style="filter: brightness(0.9);"> Todos</button>
       </div>

@@ -32,6 +32,7 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 - 📈 **Google Analytics integrado** — Seguimiento de visitas y eventos personalizados
 - 🎨 **Interfaz visual unificada** — Diseño consistente en todos los módulos con bordes, glows y animaciones
 - 🏗️ **Arquitectura CSS en 3 capas** — Separación estricta de responsabilidades: layout, piel unificada y color semántico
+- 🎨 **Selector de Temas** — 18 temas visuales + modo aleatorio, persistencia en localStorage
 - 🎒 **Inventario y Personajes** — Buscador de objetos en toda la cuenta (banco, materiales, armería legendaria)
 - 📊 **Dashboard de Objetivos WV** — Tabla comparativa de objetivos semanales multi-cuenta con KPIs y countdown
 

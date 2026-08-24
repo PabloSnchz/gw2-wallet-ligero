@@ -1,0 +1,131 @@
+/* ==========================================================================
+   Bóveda del Gato Negro — Tema Bóveda (default)
+   Estilo actual del proyecto, dark con acentos dorados
+   ========================================================================== */
+
+:root,
+[data-theme="boveda"] {
+  /* Colores base */
+  --bg: #0e0e10;
+  --bg-0: #0d0f13;
+  --bg-1: #10131a;
+  --bg-2: #111216;
+  --panel: #141418;
+  --panel-border: #242428;
+  --panel-outline: #1d1d20;
+
+  /* Bordes */
+  --bd-1: #23252b;
+  --bd-2: #2d2f36;
+
+  /* Texto */
+  --text: #e9e9ee;
+  --tx-1: #e9e9f1;
+  --tx-2: #cfd2d8;
+  --tx-3: #a0a0a6;
+  --muted: #a0a0a6;
+
+  /* Acentos */
+  --acc-1: #5276ff;
+  --acc-2: #a7f3d0;
+  --acc-warn: #ffd569;
+  --acc-err: #f28b82;
+  --gn-gold: #FFA928;
+  --gn-gold-2: #FFCE66;
+  --accent: #b71c1c;
+  --accent-2: #7bc2ff;
+
+  /* Colores semánticos */
+  --color-green: #a0ffc8;
+  --color-green-bg: #1a3a2a;
+  --color-amber: #ffd36b;
+  --color-amber-bg: #3a2a1a;
+  --color-red: #ff9d9d;
+  --color-red-bg: #3a1a1a;
+  --color-blue: #7bc2ff;
+  --color-blue-bg: #1a2a3a;
+  --color-gray: #6a7080;
+  --color-gray-bg: #1a1c24;
+
+  /* Botones */
+  --btn: #1c1c20;
+  --btn-border: #2a2a2f;
+  --btn-hover: #24242a;
+
+  /* Glow y elevaciones */
+  --glow-base: rgba(90, 110, 154, 0.12);
+  --elev-0: none;
+  --elev-1: 0 1px 0 0 #1a1b20 inset, 0 0 0 1px rgba(255,255,255,0.02);
+  --elev-2: 0 6px 16px rgba(0,0,0,.35), 0 0 0 1px rgba(82,118,255,.08);
+  --elev-hover: 0 10px 28px rgba(0,0,0,0.45), 0 0 16px rgba(90,110,154,0.20), 0 0 0 1px rgba(82,118,255,0.12);
+
+  /* Geometría */
+  --radius: 10px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --pill-radius: 24px;
+  --card-radius: 12px;
+  --gap-sm: 8px;
+  --gap-md: 12px;
+  --gap-lg: 16px;
+
+  /* Motion */
+  --ease-1: cubic-bezier(.2,.7,.2,1);
+  --dur-1: .14s;
+  --transition-fast: 0.1s ease;
+  --transition-normal: 0.2s ease;
+  --transition-speed: 0.18s;
+
+  /* Tipografía */
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Sombras */
+  --shadow: 0 0 0 1px #1d1d20 inset;
+  --shadow-hover: 0 0 0 1px #3b1e1e, 0 4px 12px rgba(208,71,71,.35);
+
+  /* Hover */
+  --hover-effect: shadow;
+  --hover-scale: 1;
+  --hover-filter: none;
+  --card-scale: 1;
+
+  /* Espaciado */
+  --spacing: 16px;
+
+  /* Textura de fondo */
+  --bg-texture: none;
+
+  /* Scrollbar */
+  --scrollbar-color: #3a3a3f;
+
+  /* Animación */
+  --animation: fadeIn 0.18s ease-out;
+
+  /* Mood */
+  --mood: serio;
+
+  /* Glow extra */
+  --glow-color: rgba(208,71,71,0.35);
+
+  /* Home Nodes */
+  --gw-mining-bg: linear-gradient(180deg,#1c2432,#0d1622);
+  --gw-logging-bg: linear-gradient(180deg,#1e2a21,#0f1a13);
+  --gw-harvest-bg: linear-gradient(180deg,#1c2230,#111827);
+
+  /* Activities */
+  --gw-card-bg: #101620;
+  --gw-card-borda: #1e2a3b;
+  --gw-card-borda-hover: #2a3950;
+  --gw-muted: #8ea2bd;
+  --gw-ok: #a0ffc8;
+  --gw-bad: #ff9d9d;
+  --gw-chip-bg: linear-gradient(180deg,#1a2230,#0f1722);
+  --gw-chip-borda: #2b3a53;
+  --gw-pill-ok-bg: rgba(45,188,133,.14);
+  --gw-pill-bad-bg: rgba(233,76,92,.12);
+  --gw-shadow: 0 0 0 1px rgba(46,68,97,.5) inset, 0 2px 18px rgba(8,15,25,.6);
+
+  /* Esquema de color nativo */
+  color-scheme: dark;
+}

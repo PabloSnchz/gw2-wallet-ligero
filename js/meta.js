@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+﻿/* eslint-disable no-console */
 (function(){
   'use strict';
 
@@ -119,7 +119,7 @@
   function setStatus(msg, kind='info'){
     if(!el.status) return;
     el.status.textContent = msg;
-    el.status.style.color = (kind==='error') ? '#f28b82' : (kind==='ok' ? '#a7f3d0' : '#a0a0a6');
+    el.status.style.color = (kind==='error') ? 'var(--color-red)' : (kind==='ok' ? 'var(--color-green)' : 'var(--muted)');
   }
   const nowLocal = () => new Date();
   const pad2 = (n) => String(n).padStart(2,'0');
@@ -466,7 +466,7 @@
   }
   function expTintColor(meta){
     const k = expKeyOf(meta);
-    return EXP_TINT[k] || '#e9e9f1';
+    return EXP_TINT[k] || 'var(--tx-1)';
   }
 
   function expIconHTML(meta) {
@@ -478,8 +478,8 @@
     var iconGlowColor = hexToRGBA(tint, 0.50);
     var iconBorderColor = hexToRGBA(tint, 0.45);
     var iconDeco = (iconBorderColor && iconGlowColor)
-      ? ' style="box-shadow: 0 0 0 2px ' + iconBorderColor + ', 0 0 10px ' + iconGlowColor + '; border-radius:10px; background:#d0d0d0;"'
-      : ' style="background:#d0d0d0;border-radius:10px;"';
+      ? ' style="box-shadow: 0 0 0 2px ' + iconBorderColor + ', 0 0 10px ' + iconGlowColor + '; border-radius:10px; background:var(--tx-3);"'
+      : ' style="background:var(--tx-3);border-radius:10px;"';
     if (url) {
       return '<img class="meta-card__icon" src="' + esc(url) + '" alt="' + esc(label) + '" loading="lazy" style="width:42px;height:42px;object-fit:contain;flex-shrink:0;border-radius:10px;"/>';
     }
@@ -561,34 +561,34 @@
     }) : [];
 
     return `
-      <article class="meta-card" data-id="${meta.id}"${styleTint} style="background:#0f1116;border:1px solid #26262b;border-radius:16px;overflow:hidden;">
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #26262b;overflow:hidden;">
+      <article class="meta-card" data-id="${meta.id}"${styleTint} style="background:var(--bg-1);border:1px solid var(--bd-1);border-radius:16px;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--bd-1);overflow:hidden;">
           ${expIcon}
           <div style="flex:1;min-width:0;overflow:hidden;">
             <div style="display:flex;align-items:center;gap:8px;">
               <span style="font-weight:700;font-size:0.9rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(meta.name)}">${esc(meta.name)}</span>
-              <span style="font-size:0.6rem;color:${expTintColor(meta)};background:#1a1c24;padding:2px 6px;border-radius:10px;white-space:nowrap;flex-shrink:0;max-width:80px;overflow:hidden;text-overflow:ellipsis;">${esc(meta.expansion || '—')}</span>
+              <span style="font-size:0.6rem;color:${expTintColor(meta)};background:var(--bg-1);padding:2px 6px;border-radius:10px;white-space:nowrap;flex-shrink:0;max-width:80px;overflow:hidden;text-overflow:ellipsis;">${esc(meta.expansion || '—')}</span>
               ${pinBtn}
             </div>
-            <div style="margin-top:6px;height:3px;background:#2a2c35;border-radius:2px;overflow:hidden;">
-              <div style="width:${dt.done ? '100' : '0'}%;height:100%;background:linear-gradient(90deg,#7bc2ff,#a0ffc8);border-radius:2px;transition:width 0.3s ease;"></div>
+            <div style="margin-top:6px;height:3px;background:var(--bd-1);border-radius:2px;overflow:hidden;">
+              <div style="width:${dt.done ? '100' : '0'}%;height:100%;background:linear-gradient(90deg,var(--color-blue),var(--color-green));border-radius:2px;transition:width 0.3s ease;"></div>
             </div>
           </div>
         </div>
         <div style="padding:0;display:flex;flex-direction:column;gap:0;">
-          <div style="display:flex;align-items:center;gap:12px;padding:8px 12px 3px 12px;background:#0a0c10;border-radius:12px;border:1px solid ${dt.done ? '#2a6a4a' : '#26262b'};transition:all 0.2s ease;">
+          <div style="display:flex;align-items:center;gap:12px;padding:8px 12px 3px 12px;background:var(--bg-0);border-radius:12px;border:1px solid ${dt.done ? 'var(--color-green)' : 'var(--bd-1)'};transition:all 0.2s ease;">
             <div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
-              <span style="font-size:0.65rem;color:${inst.state === 'active' ? '#a0ffc8' : (inst.state === 'soon' ? '#ffd36b' : '#7bc2ff')};background:#1a1c24;padding:2px 6px;border-radius:12px;">${inst.state === 'active' ? 'ACTIVO' : (inst.state === 'soon' ? 'PRÓXIMO' : 'MÁS TARDE')}</span>
+              <span style="font-size:0.65rem;color:${inst.state === 'active' ? 'var(--color-green)' : (inst.state === 'soon' ? 'var(--color-amber)' : 'var(--color-blue)')};background:var(--bg-1);padding:2px 6px;border-radius:12px;">${inst.state === 'active' ? 'ACTIVO' : (inst.state === 'soon' ? 'PRÓXIMO' : 'MÁS TARDE')}</span>
             </div>
             <div style="flex:1;min-width:0;">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <span style="font-size:0.65rem;color:#9aa2b8;">${minsRemaining != null ? (inst.state === 'active' ? 'Termina en ' + minsRemaining + ' min' : 'En ' + minsRemaining + ' min') : 'Sin horario'}</span>
-                <span style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:${dt.done ? '#a0ffc8' : '#ff9d9d'};">
+                <span style="font-size:0.65rem;color:var(--muted);">${minsRemaining != null ? (inst.state === 'active' ? 'Termina en ' + minsRemaining + ' min' : 'En ' + minsRemaining + ' min') : 'Sin horario'}</span>
+                <span style="display:flex;align-items:center;gap:4px;font-size:0.65rem;color:${dt.done ? 'var(--color-green)' : 'var(--color-red)'};">
                   <img src="assets/icons/Welcome/${dt.done ? '156108' : '156107'}.png" width="12" height="12" alt="">
                   ${dt.done ? 'Completado' : 'Pendiente'}
                 </span>
               </div>
-              ${localWindows.length ? '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:4px;">' + localWindows.slice(0,12).map(function(lhhm, idx){ var hhmm = meta.windowsUTC[idx]; var wStart = localDateFromUTC_HHMM(hhmm); var wEnd = new Date(wStart.getTime() + (meta.durationMin || 15)*60000); var now = new Date(); var wState = (now >= wStart && now < wEnd) ? 'active' : (wStart > now && ((wStart - now)/60000) <= SOON_MIN) ? 'soon' : 'later'; var chipColor = wState === 'active' ? '#a0ffc8' : (wState === 'soon' ? '#ffd36b' : '#9aa2b8'); var chipBg = wState === 'active' ? 'rgba(160,255,200,0.12)' : (wState === 'soon' ? 'rgba(255,211,107,0.12)' : '#1a1c24'); var chipBorder = wState === 'active' ? 'rgba(160,255,200,0.3)' : (wState === 'soon' ? 'rgba(255,211,107,0.3)' : '#2a2c35'); return '<span style="font-size:0.6rem;color:' + chipColor + ';background:' + chipBg + ';padding:1px 4px;border-radius:8px;border:1px solid ' + chipBorder + ';text-align:center;">' + esc(lhhm) + '</span>'; }).join('') + '</div>' : ''}
+              ${localWindows.length ? '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:4px;">' + localWindows.slice(0,12).map(function(lhhm, idx){ var hhmm = meta.windowsUTC[idx]; var wStart = localDateFromUTC_HHMM(hhmm); var wEnd = new Date(wStart.getTime() + (meta.durationMin || 15)*60000); var now = new Date(); var wState = (now >= wStart && now < wEnd) ? 'active' : (wStart > now && ((wStart - now)/60000) <= SOON_MIN) ? 'soon' : 'later'; var chipColor = wState === 'active' ? 'var(--color-green)' : (wState === 'soon' ? 'var(--color-amber)' : 'var(--muted)'); var chipBg = wState === 'active' ? 'rgba(160,255,200,0.12)' : (wState === 'soon' ? 'rgba(255,211,107,0.12)' : 'var(--bg-1)'); var chipBorder = wState === 'active' ? 'rgba(160,255,200,0.3)' : (wState === 'soon' ? 'rgba(255,211,107,0.3)' : 'var(--bd-1)'); return '<span style="font-size:0.6rem;color:' + chipColor + ';background:' + chipBg + ';padding:1px 4px;border-radius:8px;border:1px solid ' + chipBorder + ';text-align:center;">' + esc(lhhm) + '</span>'; }).join('') + '</div>' : ''}
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;padding:6px 16px 5px 16px;">

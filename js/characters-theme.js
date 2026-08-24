@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * Characters Theme — diseño sobrio con borde izquierdo de color por profesión
  * v1.0.1 (2026-05-02)
  *
@@ -31,7 +31,7 @@
 
   var PROF_COLORS = {
     'Guardian':     '#73b9ff',
-    'Warrior':      '#ffd966',
+    'Warrior':      'var(--color-amber)',
     'Revenant':     '#b19cd9',
     'Engineer':     '#ff9d5c',
     'Ranger':       '#6b8e23',
@@ -139,10 +139,10 @@
         'display:flex;align-items:center;gap:8px;',
         'padding:8px 12px;',
         'width:100%;',
-        'background:#1a1c24;',
-        'border:1px solid #2a2c35;',
+        'background:var(--bg-1);',
+        'border:1px solid var(--bd-1);',
         'border-radius:8px;',
-        'color:#e0e4ed;',
+        'color:var(--tx-1);',
         'font-size:0.8rem;',
         'cursor:pointer;',
         'text-align:left;',
@@ -159,7 +159,7 @@
 
       var arrow = document.createElement('span');
       arrow.textContent = '▼';
-      arrow.style.cssText = 'font-size:0.6rem;color:#9aa2b8;flex-shrink:0;';
+      arrow.style.cssText = 'font-size:0.6rem;color:var(--muted);flex-shrink:0;';
 
       btn.appendChild(btnText);
       btn.appendChild(arrow);
@@ -173,8 +173,8 @@
         'left:0;',
         'right:0;',
         'z-index:50;',
-        'background:#1a1c24;',
-        'border:1px solid #2a2c35;',
+        'background:var(--bg-1);',
+        'border:1px solid var(--bd-1);',
         'border-radius:8px;',
         'padding:4px;',
         'margin-top:4px;',
@@ -188,7 +188,7 @@
           var group = list.querySelector('[data-group="' + groupLabel + '"]');
           if (!group) {
             var groupHeader = document.createElement('div');
-            groupHeader.style.cssText = 'padding:4px 10px;font-size:0.7rem;font-weight:600;color:#ffd966;text-transform:uppercase;';
+            groupHeader.style.cssText = 'padding:4px 10px;font-size:0.7rem;font-weight:600;color:var(--color-amber);text-transform:uppercase;';
             groupHeader.textContent = groupLabel;
             list.appendChild(groupHeader);
           }
@@ -202,15 +202,15 @@
           'padding:6px 10px;',
           'cursor:pointer;',
           'border-radius:6px;',
-          'color:#b4bad0;',
+          'color:var(--tx-3);',
           'font-size:0.8rem;',
           'transition:background 0.1s ease;'
         ].join('');
 
         if (opt.selected) {
           optionDiv.classList.add('active');
-          optionDiv.style.background = '#1a2a3a';
-          optionDiv.style.color = '#7bc2ff';
+          optionDiv.style.background = 'var(--color-blue-bg)';
+          optionDiv.style.color = 'var(--color-blue)';
         }
 
         optionDiv.addEventListener('click', function (e) {
@@ -221,11 +221,11 @@
           list.querySelectorAll('.char-select-option').forEach(function (o) {
             o.classList.remove('active');
             o.style.background = '';
-            o.style.color = '#b4bad0';
+            o.style.color = 'var(--tx-3)';
           });
           optionDiv.classList.add('active');
-          optionDiv.style.background = '#1a2a3a';
-          optionDiv.style.color = '#7bc2ff';
+          optionDiv.style.background = 'var(--color-blue-bg)';
+          optionDiv.style.color = 'var(--color-blue)';
           list.style.display = 'none';
         });
 
@@ -246,15 +246,15 @@
       list.addEventListener('mouseover', function (e) {
         var opt = e.target.closest('.char-select-option');
         if (opt && !opt.classList.contains('active')) {
-          opt.style.background = '#252830';
-          opt.style.color = '#e0e4ed';
+          opt.style.background = 'var(--bg-2)';
+          opt.style.color = 'var(--tx-1)';
         }
       });
       list.addEventListener('mouseout', function (e) {
         var opt = e.target.closest('.char-select-option');
         if (opt && !opt.classList.contains('active')) {
           opt.style.background = '';
-          opt.style.color = '#b4bad0';
+          opt.style.color = 'var(--tx-3)';
         }
       });
 

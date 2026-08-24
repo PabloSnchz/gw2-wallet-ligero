@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/converter-modal.js — Conversor Gem ↔ Gold (Modal)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
  * Versión: 1.0.0 (2026-05-04)
@@ -284,7 +284,7 @@
     var el = document.getElementById('cvState');
     if (!el) return;
     el.textContent = msg;
-    el.style.color = (kind === 'error') ? '#f28b82' : '#a0a0a6';
+    el.style.color = (kind === 'error') ? 'var(--color-red)' : 'var(--muted)';
   }
 
   async function onTopInput() {
@@ -519,7 +519,7 @@
     }
 
     if (!st.prices.length) {
-      container.innerHTML = '<div style="text-align:center;padding:40px;color:#9aa2b8;">' +
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">' +
         '<img src="assets/icons/155033.png" width="48" height="48" alt="" style="opacity:0.3;margin-bottom:16px;"><br>' +
         'No se pudieron cargar los datos del mercado.<br>' +
         '<button id="cvOfertasRetry" class="btn btn--ghost" style="margin-top:16px;">Reintentar</button></div>';
@@ -531,13 +531,13 @@
     var isLegendaryFilter = state.ofertas.filters.rarity === 'Legendary';
 
     var html =
-      '<div style="margin-bottom:8px;font-size:0.75rem;color:#9aa2b8;line-height:1.5;">' +
+      '<div style="margin-bottom:8px;font-size:0.75rem;color:var(--muted);line-height:1.5;">' +
         (isLegendaryFilter
           ? '💜 <strong>Legendarias más activas:</strong> ordenadas por cantidad de gente vendiendo. A más vendedores, más liquidez y precios más competitivos.'
           : '📊 <strong>Ítems más populares:</strong> ordenados por volumen total de órdenes de compra y venta. Mostrando los que más se mueven. Usá el filtro de rareza para enfocarte.') +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">' +
-        '<select id="cvOfertasRarity" style="background:#1a1c24;border:1px solid #2a2c35;border-radius:20px;color:#e0e4ed;padding:6px 12px;font-size:0.75rem;">' +
+        '<select id="cvOfertasRarity" style="background:var(--bg-1);border:1px solid var(--bd-1);border-radius:20px;color:var(--tx-1);padding:6px 12px;font-size:0.75rem;">' +
           '<option value="">Todas las rarezas</option>' +
           '<option value="Legendary">💜 Legendarias</option>' +
           '<option value="Ascended">Ascendido</option>' +
@@ -547,7 +547,7 @@
           '<option value="Fine">Bueno</option>' +
           '<option value="non_legendary">No legendario/ascendido</option>' +
         '</select>' +
-        '<select id="cvOfertasVolume" style="background:#1a1c24;border:1px solid #2a2c35;border-radius:20px;color:#e0e4ed;padding:6px 12px;font-size:0.75rem;">' +
+        '<select id="cvOfertasVolume" style="background:var(--bg-1);border:1px solid var(--bd-1);border-radius:20px;color:var(--tx-1);padding:6px 12px;font-size:0.75rem;">' +
           '<option value="0">Cualquier volumen</option>' +
           '<option value="100">> 100 unidades</option>' +
           '<option value="500">> 500 unidades</option>' +
@@ -567,11 +567,11 @@
         '<div style="overflow-x:auto;">' +
           '<table style="width:100%;border-collapse:collapse;font-size:0.78rem;">' +
             '<thead>' +
-              '<tr style="border-bottom:2px solid #2a2c35;">' +
-                '<th style="padding:8px 6px;text-align:left;color:#9aa2b8;font-weight:600;">Ítem</th>' +
-                '<th style="padding:8px 6px;text-align:right;color:#9aa2b8;font-weight:600;">Compra</th>' +
-                '<th style="padding:8px 6px;text-align:right;color:#9aa2b8;font-weight:600;">Venta</th>' +
-                '<th style="padding:8px 6px;text-align:right;color:#9aa2b8;font-weight:600;">' + (isLegendaryFilter ? 'Vendedores' : 'Vol. total') + '</th>' +
+              '<tr style="border-bottom:2px solid var(--bd-1);">' +
+                '<th style="padding:8px 6px;text-align:left;color:var(--muted);font-weight:600;">Ítem</th>' +
+                '<th style="padding:8px 6px;text-align:right;color:var(--muted);font-weight:600;">Compra</th>' +
+                '<th style="padding:8px 6px;text-align:right;color:var(--muted);font-weight:600;">Venta</th>' +
+                '<th style="padding:8px 6px;text-align:right;color:var(--muted);font-weight:600;">' + (isLegendaryFilter ? 'Vendedores' : 'Vol. total') + '</th>' +
               '</tr>' +
             '</thead>' +
             '<tbody>';
@@ -585,10 +585,10 @@
         var rarityColor = RARITY_COLORS[rarity] || '#FFFFFF';
         var spread = p.spread;
         var spreadPct = p.spreadPct.toFixed(1);
-        var spreadColor = spread > 0 ? '#a0ffc8' : '#9aa2b8';
+        var spreadColor = spread > 0 ? 'var(--color-green)' : 'var(--muted)';
 
         html +=
-          '<tr style="border-bottom:1px solid #1f2026;' + (idx % 2 === 0 ? 'background:#0a0c10;' : '') + '">' +
+          '<tr style="border-bottom:1px solid var(--bd-1);' + (idx % 2 === 0 ? 'background:var(--bg-0);' : '') + '">' +
             '<td style="padding:8px 6px;display:flex;align-items:center;gap:6px;">' +
               (icon ? '<img src="' + esc(icon) + '" width="28" height="28" alt="" style="border-radius:4px;">' : '') +
               '<div>' +
@@ -598,16 +598,16 @@
             '</td>' +
             '<td style="padding:8px 6px;text-align:right;font-family:monospace;">' +
               (p.buys ? formatCoinsShort(p.buys.unit_price) : '—') +
-              '<div style="font-size:0.6rem;color:#9aa2b8;">' + (p.buyQty ? p.buyQty.toLocaleString('es-AR') + ' comp' : '') + '</div>' +
+              '<div style="font-size:0.6rem;color:var(--muted);">' + (p.buyQty ? p.buyQty.toLocaleString('es-AR') + ' comp' : '') + '</div>' +
             '</td>' +
             '<td style="padding:8px 6px;text-align:right;font-family:monospace;">' +
               (p.sells ? formatCoinsShort(p.sells.unit_price) : '—') +
-              '<div style="font-size:0.6rem;color:#9aa2b8;">' + (p.sellQty ? p.sellQty.toLocaleString('es-AR') + ' vend' : '') + '</div>' +
+              '<div style="font-size:0.6rem;color:var(--muted);">' + (p.sellQty ? p.sellQty.toLocaleString('es-AR') + ' vend' : '') + '</div>' +
             '</td>' +
             '<td style="padding:8px 6px;text-align:right;">' +
               (isLegendaryFilter
-                ? '<span style="color:#ffd36b;font-weight:600;">' + p.sellQty.toLocaleString('es-AR') + '</span>'
-                : '<span style="color:#7bc2ff;font-weight:600;">' + p.totalVol.toLocaleString('es-AR') + '</span>'
+                ? '<span style="color:var(--color-amber);font-weight:600;">' + p.sellQty.toLocaleString('es-AR') + '</span>'
+                : '<span style="color:var(--color-blue);font-weight:600;">' + p.totalVol.toLocaleString('es-AR') + '</span>'
               ) +
             '</td>' +
           '</tr>';
@@ -630,9 +630,9 @@
     var s = Math.floor((copper % 10000) / 100);
     var c = copper % 100;
     var parts = [];
-    if (g > 0) parts.push('<span style="color:#f4c542;font-weight:600;">' + g + '</span> <span style="color:#9aa2b8;">g</span>');
-    if (s > 0) parts.push('<span style="color:#e0e0e0;font-weight:500;">' + s + '</span> <span style="color:#9aa2b8;">s</span>');
-    parts.push('<span style="color:#b87333;font-weight:500;">' + c + '</span> <span style="color:#9aa2b8;">c</span>');
+    if (g > 0) parts.push('<span style="color:#f4c542;font-weight:600;">' + g + '</span> <span style="color:var(--muted);">g</span>');
+    if (s > 0) parts.push('<span style="color:#e0e0e0;font-weight:500;">' + s + '</span> <span style="color:var(--muted);">s</span>');
+    parts.push('<span style="color:#b87333;font-weight:500;">' + c + '</span> <span style="color:var(--muted);">c</span>');
     return parts.join(' ');
   }
 
@@ -764,22 +764,22 @@
     var st = state.transacciones;
 
     if (st.loading) {
-      container.innerHTML = '<div style="text-align:center;padding:40px;color:#9aa2b8;">' +
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">' +
         '<div class="skeleton-enhanced" style="height:200px;margin-bottom:16px;"></div>Cargando tus transacciones…</div>';
       return;
     }
 
     var token = getSelectedTokenForCommerce();
     if (!token) {
-      container.innerHTML = '<div style="text-align:center;padding:40px;color:#9aa2b8;">' +
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">' +
         '<img src="assets/icons/155048.png" width="48" height="48" alt="" style="opacity:0.3;margin-bottom:16px;"><br>' +
         '🔑 Necesitás una API Key con permiso <strong>tradingpost</strong>.<br>' +
-        '<span style="font-size:0.75rem;">Agregala en <a href="https://account.arena.net/applications" target="_blank" rel="noopener" style="color:#7bc2ff;">account.arena.net</a></span></div>';
+        '<span style="font-size:0.75rem;">Agregala en <a href="https://account.arena.net/applications" target="_blank" rel="noopener" style="color:var(--color-blue);">account.arena.net</a></span></div>';
       return;
     }
 
     if (!st.buys.length && !st.sells.length) {
-      container.innerHTML = '<div style="text-align:center;padding:40px;color:#9aa2b8;">' +
+      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">' +
         '<img src="assets/icons/155033.png" width="48" height="48" alt="" style="opacity:0.3;margin-bottom:16px;"><br>' +
         '📭 No tenés órdenes activas en el TP.<br>' +
         '<button id="cvTransaccionesRefresh" class="btn btn--ghost" style="margin-top:16px;">Refrescar</button></div>';
@@ -794,31 +794,31 @@
     var totalCompras = st.buys.reduce(function(sum, tx) { return sum + (tx.price * tx.quantity); }, 0);
     var totalVentas = st.sells.reduce(function(sum, tx) { return sum + (tx.price * tx.quantity); }, 0);
     var balance = totalVentas - totalCompras;
-    var balanceColor = balance >= 0 ? '#a0ffc8' : '#ff9d9d';
+    var balanceColor = balance >= 0 ? 'var(--color-green)' : 'var(--color-red)';
     var balanceSign = balance >= 0 ? '+' : '';
 
     var html =
-      '<div style="margin-bottom:8px;font-size:0.75rem;color:#9aa2b8;line-height:1.5;">' +
+      '<div style="margin-bottom:8px;font-size:0.75rem;color:var(--muted);line-height:1.5;">' +
         '📋 <strong>Tus órdenes activas</strong> en la Compañía de Comercio. ' +
-        'Compras: <span style="color:#a0ffc8;">' + st.buys.length + '</span> · ' +
-        'Ventas: <span style="color:#ff9d9d;">' + st.sells.length + '</span>' +
+        'Compras: <span style="color:var(--color-green);">' + st.buys.length + '</span> · ' +
+        'Ventas: <span style="color:var(--color-red);">' + st.sells.length + '</span>' +
       '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">' +
-        '<div style="background:#0f1116;border-radius:8px;padding:8px 10px;border-left:3px solid #ff9d9d;box-shadow:0 0 6px rgba(255,157,157,0.12);">' +
-          '<div style="font-size:0.6rem;color:#b4bad0;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">💰 Total en compras</div>' +
-          '<div style="font-weight:700;color:#ff9d9d;font-size:0.85rem;">' + formatCoinsShort(totalCompras) + '</div>' +
+        '<div style="background:var(--bg-1);border-radius:8px;padding:8px 10px;border-left:3px solid var(--color-red);box-shadow:0 0 6px rgba(255,157,157,0.12);">' +
+          '<div style="font-size:0.6rem;color:var(--tx-3);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">💰 Total en compras</div>' +
+          '<div style="font-weight:700;color:var(--color-red);font-size:0.85rem;">' + formatCoinsShort(totalCompras) + '</div>' +
         '</div>' +
-        '<div style="background:#0f1116;border-radius:8px;padding:8px 10px;border-left:3px solid #a0ffc8;box-shadow:0 0 6px rgba(160,255,200,0.12);">' +
-          '<div style="font-size:0.6rem;color:#b4bad0;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">📈 Total en ventas</div>' +
-          '<div style="font-weight:700;color:#a0ffc8;font-size:0.85rem;">' + formatCoinsShort(totalVentas) + '</div>' +
+        '<div style="background:var(--bg-1);border-radius:8px;padding:8px 10px;border-left:3px solid var(--color-green);box-shadow:0 0 6px rgba(160,255,200,0.12);">' +
+          '<div style="font-size:0.6rem;color:var(--tx-3);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">📈 Total en ventas</div>' +
+          '<div style="font-weight:700;color:var(--color-green);font-size:0.85rem;">' + formatCoinsShort(totalVentas) + '</div>' +
         '</div>' +
-        '<div style="background:#0f1116;border-radius:8px;padding:8px 10px;border-left:3px solid ' + (balance >= 0 ? '#a0ffc8' : '#ff9d9d') + ';box-shadow:0 0 6px ' + (balance >= 0 ? 'rgba(160,255,200,0.15)' : 'rgba(255,157,157,0.15)') + ';">' +
-          '<div style="font-size:0.6rem;color:#b4bad0;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">⚖️ Balance</div>' +
+        '<div style="background:var(--bg-1);border-radius:8px;padding:8px 10px;border-left:3px solid ' + (balance >= 0 ? 'var(--color-green)' : 'var(--color-red)') + ';box-shadow:0 0 6px ' + (balance >= 0 ? 'rgba(160,255,200,0.15)' : 'rgba(255,157,157,0.15)') + ';">' +
+          '<div style="font-size:0.6rem;color:var(--tx-3);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">⚖️ Balance</div>' +
           '<div style="font-weight:700;color:' + balanceColor + ';font-size:0.85rem;">' + balanceSign + formatCoinsShort(Math.abs(balance)) + '</div>' +
         '</div>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">' +
-        '<select id="cvTransaccionesType" style="background:#1a1c24;border:1px solid #2a2c35;border-radius:20px;color:#e0e4ed;padding:6px 12px;font-size:0.75rem;">' +
+        '<select id="cvTransaccionesType" style="background:var(--bg-1);border:1px solid var(--bd-1);border-radius:20px;color:var(--tx-1);padding:6px 12px;font-size:0.75rem;">' +
           '<option value="all">Todas las órdenes</option>' +
           '<option value="buys">🟢 Solo compras</option>' +
           '<option value="sells">🔴 Solo ventas</option>' +
@@ -833,13 +833,13 @@
     } else {
       html +=
         '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.78rem;">' +
-          '<thead><tr style="border-bottom:2px solid #2a2c35;">' +
-            '<th style="padding:8px 6px;text-align:left;color:#9aa2b8;font-weight:600;">Ítem</th>' +
-            '<th style="padding:8px 6px;text-align:center;color:#9aa2b8;font-weight:600;">Tipo</th>' +
-            '<th style="padding:8px 6px;text-align:right;color:#9aa2b8;font-weight:600;">Cantidad</th>' +
-            '<th style="padding:8px 6px;text-align:right;color:#9aa2b8;font-weight:600;">Precio</th>' +
-            '<th style="padding:8px 6px;text-align:right;color:#9aa2b8;font-weight:600;">Total</th>' +
-            '<th style="padding:8px 6px;text-align:right;color:#9aa2b8;font-weight:600;">Creada</th>' +
+          '<thead><tr style="border-bottom:2px solid var(--bd-1);">' +
+            '<th style="padding:8px 6px;text-align:left;color:var(--muted);font-weight:600;">Ítem</th>' +
+            '<th style="padding:8px 6px;text-align:center;color:var(--muted);font-weight:600;">Tipo</th>' +
+            '<th style="padding:8px 6px;text-align:right;color:var(--muted);font-weight:600;">Cantidad</th>' +
+            '<th style="padding:8px 6px;text-align:right;color:var(--muted);font-weight:600;">Precio</th>' +
+            '<th style="padding:8px 6px;text-align:right;color:var(--muted);font-weight:600;">Total</th>' +
+            '<th style="padding:8px 6px;text-align:right;color:var(--muted);font-weight:600;">Creada</th>' +
           '</tr></thead><tbody>';
 
       filtered.forEach(function (tx, idx) {
@@ -853,7 +853,7 @@
         var dateStr = tx.created ? new Date(tx.created).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
 
         html +=
-          '<tr style="border-bottom:1px solid #1f2026;' + (idx % 2 === 0 ? 'background:#0a0c10;' : '') + '">' +
+          '<tr style="border-bottom:1px solid var(--bd-1);' + (idx % 2 === 0 ? 'background:var(--bg-0);' : '') + '">' +
             '<td style="padding:8px 6px;display:flex;align-items:center;gap:6px;">' +
               (icon ? '<img src="' + esc(icon) + '" width="28" height="28" alt="" style="border-radius:4px;">' : '') +
               '<div>' +
@@ -864,8 +864,8 @@
             '<td style="padding:8px 6px;text-align:center;font-size:0.7rem;">' + typeLabel + '</td>' +
             '<td style="padding:8px 6px;text-align:right;">' + tx.quantity.toLocaleString('es-AR') + '</td>' +
             '<td style="padding:8px 6px;text-align:right;font-family:monospace;">' + formatCoinsShort(tx.price) + '</td>' +
-            '<td style="padding:8px 6px;text-align:right;font-family:monospace;font-weight:600;color:' + (isBuy ? '#ff9d9d' : '#a0ffc8') + ';">' + formatCoinsShort(tx.total) + '</td>' +
-            '<td style="padding:8px 6px;text-align:right;font-size:0.65rem;color:#9aa2b8;">' + dateStr + '</td>' +
+            '<td style="padding:8px 6px;text-align:right;font-family:monospace;font-weight:600;color:' + (isBuy ? 'var(--color-red)' : 'var(--color-green)') + ';">' + formatCoinsShort(tx.total) + '</td>' +
+            '<td style="padding:8px 6px;text-align:right;font-size:0.65rem;color:var(--muted);">' + dateStr + '</td>' +
           '</tr>';
       });
 
@@ -953,17 +953,17 @@
           '<button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button>' +
         '</header>' +
         // Tabs (Fase 2 y 3 como placeholder)
-        '<div class="conv-modal-tabs" style="display:flex;gap:4px;padding:0 16px;border-bottom:1px solid #2a2c35;background:#0f1116;">' +
-          '<button class="conv-modal-tab active" data-tab="cambio" style="background:transparent;border:none;padding:10px 16px;font-size:0.82rem;color:#7bc2ff;cursor:pointer;border-bottom:2px solid #7bc2ff;margin-bottom:-1px;transition:all 0.15s ease;font-weight:600;">' +
+        '<div class="conv-modal-tabs" style="display:flex;gap:4px;padding:0 16px;border-bottom:1px solid var(--bd-1);background:var(--bg-1);">' +
+          '<button class="conv-modal-tab active" data-tab="cambio" style="background:transparent;border:none;padding:10px 16px;font-size:0.82rem;color:var(--color-blue);cursor:pointer;border-bottom:2px solid var(--color-blue);margin-bottom:-1px;transition:all 0.15s ease;font-weight:600;">' +
             '<img src="assets/icons/502065.png" width="16" height="16" alt="" style="vertical-align:middle;margin-right:5px;filter:drop-shadow(0 0 3px rgba(75,189,240,0.5));">Cambio' +
           '</button>' +
-          '<button class="conv-modal-tab" data-tab="transacciones" style="background:transparent;border:none;padding:10px 16px;font-size:0.82rem;color:#9aa2b8;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s ease;" onmouseover="this.style.color=\'#e0e4ed\';this.style.background=\'rgba(123,194,255,0.05)\'" onmouseout="this.style.color=\'#9aa2b8\';this.style.background=\'transparent\'">' +
+          '<button class="conv-modal-tab" data-tab="transacciones" style="background:transparent;border:none;padding:10px 16px;font-size:0.82rem;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s ease;" onmouseover="this.style.color=\'var(--tx-1)\';this.style.background=\'rgba(123,194,255,0.05)\'" onmouseout="this.style.color=\'var(--muted)\';this.style.background=\'transparent\'">' +
             '<img src="assets/icons/155033.png" width="16" height="16" alt="" style="vertical-align:middle;margin-right:5px;opacity:0.6;">Transacciones' +
           '</button>' +
-          '<button class="conv-modal-tab" data-tab="populares" style="background:transparent;border:none;padding:10px 16px;font-size:0.82rem;color:#9aa2b8;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s ease;" onmouseover="this.style.color=\'#e0e4ed\';this.style.background=\'rgba(123,194,255,0.05)\'" onmouseout="this.style.color=\'#9aa2b8\';this.style.background=\'transparent\'">' +
+          '<button class="conv-modal-tab" data-tab="populares" style="background:transparent;border:none;padding:10px 16px;font-size:0.82rem;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s ease;" onmouseover="this.style.color=\'var(--tx-1)\';this.style.background=\'rgba(123,194,255,0.05)\'" onmouseout="this.style.color=\'var(--muted)\';this.style.background=\'transparent\'">' +
             '<img src="assets/icons/155033.png" width="16" height="16" alt="" style="vertical-align:middle;margin-right:5px;opacity:0.6;">Populares' +
           '</button>' +
-          '<button class="conv-modal-tab" data-tab="historial" style="background:transparent;border:none;padding:10px 16px;font-size:0.82rem;color:#9aa2b8;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s ease;" onmouseover="this.style.color=\'#e0e4ed\';this.style.background=\'rgba(123,194,255,0.05)\'" onmouseout="this.style.color=\'#9aa2b8\';this.style.background=\'transparent\'">' +
+          '<button class="conv-modal-tab" data-tab="historial" style="background:transparent;border:none;padding:10px 16px;font-size:0.82rem;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s ease;" onmouseover="this.style.color=\'var(--tx-1)\';this.style.background=\'rgba(123,194,255,0.05)\'" onmouseout="this.style.color=\'var(--muted)\';this.style.background=\'transparent\'">' +
             '<img src="assets/icons/Welcome/3124974.png" width="16" height="16" alt="" style="vertical-align:middle;margin-right:5px;opacity:0.6;">Historial' +
           '</button>' +
         '</div>' +
@@ -977,13 +977,13 @@
                 '</span>' +
                 '<span style="color:#7dd3fc;font-weight:600;">Conseguir Gemas</span>' +
               '</h4>' +
-              '<div class="conv2-card" style="background:#0f1116;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:8px 10px;box-shadow:0 0 6px rgba(90,110,154,0.08);">' +
+              '<div class="conv2-card" style="background:var(--bg-1);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:8px 10px;box-shadow:0 0 6px rgba(90,110,154,0.08);">' +
                 '<div class="conv2-row" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;">' +
-                  '<input id="cvGems" class="conv2-entry" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Gemas" style="background:transparent;border:0;outline:none;width:100%;color:#e9e9ee;font-size:18px;">' +
-                  '<div id="cvGemsOut" class="coin-badges coin-badges--lg" style="display:inline-flex;gap:6px;align-items:center;background:#0a0c10;padding:6px 10px;border-radius:8px;border:1px solid #1f2026;min-width:80px;justify-content:flex-end;">—</div>' +
+                  '<input id="cvGems" class="conv2-entry" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Gemas" style="background:transparent;border:0;outline:none;width:100%;color:var(--text);font-size:18px;">' +
+                  '<div id="cvGemsOut" class="coin-badges coin-badges--lg" style="display:inline-flex;gap:6px;align-items:center;background:var(--bg-0);padding:6px 10px;border-radius:8px;border:1px solid var(--bd-1);min-width:80px;justify-content:flex-end;">—</div>' +
                 '</div>' +
                 '<div class="conv2-quick" id="cvGemsQuick" aria-label="Atajos de gemas" style="display:flex;gap:6px;margin-top:8px;">' +
-                  '<button type="button" data-gems="100" class="conv2-chip" style="display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;border-radius:14px;font-size:0.7rem;font-weight:600;background:#1a1c24;border:1px solid #2a2c35;color:#b4bad0;cursor:pointer;transition:all 0.15s ease;">100</button>' +
+                  '<button type="button" data-gems="100" class="conv2-chip" style="display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;border-radius:14px;font-size:0.7rem;font-weight:600;background:var(--bg-1);border:1px solid var(--bd-1);color:var(--tx-3);cursor:pointer;transition:all 0.15s ease;">100</button>' +
                   '<button type="button" data-gems="400" class="conv2-chip">400</button>' +
                   '<button type="button" data-gems="800" class="conv2-chip">800</button>' +
                   '<button type="button" data-gems="1200" class="conv2-chip">1200</button>' +
@@ -995,10 +995,10 @@
                 '</span>' +
                 '<span style="color:#f1cc7a;font-weight:600;">Conseguir Oro</span>' +
               '</h4>' +
-              '<div class="conv2-card" style="background:#0f1116;border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:8px 10px;box-shadow:0 0 6px rgba(90,110,154,0.08);">' +
+              '<div class="conv2-card" style="background:var(--bg-1);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:8px 10px;box-shadow:0 0 6px rgba(90,110,154,0.08);">' +
                 '<div class="conv2-row" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;">' +
                   '<input id="cvGold" class="conv2-entry conv2-gold" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Oro (g)" style="background:transparent;border:0;outline:none;width:100%;color:#d7b062;font-size:18px;">' +
-                  '<output id="cvGoldOut" class="conv2-gems" style="color:#e9e9ee;background:#0a0c10;padding:6px 10px;border-radius:8px;border:1px solid #1f2026;min-width:80px;text-align:right;font-weight:600;">—</output>' +
+                  '<output id="cvGoldOut" class="conv2-gems" style="color:var(--text);background:var(--bg-0);padding:6px 10px;border-radius:8px;border:1px solid var(--bd-1);min-width:80px;text-align:right;font-weight:600;">—</output>' +
                 '</div>' +
                 '<div class="conv2-quick" id="cvGoldQuick" aria-label="Atajos de oro" style="display:flex;gap:6px;margin-top:8px;">' +
                   '<button type="button" data-gold="10" class="conv2-chip">10 g</button>' +
@@ -1010,11 +1010,11 @@
                 '<button id="cvRefresh" class="btn" title="Actualizar cotización" style="display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:6px 14px;">' +
                   '<img src="assets/icons/Welcome/834002.png" width="14" height="14" alt="">Actualizar' +
                 '</button>' +
-                '<span id="cvState" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:10px;font-size:0.7rem;background:#1a3a2a;color:#a0ffc8;border:1px solid #2a6a4a;margin:0;">✅ Listo.</span>' +
+                '<span id="cvState" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:10px;font-size:0.7rem;background:var(--color-green-bg);color:var(--color-green);border:1px solid var(--color-green);margin:0;">✅ Listo.</span>' +
               '</div>' +
               '<hr class="hr-hairline">' +
               '<div class="conv2-refline" style="display:flex;justify-content:center;padding:4px 0;">' +
-                '<span id="cvRef400" style="display:inline-flex;align-items:center;gap:8px;background:#0f1116;padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);box-shadow:0 0 8px rgba(90,110,154,0.08);">—</span>' +
+                '<span id="cvRef400" style="display:inline-flex;align-items:center;gap:8px;background:var(--bg-1);padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);box-shadow:0 0 8px rgba(90,110,154,0.08);">—</span>' +
               '</div>' +
               '<hr class="hr-hairline">' +
               '<div id="convScore" class="conv2-score" aria-live="polite" style="display:grid;gap:8px;">' +
@@ -1035,7 +1035,7 @@
           '<div class="conv-tab-content" data-tab="populares" style="display:none;"></div>' +
           // Tab: Historial (placeholder Fase 3)
           '<div class="conv-tab-content" data-tab="historial" style="display:none;">' +
-            '<div style="text-align:center;padding:40px;color:#9aa2b8;">' +
+            '<div style="text-align:center;padding:40px;color:var(--muted);">' +
               '<img src="assets/icons/Welcome/3124974.png" width="48" height="48" alt="" style="opacity:0.3;margin-bottom:16px;"><br>' +
               'Historial de tendencia de gemas<br>' +
               '<span style="font-size:0.8rem;">Próximamente</span>' +
@@ -1148,8 +1148,8 @@
       var btn = tabBtns[i];
       var isActive = btn.getAttribute('data-tab') === tabId;
       btn.classList.toggle('active', isActive);
-      btn.style.color = isActive ? '#7bc2ff' : '#9aa2b8';
-      btn.style.borderBottomColor = isActive ? '#7bc2ff' : 'transparent';
+      btn.style.color = isActive ? 'var(--color-blue)' : 'var(--muted)';
+      btn.style.borderBottomColor = isActive ? 'var(--color-blue)' : 'transparent';
     }
 
     // Actualizar contenidos
@@ -1171,9 +1171,9 @@
                 '<div style="text-align:center;padding:40px;">' +
                   '<img src="assets/icons/Welcome/156107.png" width="48" height="48" alt="" style="margin-bottom:16px;opacity:0.7;">' +
                   '<h4 style="margin:0 0 12px 0;color:#b71c1c;text-shadow:0 0 6px rgba(255,59,59,0.55);">⚠️ Permiso requerido</h4>' +
-                  '<p style="margin:0 0 8px 0;color:#9aa2b8;">Esta API Key no tiene el permiso <strong style="color:#b71c1c;">tradingpost</strong>.</p>' +
-                  '<p style="margin:0 0 16px 0;color:#9aa2b8;font-size:0.8rem;">Para ver tus órdenes activas, necesitás una key con ese permiso.</p>' +
-                  '<a href="https://account.arena.net/applications" target="_blank" rel="noopener" class="an-util-link" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;background:#0f1013;border:1px solid #2a2c35;border-radius:8px;padding:8px 14px;color:#b71c1c;text-shadow:0 0 6px rgba(255,59,59,0.55);">' +
+                  '<p style="margin:0 0 8px 0;color:var(--muted);">Esta API Key no tiene el permiso <strong style="color:#b71c1c;">tradingpost</strong>.</p>' +
+                  '<p style="margin:0 0 16px 0;color:var(--muted);font-size:0.8rem;">Para ver tus órdenes activas, necesitás una key con ese permiso.</p>' +
+                  '<a href="https://account.arena.net/applications" target="_blank" rel="noopener" class="an-util-link" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;background:var(--bg-1);border:1px solid var(--bd-1);border-radius:8px;padding:8px 14px;color:#b71c1c;text-shadow:0 0 6px rgba(255,59,59,0.55);">' +
                     '<img src="assets/icons/Welcome/547832.png" width="16" height="16" alt="">' +
                     'Crear API Key con tradingpost' +
                   '</a>' +
@@ -1191,7 +1191,7 @@
         var container = document.querySelector('.conv-tab-content[data-tab="transacciones"]');
         if (container && (!container.innerHTML || container.innerHTML.includes('Cargando') || container.innerHTML.includes('perdido'))) {
           container.innerHTML = 
-            '<div style="text-align:center;padding:40px;color:#9aa2b8;">' +
+            '<div style="text-align:center;padding:40px;color:var(--muted);">' +
               '<img src="assets/icons/155048.png" width="48" height="48" alt="" style="opacity:0.3;margin-bottom:16px;">' +
               '<p>Seleccioná una API Key para ver tus transacciones.</p>' +
             '</div>';

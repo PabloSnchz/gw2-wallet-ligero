@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/wv-objectives-ui.js — UI de Objetivos de Wizard's Vault
  * v1.0.0 (2026-05-01)
  *

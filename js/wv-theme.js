@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * WV Theme — diseño unificado para Cámara del Brujo
  * v1.0.1 (2026-05-02)
  *
@@ -41,9 +41,9 @@
 
   // Colores de referencia para modos de objetivos (si no se detecta color)
   var MODE_COLORS = {
-    'pve': '#a0ffc8',
+    'pve': 'var(--color-green)',
     'pvp': '#ff6b6b',
-    'wvw': '#ffd36b'
+    'wvw': 'var(--color-amber)'
   };
 
   // ==========================================================================
@@ -55,16 +55,16 @@
     var nameEl = card.querySelector('.wv-card__name');
     if (nameEl) {
       var color = nameEl.style.color;
-      if (color && color !== 'rgb(233, 233, 241)' && color !== '#e9e9f1') return color;
+      if (color && color !== 'rgb(233, 233, 241)' && color !== 'var(--tx-1)') return color;
     }
 
     // 2) Buscar modo PvE/PvP/WvW en objetivos
     var modeEl = card.querySelector('.wv-obj-mode, [data-wv-mode], [data-mode]');
     if (modeEl) {
       var mode = (modeEl.getAttribute('data-wv-mode') || modeEl.getAttribute('data-mode') || modeEl.textContent || '').trim().toLowerCase();
-      if (mode === 'pve' || mode.includes('pve')) return '#a0ffc8';      // Verde PvE
+      if (mode === 'pve' || mode.includes('pve')) return 'var(--color-green)';      // Verde PvE
       if (mode === 'pvp' || mode.includes('pvp')) return '#ff6b6b';      // Rojo PvP
-      if (mode === 'wvw' || mode.includes('wvw')) return '#ffd36b';      // Ámbar WvW
+      if (mode === 'wvw' || mode.includes('wvw')) return 'var(--color-amber)';      // Ámbar WvW
     }
 
     // 3) Fallback: color neutro

@@ -1,0 +1,129 @@
+﻿/* ==========================================================================
+   Bóveda del Gato Negro — Tema macos
+   ========================================================================== */
+
+[data-theme="macos"] {
+  /* Colores base */
+  --bg: #f5f5f7;
+  --bg-0: #f5f5f7;
+  --bg-1: #ffffff;
+  --bg-2: #ffffff;
+  --panel: #ffffff;
+  --panel-border: rgba(0,0,0,0.08);
+  --panel-outline: rgba(0,0,0,0.08);
+
+  /* Bordes */
+  --bd-1: rgba(0,0,0,0.08);
+  --bd-2: rgba(0,0,0,0.08);
+
+  /* Texto */
+  --text: #1d1d1f;
+  --tx-1: #1d1d1f;
+  --tx-2: #1d1d1f;
+  --tx-3: #6e6e73;
+  --muted: #6e6e73;
+
+  /* Acentos */
+  --acc-1: #007aff;
+  --acc-2: #5ac8fa;
+  --acc-warn: #5ac8fa;
+  --acc-err: #f28b82;
+  --gn-gold: #007aff;
+  --gn-gold-2: #5ac8fa;
+  --accent: #007aff;
+  --accent-2: #5ac8fa;
+
+  /* Colores semánticos */
+  --color-green: #a0ffc8;
+  --color-green-bg: #1a3a2a;
+  --color-amber: #ffd36b;
+  --color-amber-bg: #3a2a1a;
+  --color-red: #ff9d9d;
+  --color-red-bg: #3a1a1a;
+  --color-blue: #7bc2ff;
+  --color-blue-bg: #1a2a3a;
+  --color-gray: #6a7080;
+  --color-gray-bg: #1a1c24;
+
+  /* Botones */
+  --btn: #ffffff;
+  --btn-border: rgba(0,0,0,0.08);
+  --btn-hover: #ffffff;
+
+  /* Glow y elevaciones */
+  --glow-base: rgba(90, 110, 154, 0.12);
+  --elev-0: none;
+  --elev-1: 0 1px 0 0 rgba(255,255,255,0.02) inset;
+  --elev-2: 0 6px 16px rgba(0,0,0,0.2);
+  --elev-hover: 0 10px 28px rgba(0,0,0,0.3), 0 0 16px rgba(90,110,154,0.15);
+
+  /* Geometría */
+  --radius: 16px;
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 16px;
+  --pill-radius: 24px;
+  --card-radius: 16px;
+  --gap-sm: 8px;
+  --gap-md: 12px;
+  --gap-lg: 14px;
+
+  /* Motion */
+  --ease-1: cubic-bezier(.2,.7,.2,1);
+  --dur-1: .14s;
+  --transition-fast: 0.1s ease;
+  --transition-normal: 0.2s ease;
+  --transition-speed: 0.18s;
+
+  /* Tipografía */
+  --font: -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Sombras */
+  --shadow: 0 2px 8px rgba(0,0,0,0.2);
+  --shadow-hover: 0 6px 16px rgba(0,0,0,0.3);
+
+  /* Hover */
+  --hover-effect: glow;
+  --hover-scale: 1;
+  --hover-filter: brightness(1.05);
+  --card-scale: 1;
+
+  /* Espaciado */
+  --spacing: 14px;
+
+  /* Textura de fondo */
+  --bg-texture: none;
+
+  /* Scrollbar */
+  --scrollbar-color: rgba(0,0,0,0.08);
+
+  /* Animación */
+  --animation: fadeIn 0.18s ease-out;
+
+  /* Mood */
+  --mood: macos;
+
+  /* Glow extra */
+  --glow-color: rgba(90, 110, 154, 0.25);
+
+  /* Home Nodes */
+  --gw-mining-bg: linear-gradient(180deg,#1c2432,#0d1622);
+  --gw-logging-bg: linear-gradient(180deg,#1e2a21,#0f1a13);
+  --gw-harvest-bg: linear-gradient(180deg,#1c2230,#111827);
+
+  /* Activities */
+  --gw-card-bg: #ffffff;
+  --gw-card-borda: rgba(0,0,0,0.08);
+  --gw-card-borda-hover: rgba(0,0,0,0.08);
+  --gw-muted: #6e6e73;
+  --gw-ok: #a0ffc8;
+  --gw-bad: #ff9d9d;
+  --gw-chip-bg: linear-gradient(180deg,#ffffff,#f5f5f7);
+  --gw-chip-borda: rgba(0,0,0,0.08);
+  --gw-pill-ok-bg: rgba(45,188,133,.14);
+  --gw-pill-bad-bg: rgba(233,76,92,.12);
+  --gw-shadow: 0 0 0 1px rgba(46,68,97,.5) inset, 0 2px 18px rgba(8,15,25,.6);
+
+  /* Esquema de color nativo */
+  color-scheme: dark;
+}
