@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+﻿/* eslint-disable no-console */
 (function () {
   'use strict';
 
@@ -122,7 +122,7 @@
   /* ========================= Utils ========================= */
   function setStatus(m, k = 'info') {
     if (!el.status) return;
-    el.status.style.color = k === 'error' ? '#f28b82' : (k === 'ok' ? '#a7f3d0' : '#a0a0a6');
+    el.status.style.color = k === 'error' ? 'var(--color-red)' : (k === 'ok' ? 'var(--color-green)' : 'var(--muted)');
     el.status.textContent = m;
   }
 
@@ -461,9 +461,9 @@
     var silver = Math.floor((copper % 10000) / 100);
     var copperLeft = copper % 100;
     var parts = [];
-    if (gold > 0) parts.push('<span style="color:#f4c542;font-weight:600;">' + gold.toLocaleString('es-AR') + '</span> <span style="color:#9aa2b8;">g</span>');
-    if (silver > 0) parts.push('<span style="color:#e0e0e0;font-weight:500;">' + silver + '</span> <span style="color:#9aa2b8;">s</span>');
-    parts.push('<span style="color:#b87333;font-weight:500;">' + copperLeft + '</span> <span style="color:#9aa2b8;">c</span>');
+    if (gold > 0) parts.push('<span style="color:#f4c542;font-weight:600;">' + gold.toLocaleString('es-AR') + '</span> <span style="color:var(--muted);">g</span>');
+    if (silver > 0) parts.push('<span style="color:#e0e0e0;font-weight:500;">' + silver + '</span> <span style="color:var(--muted);">s</span>');
+    parts.push('<span style="color:#b87333;font-weight:500;">' + copperLeft + '</span> <span style="color:var(--muted);">c</span>');
     return parts.join(' ');
   }
 
@@ -783,7 +783,7 @@
     if (!el.keysList) return;
     if (!KeyManager.list.length) {
       el.keysList.innerHTML = `
-        <div style="text-align:center;padding:24px;color:#9aa2b8;display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <div style="text-align:center;padding:24px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:12px;">
           <img src="assets/icons/Cuentas/155048.png" width="48" height="48" alt="" style="filter:brightness(0.7);opacity:0.7;">
           <p class="muted" style="margin:0;">No tenés API Keys guardadas.</p>
           <p class="muted" style="margin:0;font-size:0.75rem;">Agregá una debajo para empezar.</p>
@@ -807,11 +807,11 @@
           ${tagIcon || '<img src="' + CONFIG_ICONS.account + '" width="28" height="28" alt="" style="filter:brightness(0.7);opacity:0.5;border-radius:6px;">'}
         </div>
         <div style="flex:1;min-width:0;">
-          <div style="font-weight:600;color:#e0e4ed;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <div style="font-weight:600;color:var(--tx-1);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             ${esc(k.label || obfuscate(k.value))}
-            ${isSelected ? '<span style="font-size:0.65rem;background:#1a3a2a;color:#a0ffc8;padding:2px 8px;border-radius:20px;">✓ En uso</span>' : ''}
+            ${isSelected ? '<span style="font-size:0.65rem;background:var(--color-green-bg);color:var(--color-green);padding:2px 8px;border-radius:20px;">✓ En uso</span>' : ''}
           </div>
-          <div style="font-size:0.75rem;color:#9aa2b8;display:flex;align-items:center;gap:6px;margin-top:4px;">
+          <div style="font-size:0.75rem;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:4px;">
             <img src="assets/icons/Cuentas/155048.png" width="12" height="12" alt="" style="filter:brightness(0.7);">
             ${esc(obfuscate(k.value))}
           </div>
@@ -820,7 +820,7 @@
           <button class="btn k-use"    title="Usar esta Key" style="display:inline-flex;align-items:center;gap:4px;font-size:0.7rem;padding:4px 8px;"><img src="assets/icons/Welcome/834002.png" width="14" height="14" alt="" style="filter:brightness(0.9);"> Usar</button>
           <button class="btn k-copy"   title="Copiar API Key" style="display:inline-flex;align-items:center;gap:4px;font-size:0.7rem;padding:4px 8px;"><img src="assets/icons/Welcome/155911.png" width="14" height="14" alt="" style="filter:brightness(0.9);"> Copiar</button>
           <button class="btn k-rename" title="Renombrar" style="display:inline-flex;align-items:center;gap:4px;font-size:0.7rem;padding:4px 8px;"><img src="assets/icons/Welcome/102353.png" width="14" height="14" alt="" style="filter:brightness(0.9);"> Renombrar</button>
-          <button class="btn k-del"    title="Eliminar" style="display:inline-flex;align-items:center;gap:4px;font-size:0.7rem;padding:4px 8px;background:rgba(255,157,157,0.1);border-color:rgba(255,157,157,0.3);color:#ff9d9d;"><img src="assets/icons/Welcome/156107.png" width="14" height="14" alt="" style="filter:brightness(0.9);"> Eliminar</button>
+          <button class="btn k-del"    title="Eliminar" style="display:inline-flex;align-items:center;gap:4px;font-size:0.7rem;padding:4px 8px;background:rgba(255,157,157,0.1);border-color:rgba(255,157,157,0.3);color:var(--color-red);"><img src="assets/icons/Welcome/156107.png" width="14" height="14" alt="" style="filter:brightness(0.9);"> Eliminar</button>
         </div>
       </div>`;
     }).join('');

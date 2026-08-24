@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/characters.js — Panel de Personajes y Localización
  * v2.3.0 (2026-03-24)
  *
@@ -953,7 +953,7 @@
     var wvwLevel = state.accountWvwLevel ? ' ' + state.accountWvwLevel : '';
     var wvw = wvwName + wvwLevel;
 
-    container.innerHTML = '\n      <div class="account-summary" style="display: flex; gap: 20px; padding: 10px; background: #1a1e2a; border-radius: 8px; margin-bottom: 16px;">\n        <div><strong>\uD83C\uDFC6 Logros:</strong> ' + ach + '</div>\n        <div><strong>\u2694\uFE0F PvP:</strong> ' + pvp + '</div>\n        <div><strong>\uD83D\uDEE1\uFE0F WvW:</strong> ' + wvw + '</div>\n      </div>\n    ';
+    container.innerHTML = '\n      <div class="account-summary" style="display: flex; gap: 20px; padding: 10px; background: var(--bg-2); border-radius: 8px; margin-bottom: 16px;">\n        <div><strong>\uD83C\uDFC6 Logros:</strong> ' + ach + '</div>\n        <div><strong>\u2694\uFE0F PvP:</strong> ' + pvp + '</div>\n        <div><strong>\uD83D\uDEE1\uFE0F WvW:</strong> ' + wvw + '</div>\n      </div>\n    ';
   }
 
   function renderFilters() {
@@ -982,7 +982,7 @@
     html += '<div class="chip chip--check"><button id="charViewToggle" class="btn btn--ghost" data-tip="Cambiar vista">' + (state.view === 'table' ? 'Vista tarjetas' : 'Vista tabla') + '</button></div>';
     html += '<div style="position:relative;margin-left:auto;">';
     html += '<img src="assets/icons/Welcome/3124974.png" width="14" height="14" alt="" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:0.4;pointer-events:none;">';
-    html += '<input type="text" id="charSearchInp" placeholder="Buscar personaje..." value="' + esc(state.filters.search) + '" style="padding:7px 10px 7px 30px;background:#1a1c24;border:1px solid #2a2c35;border-radius:20px;color:#e0e4ed;font-size:0.8rem;width:200px;">';
+    html += '<input type="text" id="charSearchInp" placeholder="Buscar personaje..." value="' + esc(state.filters.search) + '" style="padding:7px 10px 7px 30px;background:var(--bg-1);border:1px solid var(--bd-1);border-radius:20px;color:var(--tx-1);font-size:0.8rem;width:200px;">';
     html += '</div>';
     html += '</div>';
 
@@ -1059,7 +1059,7 @@
         style: {
           padding: '20px',
           textAlign: 'center',
-          background: '#1a1e2a',
+          background: 'var(--bg-2)',
           borderRadius: '8px',
           marginBottom: '16px'
         }
@@ -1105,7 +1105,7 @@
 
   var PROF_COLORS = {
     'Guardian': '#73b9ff',
-    'Warrior': '#ffd966',
+    'Warrior': 'var(--color-amber)',
     'Revenant': '#b19cd9',
     'Engineer': '#ff9d5c',
     'Ranger': '#6b8e23',
@@ -1118,7 +1118,7 @@
   function createProfIcon(profession) {
     var url = state.profIcons[profession];
     var initial = profession ? profession.charAt(0) : '?';
-    var color = PROF_COLORS[profession] || '#888';
+    var color = PROF_COLORS[profession] || 'var(--muted)';
     var container = createEl('div', { className: 'prof-icon-container', style: { position: 'relative', display: 'inline-block', width: '64px', height: '64px' } });
 
     if (url) {
@@ -1127,7 +1127,7 @@
         alt: profession,
         width: '64',
         height: '64',
-        style: { borderRadius: '12px', background: '#1a1e2a', border: '2px solid #3a4050' },
+        style: { borderRadius: '12px', background: 'var(--bg-2)', border: '2px solid var(--bd-1)' },
         loading: 'lazy',
         onerror: function(e) {
           console.warn(LOG, 'Error cargando icono para ' + profession + ':', url);
@@ -1144,7 +1144,7 @@
               justifyContent: 'center',
               fontSize: '24px',
               fontWeight: 'bold',
-              color: '#fff',
+              color: 'var(--tx-1)',
               textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
             }
           }, initial);
@@ -1164,7 +1164,7 @@
           justifyContent: 'center',
           fontSize: '24px',
           fontWeight: 'bold',
-          color: '#fff',
+          color: 'var(--tx-1)',
           textShadow: '1px 1px 2px rgba(0,0,0,0.5)'
         }
       }, initial));
@@ -1196,7 +1196,7 @@
         createEl('div', { style: { flex: 1 } }, [
           createEl('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' } }, [
             createEl('h4', { style: { margin: 0 } }, esc(c.name)),
-            guildHtml ? createEl('span', { style: { color: '#ffd966' } }, guildHtml) : null
+            guildHtml ? createEl('span', { style: { color: 'var(--color-amber)' } }, guildHtml) : null
           ]),
           createEl('div', { style: { display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' } }, [
             raceIcon ? createEl('img', { src: raceIcon, alt: c.race, width: '24', height: '24', style: { borderRadius: '4px' }, title: c.race, onerror: function(e) { e.target.style.display = 'none'; } }) : null,
@@ -1210,7 +1210,7 @@
         href: c.map_id ? 'https://wiki.guildwars2.com/wiki/' + encodeURIComponent(c.map_name.replace(/ /g, '_')) : '#',
         target: c.map_id ? '_blank' : null,
         rel: c.map_id ? 'noopener' : null,
-        style: c.map_id ? {} : { color: '#888', cursor: 'default' }
+        style: c.map_id ? {} : { color: 'var(--muted)', cursor: 'default' }
       }, c.map_name);
 
       var poiSelect = createEl('select', {
@@ -1294,7 +1294,7 @@
         href: c.map_id ? 'https://wiki.guildwars2.com/wiki/' + encodeURIComponent(c.map_name.replace(/ /g, '_')) : '#',
         target: c.map_id ? '_blank' : null,
         rel: c.map_id ? 'noopener' : null,
-        style: c.map_id ? {} : { color: '#888', cursor: 'default' }
+        style: c.map_id ? {} : { color: 'var(--muted)', cursor: 'default' }
       }, c.map_name);
 
       var row = createEl('tr', {}, [
@@ -1302,7 +1302,7 @@
           profIcon,
           createEl('div', {}, [
             createEl('strong', {}, esc(c.name)),
-            c.guild_tag ? createEl('span', { style: { color: '#ffd966', marginLeft: '4px' } }, '[' + esc(c.guild_tag) + ']') : null,
+            c.guild_tag ? createEl('span', { style: { color: 'var(--color-amber)', marginLeft: '4px' } }, '[' + esc(c.guild_tag) + ']') : null,
             createEl('div', { className: 'muted', style: { display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' } }, [
               raceIcon ? createEl('img', { src: raceIcon, width: '16', height: '16', onerror: function(e) { e.target.style.display = 'none'; } }) : null,
               specIcon ? createEl('img', { src: specIcon, width: '16', height: '16', onerror: function(e) { e.target.style.display = 'none'; } }) : null,

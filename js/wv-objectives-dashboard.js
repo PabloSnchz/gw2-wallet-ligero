@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/wv-objectives-dashboard.js — Dashboard de Objetivos Multi-Cuenta
  * v1.0.0 (2026-05-15)
  *
@@ -115,10 +115,10 @@
 
   function getAccountColor(tag) {
     switch (tag) {
-      case 'main': return '#ffd966';
+      case 'main': return 'var(--color-amber)';
       case 'alter': return '#b19cd9';
-      case 'f2p': return '#7bc2ff';
-      default: return '#9aa2b8';
+      case 'f2p': return 'var(--color-blue)';
+      default: return 'var(--muted)';
     }
   }
 
@@ -272,7 +272,7 @@
   function renderCell(account, objective) {
     var obj = (account.objectives || []).find(function (o) { return o.id === objective.id; });
     if (!obj) {
-      return '<td style="text-align:center;padding:6px 8px;color:#555;font-size:0.8rem;" title="Sin datos">—</td>';
+      return '<td style="text-align:center;padding:6px 8px;color:var(--tx-3);font-size:0.8rem;" title="Sin datos">—</td>';
     }
 
     if (obj.claimed) {
@@ -282,7 +282,7 @@
     }
     if (obj.pct >= 100) {
       return '<td style="text-align:center;padding:6px 8px;background:rgba(255,211,107,0.06);" title="✔️ Completado • ' + obj.progress + '/' + obj.total + '">' +
-        '<span style="color:#ffd36b;font-weight:600;font-size:0.8rem;">✔️ ' + obj.progress + '/' + obj.total + '</span>' +
+        '<span style="color:var(--color-amber);font-weight:600;font-size:0.8rem;">✔️ ' + obj.progress + '/' + obj.total + '</span>' +
         '</td>';
     }
     return '<td style="text-align:center;padding:6px 8px;" title="En progreso • ' + obj.progress + '/' + obj.total + '">' +
@@ -298,7 +298,7 @@
 
   function renderSkeleton() {
     return '<div class="panel__body" style="padding:0 12px;">' +
-      '<h2 style="display:flex;align-items:center;gap:8px;font-size:1.1rem;color:#e0e4ed;margin:0 0 16px 0;">' +
+      '<h2 style="display:flex;align-items:center;gap:8px;font-size:1.1rem;color:var(--tx-1);margin:0 0 16px 0;">' +
         '<img src="assets/icons/3172791.png" alt="" width="28" height="28">' +
         'Dashboard de Objetivos Semanales' +
       '</h2>' +
@@ -359,7 +359,7 @@
     var kpiIconClaimed = 'https://render.guildwars2.com/file/1856A01E331452E4C14E4C9CF4F818E3FAEF9B79/3124964.png';
     var kpiIconCompleted = 'assets/icons/Welcome/156108.png';
 
-        var kpiStyle = 'background:#0f1116;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px 20px;flex:1;min-width:170px;display:flex;align-items:center;gap:14px;transition:all 0.22s cubic-bezier(0.2,0.9,0.4,1.1);cursor:default;';
+        var kpiStyle = 'background:var(--bg-1);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px 20px;flex:1;min-width:170px;display:flex;align-items:center;gap:14px;transition:all 0.22s cubic-bezier(0.2,0.9,0.4,1.1);cursor:default;';
     var kpiHover = 'onmouseover="this.style.transform=\'translateY(-3px)\';this.style.boxShadow=\'0 10px 28px rgba(0,0,0,0.45), 0 0 16px rgba(90,110,154,0.20), 0 0 0 1px rgba(82,118,255,0.12)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'0 0 8px rgba(90,110,154,0.08)\'"';
 
     var tsStr = formatTimestamp(state.lastRefreshTime);
@@ -367,12 +367,12 @@
     var html = '<div class="panel__body" style="padding:0 12px;">';
     
     // Título
-    html += '<h2 style="display:flex;align-items:center;justify-content:space-between;font-size:1.1rem;color:#e0e4ed;margin:0 0 16px 0;">' +
+    html += '<h2 style="display:flex;align-items:center;justify-content:space-between;font-size:1.1rem;color:var(--tx-1);margin:0 0 16px 0;">' +
       '<span style="display:flex;align-items:center;gap:8px;">' +
         '<img src="assets/icons/3172791.png" alt="" width="28" height="28">' +
         'Dashboard de Objetivos Semanales' +
       '</span>' +
-      '<span id="wvodCountdown" style="font-size:0.7rem;color:#9aa2b8;background:#0f1116;border:1px solid #1f2026;border-radius:8px;padding:3px 10px;white-space:nowrap;">⏳ —</span>' +
+      '<span id="wvodCountdown" style="font-size:0.7rem;color:var(--muted);background:var(--bg-1);border:1px solid var(--bd-1);border-radius:8px;padding:3px 10px;white-space:nowrap;">⏳ —</span>' +
       '</h2>';
 
     // KPIs con íconos
@@ -380,35 +380,35 @@
     
         html += '<div class="wvod-kpi" style="' + kpiStyle + 'border-left:3px solid rgba(123,194,255,0.5);box-shadow:0 0 8px rgba(123,194,255,0.10);" ' + kpiHover + '>';
     html += '<img src="' + kpiIconAccounts + '" alt="" width="40" height="40" style="flex-shrink:0;border-radius:8px;" loading="lazy" referrerpolicy="no-referrer">';
-    html += '<div style="flex:1;"><div style="font-size:1.6rem;font-weight:700;color:#e0e4ed;line-height:1.1;">' + totalAccounts + '</div><div style="font-size:0.72rem;color:#9aa2b8;margin-top:2px;">Cuentas</div><div style="font-size:0.62rem;color:#5a6072;margin-top:3px;">Con acceso a la Cámara del Brujo</div></div>';
+    html += '<div style="flex:1;"><div style="font-size:1.6rem;font-weight:700;color:var(--tx-1);line-height:1.1;">' + totalAccounts + '</div><div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">Cuentas</div><div style="font-size:0.62rem;color:var(--tx-3);margin-top:3px;">Con acceso a la Cámara del Brujo</div></div>';
     html += '</div>';
     
     html += '<div class="wvod-kpi" style="' + kpiStyle + 'border-left:3px solid rgba(160,255,200,0.5);box-shadow:0 0 8px rgba(160,255,200,0.10);" ' + kpiHover + '>';
     html += '<img src="' + kpiIconClaimed + '" alt="" width="40" height="40" style="flex-shrink:0;border-radius:8px;" loading="lazy" referrerpolicy="no-referrer">';
-    html += '<div style="flex:1;"><div style="font-size:1.6rem;font-weight:700;color:#e0e4ed;line-height:1.1;">' + claimedCells + ' <span style="font-size:0.7rem;color:#5a6072;font-weight:400;">/ ' + totalCells + '</span></div><div style="font-size:0.72rem;color:#9aa2b8;margin-top:2px;">Reclamados</div><div style="font-size:0.62rem;color:#5a6072;margin-top:3px;">Objetivos ya cobrados</div></div>';
+    html += '<div style="flex:1;"><div style="font-size:1.6rem;font-weight:700;color:var(--tx-1);line-height:1.1;">' + claimedCells + ' <span style="font-size:0.7rem;color:var(--tx-3);font-weight:400;">/ ' + totalCells + '</span></div><div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">Reclamados</div><div style="font-size:0.62rem;color:var(--tx-3);margin-top:3px;">Objetivos ya cobrados</div></div>';
     html += '</div>';
     
     html += '<div class="wvod-kpi" style="' + kpiStyle + 'border-left:3px solid rgba(255,211,107,0.5);box-shadow:0 0 8px rgba(255,211,107,0.10);" ' + kpiHover + '>';
     html += '<img src="' + kpiIconCompleted + '" alt="" width="40" height="40" style="flex-shrink:0;border-radius:8px;" loading="lazy" referrerpolicy="no-referrer">';
-    html += '<div style="flex:1;"><div style="font-size:1.6rem;font-weight:700;color:#e0e4ed;line-height:1.1;">' + completedCells + ' <span style="font-size:0.7rem;color:#5a6072;font-weight:400;">/ ' + totalCells + '</span></div><div style="font-size:0.72rem;color:#9aa2b8;margin-top:2px;">Completados</div><div style="font-size:0.62rem;color:#5a6072;margin-top:3px;">Pendientes de cobro</div></div>';
+    html += '<div style="flex:1;"><div style="font-size:1.6rem;font-weight:700;color:var(--tx-1);line-height:1.1;">' + completedCells + ' <span style="font-size:0.7rem;color:var(--tx-3);font-weight:400;">/ ' + totalCells + '</span></div><div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">Completados</div><div style="font-size:0.62rem;color:var(--tx-3);margin-top:3px;">Pendientes de cobro</div></div>';
     html += '</div>';
     
     // Progreso con mini barra en lugar de ícono
     html += '<div class="wvod-kpi" style="' + kpiStyle + 'border-left:3px solid rgba(180,186,208,0.5);box-shadow:0 0 8px rgba(180,186,208,0.10);" ' + kpiHover + '>';
     html += '<div style="flex:1;">' +
       '<div style="display:flex;align-items:baseline;gap:8px;">' +
-        '<div style="font-size:1.6rem;font-weight:700;color:#e0e4ed;line-height:1.1;">' + pctCompletado + '%</div>' +
-        '<div style="font-size:0.7rem;color:#9aa2b8;">Progreso</div>' +
+        '<div style="font-size:1.6rem;font-weight:700;color:var(--tx-1);line-height:1.1;">' + pctCompletado + '%</div>' +
+        '<div style="font-size:0.7rem;color:var(--muted);">Progreso</div>' +
       '</div>' +
-      '<div style="font-size:0.62rem;color:#5a6072;margin-top:3px;">Del total de objetivos</div>' +
-      '<div style="margin-top:6px;height:4px;background:#1a1d28;border-radius:2px;overflow:hidden;">' +
-        '<div style="height:100%;width:' + pctCompletado + '%;background:linear-gradient(90deg,#5276ff,#7bc2ff);border-radius:2px;transition:width 0.5s ease;"></div>' +
+      '<div style="font-size:0.62rem;color:var(--tx-3);margin-top:3px;">Del total de objetivos</div>' +
+      '<div style="margin-top:6px;height:4px;background:var(--bg-2);border-radius:2px;overflow:hidden;">' +
+        '<div style="height:100%;width:' + pctCompletado + '%;background:linear-gradient(90deg,var(--acc-1),var(--color-blue));border-radius:2px;transition:width 0.5s ease;"></div>' +
       '</div>' +
       '</div>';
     html += '</div>';
 
     // Barra de estado — debajo de KPIs, antes de la tabla
-    html += '<div style="width:100%;display:flex;justify-content:space-between;margin:0 0 12px 0;font-size:0.7rem;color:#9aa2b8;">';
+    html += '<div style="width:100%;display:flex;justify-content:space-between;margin:0 0 12px 0;font-size:0.7rem;color:var(--muted);">';
     html += '<span>Listo.</span>';
     html += '<span>Última actualización: ' + tsStr + '</span>';
     html += '</div>';
@@ -419,15 +419,15 @@
     if (!objectives.length) {
       html += '<p class="muted">No se encontraron objetivos semanales en ninguna cuenta.</p>';
     } else {
-      html += '<div class="table-wrap" style="overflow-x:auto;border-radius:10px;border:1px solid #1f2026;">';
+      html += '<div class="table-wrap" style="overflow-x:auto;border-radius:10px;border:1px solid var(--bd-1);">';
       html += '<table class="simple wvod-table" style="border-collapse:collapse;width:100%;">';
-      html += '<thead><tr style="background:#0e0f12;">';
-      html += '<th style="position:sticky;left:0;top:0;background:#0e0f12;z-index:2;min-width:150px;text-align:left;padding:10px 12px;border-bottom:2px solid #2a2c35;text-transform:uppercase;letter-spacing:0.5px;font-size:0.7rem;color:#9aa2b8;">Cuenta</th>';
+      html += '<thead><tr style="background:var(--bg-0);">';
+      html += '<th style="position:sticky;left:0;top:0;background:var(--bg-0);z-index:2;min-width:150px;text-align:left;padding:10px 12px;border-bottom:2px solid var(--bd-1);text-transform:uppercase;letter-spacing:0.5px;font-size:0.7rem;color:var(--muted);">Cuenta</th>';
       objectives.forEach(function (obj) {
         var trackLabel = obj.track.toUpperCase();
         var shortTitle = obj.title.length > 22 ? esc(obj.title).substring(0, 20) + '…' : esc(obj.title);
         html += '<th style="text-align:center;min-width:90px;max-width:130px;" title="' + esc(obj.title) + ' • +' + obj.acclaim + ' AA">' +
-          '<span style="display:inline-block;font-size:0.65rem;padding:1px 6px;border-radius:8px;background:#1a1d28;border:1px solid #2a2c35;margin-bottom:3px;">' + trackIconHTML(obj.track) + trackLabel + '</span>' +
+          '<span style="display:inline-block;font-size:0.65rem;padding:1px 6px;border-radius:8px;background:var(--bg-2);border:1px solid var(--bd-1);margin-bottom:3px;">' + trackIconHTML(obj.track) + trackLabel + '</span>' +
           '<div style="font-size:0.7rem;line-height:1.2;max-height:2.5em;overflow:hidden;">' + shortTitle + '</div>' +
           '<div style="font-size:0.6rem;opacity:0.5;">+' + obj.acclaim + ' AA</div>' +
           '</th>';
@@ -438,9 +438,9 @@
         var color = getAccountColor(acc.tag);
         var tagLabel = acc.tag || '';
         html += '<tr>';
-        html += '<td style="position:sticky;left:0;background:#0e0f12;z-index:1;padding:8px 10px;white-space:nowrap;display:flex;align-items:center;gap:10px;min-width:160px;">' +
+        html += '<td style="position:sticky;left:0;background:var(--bg-0);z-index:1;padding:8px 10px;white-space:nowrap;display:flex;align-items:center;gap:10px;min-width:160px;">' +
           getAccountIcon(acc.tag, acc.token) +
-          '<strong style="color:#cfd2d8;">' + esc(acc.name) + '</strong>' +
+          '<strong style="color:var(--tx-2);">' + esc(acc.name) + '</strong>' +
           // Indicador de error con ícono local (consistente con Wallet e Inventory)
           (acc.error ? ' <span title="' + esc(acc.error) + '" style="display:inline-flex;align-items:center;cursor:help;margin-left:4px;"><img src="assets/icons/Welcome/156107.png" width="14" height="14" alt="⚠" style="filter:brightness(0.8);"></span>' : '') +
           '</td>';
@@ -451,8 +451,8 @@
       });
 
       // Fila de resumen
-      html += '<tr class="total-row" style="background:#0f1118;border-top:2px solid #3a4c7a;font-weight:700;">';
-      html += '<td style="position:sticky;left:0;background:#0f1118;z-index:1;padding:10px 12px;color:#e0e4ed;">' +
+      html += '<tr class="total-row" style="background:var(--bg-1);border-top:2px solid var(--acc-1);font-weight:700;">';
+      html += '<td style="position:sticky;left:0;background:var(--bg-1);z-index:1;padding:10px 12px;color:var(--tx-1);">' +
         '<img src="assets/icons/578844.png" width="14" height="14" alt="" style="vertical-align:middle;margin-right:6px;">TOTAL</td>';
       objectives.forEach(function(obj) {
         var totalRecl = 0;
@@ -465,8 +465,8 @@
           }
         });
         html += '<td style="text-align:center;padding:10px 6px;font-size:0.75rem;">' +
-          (totalRecl > 0 ? '<span style="color:#a0ffc8;">' + totalRecl + ' recl.</span> ' : '') +
-          (totalCompl > 0 ? '<span style="color:#ffd36b;">' + totalCompl + ' compl.</span>' : (totalRecl === 0 ? '<span style="color:#555;">—</span>' : '')) +
+          (totalRecl > 0 ? '<span style="color:var(--color-green);">' + totalRecl + ' recl.</span> ' : '') +
+          (totalCompl > 0 ? '<span style="color:var(--color-amber);">' + totalCompl + ' compl.</span>' : (totalRecl === 0 ? '<span style="color:var(--tx-3);">—</span>' : '')) +
           '</td>';
       });
       html += '</tr>';
@@ -481,8 +481,8 @@
       '.wvod-table tbody tr:nth-child(even) td { background: rgba(255,255,255,0.015); }' +
       '.wvod-table tbody tr:hover td { background: rgba(255,255,255,0.04); }' +
       '.wvod-table td { border-bottom: 1px solid rgba(255,255,255,0.04); transition: background 0.15s ease; }' +
-      '.wvod-table th { border-bottom: 2px solid #2a2c35; }' +
-      '.wvod-table .total-row td { background:#0f1118; }' +
+      '.wvod-table th { border-bottom: 2px solid var(--bd-1); }' +
+      '.wvod-table .total-row td { background:var(--bg-1); }' +
       '</style>';
 
     host.innerHTML = html;

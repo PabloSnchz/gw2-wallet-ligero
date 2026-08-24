@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/inventory-dashboard.js — Dashboard de Inventario Multi-Cuenta
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
  * Versión: 1.0.0 (2026-05-07)
@@ -416,9 +416,9 @@
         var charInfoDiv = firstCell.querySelector('.id-char-info');
         if (charInfoDiv) {
           if (acc._charLoading) {
-            charInfoDiv.innerHTML = '<img src="assets/icons/Cuentas/358353.png" width="14" height="14" alt="" style="vertical-align:middle;animation:charPulse 2s ease-in-out infinite;"> <span style="color:#5a6072;">cargando...</span>';
+            charInfoDiv.innerHTML = '<img src="assets/icons/Cuentas/358353.png" width="14" height="14" alt="" style="vertical-align:middle;animation:charPulse 2s ease-in-out infinite;"> <span style="color:var(--tx-3);">cargando...</span>';
           } else if (acc.activeCharName) {
-            charInfoDiv.innerHTML = '<img src="assets/icons/Cuentas/358353.png" width="14" height="14" alt="" style="vertical-align:middle;opacity:0.7;"> <span style="color:#5a6072;">' + esc(acc.activeCharName) + '</span>';
+            charInfoDiv.innerHTML = '<img src="assets/icons/Cuentas/358353.png" width="14" height="14" alt="" style="vertical-align:middle;opacity:0.7;"> <span style="color:var(--tx-3);">' + esc(acc.activeCharName) + '</span>';
           } else {
             charInfoDiv.innerHTML = '';
           }
@@ -458,7 +458,7 @@
     cell.__blinking = true;
     cell.classList.add('id-cell-updated');
     cell.style.transition = 'none';
-    cell.style.color = '#ffd36b';
+    cell.style.color = 'var(--color-amber)';
     cell.style.fontWeight = '700';
     var blinks = 0;
     var blinkInterval = setInterval(function() {
@@ -466,13 +466,13 @@
       if (blinks > 6) {
         clearInterval(blinkInterval);
         if (cell && cell.isConnected) {
-          cell.style.color = '#ffd36b';
+          cell.style.color = 'var(--color-amber)';
           cell.style.fontWeight = '700';
           cell.__blinking = false;
         }
       } else {
         if (cell && cell.isConnected) {
-          cell.style.color = (blinks % 2 === 1) ? '#ffd36b' : '';
+          cell.style.color = (blinks % 2 === 1) ? 'var(--color-amber)' : '';
           cell.style.fontWeight = (blinks % 2 === 1) ? '700' : '';
         }
       }
@@ -585,9 +585,9 @@
     var silver = Math.floor((copper % 10000) / 100);
     var copperLeft = copper % 100;
     var parts = [];
-    if (gold > 0) parts.push('<span style="color:#f4c542;font-weight:600;">' + gold.toLocaleString('es-AR') + '</span> <span style="color:#9aa2b8;">g</span>');
-    if (silver > 0) parts.push('<span style="color:#e0e0e0;font-weight:500;">' + silver + '</span> <span style="color:#9aa2b8;">s</span>');
-    parts.push('<span style="color:#b87333;font-weight:500;">' + copperLeft + '</span> <span style="color:#9aa2b8;">c</span>');
+    if (gold > 0) parts.push('<span style="color:#f4c542;font-weight:600;">' + gold.toLocaleString('es-AR') + '</span> <span style="color:var(--muted);">g</span>');
+    if (silver > 0) parts.push('<span style="color:#e0e0e0;font-weight:500;">' + silver + '</span> <span style="color:var(--muted);">s</span>');
+    parts.push('<span style="color:#b87333;font-weight:500;">' + copperLeft + '</span> <span style="color:var(--muted);">c</span>');
     return parts.join(' ');
   }
 
@@ -753,7 +753,7 @@
     var totalGold = getTotalGoldValue();
     var totalBadge = document.createElement('span');
     totalBadge.id = 'idTotalGoldBadge';
-    totalBadge.style.cssText = 'margin-left:auto;margin-right:0;display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:#0f1116;border:1px solid rgba(244,197,66,0.3);border-radius:24px;font-size:0.78rem;font-weight:600;';
+    totalBadge.style.cssText = 'margin-left:auto;margin-right:0;display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--bg-1);border:1px solid rgba(244,197,66,0.3);border-radius:24px;font-size:0.78rem;font-weight:600;';
     totalBadge.innerHTML = '<img src="assets/icons/619316.png" width="16" height="16" alt="" style="vertical-align:middle;">' + formatCoinValue(totalGold);
     container.appendChild(totalBadge);
 
@@ -815,7 +815,7 @@
       '<span>' + (selectedNames || 'Seleccionar ítems') + '</span>' +
       '<span>▼</span>' +
       '</button>' +
-      '<div id="idDropdown" style="position:absolute;top:100%;left:0;background:#1a1c24;border:1px solid #2a2c35;border-radius:8px;padding:8px;z-index:100;min-width:280px;max-height:350px;overflow-y:auto;display:none;">' +
+      '<div id="idDropdown" style="position:absolute;top:100%;left:0;background:var(--bg-1);border:1px solid var(--bd-1);border-radius:8px;padding:8px;z-index:100;min-width:280px;max-height:350px;overflow-y:auto;display:none;">' +
       '<div style="display:flex;flex-direction:column;gap:6px;">' +
       '<button id="idSelectAllBtn" class="btn btn--xs" style="margin-bottom:4px;">✓ Seleccionar todas</button>' +
       '<button id="idSelectNoneBtn" class="btn btn--xs" style="margin-bottom:8px;">✗ Deseleccionar todas</button>';
@@ -906,7 +906,7 @@
       var tierKey = tierKeys[i];
       var tier = set.tiers[tierKey];
       var isActive = state.activeTiers.indexOf(tierKey) !== -1;
-      html += '<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:0.75rem;color:#b4bad0;margin-left:12px;">' +
+      html += '<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:0.75rem;color:var(--tx-3);margin-left:12px;">' +
         '<input type="checkbox" class="id-tier-cb" data-tier="' + esc(tierKey) + '" ' + (isActive ? 'checked' : '') + '> ' + esc(tier.name) +
       '</label>';
     }
@@ -947,13 +947,13 @@
     if (!container) return;
 
     container.innerHTML =
-      '<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:0.75rem;color:#b4bad0;">' +
+      '<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:0.75rem;color:var(--tx-3);">' +
         '<input type="checkbox" id="idHideZeroRows" ' + (state.hideZeroRows ? 'checked' : '') + '> Ocultar cuentas vacías' +
       '</label>' +
-      '<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:0.75rem;color:#b4bad0;margin-left:12px;">' +
+      '<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:0.75rem;color:var(--tx-3);margin-left:12px;">' +
         '<input type="checkbox" id="idHideZeroCols" ' + (state.hideZeroColumns ? 'checked' : '') + '> Ocultar columnas vacías' +
       '</label>' +
-      '<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:0.75rem;color:#b4bad0;margin-left:12px;">' +
+      '<label style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:0.75rem;color:var(--tx-3);margin-left:12px;">' +
         '<input type="checkbox" id="idHideMain" ' + (state.hideMainAccounts ? 'checked' : '') + '> Ocultar cuentas main' +
       '</label>' +
       '<span id="idTierToggles" style="display:inline-flex;align-items:center;gap:4px;"></span>';
@@ -1099,9 +1099,9 @@
 
       var charInfo = '';
       if (acc._charLoading) {
-        charInfo = '<div class="id-char-info" style="font-size:0.6rem;color:#5a6072;margin-top:1px;"><img src="assets/icons/Cuentas/358353.png" width="14" height="14" alt="" style="vertical-align:middle;animation:charPulse 2s ease-in-out infinite;"> <span style="color:#5a6072;">cargando...</span></div>';
+        charInfo = '<div class="id-char-info" style="font-size:0.6rem;color:var(--tx-3);margin-top:1px;"><img src="assets/icons/Cuentas/358353.png" width="14" height="14" alt="" style="vertical-align:middle;animation:charPulse 2s ease-in-out infinite;"> <span style="color:var(--tx-3);">cargando...</span></div>';
       } else if (acc.activeCharName) {
-        charInfo = '<div class="id-char-info" style="font-size:0.6rem;color:#5a6072;margin-top:1px;"><img src="assets/icons/Cuentas/358353.png" width="14" height="14" alt="" style="vertical-align:middle;opacity:0.7;"> ' + esc(acc.activeCharName) + '</div>';
+        charInfo = '<div class="id-char-info" style="font-size:0.6rem;color:var(--tx-3);margin-top:1px;"><img src="assets/icons/Cuentas/358353.png" width="14" height="14" alt="" style="vertical-align:middle;opacity:0.7;"> ' + esc(acc.activeCharName) + '</div>';
       }
 
       cells.push(
@@ -1251,7 +1251,7 @@
           '<span id="idTimestamp" class="id-timestamp"></span>' +
         '</div>' +
         '<style>@keyframes pulse{0%,100%{opacity:0.3}50%{opacity:0.8}}@keyframes charPulse{0%,100%{opacity:0.4;filter:drop-shadow(0 0 3px rgba(123,194,255,0.3))}50%{opacity:0.85;filter:drop-shadow(0 0 6px rgba(123,194,255,0.55))}}</style>' +
-        '<div class="id-tablewrap" style="overflow:auto;border:1px solid #26262b;border-radius:12px;">' +
+        '<div class="id-tablewrap" style="overflow:auto;border:1px solid var(--bd-1);border-radius:12px;">' +
           '<table id="idTable" style="width:100%;border-collapse:collapse;">' +
             '<thead></thead>' +
             '<tbody></tbody>' +

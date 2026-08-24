@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
  * v2.17.0 (2026-06-03) — Soporte Strike Tracker + F5 fix + skeleton ampliado
  *
@@ -501,7 +501,7 @@
               '<option value="hide"'+(legacyVis==='hide'?' selected':'')+'>Ocultar</option>',
             '</select>',
             '<button id="wvClearSynced" class="btn btn--ghost" title="Borrar o recortar marcas ya cubiertas por el API">Limpiar sincronizados</button>',
-            '<button id="wvClearPinsAll" class="btn btn--ghost" title="Borrar TODOS los fijados de TODAS las API keys para esta temporada" style="display:inline-flex;align-items:center;gap:4px;color:#ff9d9d;">' +
+            '<button id="wvClearPinsAll" class="btn btn--ghost" title="Borrar TODOS los fijados de TODAS las API keys para esta temporada" style="display:inline-flex;align-items:center;gap:4px;color:var(--color-red);">' +
               '<img src="assets/icons/Welcome/156107.png" width="14" height="14" alt="">Limpiar fijados' +
             '</button>',
             '<button id="wvReplicatePins" class="btn btn--ghost" title="Copiar los fijados de esta API key a todas las demás" style="display:inline-flex;align-items:center;gap:4px;">' +
@@ -687,7 +687,7 @@
       var isCompleted = leftVal !== null && leftVal === 0;
       var statusIcon = isCompleted ? '✅' : (limit === null ? '∞' : '⚠️');
       var statusText = isCompleted ? 'Completado' : (limit === null ? 'Ilimitado' : 'Pendiente');
-      var statusColor = isCompleted ? '#a0ffc8' : (limit === null ? '#7bc2ff' : '#ffd36b');
+      var statusColor = isCompleted ? 'var(--color-green)' : (limit === null ? 'var(--color-blue)' : 'var(--color-amber)');
       
       var rows = card.querySelectorAll('.wv-card__row');
       if (rows.length >= 2) {
@@ -864,7 +864,7 @@
           var isCompleted = leftVal !== null && leftVal === 0;
           var statusIcon = isCompleted ? '✅' : (limit === null ? '∞' : '⚠️');
           var statusText = isCompleted ? 'Completado' : (limit === null ? 'Ilimitado' : 'Pendiente');
-          var statusColor = isCompleted ? '#a0ffc8' : (limit === null ? '#7bc2ff' : '#ffd36b');
+          var statusColor = isCompleted ? 'var(--color-green)' : (limit === null ? 'var(--color-blue)' : 'var(--color-amber)');
 
           var b1 = color ? hexToRGBA(color, 0.32) : null;
           var g1 = color ? hexToRGBA(color, 0.36) : null;

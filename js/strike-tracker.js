@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/strike-tracker.js — Seguimiento de Strike Missions
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
  * Versión: 1.0.0 (2026-06-03)
@@ -563,25 +563,25 @@
             <button id="strikeViewRaidsBtn" class="btn btn--ghost" style="padding: 6px 20px; font-size: 0.85rem;">Raids</button>
             <button id="strikeViewStrikesBtn" class="btn btn--accent" style="padding: 6px 20px; font-size: 0.85rem;">Strikes</button>
           </div>
-          <div class="meta-clock-bar chips" style="display: inline-flex; gap: 16px; align-items: center; background: #0f1116; padding: 4px 12px; border-radius: 40px; border: 1px solid #2a2c35;">
+          <div class="meta-clock-bar chips" style="display: inline-flex; gap: 16px; align-items: center; background: var(--bg-1); padding: 4px 12px; border-radius: 40px; border: 1px solid var(--bd-1);">
             <div style="display: flex; align-items: center; gap: 6px;" data-tip="Hora del servidor (UTC+0)">
               <img src="assets/icons/460028.png" width="20" height="20" alt="UTC" style="filter: brightness(0.9);">
               <span>UTC</span>
               <strong id="strikeUtcTime">—</strong>
             </div>
-            <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
+            <div style="width: 1px; height: 24px; background: var(--bd-1);"></div>
             <div style="display: flex; align-items: center; gap: 6px;" data-tip="Tu hora local">
               <img src="assets/icons/841720.png" width="20" height="20" alt="Local" style="filter: brightness(0.9);">
               <span>Local</span>
               <strong id="strikeLocalTime">—</strong>
             </div>
-            <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
+            <div style="width: 1px; height: 24px; background: var(--bd-1);"></div>
             <div style="display: flex; align-items: center; gap: 6px;" data-tip="Reset diario a las 00:00 UTC">
               <img src="assets/icons/534745.png" width="20" height="20" alt="Reset diario" style="filter: brightness(0.9);">
               <span>Reset diario</span>
               <strong id="strikeDailyReset">—</strong>
             </div>
-            <div style="width: 1px; height: 24px; background: #2a2c35;"></div>
+            <div style="width: 1px; height: 24px; background: var(--bd-1);"></div>
             <div style="display: flex; align-items: center; gap: 6px;" data-tip="Reset semanal los lunes a las 07:30 UTC">
               <img src="assets/icons/155064.png" width="20" height="20" alt="Reset semanal" style="filter: brightness(0.9);">
               <span>Reset semanal</span>
@@ -607,32 +607,32 @@
     kpiContainer.innerHTML = `
       <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
         <!-- KPI 1: Strikes completadas -->
-        <div style="background: #0f1116; border-radius: 12px; padding: 12px 20px; border-left: 3px solid #a0ffc8; flex: 1;">
-          <div style="color: #a0a6b3; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+        <div style="background: var(--bg-1); border-radius: 12px; padding: 12px 20px; border-left: 3px solid var(--color-green); flex: 1;">
+          <div style="color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 6px;">
             <span>⚔️ Strikes completadas</span>
           </div>
-          <div style="font-size: 28px; font-weight: 800; color: #a0ffc8;">${completedCount} / ${totalCount}</div>
-          <div style="font-size: 10px; color: #6a7080; margin-top: 4px;">Encuentros de incursión</div>
+          <div style="font-size: 28px; font-weight: 800; color: var(--color-green);">${completedCount} / ${totalCount}</div>
+          <div style="font-size: 10px; color: var(--tx-3); margin-top: 4px;">Encuentros de incursión</div>
         </div>
         
         <!-- KPI 2: LI farmeables (strikes que dan LI) -->
-        <div style="background: #0f1116; border-radius: 12px; padding: 12px 20px; border-left: 3px solid #ffd36b; flex: 1;">
-          <div style="color: #a0a6b3; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+        <div style="background: var(--bg-1); border-radius: 12px; padding: 12px 20px; border-left: 3px solid var(--color-amber); flex: 1;">
+          <div style="color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 6px;">
             <img src="https://render.guildwars2.com/file/6D33B7387BAF2E2CC9B5D37D1D1B01246AB6FA22/1302744.png" width="14" height="14" alt="LI" style="filter: brightness(0.9);">
             <span>Conocimiento legendario</span>
           </div>
-          <div style="font-size: 28px; font-weight: 800; color: #ffd36b;">${liEarned} / ${liTotal}</div>
-          <div style="font-size: 10px; color: #6a7080; margin-top: 4px;">Farmeados esta semana</div>
+          <div style="font-size: 28px; font-weight: 800; color: var(--color-amber);">${liEarned} / ${liTotal}</div>
+          <div style="font-size: 10px; color: var(--tx-3); margin-top: 4px;">Farmeados esta semana</div>
         </div>
         
         <!-- KPI 3: Progreso semanal (barra) -->
-        <div style="background: #0f1116; border-radius: 12px; padding: 12px 20px; border-left: 3px solid #7bc2ff; flex: 1;">
-          <div style="color: #a0a6b3; font-size: 12px;">📊 Progreso semanal</div>
-          <div style="font-size: 28px; font-weight: 800; color: #7bc2ff;">${percentage}%</div>
-          <div style="margin-top: 8px; height: 4px; background: #2a2c35; border-radius: 2px; overflow: hidden;">
-            <div style="width: ${percentage}%; height: 100%; background: linear-gradient(90deg, #7bc2ff, #a0ffc8);"></div>
+        <div style="background: var(--bg-1); border-radius: 12px; padding: 12px 20px; border-left: 3px solid var(--color-blue); flex: 1;">
+          <div style="color: var(--muted); font-size: 12px;">📊 Progreso semanal</div>
+          <div style="font-size: 28px; font-weight: 800; color: var(--color-blue);">${percentage}%</div>
+          <div style="margin-top: 8px; height: 4px; background: var(--bd-1); border-radius: 2px; overflow: hidden;">
+            <div style="width: ${percentage}%; height: 100%; background: linear-gradient(90deg, var(--color-blue), var(--color-green));"></div>
           </div>
-          <div style="font-size: 10px; color: #6a7080; margin-top: 4px;">${liPercentage}% de LI completados</div>
+          <div style="font-size: 10px; color: var(--tx-3); margin-top: 4px;">${liPercentage}% de LI completados</div>
         </div>
       </div>
     `;
@@ -652,8 +652,8 @@
 
   function getTypeColor(hasCM, hasLM) {
     if (hasLM) return '#974EFF';
-    if (hasCM) return '#ffd36b';
-    return '#7bc2ff';
+    if (hasCM) return 'var(--color-amber)';
+    return 'var(--color-blue)';
   }
 
   function renderStrikesGrid(completedEncounters) {
@@ -696,8 +696,8 @@
       else expClass = 'raid-expansion--core';
       
       var expHtml = `
-        <div class="raid-wing-card" style="background: linear-gradient(180deg, #0f1116 0%, #0d0f14 100%); border: 1px solid #26262b; border-radius: 16px; overflow: hidden; margin-bottom: 20px;">
-          <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #0c0e14; border-bottom: 1px solid #26262b;">
+        <div class="raid-wing-card" style="background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%); border: 1px solid var(--bd-1); border-radius: 16px; overflow: hidden; margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg-0); border-bottom: 1px solid var(--bd-1);">
             <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
               ${createSafeIcon(expansion.icon, expansion.name, 28, 28, '📦')}
             </div>
@@ -706,8 +706,8 @@
                 <div style="font-weight: 700; font-size: 1rem;">${esc(expansion.name)}</div>
                 <span class="raid-expansion-badge ${expClass}">${esc(expansion.expansion)}</span>
               </div>
-              <div class="raid-wing-progress" style="margin-top: 8px; height: 3px; background: #2a2c35; border-radius: 2px; overflow: hidden;">
-                <div class="raid-wing-progress__fill" style="width: ${expProgressPercent}%; height: 100%; background: linear-gradient(90deg, #7bc2ff, #a0ffc8); border-radius: 2px; transition: width 0.3s ease;"></div>
+              <div class="raid-wing-progress" style="margin-top: 8px; height: 3px; background: var(--bd-1); border-radius: 2px; overflow: hidden;">
+                <div class="raid-wing-progress__fill" style="width: ${expProgressPercent}%; height: 100%; background: linear-gradient(90deg, var(--color-blue), var(--color-green)); border-radius: 2px; transition: width 0.3s ease;"></div>
               </div>
             </div>
           </div>
@@ -726,16 +726,16 @@
         var typeClass = strike.cm ? 'raid-encounter-card--jefe' : 'raid-encounter-card--evento';
 
         expHtml += `
-          <div class="raid-encounter-card ${completedClass} ${typeClass}" data-strike-id="${esc(strike.id)}" style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: #0a0c10; border-radius: 12px; border: 1px solid ${isCompleted ? '#2a6a4a' : '#26262b'}; transition: all 0.2s ease;">
+          <div class="raid-encounter-card ${completedClass} ${typeClass}" data-strike-id="${esc(strike.id)}" style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--bg-0); border-radius: 12px; border: 1px solid ${isCompleted ? 'var(--color-green)' : 'var(--bd-1)'}; transition: all 0.2s ease;">
             <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
               ${createSafeIcon(strike.icon, strike.name, 36, 36, typeIcon)}
             </div>
             <div style="flex: 1;">
               <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                <span style="font-size: 0.65rem; color: ${typeColor}; background: #1a1c24; padding: 2px 6px; border-radius: 12px;">${typeLabel}</span>
-                <div class="raid-encounter-name" style="font-weight: 600; font-size: 0.85rem; ${isCompleted ? 'text-decoration: line-through; text-decoration-color: #a0ffc8;' : ''}">${esc(strike.name)}</div>
+                <span style="font-size: 0.65rem; color: ${typeColor}; background: var(--bg-1); padding: 2px 6px; border-radius: 12px;">${typeLabel}</span>
+                <div class="raid-encounter-name" style="font-weight: 600; font-size: 0.85rem; ${isCompleted ? 'text-decoration: line-through; text-decoration-color: var(--color-green);' : ''}">${esc(strike.name)}</div>
               </div>
-              <div style="font-size: 0.65rem; color: ${isCompleted ? '#a0ffc8' : '#ff9d9d'}; display: flex; align-items: center; gap: 4px;">
+              <div style="font-size: 0.65rem; color: ${isCompleted ? 'var(--color-green)' : 'var(--color-red)'}; display: flex; align-items: center; gap: 4px;">
                 <img src="assets/icons/Welcome/${isCompleted ? '156108' : '156107'}.png" width="12" height="12" alt="" style="vertical-align: middle;">
                 ${isCompleted ? 'Completada' : 'Pendiente'}
               </div>
@@ -899,28 +899,28 @@
     var html = '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;">';
 
     // LI
-    html += '<div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #1a1c24; border-radius: 10px;">';
+    html += '<div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-1); border-radius: 10px;">';
     html += '<img src="https://render.guildwars2.com/file/6D33B7387BAF2E2CC9B5D37D1D1B01246AB6FA22/1302744.png" width="32" height="32" alt="LI" onerror="this.src=\'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Ctext x=%270%27 y=%2720%27 font-size=%2720%27%3E🔮%3C/text%3E%3C/svg%3E\'">';
-    html += '<div><div style="font-size: 0.7rem; color: #9aa2b8;">Conocimiento legendario</div>';
-    html += '<div style="font-weight: 700; color: #ffd36b;">+' + liCount + '</div></div></div>';
+    html += '<div><div style="font-size: 0.7rem; color: var(--muted);">Conocimiento legendario</div>';
+    html += '<div style="font-weight: 700; color: var(--color-amber);">+' + liCount + '</div></div></div>';
 
     // Oro
-    html += '<div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #1a1c24; border-radius: 10px;">';
+    html += '<div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-1); border-radius: 10px;">';
     html += '<img src="https://render.guildwars2.com/file/98457F504BA2FAC8457F532C4B30EDC23929ACF9/619316.png" width="32" height="32" alt="Oro" onerror="this.src=\'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Ctext x=%270%27 y=%2720%27 font-size=%2720%27%3E💰%3C/text%3E%3C/svg%3E\'">';
-    html += '<div><div style="font-size: 0.7rem; color: #9aa2b8;">Oro</div>';
-    html += '<div style="font-weight: 700; color: #ffd36b;">+2~4</div></div></div>';
+    html += '<div><div style="font-size: 0.7rem; color: var(--muted);">Oro</div>';
+    html += '<div style="font-weight: 700; color: var(--color-amber);">+2~4</div></div></div>';
 
     // Experiencia
-    html += '<div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #1a1c24; border-radius: 10px;">';
+    html += '<div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-1); border-radius: 10px;">';
     html += '<img src="assets/icons/raids/experience.png" width="32" height="32" alt="Experiencia" onerror="this.src=\'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Ctext x=%270%27 y=%2720%27 font-size=%2720%27%3E⭐%3C/text%3E%3C/svg%3E\'">';
-    html += '<div><div style="font-size: 0.7rem; color: #9aa2b8;">Experiencia</div>';
-    html += '<div style="font-weight: 700; color: #a0ffc8;">+200,025</div></div></div>';
+    html += '<div><div style="font-size: 0.7rem; color: var(--muted);">Experiencia</div>';
+    html += '<div style="font-weight: 700; color: var(--color-green);">+200,025</div></div></div>';
 
     // Karma
-    html += '<div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #1a1c24; border-radius: 10px;">';
+    html += '<div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-1); border-radius: 10px;">';
     html += '<img src="https://render.guildwars2.com/file/94953FA23D3E0D23559624015DFEA4CFAA07F0E5/155026.png" width="32" height="32" alt="Karma" onerror="this.src=\'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27%3E%3Ctext x=%270%27 y=%2720%27 font-size=%2720%27%3E☯%3C/text%3E%3C/svg%3E\'">';
-    html += '<div><div style="font-size: 0.7rem; color: #9aa2b8;">Karma</div>';
-    html += '<div style="font-weight: 700; color: #7bc2ff;">+10,000</div></div></div>';
+    html += '<div><div style="font-size: 0.7rem; color: var(--muted);">Karma</div>';
+    html += '<div style="font-weight: 700; color: var(--color-blue);">+10,000</div></div></div>';
 
     html += '</div>';
 
@@ -928,12 +928,12 @@
     var specialDrops = STRIKE_REWARDS[encounterId];
     if (specialDrops && specialDrops.specialDrops && specialDrops.specialDrops.length > 0) {
       html += '<div style="margin-top: 8px;">';
-      html += '<div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 12px; color: #ffd36b;">✨ Drops excepcionales</div>';
+      html += '<div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 12px; color: var(--color-amber);">✨ Drops excepcionales</div>';
       html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px;">';
       
       for (var i = 0; i < specialDrops.specialDrops.length; i++) {
         var drop = specialDrops.specialDrops[i];
-        html += '<div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #0a0c10; border-radius: 10px; border: 1px solid #2a2c35;">';
+        html += '<div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg-0); border-radius: 10px; border: 1px solid var(--bd-1);">';
         html += '<img src="' + esc(drop.icon) + '" width="32" height="32" alt="' + esc(drop.name) + '" onerror="this.src=\'assets/icons/raids/bosses/default.png\'">';
         html += '<div><div style="font-size: 0.75rem; font-weight: 500;">' + esc(drop.name) + '</div>';
         html += '<div class="muted" style="font-size: 0.6rem;">' + esc(drop.type) + '</div></div></div>';
@@ -978,7 +978,7 @@
           ${createSafeIcon(details.image, strikeName, 120, 120, '⚔️')}
         </div>
         <div>
-          <h4 style="margin: 0 0 12px 0; font-size: 1rem; color: #a0ffc8; display: flex; align-items: center; gap: 8px;">
+          <h4 style="margin: 0 0 12px 0; font-size: 1rem; color: var(--color-green); display: flex; align-items: center; gap: 8px;">
             <img src="assets/icons/Welcome/222580.png" width="20" height="20" alt="Descripción" style="vertical-align: middle;">
             Descripción
           </h4>
@@ -987,7 +987,7 @@
       </div>
       <div class="raid-tab-content" data-tab="strat" style="display: none; padding: 16px;">
         <div>
-          <h4 style="margin: 0 0 12px 0; font-size: 1rem; color: #ffd36b; display: flex; align-items: center; gap: 8px;">
+          <h4 style="margin: 0 0 12px 0; font-size: 1rem; color: var(--color-amber); display: flex; align-items: center; gap: 8px;">
             <img src="assets/icons/Cuentas/240679.png" width="20" height="20" alt="Estrategia" style="vertical-align: middle;">
             Estrategia
           </h4>
@@ -999,11 +999,11 @@
       </div>
       <div class="raid-tab-content" data-tab="links" style="display: none; padding: 16px;">
         <div style="display: flex; flex-direction: column; gap: 12px;">
-          <a href="${esc(details.wiki)}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; border-bottom: none; color: #7bc2ff; display: inline-flex; align-items: center; gap: 8px;">
+          <a href="${esc(details.wiki)}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; border-bottom: none; color: var(--color-blue); display: inline-flex; align-items: center; gap: 8px;">
             <img src="assets/icons/Welcome/222580.png" width="18" height="18" alt="Wiki" style="vertical-align: middle;">
             Ver en Wiki oficial de Guild Wars 2
           </a>
-          <a href="${esc(details.video)}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; border-bottom: none; color: #7bc2ff; display: inline-flex; align-items: center; gap: 8px;">
+          <a href="${esc(details.video)}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; border-bottom: none; color: var(--color-blue); display: inline-flex; align-items: center; gap: 8px;">
             <img src="assets/icons/raids/bosses/Cinematic.png" width="18" height="18" alt="Video" style="vertical-align: middle;">
             Ver video tutorial en YouTube
           </a>
@@ -1114,7 +1114,7 @@
       state.error = error.message;
       var gridContainer = document.getElementById('strikesGrid');
       if (gridContainer) {
-        gridContainer.innerHTML = `<div class="error" style="text-align: center; padding: 40px; color: #ff9d9d;">❌ Error al cargar datos de strikes: ${esc(error.message)}<br><small>Verificá que la API key tenga permiso "progression"</small></div>`;
+        gridContainer.innerHTML = `<div class="error" style="text-align: center; padding: 40px; color: var(--color-red);">❌ Error al cargar datos de strikes: ${esc(error.message)}<br><small>Verificá que la API key tenga permiso "progression"</small></div>`;
       }
     } finally {
       state.loading = false;

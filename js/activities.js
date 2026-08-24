@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/activities.js — Panel de Actividades (Objetivos / Home Nodes)
  * v3.19.6 (2026-04-05) - Persistencia robusta de Piedras Vetustas (sin Promesas como claves)
  *
@@ -639,7 +639,7 @@
           </div>
           <div class="muted" style="margin-top: 6px; font-size: 0.7rem; line-height: 1.3;">
             <div><strong>${esc(item.npc)}</strong> — ${esc(item.region)}</div>
-            <div style="color: #a0a0a6; font-size: 0.65rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(item.name)}</div>
+            <div style="color: var(--muted); font-size: 0.65rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(item.name)}</div>
           </div>
           ${!hasChat ? '<div class="pill s-error" style="margin-top: 6px; font-size: 0.6rem; text-align: center;">❌ Sin código</div>' : ''}
         </article>
@@ -744,7 +744,7 @@
       var glowBorder = done ? 'rgba(160,255,200,0.3)' : 'rgba(255,211,107,0.3)';
       html += `
         <article class="card ecto-card" style="padding: 10px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid ${bLeftColor}; box-shadow: 0 0 8px rgba(90,110,154,0.12);">
-          <div style="width: 44px; height: 44px; border-radius: 10px; background: #0f1116; display: flex; align-items: center; justify-content: center; border: 1px solid #262a33; box-shadow: 0 0 0 2px ${glowBorder}, 0 0 10px ${glowColor};">
+          <div style="width: 44px; height: 44px; border-radius: 10px; background: var(--bg-1); display: flex; align-items: center; justify-content: center; border: 1px solid var(--bd-1); box-shadow: 0 0 0 2px ${glowBorder}, 0 0 10px ${glowColor};">
             ${icon ? '<img src="' + esc(icon) + '" width="32" height="32" alt="" style="border-radius: 8px; object-fit: contain;">' : ''}
           </div>
           <div style="width: 100%;">
@@ -803,7 +803,7 @@
     if (barLeivas) {
       var percentage = Math.min(100, Math.round(state.weekly.stones / 5 * 100));
       barLeivas.style.width = percentage + '%';
-      barLeivas.style.background = state.weekly.stones >= 5 ? 'linear-gradient(90deg, #4CAF50, #8BC34A)' : 'linear-gradient(90deg, #ffd966, #ffaa33)';
+      barLeivas.style.background = state.weekly.stones >= 5 ? 'linear-gradient(90deg, #4CAF50, #8BC34A)' : 'linear-gradient(90deg, var(--color-amber), #ffaa33)';
     }
   }
 
@@ -845,7 +845,7 @@
     var t4 = state.daily.fractals.today.t4 || [];
     var rec = state.daily.fractals.today.rec || [];
     var html = '<div style="display: flex; flex-direction: column; gap: 20px;">';
-    html += '<div><h4 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;"><span class="badge badge--success" style="background: #1a3a2a; border: none;">🌀 T4</span><span style="font-size: 0.85rem;">Fractales diarios</span></h4><div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">';
+    html += '<div><h4 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;"><span class="badge badge--success" style="background: var(--color-green-bg); border: none;">🌀 T4</span><span style="font-size: 0.85rem;">Fractales diarios</span></h4><div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">';
     t4.forEach(function(fractal) {
       var name = typeof fractal === 'string' ? fractal : fractal.name;
       var hasCM = fractal.cm === true;
@@ -857,7 +857,7 @@
               '</div></article>';
     });
     html += '</div></div>';
-    html += '<div><h4 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;"><span class="badge badge--info" style="background: #1a2a3a; border: none;">🎯 Recomendados</span><span style="font-size: 0.85rem;">Escalas del día</span></h4><div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">';
+    html += '<div><h4 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;"><span class="badge badge--info" style="background: var(--color-blue-bg); border: none;">🎯 Recomendados</span><span style="font-size: 0.85rem;">Escalas del día</span></h4><div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">';
     rec.forEach(function(r) {
       var scaleNum = r.scale || parseInt(String(r.name || r).match(/\d+/)?.[0] || '0', 10);
       var scaleName = typeof r === 'string' ? r : (r.name || 'Scale ' + scaleNum);
@@ -871,7 +871,7 @@
     if (state.daily.fractals.tomorrow && state.daily.fractals.tomorrow.t4 && state.daily.fractals.tomorrow.t4.length) {
       var tomorrowNames = state.daily.fractals.tomorrow.t4.map(function(f) { return typeof f === 'string' ? f : f.name; });
       if (tomorrowNames.length && tomorrowNames[0]) {
-        html += '<div class="muted" style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #26262b; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
+        html += '<div class="muted" style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--bd-1); font-size: 0.7rem; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
                 '<span>📅</span> <span>Mañana: ' + esc(tomorrowNames.join(', ')) + '</span></div>';
       }
     }
@@ -917,7 +917,7 @@
           '<div id="activitiesClockBarPlaceholder"></div>' +
         '</div>' +
         '<div id="actDaily" class="tab-panel">' +
-          '<section class="weekly-key-strip" id="weeklyKeyStrip" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #1a1e2a; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px;">' +
+          '<section class="weekly-key-strip" id="weeklyKeyStrip" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--bg-2); border-radius: 12px; padding: 12px 16px; margin-bottom: 20px;">' +
             '<div style="display: flex; align-items: center; gap: 12px;">' +
               '<div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">' +
                 '<img src="assets/icons/Activities/19980.png" width="32" height="32" alt="Llave" id="weeklyKeyIcon">' +

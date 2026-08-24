@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/wv-tabs-skin.js — Re-skin de los botones de tabs del header de Wizard's Vault
  * Proyecto: Bóveda del Gato Negro
  * Versión: 1.0.0 (2026-03-04)
@@ -40,16 +40,16 @@
         display:inline-flex; align-items:center; justify-content:center; gap:8px;
         padding:6px 12px; border-radius:8px; user-select:none; cursor:pointer;
         font-weight:600; line-height:1; text-decoration:none;
-        color:#e6e9ef; background:#111319; border:1px solid #2c2f36;
+        color:var(--tx-1); background:var(--bg-1); border:1px solid var(--bd-1);
       }
-      .btn--wv-skin:not(.btn):hover  { border-color:#3b4352; }
+      .btn--wv-skin:not(.btn):hover  { border-color:var(--bd-2); }
       .btn--wv-skin:not(.btn):active { transform:translateY(0.5px); }
 
       /* Estado activo/seleccionado de la tab (imitando pressed/primary sutil) */
       .btn--wv-active {
-        background:#1b2130 !important;
-        border-color:#3b4352 !important;
-        box-shadow:0 0 0 1px #3b4352 inset;
+        background:var(--bg-2) !important;
+        border-color:var(--bd-2) !important;
+        box-shadow:0 0 0 1px var(--bd-2) inset;
       }
 
       /* Suavizar pill viejo si aún queda */

@@ -1,0 +1,130 @@
+/* ==========================================================================
+   Bóveda del Gato Negro — Tema Catppuccin
+   Colores pastel, mood relajado
+   ========================================================================== */
+
+[data-theme="catppuccin"] {
+  /* Colores base */
+  --bg: #1e1e2e;
+  --bg-0: #1a1a28;
+  --bg-1: #28283a;
+  --bg-2: #242438;
+  --panel: #28283a;
+  --panel-border: #45475a;
+  --panel-outline: #3a3c4e;
+
+  /* Bordes */
+  --bd-1: #45475a;
+  --bd-2: #585b70;
+
+  /* Texto */
+  --text: #cdd6f4;
+  --tx-1: #cdd6f4;
+  --tx-2: #b4b8c8;
+  --tx-3: #6c7086;
+  --muted: #6c7086;
+
+  /* Acentos */
+  --acc-1: #89b4fa;
+  --acc-2: #a6e3a1;
+  --acc-warn: #f9e2af;
+  --acc-err: #f38ba8;
+  --gn-gold: #f5c2e7;
+  --gn-gold-2: #f9e2af;
+  --accent: #f5c2e7;
+  --accent-2: #89b4fa;
+
+  /* Colores semánticos */
+  --color-green: #a6e3a1;
+  --color-green-bg: #1e3a28;
+  --color-amber: #f9e2af;
+  --color-amber-bg: #3a3220;
+  --color-red: #f38ba8;
+  --color-red-bg: #3a1e2a;
+  --color-blue: #89b4fa;
+  --color-blue-bg: #1e2a3a;
+  --color-gray: #6c7086;
+  --color-gray-bg: #242438;
+
+  /* Botones */
+  --btn: #313146;
+  --btn-border: #45475a;
+  --btn-hover: #3a3a50;
+
+  /* Glow y elevaciones */
+  --glow-base: rgba(245,194,231,0.12);
+  --elev-0: none;
+  --elev-1: 0 1px 0 0 #313146 inset, 0 0 0 1px rgba(137,180,250,0.04);
+  --elev-2: 0 6px 16px rgba(0,0,0,0.2), 0 0 0 1px rgba(137,180,250,0.10);
+  --elev-hover: 0 10px 28px rgba(0,0,0,0.30), 0 0 16px rgba(245,194,231,0.18), 0 0 0 1px rgba(137,180,250,0.15);
+
+  /* Geometría */
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --pill-radius: 24px;
+  --card-radius: 12px;
+  --gap-sm: 8px;
+  --gap-md: 12px;
+  --gap-lg: 14px;
+
+  /* Motion */
+  --ease-1: cubic-bezier(.2,.7,.2,1);
+  --dur-1: .14s;
+  --transition-fast: 0.1s ease;
+  --transition-normal: 0.2s ease;
+  --transition-speed: 0.2s;
+
+  /* Tipografía */
+  --font: 'Segoe UI', system-ui, sans-serif;
+
+  /* Sombras */
+  --shadow: 0 2px 8px rgba(0,0,0,0.2);
+  --shadow-hover: 0 6px 16px rgba(245,194,231,0.2);
+
+  /* Hover */
+  --hover-effect: cat-glow;
+  --hover-scale: 1;
+  --hover-filter: brightness(1.05);
+  --card-scale: 1;
+
+  /* Espaciado */
+  --spacing: 14px;
+
+  /* Textura de fondo */
+  --bg-texture: none;
+
+  /* Scrollbar */
+  --scrollbar-color: #45475a;
+
+  /* Animación */
+  --animation: fadeIn 0.2s ease-out;
+
+  /* Mood */
+  --mood: pastel;
+
+  /* Glow extra */
+  --glow-color: rgba(245,194,231,0.25);
+
+  /* Home Nodes */
+  --gw-mining-bg: linear-gradient(180deg,#2a2a3e,#1a1a2e);
+  --gw-logging-bg: linear-gradient(180deg,#263a2e,#16221e);
+  --gw-harvest-bg: linear-gradient(180deg,#2e263a,#1e162a);
+
+  /* Activities */
+  --gw-card-bg: #242438;
+  --gw-card-borda: #45475a;
+  --gw-card-borda-hover: #585b70;
+  --gw-muted: #6c7086;
+  --gw-ok: #a6e3a1;
+  --gw-bad: #f38ba8;
+  --gw-chip-bg: linear-gradient(180deg,#313146,#242438);
+  --gw-chip-borda: #45475a;
+  --gw-pill-ok-bg: rgba(166,227,161,.14);
+  --gw-pill-bad-bg: rgba(243,139,168,.14);
+  --gw-shadow: 0 0 0 1px rgba(137,180,250,.15) inset, 0 2px 18px rgba(0,0,0,.25);
+
+  /* Esquema de color nativo */
+  color-scheme: dark;
+}

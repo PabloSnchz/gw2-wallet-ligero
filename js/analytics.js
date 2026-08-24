@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/analytics.js — Eventos personalizados para Google Analytics
  * Versión: 1.0.0
  */

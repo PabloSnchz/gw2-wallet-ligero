@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * Meta Theme (expansión/temporada) — diseño sobrio con borde izquierdo de color
  * v1.4.2 (2026-05-02)
  *
@@ -148,8 +148,8 @@
     clockBar.className = 'meta-clock-bar chips';
     clockBar.style.cssText = [
       'display:flex', 'gap:16px', 'align-items:center',
-      'background:#0f1116', 'padding:4px 12px', 'border-radius:40px',
-      'border:1px solid #2a2c35', 'font-family:monospace',
+      'background:var(--bg-1)', 'padding:4px 12px', 'border-radius:40px',
+      'border:1px solid var(--bd-1)', 'font-family:monospace',
       'font-size:0.85rem', 'flex-wrap:wrap'
     ].join(';');
 
@@ -158,17 +158,17 @@
         '<img src="' + ICON_UTC + '" width="24" height="24" alt="UTC" style="filter:brightness(0.9);">' +
         '<span>UTC</span><strong id="metaUtcTime">--:--:--</strong>' +
       '</div>' +
-      '<div style="width:1px;height:24px;background:#2a2c35;"></div>' +
+      '<div style="width:1px;height:24px;background:var(--bd-1);"></div>' +
       '<div style="display:flex;align-items:center;gap:6px;" data-tip="Tu hora local">' +
         '<img src="' + ICON_LOCAL + '" width="24" height="24" alt="Local" style="filter:brightness(0.9);">' +
         '<span>Local</span><strong id="metaLocalTime">--:--:--</strong>' +
       '</div>' +
-      '<div style="width:1px;height:24px;background:#2a2c35;"></div>' +
+      '<div style="width:1px;height:24px;background:var(--bd-1);"></div>' +
       '<div style="display:flex;align-items:center;gap:6px;" data-tip="Reset diario a las 00:00 UTC">' +
         '<img src="' + ICON_DAILY + '" width="24" height="24" alt="Reset diario" style="filter:brightness(0.9);">' +
         '<span>Reset diario</span><strong id="metaDailyReset">--</strong>' +
       '</div>' +
-      '<div style="width:1px;height:24px;background:#2a2c35;"></div>' +
+      '<div style="width:1px;height:24px;background:var(--bd-1);"></div>' +
       '<div style="display:flex;align-items:center;gap:6px;" data-tip="Reset semanal los lunes a las 07:30 UTC">' +
         '<img src="' + ICON_WEEKLY + '" width="24" height="24" alt="Reset semanal" style="filter:brightness(0.9);">' +
         '<span>Reset semanal</span><strong id="metaWeeklyReset">--</strong>' +
@@ -232,7 +232,7 @@
     if (hasChanges && !schedulePanel.querySelector('.local-indicator')) {
       var header = document.createElement('div');
       header.className = 'schedule-panel__header';
-      header.style.cssText = 'margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #2a2c35;font-size:0.7rem;color:#b4bad0;';
+      header.style.cssText = 'margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--bd-1);font-size:0.7rem;color:var(--tx-3);';
       header.innerHTML = '📅 Horarios de hoy <span class="local-indicator" style="opacity:0.7">(hora local)</span>';
       schedulePanel.insertBefore(header, schedulePanel.firstChild);
     }
@@ -343,15 +343,15 @@
       if (idx === activeIndex) {
         chip.classList.add('chip--active');
         chip.style.fontWeight      = 'bold';
-        chip.style.borderColor     = '#a0ffc8';
-        chip.style.color           = '#a0ffc8';
+        chip.style.borderColor     = 'var(--color-green)';
+        chip.style.color           = 'var(--color-green)';
         chip.style.backgroundColor = 'rgba(160,255,200,0.06)';
         chip.style.boxShadow       = '0 0 0 1px rgba(160,255,200,0.2) inset';
       } else if (idx === nextIndex && activeIndex === -1) {
         chip.classList.add('chip--next');
         chip.style.fontWeight      = 'bold';
-        chip.style.borderColor     = '#ffd966';
-        chip.style.color           = '#ffd966';
+        chip.style.borderColor     = 'var(--color-amber)';
+        chip.style.color           = 'var(--color-amber)';
         chip.style.backgroundColor = 'rgba(255,217,102,0.06)';
         chip.style.boxShadow       = '0 0 0 1px rgba(255,217,102,0.2) inset';
       }

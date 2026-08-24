@@ -1,4 +1,4 @@
-(function(){
+﻿(function(){
   'use strict';
 
   const $  = (s, r=document) => r.querySelector(s);
@@ -48,7 +48,7 @@
   let acctCtrl  = null;
 
   async function updateAccountId(){
-    const out = $('#accountIdLabel');
+    const out = $('var(--acc-1)ountIdLabel');
     const tokenSel = $('#keySelectGlobal');
     if (!out || !tokenSel) return;
 

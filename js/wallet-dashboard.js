@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/wallet-dashboard.js — Dashboard de Cartera Multi-Cuenta
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
  * Versión: 2.5.0 (2026-04-08)
@@ -36,9 +36,9 @@
     var copperLeft = copper % 100;
     
     var parts = [];
-    if (gold > 0) parts.push('<span style="color:#f4c542;">' + gold.toLocaleString('es-AR') + '</span> <span style="color:#a0a0a6;">g</span>');
-    if (silver > 0 || gold > 0) parts.push('<span style="color:#e0e0e0;">' + silver + '</span> <span style="color:#a0a0a6;">s</span>');
-    parts.push('<span style="color:#b87333;">' + copperLeft + '</span> <span style="color:#a0a0a6;">c</span>');
+    if (gold > 0) parts.push('<span style="color:#f4c542;">' + gold.toLocaleString('es-AR') + '</span> <span style="color:var(--muted);">g</span>');
+    if (silver > 0 || gold > 0) parts.push('<span style="color:#e0e0e0;">' + silver + '</span> <span style="color:var(--muted);">s</span>');
+    parts.push('<span style="color:#b87333;">' + copperLeft + '</span> <span style="color:var(--muted);">c</span>');
     return parts.join(' ');
   }
 
@@ -283,7 +283,7 @@
       '<span>' + (selectedNames || 'Seleccionar divisas') + '</span>' +
       '<span>▼</span>' +
       '</button>' +
-      '<div id="wdCurrencyDropdown" style="position:absolute; top:100%; left:0; background:#1a1c24; border:1px solid #2a2c35; border-radius:8px; padding:8px; z-index:100; min-width:220px; max-height:300px; overflow-y:auto; display:none;">' +
+      '<div id="wdCurrencyDropdown" style="position:absolute; top:100%; left:0; background:var(--bg-1); border:1px solid var(--bd-1); border-radius:8px; padding:8px; z-index:100; min-width:220px; max-height:300px; overflow-y:auto; display:none;">' +
       '<div style="display:flex; flex-direction:column; gap:6px;">' +
       '<button id="wdSelectAllBtn" class="btn btn--xs" style="margin-bottom:4px;">✓ Seleccionar todas</button>' +
       '<button id="wdSelectNoneBtn" class="btn btn--xs" style="margin-bottom:8px;">✗ Deseleccionar todas</button>';
@@ -407,7 +407,7 @@
 
   function formatValueForDisplay(currencyId, value) {
     if (value < 0) {
-      return '<span style="color:#ff9d9d;">' + (currencyId === 1 ? formatCoinValue(Math.abs(value)) : fmtInt(Math.abs(value))) + '</span>';
+      return '<span style="color:var(--color-red);">' + (currencyId === 1 ? formatCoinValue(Math.abs(value)) : fmtInt(Math.abs(value))) + '</span>';
     }
     if (currencyId === 1) {
       return '<span class="gold-value">' + formatCoinValue(value) + '</span>';
@@ -548,18 +548,18 @@
     styleEl.id = 'wdTableStyles';
     styleEl.textContent = [
       '#wdTable { border-collapse:separate; border-spacing:0; width:100%; }',
-      '#wdTable th { position:sticky; top:0; background:#0f1118; z-index:2; font-weight:600; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px; color:#9aa2b8; border-bottom:2px solid #2a2c35; padding:10px 12px; }',
-      '#wdTable td { padding:10px 12px; border-bottom:1px solid #1f2026; vertical-align:middle; color:#cfd2d8; }',
-      '#wdTable tbody tr:hover { background:#1a1d28; }',
-      '#wdTable tbody tr:nth-child(even) { background:#0c0e14; }',
-      '#wdTable tbody tr:nth-child(even):hover { background:#1a1d28; }',
-      '#wdTable .total-row { background:#0f1118!important; border-top:2px solid #3a4c7a; font-weight:700; }',
+      '#wdTable th { position:sticky; top:0; background:var(--bg-1); z-index:2; font-weight:600; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); border-bottom:2px solid var(--bd-1); padding:10px 12px; }',
+      '#wdTable td { padding:10px 12px; border-bottom:1px solid var(--bd-1); vertical-align:middle; color:var(--tx-2); }',
+      '#wdTable tbody tr:hover { background:var(--bg-2); }',
+      '#wdTable tbody tr:nth-child(even) { background:var(--bg-0); }',
+      '#wdTable tbody tr:nth-child(even):hover { background:var(--bg-2); }',
+      '#wdTable .total-row { background:var(--bg-1)!important; border-top:2px solid var(--acc-1); font-weight:700; }',
       '#wdTable .total-row td { padding-top:12px; padding-bottom:12px; }',
-      '#wdTable th:first-child, #wdTable td:first-child { position:sticky; left:0; background:#0e1116; z-index:1; }',
-      '#wdTable tr:hover td:first-child { background:#1a1d28; }',
-      '#wdTable tr:nth-child(even) td:first-child { background:#0c0e14; }',
-      '#wdTable tr:nth-child(even):hover td:first-child { background:#1a1d28; }',
-      '#wdTable .total-row td:first-child { background:#0f1118!important; }'
+      '#wdTable th:first-child, #wdTable td:first-child { position:sticky; left:0; background:var(--bg-0); z-index:1; }',
+      '#wdTable tr:hover td:first-child { background:var(--bg-2); }',
+      '#wdTable tr:nth-child(even) td:first-child { background:var(--bg-0); }',
+      '#wdTable tr:nth-child(even):hover td:first-child { background:var(--bg-2); }',
+      '#wdTable .total-row td:first-child { background:var(--bg-1)!important; }'
     ].join(' ');
     document.head.appendChild(styleEl);
   }
@@ -702,7 +702,7 @@
           <span id="wdTimestamp" class="wd-timestamp"></span>
         </div>
         
-        <div class="wd-tablewrap" style="overflow:auto; border:1px solid #26262b; border-radius:12px;">
+        <div class="wd-tablewrap" style="overflow:auto; border:1px solid var(--bd-1); border-radius:12px;">
           <table id="wdTable" class="wvpd" style="width:100%; border-collapse:collapse;">
             <thead></thead>
             <tbody></tbody>

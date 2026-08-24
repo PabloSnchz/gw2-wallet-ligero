@@ -1955,6 +1955,7 @@
 | `js/strike-tracker.js` | v1.0.0 | 2026-06-03 |
 | `js/sidebar-nav.js` | v1.2 | — |
 | `js/analytics.js` | v1.0.0 | — |
+| `js/theme-selector.js` | v1.0.0 | 2026-06-XX |
 
 ---
 

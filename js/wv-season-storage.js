@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/wv-season-storage.js — Servicio de almacenamiento por temporada (Wizard's Vault)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
  * Versión: 1.1.1 (2026-03-09) — Single-Season hotfix: no-shadow por defecto + GC shadows + prune

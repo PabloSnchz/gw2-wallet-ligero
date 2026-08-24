@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * js/wv-shop-ui.js — UI de la Tienda de Wizard's Vault
  * v1.0.2 (2026-05-02)
  *
@@ -203,7 +203,7 @@
             '<option value="hide"' + (legacyVis === 'hide' ? ' selected' : '') + '>Ocultar</option>',
           '</select>',
           '<button id="wvClearSynced" class="btn btn--ghost" title="Borrar o recortar marcas ya cubiertas por el API">Limpiar sincronizados</button>',
-          '<button id="wvClearPinsAll" class="btn btn--ghost" title="Borrar TODOS los fijados de TODAS las API keys para esta temporada" style="display:inline-flex;align-items:center;gap:4px;color:#ff9d9d;">' +
+          '<button id="wvClearPinsAll" class="btn btn--ghost" title="Borrar TODOS los fijados de TODAS las API keys para esta temporada" style="display:inline-flex;align-items:center;gap:4px;color:var(--color-red);">' +
             '<img src="assets/icons/Welcome/156107.png" width="14" height="14" alt="">Limpiar fijados' +
           '</button>',
           '<button id="wvReplicatePins" class="btn btn--ghost" title="Copiar los fijados de esta API key a todas las demás" style="display:inline-flex;align-items:center;gap:4px;">' +
@@ -446,7 +446,7 @@
         card.__wvThemed = false;
         var nameEl = card.querySelector('.wv-card__name');
         var borderColor = 'rgba(255, 255, 255, 0.5)'; // fallback neutro
-        if (nameEl && nameEl.style.color && nameEl.style.color !== 'rgb(233, 233, 241)' && nameEl.style.color !== '#e9e9f1') {
+        if (nameEl && nameEl.style.color && nameEl.style.color !== 'rgb(233, 233, 241)' && nameEl.style.color !== 'var(--tx-1)') {
           // Convertir rgb(26, 147, 6) a rgba(26, 147, 6, 0.5)
           var match = nameEl.style.color.match(/[\d.]+/g);
           if (match && match.length >= 3) {
@@ -515,7 +515,7 @@
       var isCompleted = leftVal !== null && leftVal === 0;
       var statusIcon = isCompleted ? '✅' : '⚠️';
       var statusText = isCompleted ? 'Completado' : (limit === null ? 'Ilimitado' : 'Pendiente');
-      var statusColor = isCompleted ? '#a0ffc8' : (limit === null ? '#7bc2ff' : '#ffd36b');
+      var statusColor = isCompleted ? 'var(--color-green)' : (limit === null ? 'var(--color-blue)' : 'var(--color-amber)');
 
       var pinActive = !!(st.pinned && st.pinned[x.id]);
       var pinCls = 'wv-pin' + (pinActive ? ' wv-pin--active' : '');
@@ -634,7 +634,7 @@
     var isCompleted = leftVal !== null && leftVal === 0;
     var statusIcon = isCompleted ? '✅' : (limit === null ? '∞' : '⚠️');
     var statusText = isCompleted ? 'Completado' : (limit === null ? 'Ilimitado' : 'Pendiente');
-    var statusColor = isCompleted ? '#a0ffc8' : (limit === null ? '#7bc2ff' : '#ffd36b');
+    var statusColor = isCompleted ? 'var(--color-green)' : (limit === null ? 'var(--color-blue)' : 'var(--color-amber)');
 
     // Actualizar barra de progreso
     var statusDiv = card.querySelector('.wvpd-item-progress__status');

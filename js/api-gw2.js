@@ -1,4 +1,4 @@
-/* =======================================================================
+﻿/* =======================================================================
  * js/api-gw2.js  —  Capa API con fallbacks + caché persistente (mejorada)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
  * Versión: 2.15.0 (2026-05-04) — Commerce: Listings, Prices + Transactions (Buy/Sell)

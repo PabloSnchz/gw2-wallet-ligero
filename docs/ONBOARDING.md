@@ -1598,6 +1598,8 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/wallet-theme.js` | **v1.3.1** | Tema visual de Cartera — **Glow en ícono de divisa + glow neutro para divisas sin color** |
 | `js/meta-theme.js` | **v1.4.2** | Tema visual de Meta — **Solo border-left** |
 | `js/converter-modal.js` | **v1.0.0** | **Modal del Conversor Gem ↔ Gold con 3 tabs (Cambio, Transacciones, Populares)** |
+| `js/theme-selector.js` | **v1.0.0** | **Selector de temas con modal, 18 temas + aleatorio, persistencia** |
+| `css/themes/*.css` | **v1.0.0** | **18 temas con variables CSS (Bóveda, Catppuccin, Cyberpunk, etc.)** |
 | `js/achievements-theme.js` | **v1.1.1** | Tema visual de Logros — **Solo border-left** |
 | `js/wv-theme.js` | **v1.0.1** | Tema visual de WV — **Solo border-left, expone window.WVTheme** |
 | `css/theme-polish.css` | **v2.1.0** | Componentes canónicos + hover unificado + conversor |
