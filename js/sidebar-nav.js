@@ -48,7 +48,7 @@
   let acctCtrl  = null;
 
   async function updateAccountId(){
-    const out = $('var(--acc-1)ountIdLabel');
+    const out = $('#accountIdLabel');
     const tokenSel = $('#keySelectGlobal');
     if (!out || !tokenSel) return;
 

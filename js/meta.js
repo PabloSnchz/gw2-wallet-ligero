@@ -555,10 +555,35 @@
 
     // ===== ESTRUCTURA UNIFICADA (sin data-manual, sin role=button) =====
     // Convertir horarios UTC a hora local
-    var localWindows = Array.isArray(meta.windowsUTC) ? meta.windowsUTC.map(function(hhmm) {
-      var d = localDateFromUTC_HHMM(hhmm);
-      return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
-    }) : [];
+    var localWindows = [];
+    if (Array.isArray(meta.windowsUTC) && meta.windowsUTC.length) {
+      var nowForSort = new Date();
+      var allWindows = [];
+      meta.windowsUTC.forEach(function(hhmm) {
+        var d = localDateFromUTC_HHMM(hhmm);
+        var time = pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+        allWindows.push({ time: time, date: d, utc: hhmm });
+        allWindows.push({ time: time, date: new Date(d.getTime() + 24*3600*1000), utc: hhmm });
+      });
+      allWindows.sort(function(a, b) { return a.date - b.date; });
+
+      var activeWindow = null;
+      for (var i = 0; i < allWindows.length; i++) {
+        var wStart = allWindows[i].date;
+        var wEnd = new Date(wStart.getTime() + (meta.durationMin || 15)*60000);
+        if (nowForSort >= wStart && nowForSort < wEnd) {
+          activeWindow = allWindows[i];
+          break;
+        }
+      }
+
+      if (activeWindow) {
+        var futureWindows = allWindows.filter(function(lw) { return lw.date > activeWindow.date; });
+        localWindows = [activeWindow].concat(futureWindows).slice(0, 12);
+      } else {
+        localWindows = allWindows.filter(function(lw) { return lw.date >= nowForSort; }).slice(0, 12);
+      }
+    }
 
     return `
       <article class="meta-card" data-id="${meta.id}"${styleTint} style="background:var(--bg-1);border:1px solid var(--bd-1);border-radius:16px;overflow:hidden;">
@@ -588,7 +613,7 @@
                   ${dt.done ? 'Completado' : 'Pendiente'}
                 </span>
               </div>
-              ${localWindows.length ? '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:4px;">' + localWindows.slice(0,12).map(function(lhhm, idx){ var hhmm = meta.windowsUTC[idx]; var wStart = localDateFromUTC_HHMM(hhmm); var wEnd = new Date(wStart.getTime() + (meta.durationMin || 15)*60000); var now = new Date(); var wState = (now >= wStart && now < wEnd) ? 'active' : (wStart > now && ((wStart - now)/60000) <= SOON_MIN) ? 'soon' : 'later'; var chipColor = wState === 'active' ? 'var(--color-green)' : (wState === 'soon' ? 'var(--color-amber)' : 'var(--muted)'); var chipBg = wState === 'active' ? 'rgba(160,255,200,0.12)' : (wState === 'soon' ? 'rgba(255,211,107,0.12)' : 'var(--bg-1)'); var chipBorder = wState === 'active' ? 'rgba(160,255,200,0.3)' : (wState === 'soon' ? 'rgba(255,211,107,0.3)' : 'var(--bd-1)'); return '<span style="font-size:0.6rem;color:' + chipColor + ';background:' + chipBg + ';padding:1px 4px;border-radius:8px;border:1px solid ' + chipBorder + ';text-align:center;">' + esc(lhhm) + '</span>'; }).join('') + '</div>' : ''}
+              ${localWindows.length ? '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;margin-top:4px;">' + localWindows.map(function(lw){ var wStart = lw.date; var wEnd = new Date(wStart.getTime() + (meta.durationMin || 15)*60000); var now = new Date(); var wState = (now >= wStart && now < wEnd) ? 'active' : (wStart > now && ((wStart - now)/60000) <= SOON_MIN) ? 'soon' : 'later'; var chipColor = wState === 'active' ? 'var(--color-green)' : (wState === 'soon' ? 'var(--color-amber)' : 'var(--muted)'); var chipBg = wState === 'active' ? 'var(--color-green-bg)' : (wState === 'soon' ? 'var(--color-amber-bg)' : 'var(--bg-1)'); var chipBorder = wState === 'active' ? 'var(--color-green)' : (wState === 'soon' ? 'var(--color-amber)' : 'var(--bd-1)'); return '<span style="font-size:0.6rem;font-weight:' + (wState === 'active' ? '700' : '400') + ';color:' + chipColor + ';background:' + chipBg + ';padding:1px 4px;border-radius:8px;border:1px solid ' + chipBorder + ';text-align:center;">' + esc(lw.time) + '</span>'; }).join('') + '</div>' : ''}
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;padding:6px 16px 5px 16px;">
