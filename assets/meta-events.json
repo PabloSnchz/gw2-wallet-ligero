@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "id": "shadow_behemoth",
     "name": "Behemot de las Sombras",
@@ -20,7 +20,7 @@
     "map": "Pantano de las Centellas",
     "wiki": "https://wiki.guildwars2.com/wiki/Tequatl_the_Sunless",
     "chat": "[&BNABAAA=]",
-    "windowsUTC": ["00:00","03:00","08:00","12:00","20:00"],
+    "windowsUTC": ["00:00","03:00","06:00","09:00","12:00","15:00","18:00","21:00"],
     "durationMin": 20,
     "api": { "worldBossId": "tequatl_the_sunless" },
     "highlightItemId": 37064
@@ -33,7 +33,7 @@
     "map": "Estepas Crestafulgurante",
     "wiki": "https://wiki.guildwars2.com/wiki/The_Shatterer",
     "chat": "[&BE4DAAA=]",
-    "windowsUTC": ["01:00","05:00","08:00","12:00","16:00","23:00"],
+    "windowsUTC": ["01:00","03:00","05:00","07:00","09:00","11:00","13:00","15:00","17:00","19:00","21:00","23:00"],
     "durationMin": 15,
     "api": { "worldBossId": "the_shatterer" },
     "highlightItemId": 24836
@@ -59,7 +59,7 @@
     "map": "Cala del Sol Austral",
     "wiki": "https://wiki.guildwars2.com/wiki/Karka_Queen",
     "chat": "[&BNcGAAA=]",
-    "windowsUTC": ["02:00","04:00","10:00","14:00","18:00","22:00"],
+    "windowsUTC": ["00:00","04:00","08:00","12:00","16:00","20:00"],
     "durationMin": 20,
     "api": { "worldBossId": "karka_queen" },
     "highlightItemId": 43772
@@ -99,7 +99,7 @@
     "map": "Profundidades Enredadas",
     "wiki": "https://wiki.guildwars2.com/wiki/King_of_the_Jungle",
     "chat": "[&BPUHAAA=]",
-    "windowsUTC": ["00:30","02:30","04:30","06:30","08:30","10:30","12:30","14:30","16:30","18:30","20:30","22:30"],
+    "windowsUTC": ["00:30","03:30","06:30","09:30","12:30","15:30","18:30","21:30"],
     "durationMin": 20,
     "api": { "mapChestId": "tangled_depths_heros_choice_chest" },
     "highlightItemId": 76178
@@ -112,7 +112,7 @@
     "map": "Defensa del Dragón",
     "wiki": "https://wiki.guildwars2.com/wiki/Dragon%27s_Stand",
     "chat": "[&BIgIAAA=]",
-    "windowsUTC": ["01:00","05:00","09:00","13:00","17:00","21:00"],
+    "windowsUTC": ["00:00","02:00","04:00","06:00","08:00","10:00","12:00","14:00","16:00","18:00","20:00","22:00"],
     "durationMin": 40,
     "api": { "mapChestId": "dragons_stand_heros_choice_chest" },
     "highlightItemId": 68063
@@ -182,7 +182,7 @@
     "map": "Marca de Bjora",
     "wiki": "https://wiki.guildwars2.com/wiki/Drakkar",
     "chat": "[&BDkMAAA=]",
-    "windowsUTC": ["01:00","05:00","09:00","13:00","17:00","21:00"],
+    "windowsUTC": ["00:00","02:00","04:00","06:00","08:00","10:00","12:00","14:00","16:00","18:00","20:00","22:00"],
     "durationMin": 20,
     "api": {},
     "manualCheck": true,
@@ -253,7 +253,7 @@
     "map": "Costa Mareasangrienta",
     "wiki": "https://wiki.guildwars2.com/wiki/Admiral_Taidha_Covington",
     "chat": "[&BKgBAAA=]",
-    "windowsUTC": ["00:00","03:00","07:00","10:00","13:00","16:00","19:00","22:00"],
+    "windowsUTC": ["00:00","03:00","06:00","09:00","12:00","15:00","18:00","21:00"],
     "durationMin": 20,
     "api": { "worldBossId": "admiral_taidha_covington" },
     "highlightItemId": null
@@ -318,7 +318,7 @@
     "map": "Monte Vorágine",
     "wiki": "https://wiki.guildwars2.com/wiki/Megadestroyer",
     "chat": "[&BM0CAAA=]",
-    "windowsUTC": ["00:30","02:30","04:30","06:30","08:30","10:30","12:30","14:30","16:30","18:30","20:30","22:30"],
+    "windowsUTC": ["00:30","03:30","06:30","09:30","12:30","15:30","18:30","21:30"],
     "durationMin": 20,
     "api": { "worldBossId": "megadestroyer" },
     "highlightItemId": null
