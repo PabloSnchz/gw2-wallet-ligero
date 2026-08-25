@@ -8,6 +8,18 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [6.7.1] - 2026-06-XX
+
+### Changed
+- **theme-selector.js v1.1.0**: Modal rediseñado con filas horizontales
+  - Cada fila muestra los colores reales del tema (fondo, borde, acento)
+  - Mood del tema visible como subtítulo
+  - Badge "✓ Activo" con fondo del color accent
+  - Hover con desplazamiento horizontal
+- **theme-polish.css**: Nuevas reglas `.theme-card` para filas
+
+---
+
 ## [6.7.0] - 2026-06-XX
 
 ### Added

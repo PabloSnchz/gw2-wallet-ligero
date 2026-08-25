@@ -1955,7 +1955,7 @@
 | `js/strike-tracker.js` | v1.0.0 | 2026-06-03 |
 | `js/sidebar-nav.js` | v1.2 | — |
 | `js/analytics.js` | v1.0.0 | — |
-| `js/theme-selector.js` | v1.0.0 | 2026-06-XX |
+| `js/theme-selector.js` | v1.1.0 | 2026-06-XX |
 
 ---
 
@@ -2011,3 +2011,37 @@
 | `wv_listings_all` | JSON | WizardsVault | Cache de listados globales |
 | `wv_acc_listings` | JSON | WizardsVault | Cache de listados de cuenta (por token) |
 | `wv_obj_catalog:{LANG}` | JSON | WizardsVault | Cache de catálogo de objetivos |
+| `gn_theme` | String | ThemeSelector | Tema guardado por el usuario |
+
+---
+
+## 📄 `js/theme-selector.js` (v1.1.0)
+
+**Responsabilidad principal:** Selector de temas visuales. Crea el modal de selección con 18 filas clickeables + modo aleatorio. Cada fila muestra los colores reales del tema (fondo, borde, acento, acento-2). Cambia dinámicamente el `<link id="themeStylesheet">` al tema elegido.
+
+**API pública expuesta:** `window.ThemeSelector`
+
+**Métodos principales:**
+- `init()` — Inicializa y aplica tema guardado
+- `applyTheme(theme)` — Aplica un tema (o random si 'random')
+- `openModal()` / `closeModal()` — Abre/cierra el modal
+- `getThemes()` — Lista de temas disponibles
+- `getCurrentTheme()` — Tema activo
+- `_debug()` — Estado interno
+
+**Diseño del modal:**
+- Grid de 1 columna (filas horizontales)
+- Cada fila usa los colores reales del tema: bg, panel, accent, accent-2
+- Mood del tema visible como subtítulo
+- Badge "✓ Activo" con fondo del color accent
+- Hover con translateX(4px)
+
+**Dependencias:**
+- `css/themes/*.css` — Archivos de tema
+- `#themeStylesheet` — `<link>` en index.html
+- `theme-polish.css` — Clases `.theme-card` para bordes y hover
+
+**Persistencia:**
+- `localStorage:gn_theme` — Tema guardado
+
+**Versión real:** v1.1.0
