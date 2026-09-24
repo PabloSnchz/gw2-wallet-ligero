@@ -8,6 +8,24 @@ y el versionado **SemVer** (https://semver.org/).
 
 ---
 
+## [Unreleased]
+
+### Changed
+- **Migración de estilos inline a CSS (Fase 1)**:
+  - `theme-polish.css`: Nuevas clases `.wd-kpi-*` (4 KPIs de Wallet Dashboard) y `.id-kpi-*` (4 KPIs de Inventory Dashboard) con `border-left` semántico + `box-shadow` glow
+  - `theme-polish.css`: Nuevas clases `.id-badge`, `.id-dd-item`, `.id-dd-opt`, `.id-grid`, `.id-skel` para dropdowns, grids y skeletons de Inventory Dashboard
+  - `theme-polish.css`: Reglas `#inventoryDashboardPanel` con layout de grid, border-left, glow y controles de carga
+  - `wallet-dashboard.js`: Eliminados estilos inline de dropdown, KPIs y tabla — ahora usan `.wd-*` + `.card`
+  - `inventory-dashboard.js`: Eliminados estilos inline de badge, dropdown, KPIs, grid, skeleton y tablewrap — ahora usan `.id-*` + `.card`
+  - Eliminados backups locales `.backup_kpi_css/` y `.backup_id_kpi_css/` (no subir basura al repo)
+  - **Herramienta**: Skill `migrar-estilos-inline` creada y documentada en workspace del agente
+- **Arquitectura CSS de 3 capas aplicada a dashboards**:
+  - `main.css`: layout, grid, espaciados (sin bordes ni box-shadows)
+  - `theme-polish.css`: bordes neutros, glow base, hover unificado, `.card`, `.wd-*`, `.id-*`
+  - `*-theme.js`: solo `borderLeft` (en este caso, los colores semánticos viven en `theme-polish.css` como clases `.wd-kpi-*` / `.id-kpi-*`)
+
+---
+
 ## [6.7.1] - 2026-06-XX
 
 ### Changed

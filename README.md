@@ -41,6 +41,31 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 
 ---
 
+## ✨ Novedades principales — Unreleased
+
+### 🏗️ Migración de estilos inline a CSS (Fase 1)
+
+**Se eliminaron todos los estilos inline (`.style.*`) de los dos dashboards multi-cuenta y se migraron a la arquitectura CSS de 3 capas.**
+
+| Dashboard | Archivo | Clases CSS新增 | Estilos inline eliminados |
+|-----------|---------|----------------|--------------------------|
+| Cartera | `wallet-dashboard.js` | `.wd-kpi-amber`, `.wd-kpi-purple`, `.wd-kpi-green`, `.wd-kpi-blue`, `.wd-dropdown`, `.wd-dd-item`, `.wd-dd-opt`, `.wd-table-wrap` | Dropdown, 4 KPIs, tabla |
+| Inventario | `inventory-dashboard.js` | `.id-kpi-blue`, `.id-kpi-green`, `.id-kpi-amber`, `.id-kpi-red`, `.id-badge`, `.id-dropdown`, `.id-dd-item`, `.id-dd-opt`, `.id-grid`, `.id-skel`, `.id-tablewrap` | Badge, dropdown, 4 KPIs, grid, skeleton, tablewrap |
+
+**Arquitectura CSS de 3 capas aplicada:**
+
+| Capa | Archivo | Responsabilidad |
+|------|---------|-----------------|
+| Layout | `main.css` | Grid, espaciados, tipografía. **Sin bordes ni box-shadows.** |
+| Piel unificada | `theme-polish.css` | Bordes neutros `rgba(255,255,255,0.08)`, glow base, hover unificado, clases `.wd-*` y `.id-*` |
+| Color semántico | `*-theme.js` | Solo `borderLeft: 3px solid <color>`. Los colores de KPIs viven en `theme-polish.css` como clases `.wd-kpi-*` / `.id-kpi-*` |
+
+**Regla de oro cumplida:** Ningún `*-theme.js` sobrescribe `border`, `boxShadow`, `borderRadius` ni `transition`. Solo `borderLeft` + `classList.add('card')`.
+
+**Herramienta de apoyo:** Skill `migrar-estilos-inline` con flujo de 5 fases (backup → analyze → CSS → JS → validate).
+
+---
+
 ## ✨ Novedades principales — v6.6.2
 
 ### ⚔️ Strike Tracker — Seguimiento de Strike Missions (strike-tracker.js v1.0.0)
@@ -850,7 +875,7 @@ Definí en `index.html` (antes de router.js):
 
 ---
 
-## 📦 Archivos clave (v6.5.0)
+## 📦 Archivos clave (Unreleased)
 
 | Archivo | Versión | Responsabilidad |
 |---------|---------|-----------------|
@@ -881,7 +906,7 @@ Definí en `index.html` (antes de router.js):
 | `js/wallet-theme.js` | **v1.3.1** | Tema visual de Cartera. **Glow en ícono + glow neutro para divisas sin color** |
 | `js/achievements-theme.js` | **v1.1.1** | Tema visual de Logros. **Solo border-left** |
 | `js/app.js` | **v2.7.0** | Keys, wallet, eventos globales. **Conversor extraído a converter-modal.js** |
-| `css/theme-polish.css` | **v2.1.0** | **Componentes canónicos + hover unificado + conversor** |
+| `css/theme-polish.css` | **v2.2.0** | **Componentes canónicos + hover unificado + conversor + clases `.wd-*` / `.id-*` para KPIs, dropdowns, grids y skeletons** |
 | `css/main.css` | **v2.6.0** | Estilos principales. **Solo layout, sin bordes ni box-shadows. Tag infusión celestial.** |
 
 ### Archivos nuevos (v6.5.1)

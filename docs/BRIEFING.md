@@ -1,8 +1,8 @@
-# 🐈‍⬛ Briefing para nuevo agente — Bóveda del Gato Negro (v6.6.2)
+# 🐈‍⬛ Briefing para nuevo agente — Bóveda del Gato Negro (v6.6.2 + Unreleased)
 
 ## Tu rol
 
-Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No estás empezando de cero: El proyecto tiene **v6.6.1**, 45+ archivos, arquitectura modular IIFE vanilla JS, y reglas estrictas de CSS en 3 capas.
+Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No estás empezando de cero: El proyecto tiene **v6.6.2 + changelog Unreleased**, 45+ archivos, arquitectura modular IIFE vanilla JS, y reglas estrictas de CSS en 3 capas.
 
 **Tu objetivo:** mantener compatibilidad, no romper nada, seguir la arquitectura existente, y proponer soluciones quirúrgicas (no reescribir archivos completos).
 
@@ -81,8 +81,9 @@ Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No es
 | Personajes | ✅ Subvista con botón "Volver al Inventario" |
 | Conversor (Modal) | ✅ 3 tabs: Cambio, Transacciones, Populares |
 | Dashboard Cartera | ✅ Estable |
-| Dashboard Inventario | ✅ 3 sets, sistema de tiers, carga en 2 fases, flash ámbar |
+| Dashboard Inventario | ✅ 3 sets, sistema de tiers, carga en 2 fases, flash ámbar, **estilos migrados a CSS (clases `.id-*`)** |
 | Raid Tracker | ✅ Estable, método `_debug()` disponible, navegación integrada con Strikes |
+| **Migración inline→CSS** | ✅ Fase 1 completada: `wallet-dashboard.js` + `inventory-dashboard.js` sin estilos inline. Clases `.wd-*` y `.id-*` en `theme-polish.css` |
 | Strike Tracker | ✅ **NUEVO v6.6.2** — 15 strikes, grid optimizado, navegación integrada con Raids |
 | Panel de Cuentas | ✅ Estable |
 | Bienvenida | ✅ Estable |
@@ -102,12 +103,14 @@ Sos un desarrollador senior que trabaja dentro de las reglas del proyecto. No es
 | `converter-modal.js` | v1.0.0 | Modal con 3 tabs + placeholder Historial |
 | `wv-objectives-dashboard.js` | v1.0.0 | Dashboard de Objetivos Semanales Multi-Cuenta |
 | `inventory-hub.js` | v1.3.2 | Skeleton loader, búsqueda en banco, filtros peso |
-| `inventory-dashboard.js` | v1.0.0 | Dashboard multi-cuenta con 3 sets, sistema de tiers (T3-T6), carga en 2 fases |
+| `inventory-dashboard.js` | v1.0.0 | Dashboard multi-cuenta con 3 sets, sistema de tiers (T3-T6), carga en 2 fases. **Estilos migrados a CSS (clases `.id-*`)** |
 | `raid-tracker.js` | v1.8.0 | Raid Tracker con header unificado y navegación a Strikes |
 | `strike-tracker.js` | v1.0.0 | **NUEVO** — Strike Missions: 15 strikes, grid optimizado, KPIs, modal con detalles |
 | `theme-selector.js` | v1.1.0 | Selector de temas con modal rediseñado (filas), 18 temas + aleatorio |
 | `css/themes/` | v1.0.0 | 18 temas con variables CSS |
 | `wallet-theme.js` | v1.3.1 | Glow neutro para divisas sin color |
+| `wallet-dashboard.js` | v2.5.0 | Dashboard de Cartera. **Estilos inline eliminados, ahora usa `.wd-*` + `.card`** |
+| `css/theme-polish.css` | v2.2.0 | **Nuevas clases `.wd-*` y `.id-*` para KPIs, dropdowns, grids y skeletons** |
 | `app.js` | v2.7.0 | Conversor extraído |
 | `index.html` | — | Sidebar sin conversor, botón PD simplificado |
 

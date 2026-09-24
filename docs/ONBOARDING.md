@@ -1,7 +1,7 @@
 ```markdown
 # 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v6.6.0)
 
-Fecha: 2026-05-30
+Fecha: 2026-09-24
 Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `wv-shop-ui.js`, `wv-objectives-ui.js`, `wv-objectives-dashboard.js`, `wv-theme.js`, `wallet-dashboard.js`, `inventory-dashboard.js`, `raid-tracker.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `characters-theme.js`, `accounts-panel.js`, `welcome-panel.js`, `settings-manager.js`, `analytics.js`, `gist-sync.js`, `sidebar-nav.js`, `inventory-hub.js`, `converter-modal.js`, `*-theme.js`, `main.css`, `theme-polish.css`
 
 ## 📌 BAI — Bloque de Alineamiento Instantáneo
@@ -1590,8 +1590,8 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `js/welcome-panel.js` | v1.4.0 | Pantalla de Bienvenida |
 | `js/raid-tracker.js` | v1.7.0 | Seguimiento de Raids Semanales |
 | `js/strike-tracker.js` | **v1.0.0** | **Seguimiento de Strike Missions (NUEVO v6.6.2)** |
-| `js/wallet-dashboard.js` | **v2.5.0** | Dashboard de Cartera — **KPIs con border-left semántico + glow, tabla unificada** |
-| `js/inventory-dashboard.js` | **v1.0.0** | **Dashboard de Inventario Multi-Cuenta — Tabla comparativa de ítems, sets con tiers, carga en 2 fases** |
+| `js/wallet-dashboard.js` | **v2.5.0** | Dashboard de Cartera — **KPIs con border-left semántico + glow, tabla unificada. Estilos inline eliminados, usa `.wd-*` + `.card`** |
+| `js/inventory-dashboard.js` | **v1.0.0** | **Dashboard de Inventario Multi-Cuenta — Tabla comparativa de ítems, sets con tiers, carga en 2 fases. Estilos inline eliminados, usa `.id-*` + `.card`** |
 | `js/router.js` | **v2.17.0** | Router desacoplado (~800 líneas). **Soporta InventoryHub, WV Objectives Dashboard. Sidebar sin conversor. Purchase Detail en nav tabs.** |
 | `js/app.js` | **v2.7.0** | Keys, wallet, eventos globales. **Conversor extraído a converter-modal.js** |
 | `js/analytics.js` | v1.0.0 | Eventos personalizados para Google Analytics |
@@ -1602,7 +1602,7 @@ Web app ligera en browser, JS vanilla + HTML/CSS, sin framework. Estado y navega
 | `css/themes/*.css` | **v1.0.0** | **18 temas con variables CSS (Bóveda, Catppuccin, Cyberpunk, etc.)** |
 | `js/achievements-theme.js` | **v1.1.1** | Tema visual de Logros — **Solo border-left** |
 | `js/wv-theme.js` | **v1.0.1** | Tema visual de WV — **Solo border-left, expone window.WVTheme** |
-| `css/theme-polish.css` | **v2.1.0** | Componentes canónicos + hover unificado + conversor |
+| `css/theme-polish.css` | **v2.2.0** | Componentes canónicos + hover unificado + conversor + clases `.wd-*` / `.id-*` para KPIs, dropdowns, grids y skeletons |
 | `css/main.css` | **v2.6.0** | Layout, backgrounds, tipografía + tag infusión celestial |
 
 ### Archivos eliminados (v6.3)
@@ -2912,4 +2912,5 @@ SIN defer (temas, al final):
 - ✅ **F5 en Tienda WV**: corregido, mantiene la tab activa
 - ✅ **RaidTracker `_debug()`**: método de diagnóstico expuesto
 - ✅ **Strike Tracker v1.0.0**: seguimiento de 15 strikes, grid 3 columnas, navegación integrada con Raids, badge LI sincronizado
+- ✅ **Migración estilos inline → CSS (Fase 1)**: `wallet-dashboard.js` y `inventory-dashboard.js` sin `.style.*`. Clases `.wd-*` y `.id-*` en `theme-polish.css` v2.2.0. Skill `migrar-estilos-inline` documentada.
 ```
