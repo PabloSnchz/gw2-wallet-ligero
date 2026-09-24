@@ -753,7 +753,7 @@
     var totalGold = getTotalGoldValue();
     var totalBadge = document.createElement('span');
     totalBadge.id = 'idTotalGoldBadge';
-    totalBadge.style.cssText = 'margin-left:auto;margin-right:0;display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:var(--bg-1);border:1px solid rgba(244,197,66,0.3);border-radius:24px;font-size:0.78rem;font-weight:600;';
+    totalBadge.className = 'id-total-gold-badge';
     totalBadge.innerHTML = '<img src="assets/icons/619316.png" width="16" height="16" alt="" style="vertical-align:middle;">' + formatCoinValue(totalGold);
     container.appendChild(totalBadge);
 
@@ -810,13 +810,13 @@
       .map(function(item) { return getItemName(item.id); })
       .join(', ');
 
-    var html = '<div style="position:relative;display:inline-block;">' +
-      '<button id="idDropdownBtn" class="btn btn--ghost" style="display:inline-flex;align-items:center;gap:6px;min-width:200px;justify-content:space-between;">' +
+    var html = '<div class="id-dropdown-wrapper">' +
+      '<button id="idDropdownBtn" class="btn btn--ghost id-dropdown__btn">' +
       '<span>' + (selectedNames || 'Seleccionar ítems') + '</span>' +
       '<span>▼</span>' +
       '</button>' +
-      '<div id="idDropdown" style="position:absolute;top:100%;left:0;background:var(--bg-1);border:1px solid var(--bd-1);border-radius:8px;padding:8px;z-index:100;min-width:280px;max-height:350px;overflow-y:auto;display:none;">' +
-      '<div style="display:flex;flex-direction:column;gap:6px;">' +
+      '<div id="idDropdown" class="id-dropdown" style="top:100%; left:0; z-index:100; min-width:280px; max-height:350px; overflow-y:auto; display:none;">' +
+      '<div class="id-dropdown__content">' +
       '<button id="idSelectAllBtn" class="btn btn--xs" style="margin-bottom:4px;">✓ Seleccionar todas</button>' +
       '<button id="idSelectNoneBtn" class="btn btn--xs" style="margin-bottom:8px;">✗ Deseleccionar todas</button>';
 
@@ -1006,7 +1006,7 @@
         ? '<div class="id-kpi-price">' + formatCoinValue(totalValue) + '</div>'
         : '';
 
-      return '<div class="id-kpi-card" style="border-left:3px solid rgba(123,194,255,0.5);">' +
+      return '<div class="id-kpi-card id-kpi-blue">' +
         '<div class="id-kpi-label">' + iconHtml + esc(getItemName(itemId)) + '</div>' +
         '<div class="id-kpi-value">' + fmtInt(total) + '</div>' +
         priceHtml +
@@ -1107,7 +1107,7 @@
       cells.push(
         '<td style="min-width:140px;">' +
           '<div style="display:flex;align-items:center;gap:8px;">' +
-            (tagIcon ? '<img src="' + tagIcon + '" width="20" height="20" alt="" style="border-radius:6px;flex-shrink:0;" loading="lazy">' : '') +
+            (tagIcon ? '<img src="' + tagIcon + '" width="20" height="20" alt="" class="id-account-icon" loading="lazy">' : '') +
             '<div><strong>' + esc(acc.label) + '</strong>' + errorIndicator + charInfo + '</div>' +
           '</div>' +
         '</td>'
@@ -1175,7 +1175,7 @@
     var tableWrap = document.querySelector('#inventoryDashboardPanel .id-tablewrap');
 
     if (kpisContainer) {
-      kpisContainer.innerHTML = '<div class="id-skeleton" style="height:80px;width:100%;border-radius:12px;"></div>';
+      kpisContainer.innerHTML = '<div class="id-skeleton"></div>';
     }
     if (tableWrap) {
       tableWrap.innerHTML = '<div class="id-skeleton-table id-skeleton"></div>';
@@ -1232,7 +1232,7 @@
         '</h2>' +
       '</div>' +
       '<div class="panel__body">' +
-        '<div id="idKPIs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px;"></div>' +
+        '<div id="idKPIs"></div>' +
         '<div class="id-filters" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:12px;">' +
           '<div id="idSetSwitch" style="display:flex;gap:6px;"></div>' +
           '<div id="idItemSelector"></div>' +
@@ -1251,8 +1251,8 @@
           '<span id="idTimestamp" class="id-timestamp"></span>' +
         '</div>' +
         '<style>@keyframes pulse{0%,100%{opacity:0.3}50%{opacity:0.8}}@keyframes charPulse{0%,100%{opacity:0.4;filter:drop-shadow(0 0 3px rgba(123,194,255,0.3))}50%{opacity:0.85;filter:drop-shadow(0 0 6px rgba(123,194,255,0.55))}}</style>' +
-        '<div class="id-tablewrap" style="overflow:auto;border:1px solid var(--bd-1);border-radius:12px;">' +
-          '<table id="idTable" style="width:100%;border-collapse:collapse;">' +
+        '<div class="id-tablewrap">' +
+          '<table id="idTable" class="id-table">' +
             '<thead></thead>' +
             '<tbody></tbody>' +
           '</table>' +

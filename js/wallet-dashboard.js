@@ -283,7 +283,7 @@
       '<span>' + (selectedNames || 'Seleccionar divisas') + '</span>' +
       '<span>▼</span>' +
       '</button>' +
-      '<div id="wdCurrencyDropdown" style="position:absolute; top:100%; left:0; background:var(--bg-1); border:1px solid var(--bd-1); border-radius:8px; padding:8px; z-index:100; min-width:220px; max-height:300px; overflow-y:auto; display:none;">' +
+      '<div id="wdCurrencyDropdown" class="wd-dropdown" style="top:100%; left:0; z-index:100; min-width:220px; max-height:300px; overflow-y:auto; display:none;">' +
       '<div style="display:flex; flex-direction:column; gap:6px;">' +
       '<button id="wdSelectAllBtn" class="btn btn--xs" style="margin-bottom:4px;">✓ Seleccionar todas</button>' +
       '<button id="wdSelectNoneBtn" class="btn btn--xs" style="margin-bottom:8px;">✗ Deseleccionar todas</button>';
@@ -382,22 +382,22 @@
     var aaId = state.currencies.find(function(c) { return c.name?.includes('Reconocimiento astral') || c.id === 63; })?.id;
 
     if (goldId && totals[goldId] !== undefined) {
-      kpis.push('<div class="wd-kpi-card" style="border-left:3px solid rgba(244,197,66,0.5);box-shadow:0 0 8px rgba(244,197,66,0.15);">' +
+      kpis.push('<div class="wd-kpi-card wd-kpi-gold">' +
         '<div class="wd-kpi-label"><img src="' + goldIcon + '" width="20" height="20" style="vertical-align:middle;margin-right:6px;"> Total Oro</div>' +
         '<div class="wd-kpi-value gold-glow">' + formatCoinValue(totals[goldId]) + '</div></div>');
     }
     if (karmaId && totals[karmaId] !== undefined) {
-      kpis.push('<div class="wd-kpi-card" style="border-left:3px solid rgba(175,99,223,0.5);box-shadow:0 0 8px rgba(175,99,223,0.15);">' +
+      kpis.push('<div class="wd-kpi-card wd-kpi-karma">' +
         '<div class="wd-kpi-label"><img src="' + karmaIcon + '" width="20" height="20" style="vertical-align:middle;margin-right:6px;"> Total Karma</div>' +
         '<div class="wd-kpi-value">' + fmtInt(totals[karmaId]) + '</div></div>');
     }
     if (laurelId && totals[laurelId] !== undefined) {
-      kpis.push('<div class="wd-kpi-card" style="border-left:3px solid rgba(43,193,78,0.5);box-shadow:0 0 8px rgba(43,193,78,0.15);">' +
+      kpis.push('<div class="wd-kpi-card wd-kpi-laurel">' +
         '<div class="wd-kpi-label"><img src="' + laurelIcon + '" width="20" height="20" style="vertical-align:middle;margin-right:6px;"> Total Laurel</div>' +
         '<div class="wd-kpi-value">' + fmtInt(totals[laurelId]) + '</div></div>');
     }
     if (aaId && totals[aaId] !== undefined) {
-      kpis.push('<div class="wd-kpi-card" style="border-left:3px solid rgba(123,194,255,0.5);box-shadow:0 0 8px rgba(123,194,255,0.15);">' +
+      kpis.push('<div class="wd-kpi-card wd-kpi-aa">' +
         '<div class="wd-kpi-label"><img src="' + aaIcon + '" width="20" height="20" style="vertical-align:middle;margin-right:6px;"> Reconocimiento Astral</div>' +
         '<div class="wd-kpi-value">' + fmtInt(totals[aaId]) + '</div></div>');
     }
@@ -541,27 +541,6 @@
       th.addEventListener('click', handler);
     });
 
-    // Inyectar estilos de tabla unificada
-    var styleEl = document.getElementById('wdTableStyles');
-    if (styleEl) styleEl.remove();
-    styleEl = document.createElement('style');
-    styleEl.id = 'wdTableStyles';
-    styleEl.textContent = [
-      '#wdTable { border-collapse:separate; border-spacing:0; width:100%; }',
-      '#wdTable th { position:sticky; top:0; background:var(--bg-1); z-index:2; font-weight:600; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px; color:var(--muted); border-bottom:2px solid var(--bd-1); padding:10px 12px; }',
-      '#wdTable td { padding:10px 12px; border-bottom:1px solid var(--bd-1); vertical-align:middle; color:var(--tx-2); }',
-      '#wdTable tbody tr:hover { background:var(--bg-2); }',
-      '#wdTable tbody tr:nth-child(even) { background:var(--bg-0); }',
-      '#wdTable tbody tr:nth-child(even):hover { background:var(--bg-2); }',
-      '#wdTable .total-row { background:var(--bg-1)!important; border-top:2px solid var(--acc-1); font-weight:700; }',
-      '#wdTable .total-row td { padding-top:12px; padding-bottom:12px; }',
-      '#wdTable th:first-child, #wdTable td:first-child { position:sticky; left:0; background:var(--bg-0); z-index:1; }',
-      '#wdTable tr:hover td:first-child { background:var(--bg-2); }',
-      '#wdTable tr:nth-child(even) td:first-child { background:var(--bg-0); }',
-      '#wdTable tr:nth-child(even):hover td:first-child { background:var(--bg-2); }',
-      '#wdTable .total-row td:first-child { background:var(--bg-1)!important; }'
-    ].join(' ');
-    document.head.appendChild(styleEl);
   }
 
   function updateTimestamp() {
@@ -702,8 +681,8 @@
           <span id="wdTimestamp" class="wd-timestamp"></span>
         </div>
         
-        <div class="wd-tablewrap" style="overflow:auto; border:1px solid var(--bd-1); border-radius:12px;">
-          <table id="wdTable" class="wvpd" style="width:100%; border-collapse:collapse;">
+        <div class="wd-tablewrap">
+          <table id="wdTable" class="wd-table wvpd" style="width:100%; border-collapse:collapse;">
             <thead></thead>
             <tbody></tbody>
           </table>
