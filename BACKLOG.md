@@ -1,7 +1,7 @@
 # 📋 Backlog — Bóveda del Gato Negro
 
 > Última actualización: 2026-09-24
-> Estado actual: v6.6.2 + Unreleased (commits `c293567`, `b2b9038`, `096e82f`)
+> Estado actual: v6.6.2 + Unreleased (commits `c293567`, `b2b9038`, `096e82f`, `dba2f9e`)
 
 ---
 
@@ -17,6 +17,7 @@
 | Skill `migrar-estilos-inline` creada y documentada | — | 2026-09-24 |
 | Corrección de violaciones arquitectura CSS en 4 archivos `*-theme.js` | `096e82f` | 2026-09-24 |
 | Actualización de documentación (CHANGELOG, README, BRIEFING, ONBOARDING) | `b2b9038` | 2026-09-24 |
+| Creación de `BACKLOG.md` | `dba2f9e` | 2026-09-24 |
 
 ---
 
@@ -55,6 +56,45 @@
 | Layout | `main.css` | ✅ Sin bordes ni box-shadows |
 | Piel unificada | `theme-polish.css` | ✅ Bordes neutros, glow base, hover unificado, clases `.wd-*` / `.id-*` |
 | Color semántico | `*-theme.js` (8 archivos) | ✅ Solo `borderLeft`. Cero violaciones de `border`, `boxShadow`, `borderRadius`, `transition`. |
+
+---
+
+## 🔍 Hallazgos del análisis profundo (2026-09-24)
+
+### 🟠 ALTA prioridad — Seguridad
+
+| # | Hallazgo | Archivo(s) | Detalle | Acción sugerida |
+|---|----------|------------|---------|-----------------|
+| S1 | **Contraseña fija en `gist-sync.js`** | `js/gist-sync.js:40,49` | `fixedSalt` hardcodeado para cifrar/descifrar tokens de GitHub Gist. Cualquiera que tenga el código fuente puede descifrar. | Reemplazar por sal aleatoria por key, o usar Web Crypto API con derive key desde contraseña del usuario. |
+| S2 | **`!important` en estilos inline** | `js/inventory-hub.js:1319-1323`, `js/wv-purchase-detail.js:74,335-343`, `js/wv-shop-ui.js:187`, `js/wv-tabs-skin.js:50-59` | Se inyectan estilos CSS con `!important` via `<style>` blocks. Rompen la capa de `theme-polish.css` y la receta visual unificada. | Mover estos estilos a `theme-polish.css` sin `!important` y usar especificidad para ganar. |
+
+### 🟡 MEDIA prioridad — Arquitectura / Mantenibilidad
+
+| # | Hallazgo | Archivo(s) | Detalle | Acción sugerida |
+|---|----------|------------|---------|-----------------|
+| M1 | **`localStorage` disperso sin estándar de prefijos** | `js/accounts-panel.js`, `js/activities.js`, `js/app.js`, `js/characters.js`, `js/api-gw2.js`, `js/wv-season-storage.js` | Se usan claves como `gw2_keys`, `gn_activities_toggles`, `gn_home_nodes_marked`, `LS_WALLET_PINS`, `LS_CURR`, `LS_KEYS`, `LS_SELECTED_KEY`, `LS_FAVS`, `psna:`, `ach_`, `ach:`. Sin convención centralizada. | Crear un módulo `storage-keys.js` (IIFE) que exponga `STORAGE_KEYS` con todos los prefijos estandarizados. Reemplazar las strings hardcodeadas. |
+| M2 | **Dependencias externas sin verificación de versión** | `js/accounts-panel.js` (CryptoJS, XLSX), `js/analytics.js` (gtag) | Se usan sin checks de versión ni integrity. `CryptoJS` es legacy (recomendado Web Crypto API nativa). `XLSX` solo se usa en `accounts-panel.js` para exportar/importar templates. | Verificar que estén actualizadas. Para `CryptoJS`, migrar a `crypto.subtle` (disponible en todos los browsers modernos). Para `XLSX`, evaluar si se puede reemplazar por CSV simple. |
+| M3 | **`gist-sync.js` mezcla concerns** | `js/gist-sync.js` | 363 líneas. Mezcla cifrado, fetch a GitHub API, import/export de settings, y lógica de UI. DRY violation con `settings-manager.js`. | Extraer lógica de cifrado a un módulo separado. Dejar `gist-sync.js` como orquestador solo. |
+| M4 | **Código duplicado: `formatCoinValue`** | `js/wallet-dashboard.js`, `js/converter-modal.js` (probablemente) | La función de formateo de monedas (copper/silver/gold) aparece en múltiples lugares. | Consolidar en `api-gw2.js` o un módulo `utils.js` y exportar por `window`. |
+| M5 | **Código duplicado: `esc` y `$` / `$$`** | Varios módulos | Funciones de escape de HTML y querySelector wrapper se reimplementan en cada archivo. | Crear `utils.js` con `esc()`, `$(sel)`, `$$(sel)` y exportar por `window`. Reemplazar en cada módulo. |
+| M6 | **Eventos CustomEvent sin documentación centralizada** | Varios módulos | `gn:tokenchange`, `gn:settings:updated`, etc. No hay tabla de referencia. | Agregar sección en `docs/ONBOARDING.md` con todos los CustomEvents, su payload y quién los escucha. |
+
+### 🟢 BAJA prioridad — Limpieza técnica
+
+| # | Hallazgo | Archivo(s) | Detalle | Acción sugerida |
+|---|----------|------------|---------|-----------------|
+| B1 | **Código muerto / dead code** | Varios | Funciones definidas pero no usadas, o referencias a módulos que ya no existen. | Ejecutar `npm audit` o usar coverage tools para identificar. No crítico. |
+| B2 | **`analytics.js` con cola de eventos** | `js/analytics.js` | Si `gtag` no está cargado, guarda eventos en cola. Pero no hay timeout ni límite. Podría crecer indefinidamente. | Agregar límite de cola (ej: 100 eventos) y timeout de descarte. |
+| B3 | **`activities.js` limpieza de localStorage con `startsWith`** | `js/activities.js:489-516` | Itera todo `localStorage` buscando keys con `startsWith('ach_')` o `startsWith('ach:')`. Podría borrar datos de otras apps si comparte dominio. | Reemplazar por lista explícita de keys a limpiar, no por patrón. |
+| B4 | **Sin tests automatizados** | — | Proyecto es 100% vanilla JS sin framework de testing. | No es crítico para un frontend, pero se recomienda añadir Jest + jsdom cuando sea posible. |
+
+### 📊 Resumen de prioridades
+
+| Prioridad | Cantidad | ¿Acción inmediata? |
+|-----------|----------|---------------------|
+| 🔴 Alta (Seguridad) | 2 | ✅ Sí — `gist-sync.js` y `!important` en CSS |
+| 🟡 Media (Arquitectura) | 6 | ⚠️ Planificable — requiere refactor |
+| 🟢 Baja (Limpieza) | 4 | ❌ Sin prisa |
 
 ---
 
