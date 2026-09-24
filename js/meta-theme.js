@@ -1,4 +1,4 @@
-﻿/*!
+/*!
  * Meta Theme (expansión/temporada) — diseño sobrio con borde izquierdo de color
  * v1.4.2 (2026-05-02)
  *
@@ -338,7 +338,7 @@
       chip.style.borderColor     = '';
       chip.style.color           = '';
       chip.style.backgroundColor = '';
-      chip.style.boxShadow       = '';
+      // boxShadow se maneja por CSS (clases chip--active / chip--next), no inline
 
       if (idx === activeIndex) {
         chip.classList.add('chip--active');
@@ -346,14 +346,12 @@
         chip.style.borderColor     = 'var(--color-green)';
         chip.style.color           = 'var(--color-green)';
         chip.style.backgroundColor = 'rgba(160,255,200,0.06)';
-        chip.style.boxShadow       = '0 0 0 1px rgba(160,255,200,0.2) inset';
       } else if (idx === nextIndex && activeIndex === -1) {
         chip.classList.add('chip--next');
         chip.style.fontWeight      = 'bold';
         chip.style.borderColor     = 'var(--color-amber)';
         chip.style.color           = 'var(--color-amber)';
         chip.style.backgroundColor = 'rgba(255,217,102,0.06)';
-        chip.style.boxShadow       = '0 0 0 1px rgba(255,217,102,0.2) inset';
       }
     });
   }

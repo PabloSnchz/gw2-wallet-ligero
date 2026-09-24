@@ -1,4 +1,4 @@
-﻿/*!
+/*!
  * Characters Theme — diseño sobrio con borde izquierdo de color por profesión
  * v1.0.1 (2026-05-02)
  *
@@ -103,14 +103,7 @@
     try { card.style.borderLeft = '3px solid ' + bLeft; } catch (_) {}
 
     // 3) Ícono de profesión: marco sutil del color (detalle interno, no interfiere con .card)
-    try {
-      var iconContainer = card.querySelector('.prof-icon-container, [class*="iconWrap"], [class*="icon-wrap"]');
-      if (iconContainer && tint) {
-        var iconBorder = hexToRGBA(tint, 0.3);
-        iconContainer.style.borderRadius = '10px';
-        iconContainer.style.boxShadow = '0 0 0 2px ' + iconBorder;
-      }
-    } catch (_) {}
+    // Los estilos de ícono (.prof-icon-container) se manejan en theme-polish.css, no inline
 
     // Heredar tema base de theme-polish.css (borde neutro, glow, hover unificado)
     card.classList.add('card');

@@ -1,4 +1,4 @@
-﻿/*!
+/*!
  * Activities Theme — migración a componentes canónicos (estilo Purchase Detail)
  * v2.6.0 (2026-03-23)
  *
@@ -738,8 +738,7 @@
         if (iconContainer) {
           iconContainer.style.boxShadow = '0 0 0 2px ' + rgba + ', 0 0 14px ' + rgba;
         }
-        card.style.border = '1px solid ' + rgba;
-        card.style.boxShadow = '0 0 0 1px ' + rgba + ' inset, 0 0 12px ' + rgba;
+        // border, boxShadow y border-radius de la card se manejan en theme-polish.css (.card)
       }
       
       grid.appendChild(card);

@@ -1,4 +1,4 @@
-﻿/*!
+/*!
  * Wallet Theme (divisas) — outline + halo por color + título tintado + badges de categorías + card canónica
  * v1.3.1 (2026-03-21)
  *
@@ -160,21 +160,8 @@
           card.querySelector('.title, .name');
         if (title) title.style.color = isColorful ? hex : '#FFFFFF';
       } catch (_) {}
-          // Glow en el ícono (mismo patrón que WV Tienda)
-    try {
-      var iconWrap = card.querySelector('.wallet-card__iconWrap');
-      if (iconWrap) {
-        if (isColorful) {
-          var iconGlow = hexToRGBA(hex, 0.36);
-          var iconBorder = hexToRGBA(hex, 0.32);
-          iconWrap.style.boxShadow = '0 0 0 2px ' + iconBorder + ', 0 0 10px ' + iconGlow;
-        } else {
-          // Glow neutro para divisas sin color asignado
-          iconWrap.style.boxShadow = '0 0 0 2px rgba(255,255,255,0.12), 0 0 8px rgba(255,255,255,0.06)';
-        }
-        iconWrap.style.borderRadius = '10px';
-      }
-    } catch (_) {}
+          // Glow en el ícono (mismo patrón que WV Tienda) — hereda de .card, no sobrescribe
+    // Los estilos de ícono interno (.wallet-card__iconWrap) se manejan en theme-polish.css
     }
 
   // --- Migración de categorías a badges ----------------------------------------
