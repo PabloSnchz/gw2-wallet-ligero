@@ -678,8 +678,9 @@
       // Cargar datos de Wallet en paralelo
       await loadAllForToken(value);
 
-      setStatus('Key guardada.', 'ok');
-      window.toast?.('success','Key guardada', { ttl: 1400 });
+      const isNew = idx < 0;
+      setStatus(isNew ? 'Key guardada.' : 'Key actualizada.', 'ok');
+      window.toast?.('success', isNew ? 'Key guardada' : 'Key actualizada', { ttl: 1400 });
     },
     rename(value, newLabel) {
       const item = this.list.find(k => k.value === value);
