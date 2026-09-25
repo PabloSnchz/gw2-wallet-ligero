@@ -865,8 +865,21 @@
     return /^[A-Za-z0-9_-]{20,}$/.test(v);
   }
 
+  // === Propuesta 4: mensaje hermano (creado una vez, reutilizado) ===
+  let _fieldMsg = null;
+  function ensureFieldMsg() {
+    if (_fieldMsg) return _fieldMsg;
+    if (!el.kfValue) return null;
+    _fieldMsg = document.createElement('span');
+    _fieldMsg.className = 'field-msg';
+    _fieldMsg.setAttribute('aria-live', 'polite');
+    el.kfValue.parentElement?.appendChild(_fieldMsg);
+    return _fieldMsg;
+  }
+
   function wireKeysForm() {
     if (!el.keysForm) return;
+    ensureFieldMsg();
     el.keysForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const label = el.kfLabel?.value.trim() || '';
@@ -875,6 +888,9 @@
 
       // Propuesta 3: validación local de formato
       if (!isValidKeyFormat(value)) {
+        el.kfValue?.classList.remove('field--ok', 'field--bad');
+        el.kfValue?.classList.add('field--bad');
+        if (_fieldMsg) _fieldMsg.textContent = 'El formato no es válido (mín. 20 caracteres alfanuméricos).';
         setStatus('El formato de la API key no es válido. Debe tener al menos 20 caracteres alfanuméricos.', 'error');
         window.toast?.('error','Formato de API key inválido', { ttl: 2500 });
         return;
@@ -882,6 +898,10 @@
 
       const submitBtn = el.keysForm.querySelector('button[type="submit"]');
       const originalText = submitBtn?.textContent || '';
+
+      // Propuesta 4: limpiar marcas previas (NO marcar error aquí)
+      el.kfValue?.classList.remove('field--ok', 'field--bad');
+      if (_fieldMsg) _fieldMsg.textContent = '';
 
       // Propuesta 1: loading state
       if (submitBtn) {
@@ -904,8 +924,19 @@
           el.kfValue.focus();
           el.kfValue.select();
         }
+
+        // Propuesta 4: marcar éxito
+        el.kfValue?.classList.remove('field--bad');
+        el.kfValue?.classList.add('field--ok');
+        if (_fieldMsg) _fieldMsg.textContent = '';
       } catch (err) {
         console.error(err);
+
+        // Propuesta 4: marcar error
+        el.kfValue?.classList.remove('field--ok');
+        el.kfValue?.classList.add('field--bad');
+        if (_fieldMsg) _fieldMsg.textContent = err.message || 'La API key no es válida.';
+
         setStatus(err.message || 'La API key no es válida.', 'error');
         window.toast?.('error','No se pudo validar la key', { ttl: 2000 });
       } finally {
