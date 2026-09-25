@@ -103,3 +103,65 @@
 - Este backlog es vivo. Agregar items cuando surjan problemas o mejoras identificadas.
 - Prioridad: **Alta** = rompe funcionalidad o seguridad. **Media** = mejora mantenibilidad. **Baja** = limpieza técnica.
 - Los items descartados pueden revivir si cambian las circunstancias (ej: si se añade un backend que permita estilos dinámicos vía CSS variables).
+
+---
+
+## 🎯 Detectadas por PO (Pablo) — Análisis UX del flujo de agregar API Key
+
+> **Fecha:** 2026-09-25
+> **Análisis completo:** Ver MEMORY.md del PO
+> **Fricciones detectadas:** F1-F8 | **Propuestas:** 1-9
+
+### 🔴 Fricciones Críticas
+
+| # | Fricción | Archivo(s) | Detalle | Propuesta asociada |
+|---|----------|------------|---------|-------------------|
+| F1 | **Sin feedback de carga en botón "Guardar"** | `js/app.js` ~870 | El botón no cambia mientras `API.tokenInfo()` y `loadAllForToken()` tardan 2-5s. Solo hay `setStatus('Validando API key…')` en texto pequeño. | 🟢 Propuesta 1 |
+| F2 | **Sin focus automático tras éxito** | `js/app.js` ~878 | Los campos se limpian pero el focus queda en el botón. Para 27 keys, suma 27 clicks extra. | 🟢 Propuesta 2 |
+
+### 🟡 Fricciones Medias
+
+| # | Fricción | Archivo(s) | Detalle | Propuesta asociada |
+|---|----------|------------|---------|-------------------|
+| F3 | **Modal no se cierra automáticamente** | `js/app.js` ~878 | Correcto para múltiples keys, pero el usuario debe recordar cerrarlo al terminar. | — (comportamiento correcto) |
+| F4 | **Sin validación local de formato** | `js/app.js` ~872 | Se envía la key a la API sin validación previa. Fetchs innecesarios para keys inválidas. | 🟢 Propuesta 3 |
+
+### 🟢 Fricciones Bajas
+
+| # | Fricción | Archivo(s) | Detalle | Propuesta asociada |
+|---|----------|------------|---------|-------------------|
+| F5 | **Toast de éxito muy corto** | `js/app.js` ~705 | 1400ms. Puede desaparecer antes de que el usuario lo lea. | — |
+| F6 | **Sin feedback de "Actualizando" vs "Agregando"** | `js/app.js` ~705 | El toast dice "Key guardada" en ambos casos. | 🟡 Propuesta 5 |
+| F7 | ** Mensaje de error genérico** | `js/app.js` ~883 | "La API key no es válida" no dice por qué. | 🟢 Propuesta 8 |
+| F8 | **`loadAllForToken()` sin feedback visible** | `js/app.js` ~700 | Carga wallet + currencies (1-2s) sin indicador claro. | 🟢 Propuesta 9 |
+
+### 🟢 Propuestas Fáciles (implementar ya)
+
+| # | Propuesta | Dificultad | Beneficio |
+|---|-----------|------------|-----------|
+| 1 | **Loading state en botón "Guardar"** | 🟢 Fácil | Feedback inmediato. Evita duplicate requests. |
+| 2 | **Focus automático al campo de key tras éxito** | 🟢 Fácil | Flujo continuo para usuarios multicuenta. Ahorra 27 clicks. |
+| 3 | **Validación local de formato de key** | 🟢 Fácil | Evita fetchs innecarios. Feedback más rápido. |
+| 7 | **Botón "Limpiar" más visible** | 🟢 Fácil | Limpieza rápida si hubo error en la pegada. |
+| 8 | **Mejorar mensajes de error** | 🟢 Fácil | El usuario puede corregir el error más rápido. |
+| 9 | **Feedback de carga en `loadAllForToken()`** | 🟢 Fácil | Evita sensación de bloqueo. |
+
+### 🟡 Propuestas Medias (validadas por Code Reviewer)
+
+| # | Propuesta | Dificultad | Estado del Reviewer |
+|---|-----------|------------|---------------------|
+| 4 | **Feedback visual en campo (éxito/error)** | 🟡 Medio | ✅ Aprobar con cambios: solo `theme-polish.css`, `classList-toggle`, mensaje hermano con escape. Patrón `.field--ok`/`.field--error` similar a `.kpi--ok`/`.kpi--bad`. |
+| 5 | **Diferenciar "Agregando" vs "Actualizando"** | 🟡 Medio | ✅ Aprobar con cambios: usar variable `idx` existente en `addOrUpdate`, no cambiar return, no mover toast al caller. |
+| 6 | **Timeout de validación (10s)** | 🟡 Medio | ✅ Aprobar con cambios: modify `API.json`/`API.tokenInfo` para aceptar `signal`, usar `clearTimeout` en `finally`, detectar `AbortError`. Patrón existente en `inventory-dashboard.js`. |
+
+### 📊 Priorización del PO
+
+1. 🟢 Propuesta 1 (Loading state)
+2. 🟢 Propuesta 2 (Focus automático)
+3. 🟢 Propuesta 3 (Validación local)
+4. 🟢 Propuesta 8 (Mejorar errores)
+5. 🟢 Propuesta 7 (Botón Limpiar)
+6. 🟢 Propuesta 9 (Feedback de carga)
+7. 🟡 Propuesta 4 (Feedback visual)
+8. 🟡 Propuesta 5 (Diferenciar agregar/actualizar)
+9. 🟡 Propuesta 6 (Timeout)
