@@ -53,15 +53,15 @@
   /* ========================== API =========================== */
   const API = {
     withToken: (u, t) => `${u}${u.includes('?') ? '&' : '?'}access_token=${encodeURIComponent(t)}`,
-    async json(url) {
-      const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    async json(url, signal) {
+      const r = await fetch(url, { headers: { 'Accept': 'application/json' }, signal });
       if (!r.ok) {
         const txt = await r.text().catch(() => `${r.status}`);
         throw new Error(`HTTP ${r.status} ${txt}`);
       }
       return r.json();
     },
-    tokenInfo: (t) => API.json(API.withToken('https://api.guildwars2.com/v2/tokeninfo', t)),
+    tokenInfo: (t, signal) => API.json(API.withToken('https://api.guildwars2.com/v2/tokeninfo', t), signal),
     account:   (t) => API.json(API.withToken('https://api.guildwars2.com/v2/account', t)),
     wallet:    (t) => API.json(API.withToken('https://api.guildwars2.com/v2/account/wallet', t)),
     currencies: () => API.json('https://api.guildwars2.com/v2/currencies?ids=all&lang=es'),
@@ -659,9 +659,9 @@
       });
       if (this.selected) sel.value = this.selected;
     },
-    async addOrUpdate({ label, value }) {
+    async addOrUpdate({ label, value, signal }) {
       setStatus('Validando API key…');
-      const info = await API.tokenInfo(value);
+      const info = await API.tokenInfo(value, signal);
       const perms = new Set(info.permissions || []);
       if (!perms.has('account') || !perms.has('wallet')) throw new Error('La API key necesita permisos: account + wallet');
 
@@ -900,6 +900,10 @@
       const submitBtn = el.keysForm.querySelector('button[type="submit"]');
       const originalText = submitBtn?.textContent || '';
 
+      // Propuesta 6: AbortController + timeout de 10s
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       // Propuesta 4: limpiar marcas previas (NO marcar error aquí)
       el.kfValue?.classList.remove('field--ok', 'field--bad');
       if (_fieldMsg) _fieldMsg.textContent = '';
@@ -915,7 +919,7 @@
         // Evento Analytics
         if (typeof Analytics !== 'undefined') Analytics.addApiKey();
 
-        await KeyManager.addOrUpdate({ label, value });
+        await KeyManager.addOrUpdate({ label, value, signal: controller.signal });
         if (el.kfLabel) el.kfLabel.value = '';
         if (el.kfValue) el.kfValue.value = '';
         renderKeysList();
@@ -933,14 +937,21 @@
       } catch (err) {
         console.error(err);
 
+        // Propuesta 6: detectar timeout (AbortError)
+        const isTimeout = err.name === 'AbortError';
+        const msg = isTimeout ? 'Timeout: la API de GW2 no respondió en 10s.' : (err.message || 'La API key no es válida.');
+
         // Propuesta 4: marcar error
         el.kfValue?.classList.remove('field--ok');
         el.kfValue?.classList.add('field--bad');
-        if (_fieldMsg) _fieldMsg.textContent = err.message || 'La API key no es válida.';
+        if (_fieldMsg) _fieldMsg.textContent = msg;
 
-        setStatus(err.message || 'La API key no es válida.', 'error');
-        window.toast?.('error','No se pudo validar la key', { ttl: 2000 });
+        setStatus(msg, 'error');
+        window.toast?.('error', isTimeout ? 'Timeout de validación (10s)' : 'No se pudo validar la key', { ttl: 2500 });
       } finally {
+        // Propuesta 6: limpiar timeout (siempre, incluso en caso de error)
+        clearTimeout(timeoutId);
+
         // Propuesta 1: restaurar estado original
         if (submitBtn) {
           submitBtn.textContent = originalText;
