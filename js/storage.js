@@ -200,6 +200,13 @@
       return false;
     },
 
+    // hasRaw: igual que has() pero SIN fallback. Solo chequea localStorage directamente.
+    // USO: _migrateOne y migrate() necesitan saber si la clave NUEVA ya existe
+    // sin que el fallback les dé falso positivo.
+    hasRaw: function (key) {
+      return safe(function () { return localStorage.getItem(key) !== null; }, false, 'hasRaw');
+    },
+
     list: function (prefix) {
       var result = [];
       safe(function () {
@@ -220,20 +227,8 @@
       subNamespaces.forEach(function (ns) {
         var prefix = 'gn:' + ns;
         Storage.list(prefix).forEach(function (k) { keysToDelete.push(k); });
-        var legacyMap = {
-          'wallet:pins': ['walletPins:'], 'wallet:snapshots': ['walletSnapshot:'],
-          'wallet:compact': ['walletCompact'],
-          'activities:home:nodes': ['gn_home_nodes_marked'],
-          'activities:toggles': ['gn_activities_toggles'],
-          'activities:stones': ['gn_activities_stones_'],
-          'characters': ['characters:'],
-          'meta:hecho_hoy': ['gn_meta_hecho_hoy:'], 'meta:favs': ['gn_meta_favs:'],
-          'wv:season': ['wv:season:'], 'wv:season:index': ['wv:season:index'],
-          'wv:purchase:icon_url': ['wvpd_icon_url'], 'wv:purchase:open': ['wvpd_open'],
-          'github:token': ['gh_token_encrypted'], 'github:gist_id': ['gh_gist_id'],
-          'raids:strike:view': ['raid_strike_view'],
-        };
-        var legacy = legacyMap[ns] || [];
+        // legacyMap se deriva de FALLBACK_MAP para evitar duplicación.
+        var legacy = FALLBACK_MAP['gn:' + ns] ? [FALLBACK_MAP['gn:' + ns]] : [];
         legacy.forEach(function (k) { if (Storage.has(k)) keysToDelete.push(k); });
       });
       var unique = [], seen = {};
@@ -289,7 +284,9 @@
             Storage._migrateOne(oldKey, newKey, migrated, failed);
           });
         } else {
-          if (Storage.has(from)) Storage._migrateOne(from, to, migrated, failed);
+          // hasRaw: no usar has() porque si la clave nueva ya existe,
+          // el fallback podría dar falso positivo y saltear la migración.
+          if (Storage.hasRaw(from)) Storage._migrateOne(from, to, migrated, failed);
         }
       });
       if (failed.length) console.warn('[Storage] Migración falló para:', failed);
@@ -297,7 +294,10 @@
     },
 
     _migrateOne: function (oldKey, newKey, migrated, failed) {
-      if (Storage.has(newKey)) return;
+      // hasRaw: no usar has(newKey) porque el fallback haría que,
+      // si newKey no existe pero oldKey sí, has() devolviera true
+      // y la migración se salteara para siempre.
+      if (Storage.hasRaw(newKey)) return;
       var oldVal;
       try {
         oldVal = localStorage.getItem(oldKey);
