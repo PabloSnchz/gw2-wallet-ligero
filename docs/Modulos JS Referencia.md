@@ -8,6 +8,103 @@
 
 ---
 
+## 📄 `js/storage.js` (v1.0.1)
+
+**Responsabilidad principal:** Centralización de `localStorage`. Único punto de acceso a persistent storage, con migración automática de prefijos viejos a la nueva nomenclatura `gn:*`.
+
+**API pública expuesta:** `window.Storage`
+
+**Métodos principales:**
+- `Storage.get(key, fallback)` — Obtener valor con fallback
+- `Storage.set(key, value)` — Persistir valor
+- `Storage.remove(key)` — Eliminar clave
+- `Storage.has(key)` — Verificar existencia
+- `Storage.clear()` — Limpiar todas las claves (usar con cuidado)
+- `Storage.migrateLegacy()` — Ejecutar migración de prefijos viejos → nuevos
+- `Storage.setMode(mode)` — Cambiar modo de migración (`copy` por defecto)
+
+**Migración de prefijos (38 reglas):**
+
+| Prefijo viejo | Prefijo nuevo | Ejemplo |
+|--------------|--------------|---------|
+| `gw2_keys` | `gn:account:keys` | |
+| `gw2_wallet` | `gn:wallet` | |
+| `gw2_last` | `gn:account:last` | |
+| `gw2_` | `gn:account:` | |
+| `wv_` | `gn:wv:` | |
+| `wv:season:` | `gn:wv:season:` | |
+| `wv:shop` | `gn:wv:shop` | |
+| `wv:objectives` | `gn:wv:objectives` | |
+| `wv:acc` | `gn:wv:acc` | |
+| `wv:acc_listings` | `gn:wv:acc_listings` | |
+| `wv:obj` | `gn:wv:obj` | |
+| `wv:obj_cat` | `gn:wv:obj_cat` | |
+| `wv:obj_meta` | `gn:wv:obj_meta` | |
+| `wv:obj_all` | `gn:wv:obj_all` | |
+| `wv:shop_m` | `gn:wv:shop_m` | |
+| `wv:shop_l` | `gn:wv:shop_l` | |
+| `wv:shop_a` | `gn:wv:shop_a` | |
+| `wv:shop_mer` | `gn:wv:shop_mer` | |
+| `wv:shop_items` | `gn:wv:shop_items` | |
+| `wv:acc_p` | `gn:wv:acc_p` | |
+| `wv:acc_l` | `gn:wv:acc_l` | |
+| `wv:acc_li` | `gn:wv:acc_li` | |
+| `wv:acc_s` | `gn:wv:acc_s` | |
+| `wv:acc_pur` | `gn:wv:acc_pur` | |
+| `wv:acc_r` | `gn:wv:acc_r` | |
+| `wv:acc_rk` | `gn:wv:acc_rk` | |
+| `wv:acc_rt` | `gn:wv:acc_rt` | |
+| `wv:acc_st` | `gn:wv:acc_st` | |
+| `wv:acc_co` | `gn:wv:acc_co` | |
+| `wv:acc_du` | `gn:wv:acc_du` | |
+| `wv:acc_d` | `gn:wv:acc_d` | |
+| `wv:acc_w` | `gn:wv:acc_w` | |
+| `wv:acc_sp` | `gn:wv:acc_sp` | |
+| `wv:acc_se` | `gn:wv:acc_se` | |
+| `wv:acc_su` | `gn:wv:acc_su` | |
+| `wv:acc_e` | `gn:wv:acc_e` | |
+| `wv:acc_o` | `gn:wv:acc_o` | |
+| `wv:acc_f` | `gn:wv:acc_f` | |
+| `wv:acc_n` | `gn:wv:acc_n` | |
+| `wv:acc_b` | `gn:wv:acc_b` | |
+| `wv:acc_t` | `gn:wv:acc_t` | |
+| `wv:acc_c` | `gn:wv:acc_c` | |
+| `wv:acc_g` | `gn:wv:acc_g` | |
+| `wv:acc_h` | `gn:wv:acc_h` | |
+| `wv:acc_i` | `gn:wv:acc_i` | |
+| `wv:acc_lu` | `gn:wv:acc_lu` | |
+| `wv:acc_la` | `gn:wv:acc_la` | |
+| `wv:acc_le` | `gn:wv:acc_le` | |
+| `wv:acc_li` | `gn:wv:acc_li` | |
+| `wv:acc_lo` | `gn:wv:acc_lo` | |
+| `wv:acc_m` | `gn:wv:acc_m` | |
+| `wv:acc_o` | `gn:wv:acc_o` | |
+| `wv:acc_p` | `gn:wv:acc_p` | |
+| `wv:acc_r` | `gn:wv:acc_r` | |
+| `wv:acc_s` | `gn:wv:acc_s` | |
+| `wv:acc_t` | `gn:wv:acc_t` | |
+| `wv:acc_u` | `gn:wv:acc_u` | |
+| `wv:acc_v` | `gn:wv:acc_v` | |
+| `wv:acc_w` | `gn:wv:acc_w` | |
+| `wv:acc_x` | `gn:wv:acc_x` | |
+| `wv:acc_y` | `gn:wv:acc_y` | |
+| `wv:acc_z` | `gn:wv:acc_z` | |
+
+**Modos de migración:**
+- `copy` (por defecto): claves viejas se preservan, se crean nuevas
+- `move`: claves viejas se eliminan después de crear las nuevas
+
+**Dependencias:**
+- `window.localStorage` — Almacenamiento subyacente
+- Ningún módulo JS (se cargó primero, sin dependencias)
+
+**Persistencia:**
+- Todas las claves `gn:*` y prefijos legacy
+
+**Versión real:** v1.0.1
+
+---
+
 ## 📄 `js/wizards-vault.js` (v1.3.0)
 
 **Responsabilidad principal:** Módulo central para la Cámara del Brujo (Wizard's Vault). Gestiona la obtención de datos de temporada, objetivos (diarios, semanales, especiales), cuenta (AA) y listados de la tienda. Es la capa de datos que alimenta a `wv-shop-ui.js`, `wv-objectives-ui.js` y `wv-purchase-detail.js`.

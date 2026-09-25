@@ -10,6 +10,15 @@ y el versionado **SemVer** (https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Centralización de localStorage (`js/storage.js` v1.0.1)**:
+  - Único punto de acceso a `Storage.get/set/remove` en lugar de 27 claves dispersas
+  - 38 reglas de prefijos viejos → nuevos (`gw2_keys` → `gn:account:keys`, etc.)
+  - Modo `copy`: claves viejas preservadas, los módulos existentes no se tocan
+  - Fallback map automático si un módulo nuevo busca clave nueva y no existe
+  - Idempotente y seguro en múltiples pestañas
+  - Commit: `c1fcf8d`
+
 ### Changed
 - **Migración de estilos inline a CSS (Fase 1)**:
   - `theme-polish.css`: Nuevas clases `.wd-kpi-*` (4 KPIs de Wallet Dashboard) y `.id-kpi-*` (4 KPIs de Inventory Dashboard) con `border-left` semántico + `box-shadow` glow

@@ -2,7 +2,7 @@
 # 🐈⬛ Bóveda del Gato Negro — Onboarding Técnico Consolidado (v6.6.0)
 
 Fecha: 2026-09-24
-Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `wv-shop-ui.js`, `wv-objectives-ui.js`, `wv-objectives-dashboard.js`, `wv-theme.js`, `wallet-dashboard.js`, `inventory-dashboard.js`, `raid-tracker.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `characters-theme.js`, `accounts-panel.js`, `welcome-panel.js`, `settings-manager.js`, `analytics.js`, `gist-sync.js`, `sidebar-nav.js`, `inventory-hub.js`, `converter-modal.js`, `*-theme.js`, `main.css`, `theme-polish.css`
+Módulos clave: `api-gw2.js`, `router.js`, `achievements.js`, `wizards-vault.js`, `wv-season-storage.js`, `wv-purchase-detail.js`, `wv-tabs-skin.js`, `wv-shop-ui.js`, `wv-objectives-ui.js`, `wv-objectives-dashboard.js`, `wv-theme.js`, `wallet-dashboard.js`, `inventory-dashboard.js`, `raid-tracker.js`, `app.js`, `meta.js`, `activities.js`, `activities-theme.js`, `characters.js`, `characters-theme.js`, `accounts-panel.js`, `welcome-panel.js`, `settings-manager.js`, `analytics.js`, `gist-sync.js`, `sidebar-nav.js`, `inventory-hub.js`, `converter-modal.js`, `storage.js`, `*-theme.js`, `main.css`, `theme-polish.css`
 
 ## 📌 BAI — Bloque de Alineamiento Instantáneo
 
@@ -2913,4 +2913,5 @@ SIN defer (temas, al final):
 - ✅ **RaidTracker `_debug()`**: método de diagnóstico expuesto
 - ✅ **Strike Tracker v1.0.0**: seguimiento de 15 strikes, grid 3 columnas, navegación integrada con Raids, badge LI sincronizado
 - ✅ **Migración estilos inline → CSS (Fase 1)**: `wallet-dashboard.js` y `inventory-dashboard.js` sin `.style.*`. Clases `.wd-*` y `.id-*` en `theme-polish.css` v2.2.0. Skill `migrar-estilos-inline` documentada.
+- ✅ **`storage.js` v1.0.1**: Centralización de localStorage. 38 reglas de prefijos, modo `copy`, fallback map. Commit `c1fcf8d`.
 ```

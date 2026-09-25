@@ -43,6 +43,23 @@ https://pablosnchz.github.io/gw2-wallet-ligero/
 
 ## ✨ Novedades principales — Unreleased
 
+### 💾 Centralización de localStorage (`js/storage.js` v1.0.1)
+
+**Único punto de acceso a `localStorage` con migración automática de prefijos.**
+
+| Característica | Descripción |
+|----------------|-------------|
+| **API unificada** | `Storage.get/set/remove` en lugar de 27 claves dispersas |
+| **38 reglas de prefijos** | `gw2_*` → `gn:account:*`, `wv_*` → `gn:wv:*` |
+| **Modo `copy`** | Claves viejas preservadas, módulos existentes no se tocan |
+| **Fallback map** | Si una clave nueva no existe, busca la vieja automáticamente |
+| **Idempotente** | Seguro en múltiples pestañas |
+| **Write-before-delete** | Si falla escribir la nueva clave, no toca la vieja |
+
+**Persistencia:** Todas las claves `gn:*` y prefijos legacy.
+
+---
+
 ### 🏗️ Migración de estilos inline a CSS (Fase 1)
 
 **Se eliminaron todos los estilos inline (`.style.*`) de los dos dashboards multi-cuenta y se migraron a la arquitectura CSS de 3 capas.**
