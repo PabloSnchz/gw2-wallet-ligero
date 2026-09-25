@@ -579,6 +579,8 @@
   /* ======================= Data flow ======================== */
   async function loadAllForToken(token) {
     setStatus('Cargando datos…');
+    // Propuesta 9: toast persistente (ttl:0) con feedback de carga
+    const loadToast = window.toast?.('info', 'Cargando wallet…', { ttl: 0 });
     await ensureCurrencies();
     const [acct, w] = await Promise.all([API.account(token).catch(() => null), API.wallet(token)]);
     state.accountName = acct?.name || '—'; state.wallet = w || [];
@@ -588,6 +590,7 @@
     migrateFavsToPinsIfNeeded();
 
     setStatus('Listo.', 'ok'); render();
+    loadToast?.close();
   }
 
   /* ==================== KeyManager ================== */
@@ -861,6 +864,17 @@
     }));
   }
 
+  // === Propuesta 8: parsear errores de la API en mensajes diferenciados ===
+  function parseKeyError(err) {
+    const m = (err?.message || '');
+    if (/permisos/i.test(m)) return { msg: 'Faltan permisos: account + wallet', kind: 'perms' };
+    if (/HTTP 401/i.test(m)) return { msg: 'Key inválida (HTTP 401)', kind: 'invalid' };
+    if (/HTTP 403/i.test(m)) return { msg: 'Key prohibida (HTTP 403)', kind: 'forbidden' };
+    if (/HTTP 429/i.test(m)) return { msg: 'Demasiadas peticiones (HTTP 429)', kind: 'rate' };
+    if (/fetch|conexi|network|red/i.test(m)) return { msg: 'Error de red: no se pudo conectar a la API de GW2', kind: 'network' };
+    return { msg: m || 'Error desconocido', kind: 'unknown' };
+  }
+
   // === Propuesta 3: Validación local de formato (antes de enviar a la API) ===
   function isValidKeyFormat(v) {
     return /^[A-Za-z0-9_-]{20,}$/.test(v);
@@ -937,9 +951,11 @@
       } catch (err) {
         console.error(err);
 
-        // Propuesta 6: detectar timeout (AbortError)
+        // Propuesta 8: parsear error específico
         const isTimeout = err.name === 'AbortError';
-        const msg = isTimeout ? 'Timeout: la API de GW2 no respondió en 10s.' : (err.message || 'La API key no es válida.');
+        const { msg, kind } = isTimeout
+          ? { msg: 'Timeout: la API de GW2 no respondió en 10s.', kind: 'timeout' }
+          : parseKeyError(err);
 
         // Propuesta 4: marcar error
         el.kfValue?.classList.remove('field--ok');
@@ -947,7 +963,7 @@
         if (_fieldMsg) _fieldMsg.textContent = msg;
 
         setStatus(msg, 'error');
-        window.toast?.('error', isTimeout ? 'Timeout de validación (10s)' : 'No se pudo validar la key', { ttl: 2500 });
+        window.toast?.('error', msg, { ttl: 2500 });
       } finally {
         // Propuesta 6: limpiar timeout (siempre, incluso en caso de error)
         clearTimeout(timeoutId);
