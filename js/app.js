@@ -860,6 +860,11 @@
     }));
   }
 
+  // === Propuesta 3: Validación local de formato (antes de enviar a la API) ===
+  function isValidKeyFormat(v) {
+    return /^[A-Za-z0-9_-]{20,}$/.test(v);
+  }
+
   function wireKeysForm() {
     if (!el.keysForm) return;
     el.keysForm.addEventListener('submit', async (e) => {
@@ -867,6 +872,24 @@
       const label = el.kfLabel?.value.trim() || '';
       const value = el.kfValue?.value.trim() || '';
       if (!value) return setStatus('Ingresá una API key.', 'error');
+
+      // Propuesta 3: validación local de formato
+      if (!isValidKeyFormat(value)) {
+        setStatus('El formato de la API key no es válido. Debe tener al menos 20 caracteres alfanuméricos.', 'error');
+        window.toast?.('error','Formato de API key inválido', { ttl: 2500 });
+        return;
+      }
+
+      const submitBtn = el.keysForm.querySelector('button[type="submit"]');
+      const originalText = submitBtn?.textContent || '';
+
+      // Propuesta 1: loading state
+      if (submitBtn) {
+        submitBtn.textContent = 'Validando…';
+        submitBtn.classList.add('btn--loading');
+        submitBtn.disabled = true;
+      }
+
       try {
         // Evento Analytics
         if (typeof Analytics !== 'undefined') Analytics.addApiKey();
@@ -875,10 +898,23 @@
         if (el.kfLabel) el.kfLabel.value = '';
         if (el.kfValue) el.kfValue.value = '';
         renderKeysList();
+
+        // Propuesta 2: focus automático en el campo de key para la próxima entrada
+        if (el.kfValue) {
+          el.kfValue.focus();
+          el.kfValue.select();
+        }
       } catch (err) {
         console.error(err);
         setStatus(err.message || 'La API key no es válida.', 'error');
         window.toast?.('error','No se pudo validar la key', { ttl: 2000 });
+      } finally {
+        // Propuesta 1: restaurar estado original
+        if (submitBtn) {
+          submitBtn.textContent = originalText;
+          submitBtn.classList.remove('btn--loading');
+          submitBtn.disabled = false;
+        }
       }
     });
     el.kfClear?.addEventListener('click', () => {

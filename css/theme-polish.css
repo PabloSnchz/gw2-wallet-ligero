@@ -1411,3 +1411,25 @@ aside.col-side .panel-head img {
   font-family: monospace;
   font-size: 0.7rem;
 }
+
+/* === .btn--loading: spinner + estado deshabilitado (UX: Propuesta 1) === */
+.btn--loading {
+  position: relative;
+  pointer-events: none;
+  opacity: 0.7;
+}
+.btn--loading::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: btn-spin 0.6s linear infinite;
+  vertical-align: -2px;
+}
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
