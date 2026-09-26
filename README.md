@@ -1204,6 +1204,16 @@ Ver [`CHANGELOG.md`](CHANGELOG.md) para detalles completos.
 
 ---
 
+## 🤝 Créditos
+
+Este proyecto es mantenido por la Comunidad Gato Negro con una estructura de agentes especializados:
+
+- **Agente Principal** — Desarrollo, implementación y commits.
+- **Code Reviewer** — Revisión crítica antes de aplicar cambios.
+- **Documentador** — Actualización de documentación (CHANGELOG, README, ONBOARDING) en flujo asíncrono al final de cada sesion.
+
+---
+
 ## 📄 Licencia
 
 © Comunidad Gato Negro. Uso interno / comunitario. Contacto por Discord para acuerdos de distribución o forks.
