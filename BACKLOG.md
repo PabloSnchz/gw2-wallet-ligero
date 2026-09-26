@@ -165,3 +165,16 @@
 7. 🟡 Propuesta 4 (Feedback visual)
 8. 🟡 Propuesta 5 (Diferenciar agregar/actualizar)
 9. 🟡 Propuesta 6 (Timeout)
+
+---
+
+### 🔴 Pendiente: inventory-dashboard.js — Migración de estilos inline bloqueada
+
+**Estado:** Fase 1 CSS aplicada, pero problemas visuales de glow y overflow sin resolver. Bloqueada.
+
+**Contexto adicional:**
+- El archivo tiene estilos inline que violan la arquitectura de 3 capas.
+- Tiene un bug en el patrón de `clearTimeout` (lo pone después del `await`, dejando timers colgantes en caso de error). Mismo bug que detectamos en la Propuesta 6.
+- Requiere diagnóstico con DevTools para ver qué regla CSS está ganando.
+
+**Prioridad:** A definir por el PO en la próxima sessión.
