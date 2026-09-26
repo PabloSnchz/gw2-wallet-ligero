@@ -11,6 +11,18 @@ y el versionado **SemVer** (https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- **Mejoras de UX en flujo de API Keys (9 propuestas del PO Pablo)**:
+  - Propuesta 1: Loading state en botón "Guardar" (`.btn--loading` + spinner CSS)
+  - Propuesta 2: Focus automático en `kfValue` tras éxito (con `select()`)
+  - Propuesta 3: Validación local de formato `isValidKeyFormat()` (regex 20+ chars)
+  - Propuesta 4: Feedback visual en campo (`.field--ok`/`.field--bad` + `.field-msg` hermano)
+  - Propuesta 5: Diferenciar "Agregando" vs "Actualizando" (variable `idx` existente)
+  - Propuesta 6: Timeout de validación 10s (AbortController + `clearTimeout` en `finally`)
+  - Propuesta 7: Botón "Limpiar" con ícono (156107 + `btn--ghost`)
+  - Propuesta 8: `parseKeyError()` con mensajes diferenciados (401/403/429/permisos/red)
+  - Propuesta 9: Toast persistente de carga en `loadAllForToken()` (`ttl: 0`)
+  - Commits: `86bbdf9`, `886ed6b`, `e142bf2`, `e359572`, `15c2573`
+
 - **Centralización de localStorage (`js/storage.js` v1.0.1)**:
   - Único punto de acceso a `Storage.get/set/remove` en lugar de 27 claves dispersas
   - 38 reglas de prefijos viejos → nuevos (`gw2_keys` → `gn:account:keys`, etc.)
@@ -32,6 +44,19 @@ y el versionado **SemVer** (https://semver.org/).
   - `main.css`: layout, grid, espaciados (sin bordes ni box-shadows)
   - `theme-polish.css`: bordes neutros, glow base, hover unificado, `.card`, `.wd-*`, `.id-*`
   - `*-theme.js`: solo `borderLeft` (en este caso, los colores semánticos viven en `theme-polish.css` como clases `.wd-kpi-*` / `.id-kpi-*`)
+
+### Fixed
+- **UX API Keys — 9 propuestas del análisis del PO (Pablo)**:
+  - **Propuesta 1** (`86bbdf9`): **Loading state en botón "Guardar"** — spinner CSS `.btn--loading` + `disabled`. Restauración en `finally`.
+  - **Propuesta 2** (`86bbdf9`): **Focus automático en `kfValue`** tras éxito, con `select()` para edición inmediata.
+  - **Propuesta 3** (`86bbdf9`): **Validación local de formato** `isValidKeyFormat()` (mín. 20 caracteres alfanuméricos) antes de fetch. Evita peticiones innecesarias.
+  - **Propuesta 4** (`886ed6b`): **Feedback visual en campo** — clases `.field--ok` / `.field--bad` en `theme-polish.css` + mensaje hermano `.field-msg` con `aria-live`. Sin `!important`, solo `border-color`.
+  - **Propuesta 5** (`e142bf2`): **Diferenciar agregar/actualizar** — toast "Key guardada" (nueva) vs "Key actualizada" (existente). Usa `idx` existente, no cambia el return de `addOrUpdate`.
+  - **Propuesta 6** (`e359572`): **Timeout 10s con AbortController** — `controller.abort()` tras 10s. Cadena signal: handler → `addOrUpdate({signal})` → `tokenInfo(t, signal)` → `json(url, signal)` → `fetch({signal})`. Catch detecta `AbortError` → mensaje específico. `clearTimeout` en `finally`.
+  - **Propuesta 7** (`15c2573`): **Botón "Limpiar"** en el modal con ícono `156107.png` + clase `btn--ghost` + `title="Limpiar campos"`.
+  - **Propuesta 8** (`15c2573`): **`parseKeyError()`** con mensajes diferenciados: 401 (inválida), 403 (prohibida), 429 (rate limit), permisos (account+wallet), red (fetch/conexión), timeout (AbortError).
+  - **Propuesta 9** (`15c2573`): **Toast persistente de carga** en `loadAllForToken()` con `{ ttl: 0 }` — "Cargando wallet…" mientras se obtienen datos.
+  - **Docs**: Análisis UX (fricciones F1-F8) agregado a `BACKLOG.md` (`ddc6d8c`).
 
 ---
 
