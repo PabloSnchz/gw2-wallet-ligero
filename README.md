@@ -23,8 +23,9 @@ Aplicación liviana para Guild Wars 2 que permite consultar:
 - 📊 Detalle de compras Wizard's Vault — KPIs de Aclamación Astral
 - 🟢 **Estado online basado en actividad reciente** — Detecta cualquier actividad (PvP, PvE, WvW, economía)
 - 📈 **Dashboard de Cartera Multi-Cuenta** — Tabla de todas las cuentas vs divisas seleccionadas, KPIs y ordenamiento dinámico
-- 🎯 **Raid Tracker** — Seguimiento semanal de raids (8 alas, 33 encuentros, marcado automático vía API)
+- 🎯 **Raid Tracker** — Seguimiento semanal de raids (9 alas, 34 encuentros, marcado automático vía API)
 - ⚔️ **Strike Tracker** — Seguimiento de Strike Missions (15 encuentros, grid optimizado, navegación integrada con Raids)
+- ⚠️ **Legendary Tracker** — Skeleton de Armería Legendaria (legendary-tracker.js v1.0.0, Phase 1)
 - 🔐 **Panel de Cuentas** — Gestión segura de múltiples cuentas con cifrado local y diseño "Profile Card" premium
 - 🧙 **Pantalla de Bienvenida** — Onboarding y accesos rápidos
 - 💾 **Sistema de Backup/Restaurar** — Exporta/importa toda la configuración entre dispositivos

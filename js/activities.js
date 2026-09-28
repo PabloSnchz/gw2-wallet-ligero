@@ -1,4 +1,4 @@
-﻿/*!
+/*!
  * js/activities.js — Panel de Actividades (Objetivos / Home Nodes)
  * v3.19.6 (2026-04-05) - Persistencia robusta de Piedras Vetustas (sin Promesas como claves)
  *
@@ -48,7 +48,8 @@
         status: 'idle',
         error: null,
         today: { t4: [], rec: [] },
-        tomorrow: { t4: [], rec: [] }
+        tomorrow: { t4: [], rec: [] },
+        cmAchievements: new Set()
       },
       ecto: {
         done: new Set(),
@@ -819,14 +820,50 @@
     var s = size || 48;
     return '<img src="' + FRACTAL_FALLBACK_ICON + '" width="' + s + '" height="' + s + '" alt="Escala ' + scaleNum + '" loading="lazy" style="border-radius: 8px;">';
   }
+  var SOLITARY_THRONE_CM_ACHIEVEMENTS = {
+    9423: { name: 'T1', min: 'Scale 1+',  icon: '1228223' },
+    9412: { name: 'T2', min: 'Scale 26+', icon: '1228224' },
+    9373: { name: 'T3', min: 'Scale 51+', icon: '1228225' },
+    9388: { name: 'T4', min: 'Scale 76+', icon: '1424206' }
+  };
+
   var Fractals = {
     _cachedIcons: new Map(),
+    _cmFetchId: 0,
     loadToday: async function() {
       state.daily.fractals.status = 'ready';
       state.daily.fractals.today = {
         t4: [{ name: 'Twilight Oasis', cm: false }, { name: 'Cliffside', cm: false }, { name: 'Chaos', cm: false }],
         rec: [{ scale: 10, name: 'Scale 10' }, { scale: 32, name: 'Scale 32' }, { scale: 65, name: 'Scale 65' }]
       };
+      renderFractals();
+    },
+
+    loadCMStatus: async function(token) {
+      if (!token) {
+        state.daily.fractals.cmAchievements = new Set();
+        renderFractals();
+        return;
+      }
+      state.daily.fractals._cmFetchId += 1;
+      var fid = state.daily.fractals._cmFetchId;
+      try {
+        var ach = await root.GW2Api.getAccountAchievements(token);
+        if (fid !== state.daily.fractals._cmFetchId) return;
+        var done = new Set();
+        if (Array.isArray(ach)) {
+          ach.forEach(function(a) {
+            if (a.done && SOLITARY_THRONE_CM_ACHIEVEMENTS.hasOwnProperty(a.id)) {
+              done.add(a.id);
+            }
+          });
+        }
+        state.daily.fractals.cmAchievements = done;
+      } catch (err) {
+        if (fid !== state.daily.fractals._cmFetchId) return;
+        console.warn(LOG, '[Fractals] CM status error:', err.message);
+        state.daily.fractals.cmAchievements = new Set();
+      }
       renderFractals();
     },
     loadTomorrow: async function() {
@@ -868,6 +905,26 @@
               '<div style="margin-top: 6px;"><span class="badge badge--info" style="font-size: 0.6rem; padding: 2px 6px;">📊 Escala ' + scaleNum + '</span></div></div></article>';
     });
     html += '</div></div></div>';
+
+    // --- Solitary Throne CM daily tracker ---
+    var cmDone = state.daily.fractals.cmAchievements || new Set();
+    var cmToken = state.token;
+    html += '<div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--bd-1);">';
+    html += '<h4 style="margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;"><span class="badge badge--warning" style="background: var(--color-amber-bg); border: none;">👑 Solitary Throne CM</span><span style="font-size: 0.85rem;">Logros diarios</span></h4>';
+    html += '<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">';
+    Object.keys(SOLITARY_THRONE_CM_ACHIEVEMENTS).forEach(function(achId) {
+      var tier = SOLITARY_THRONE_CM_ACHIEVEMENTS[achId];
+      var isDone = cmDone.has(+achId);
+      var badgeClass = isDone ? 'badge--success' : 'badge--warning';
+      var label = isDone ? '✅ ' + tier.name + ' hecho' : '⏳ ' + tier.name + ' pendiente';
+      html += '<span class="badge ' + badgeClass + '" style="font-size: 0.65rem; padding: 3px 8px;">' + label + '</span>';
+    });
+    html += '</div>';
+    if (!cmToken) {
+      html += '<div class="muted" style="margin-top: 8px; font-size: 0.7rem; display: flex; align-items: center; gap: 4px;">🔑 Necesit\'s una API key para ver el progreso</div>';
+    }
+    html += '</div>';
+
     if (state.daily.fractals.tomorrow && state.daily.fractals.tomorrow.t4 && state.daily.fractals.tomorrow.t4.length) {
       var tomorrowNames = state.daily.fractals.tomorrow.t4.map(function(f) { return typeof f === 'string' ? f : f.name; });
       if (tomorrowNames.length && tomorrowNames[0]) {
@@ -1072,6 +1129,7 @@
     await PSNA.load(false);
     console.log(LOG, '📥 PSNA cargado');
     await Fractals.loadToday();
+    Fractals.loadCMStatus(state.token);
     requestIdle(function() { Fractals.loadTomorrow(); });
     await Ecto.loadStatus(state.token);
     renderDailyKPI();
@@ -1104,6 +1162,7 @@
       Fractals.loadToday();
       if (state.token) {
         Ecto.loadStatus(state.token);
+        Fractals.loadCMStatus(state.token);
         detectWeeklyKeyFromCharacters(state.token).then(function(detected) {
           if (detected !== state.weekly.key) setWeeklyKey(detected);
         });
@@ -1126,12 +1185,14 @@
         state.weekly.stones = stones;
         renderWeekly();
         await Ecto.loadStatus(newToken);
+        Fractals.loadCMStatus(newToken);
       } else {
         setWeeklyKey(false);
         setStones(0);
         state.daily.ecto.done.clear();
         renderEcto();
         renderWeekly();
+        Fractals.loadCMStatus(null);
       }
       renderDailyKPI();
     });
@@ -1156,7 +1217,7 @@
       ensurePanel();
       wireGlobal();
       state.inited = true;
-      console.info(LOG, 'ready v3.19.6 — Persistencia robusta de Piedras Vetustas');
+      console.info(LOG, 'ready v3.19.7 — Solitary Throne CM daily tracker');
     },
     activate: activate,
     deactivate: deactivate,
@@ -1174,7 +1235,12 @@
         token: state.token,
         active: state.active,
         weeklyKey: state.weekly.key,
-        weeklyStones: state.weekly.stones
+        weeklyStones: state.weekly.stones,
+        fractals: {
+          status: state.daily.fractals.status,
+          today: state.daily.fractals.today,
+          cmAchievements: Array.from(state.daily.fractals.cmAchievements || new Set())
+        }
       };
     },
     _renderPSNA: renderPSNA,
