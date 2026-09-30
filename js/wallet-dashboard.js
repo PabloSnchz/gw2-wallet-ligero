@@ -1,7 +1,7 @@
 /*!
  * js/wallet-dashboard.js — Dashboard de Cartera Multi-Cuenta
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 2.6.0 (2026-09-28) — Vista multicuenta con columnas de Personajes, Logros (AP), Raids
+ * Versión: 2.5.0 (2026-04-08)
  *
  * Características:
  *  - Tabla de cuentas vs divisas seleccionadas
@@ -50,8 +50,6 @@
     accounts: [],
     currencies: [],
     selectedCurrencies: [],
-    summaryFields: [],
-    summaries: {},
     loading: false,
     lastRefreshTime: null,
     sortColumn: null,
@@ -62,7 +60,6 @@
 
   var STORAGE_KEY = (typeof Storage !== 'undefined' && Storage.STORAGE_KEYS) ? Storage.STORAGE_KEYS.WALLET_DASHBOARD_CURR : 'gn:wallet:dashboard:selected_currencies';
   var SORT_STORAGE_KEY = (typeof Storage !== 'undefined' && Storage.STORAGE_KEYS) ? Storage.STORAGE_KEYS.WALLET_DASHBOARD_SORT : 'gn:wallet:dashboard:sort';
-  var SUMMARY_STORAGE_KEY = 'gn:wallet:dashboard:selected_summaries';
   
   var DEFAULT_CURRENCY_NAMES = ['Gema', 'Moneda', 'Laurel', 'Reconocimiento Astral', 'Karma', 'Esquirla espiritual'];
     // Iconos por tipo de cuenta (mismos que accounts-panel.js)
@@ -82,20 +79,6 @@
     'assets/icons/Cuentas/1770685.png',
     'assets/icons/Cuentas/1770686.png'
   ];
-
-  // Campos de resumen para la vista multicuenta (Idea 2)
-  var DEFAULT_SUMMARY_FIELDS = ['characters', 'achievements', 'raids'];
-  var SUMMARY_FIELD_LABELS = {
-    'characters': 'Personajes',
-    'achievements': 'Logros (AP)',
-    'raids': 'Raids'
-  };
-  var SUMMARY_FIELD_SYMBOLS = {
-    'characters': '\U0001F468',
-    'achievements': '\U0001F3C6',
-    'raids': '\U0001F5E1\uFE0F'
-  };
-  var TOTAL_RAID_ENCOUNTERS = 33;
 
   function getAccountIcon(tag) {
     if (tag && ACCOUNT_TYPE_ICONS[tag]) return ACCOUNT_TYPE_ICONS[tag];
@@ -142,27 +125,6 @@
     } catch(e) { console.warn(LOG, 'Error saving sort preference', e); }
   }
 
-  function loadSelectedSummaryFields() {
-    try {
-      var stored = Storage.get(SUMMARY_STORAGE_KEY);
-      if (Array.isArray(stored) && stored.length) {
-        state.summaryFields = stored;
-      } else {
-        state.summaryFields = DEFAULT_SUMMARY_FIELDS.slice();
-        saveSelectedSummaryFields();
-      }
-    } catch(e) {
-      console.warn(LOG, 'Error loading selected summary fields', e);
-      state.summaryFields = DEFAULT_SUMMARY_FIELDS.slice();
-    }
-  }
-
-  function saveSelectedSummaryFields() {
-    try {
-      Storage.set(SUMMARY_STORAGE_KEY, state.summaryFields);
-    } catch(e) { console.warn(LOG, 'Error saving selected summary fields', e); }
-  }
-
   // ------------------------------ Funciones auxiliares ------------------------------
   async function loadCurrencies() {
     if (state.currencies.length) return state.currencies;
@@ -197,40 +159,6 @@
     } catch(_) { return []; }
   }
 
-  async function loadAccountSummary(token, forceNoCache) {
-    if (!state.summaryFields || !state.summaryFields.length) return null;
-    var nocache = !!forceNoCache;
-
-    var charP, apP, raidsP;
-    if (state.summaryFields.indexOf('characters') >= 0) {
-      charP = root.GW2Api.getCharacterCount(token, { nocache: nocache });
-    }
-    if (state.summaryFields.indexOf('achievements') >= 0) {
-      apP = root.GW2Api.getAccountInfo(token, { nocache: nocache });
-    }
-    if (state.summaryFields.indexOf('raids') >= 0) {
-      raidsP = root.GW2Api.getAccountRaids(token, { nocache: nocache });
-    }
-
-    var summary = {};
-    if (charP) {
-      try { summary.characters = await charP; } catch(e) { summary.characters = 0; }
-    }
-    if (apP) {
-      try {
-        var info = await apP;
-        summary.ap = (info && typeof info.achievements === 'number') ? info.achievements : 0;
-      } catch(e) { summary.ap = 0; }
-    }
-    if (raidsP) {
-      try {
-        var raidsArr = await raidsP;
-        summary.raids = Array.isArray(raidsArr) ? raidsArr.length : 0;
-      } catch(e) { summary.raids = 0; }
-    }
-    return summary;
-  }
-
   async function loadWalletForAccount(token, forceNoCache) {
     try {
       var wallet = await root.GW2Api.getAccountWallet(token, { nocache: !!forceNoCache });
@@ -240,14 +168,10 @@
           map[entry.id] = entry.value;
         });
       }
-      var summary = null;
-      if (state.summaryFields && state.summaryFields.length) {
-        summary = await loadAccountSummary(token, forceNoCache);
-      }
-      return { wallet: map, error: null, summary: summary };
+      return { wallet: map, error: null };
     } catch(e) {
       console.warn(LOG, 'Error loading wallet for token', e);
-      return { wallet: {}, error: e.message || 'Error al cargar wallet', summary: null };
+      return { wallet: {}, error: e.message || 'Error al cargar wallet' };
     }
   }
 
@@ -278,8 +202,7 @@
                   fp: fp,
                   label: label,
                   wallet: result.wallet || {},
-                  error: result.error || null,
-                  summary: result.summary || null
+                  error: result.error || null
                 });
               })
               .catch(function(e) {
@@ -289,8 +212,7 @@
                   fp: fp,
                   label: label,
                   wallet: {},
-                  error: e.message || 'Error al cargar wallet',
-                  summary: null
+                  error: e.message || 'Error al cargar wallet'
                 });
               })
               .finally(function() { ACTIVE--; next(); });
@@ -306,19 +228,10 @@
   }
 
   // ------------------------------ Ordenamiento ------------------------------
-  function sortAccounts(accounts, column, direction) {
+  function sortAccounts(accounts, currencyId, direction) {
     return accounts.slice().sort(function(a, b) {
-      var valA, valB;
-      if (column && typeof column === 'string' && column.indexOf('summary:') === 0) {
-        var field = column.replace('summary:', '');
-        var prop = field === 'achievements' ? 'ap' : field;
-        var sumA = a.summary || {}, sumB = b.summary || {};
-        valA = sumA[prop] || 0;
-        valB = sumB[prop] || 0;
-      } else {
-        valA = a.wallet[column] || 0;
-        valB = b.wallet[column] || 0;
-      }
+      var valA = a.wallet[currencyId] || 0;
+      var valB = b.wallet[currencyId] || 0;
       if (direction === 'asc') {
         return valA - valB;
       } else {
@@ -451,77 +364,7 @@
     }
   }
 
-  function renderSummarySelector() {
-    var container = document.getElementById('wdSummarySelector');
-    if (!container) {
-      console.warn(LOG, 'Summary selector container no encontrado');
-      return;
-    }
-
-    var selectedSet = new Set(state.summaryFields || []);
-    var selectedNames = (state.summaryFields || [])
-      .map(function(f) { return SUMMARY_FIELD_LABELS[f] || f; })
-      .join(', ');
-
-    var html = '<div style="position:relative; display:inline-block;">' +
-      '<button id="wdSummaryDropdownBtn" class="btn btn--ghost" style="display:inline-flex; align-items:center; gap:6px; min-width:180px; justify-content:space-between;">' +
-      '<span>' + (selectedNames || 'Seleccionar campos') + '</span>' +
-      '<span>\u25BC</span>' +
-      '</button>' +
-      '<div id="wdSummaryDropdown" class="wd-dropdown" style="top:100%; left:0; z-index:100; min-width:200px; max-height:200px; overflow-y:auto; display:none;">' +
-      '<div style="display:flex; flex-direction:column; gap:6px;">';
-
-    Object.keys(SUMMARY_FIELD_LABELS).forEach(function(field) {
-      var isSelected = selectedSet.has(field);
-      html += '<label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:4px 8px; border-radius:6px;">' +
-        '<input type="checkbox" value="' + field + '" ' + (isSelected ? 'checked' : '') + ' style="cursor:pointer;">' +
-        '<span>' + esc(SUMMARY_FIELD_LABELS[field] || field) + '</span>' +
-        '</label>';
-    });
-
-    html += '</div></div></div>';
-    container.innerHTML = html;
-
-    var dropdownBtn = document.getElementById('wdSummaryDropdownBtn');
-    var dropdown = document.getElementById('wdSummaryDropdown');
-
-    if (dropdownBtn && dropdown) {
-      dropdownBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-      });
-
-      document.addEventListener('click', function(e) {
-        if (dropdownBtn && dropdown && !dropdownBtn.contains(e.target) && !dropdown.contains(e.target)) {
-          dropdown.style.display = 'none';
-        }
-      });
-
-      var checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
-      checkboxes.forEach(function(cb) {
-        cb.addEventListener('change', function() {
-          var id = this.value;
-          if (this.checked) {
-            if (!state.summaryFields.includes(id)) {
-              state.summaryFields.push(id);
-            }
-          } else {
-            state.summaryFields = state.summaryFields.filter(function(f) { return f !== id; });
-          }
-          saveSelectedSummaryFields();
-          var newNames = state.summaryFields
-            .map(function(f) { return SUMMARY_FIELD_LABELS[f] || f; })
-            .join(', ');
-          if (dropdownBtn.querySelector('span:first-child')) {
-            dropdownBtn.querySelector('span:first-child').textContent = newNames || 'Seleccionar campos';
-          }
-          refreshData(true);
-        });
-      });
-    }
-  }
-
-  function renderKPIs(totals, accounts) {
+  function renderKPIs(totals) {
     var container = $('#wdKPIs');
     if (!container) return;
 
@@ -556,37 +399,6 @@
       kpis.push('<div class="wd-kpi-card wd-kpi-aa">' +
         '<div class="wd-kpi-label"><img src="' + aaIcon + '" width="20" height="20" style="vertical-align:middle;margin-right:6px;"> Reconocimiento Astral</div>' +
         '<div class="wd-kpi-value">' + fmtInt(totals[aaId]) + '</div></div>');
-    }
-
-    // KPIs de resumen multicuenta (Idea 2)
-    var fields = state.summaryFields || [];
-    if (accounts && fields.length) {
-      var charTotal = 0, apTotal = 0, raidTotal = 0;
-      accounts.forEach(function(acc) {
-        var s = acc.summary || {};
-        charTotal += s.characters || 0;
-        apTotal += s.ap || 0;
-        raidTotal += s.raids || 0;
-      });
-      fields.forEach(function(field) {
-        if (field === 'characters') {
-          kpis.push('<div class="wd-kpi-card wd-kpi-summary" style="borderLeft:3px solid rgba(68,130,240,0.5);">' +
-            '<div class="wd-kpi-label" style="display:flex;align-items:center;gap:6px;">' +
-              '<span style="font-size:20px;line-height:1;">' + SUMMARY_FIELD_SYMBOLS[field] + '</span> Total Personajes</div>' +
-            '<div class="wd-kpi-value">' + fmtInt(charTotal) + '</div></div>');
-        } else if (field === 'achievements') {
-          kpis.push('<div class="wd-kpi-card wd-kpi-summary" style="borderLeft:3px solid rgba(255,193,7,0.5);">' +
-            '<div class="wd-kpi-label" style="display:flex;align-items:center;gap:6px;">' +
-              '<span style="font-size:20px;line-height:1;">' + SUMMARY_FIELD_SYMBOLS[field] + '</span> Total Logros (AP)</div>' +
-            '<div class="wd-kpi-value">' + fmtInt(apTotal) + '</div></div>');
-        } else if (field === 'raids') {
-          var pct = TOTAL_RAID_ENCOUNTERS > 0 ? Math.round(raidTotal / TOTAL_RAID_ENCOUNTERS * 100) : 0;
-          kpis.push('<div class="wd-kpi-card wd-kpi-summary" style="borderLeft:3px solid rgba(76,175,80,0.5);">' +
-            '<div class="wd-kpi-label" style="display:flex;align-items:center;gap:6px;">' +
-              '<span style="font-size:20px;line-height:1;">' + SUMMARY_FIELD_SYMBOLS[field] + '</span> Total Raids (' + fmtInt(raidTotal) + '/' + TOTAL_RAID_ENCOUNTERS + ', ' + pct + '%)</div>' +
-            '<div class="wd-kpi-value">' + fmtInt(raidTotal) + '</div></div>');
-        }
-      });
     }
 
     container.innerHTML = kpis.join('');
@@ -645,21 +457,8 @@
 
     console.log(LOG, 'Renderizando tabla con', selectedCurrencies.length, 'divisas y', state.accounts.length, 'cuentas');
 
-    // Campos de resumen activos (Idea 2)
-    var activeSummaryFields = (state.summaryFields || []).filter(function(f) { return f !== 'wv'; });
-
     // Cabecera con ordenamiento
     var hcells = ['<th class="wd-account-header">Cuenta</th>'];
-    // Summary column headers
-    activeSummaryFields.forEach(function(field) {
-      var label = SUMMARY_FIELD_LABELS[field] || field;
-      var sortIndicator = '';
-      if (state.sortColumn === 'summary:' + field) {
-        sortIndicator = state.sortDirection === 'desc' ? ' \u2193' : ' \u2191';
-      }
-      hcells.push('<th class="right sortable-summary" data-summary-field="' + field + '" title="Ordenar por ' + label + '" style="cursor:pointer; min-width:100px;">' +
-        '<span style="display:inline-block; margin-left:4px;">' + label + sortIndicator + '</span></th>');
-    });
     selectedCurrencies.forEach(function(cur) {
       var iconHtml = getCurrencyIconHtml(cur);
       var sortIndicator = '';
@@ -687,7 +486,7 @@
     });
 
     // Renderizar KPIs
-    renderKPIs(totals, state.accounts);
+    renderKPIs(totals);
 
         var bodyRows = rowsAcc.map(function(acc) {
           var cells = [];
@@ -711,21 +510,6 @@
               errorIndicator +
             '</td>'
           );
-      // Summary cells (Idea 2)
-      activeSummaryFields.forEach(function(field) {
-        var s = acc.summary || {};
-        var sv = 0;
-        if (field === 'achievements') { sv = s.ap || 0; }
-        else if (field === 'characters') { sv = s.characters || 0; }
-        else if (field === 'raids') { sv = s.raids || 0; }
-        var titleLabel = SUMMARY_FIELD_LABELS[field] || field;
-        var displayVal = fmtInt(sv);
-        if (field === 'raids' && TOTAL_RAID_ENCOUNTERS > 0) {
-          var pct = Math.round(sv / TOTAL_RAID_ENCOUNTERS * 100);
-          displayVal = sv + '/' + TOTAL_RAID_ENCOUNTERS + ' (' + pct + '%)';
-        }
-        cells.push('<td class="right" title="' + titleLabel + '">' + displayVal + '</td>');
-      });
       selectedCurrencies.forEach(function(cur) {
         var value = acc.wallet[cur.id] || 0;
         var displayValue = formatValueForDisplay(cur.id, value);
@@ -736,16 +520,6 @@
 
     // Fila de totales
     var totalCells = ['<td class="total-label"><strong><img src="assets/icons/578844.png" width="14" height="14" alt="" style="vertical-align: middle; margin-right: 6px;">TOTAL</strong></td>'];
-    activeSummaryFields.forEach(function(field) {
-      var sTotal = 0;
-      rowsAcc.forEach(function(acc) {
-        var s = acc.summary || {};
-        if (field === 'achievements') sTotal += s.ap || 0;
-        else if (field === 'characters') sTotal += s.characters || 0;
-        else if (field === 'raids') sTotal += s.raids || 0;
-      });
-      totalCells.push('<td class="right total-cell"><strong>' + fmtInt(sTotal) + '</strong></td>');
-    });
     selectedCurrencies.forEach(function(cur) {
       var totalValue = totals[cur.id];
       var displayTotal = formatValueForDisplay(cur.id, totalValue);
@@ -756,22 +530,12 @@
     tbody.innerHTML = bodyRows + totalRow;
     console.log(LOG, 'Tabla renderizada con', rowsAcc.length, 'filas');
 
-    // Agregar eventos de ordenamiento (divisas)
+    // Agregar eventos de ordenamiento
     var sortableHeaders = thead.querySelectorAll('th.sortable');
     sortableHeaders.forEach(function(th) {
       th.removeEventListener('click', th.__clickHandler);
       var currencyId = parseInt(th.getAttribute('data-currency-id'), 10);
       var handler = function() { setSortColumn(currencyId); };
-      th.__clickHandler = handler;
-      th.addEventListener('click', handler);
-    });
-
-    // Agregar eventos de ordenamiento (campos de resumen)
-    var summaryHeaders = thead.querySelectorAll('th.sortable-summary');
-    summaryHeaders.forEach(function(th) {
-      th.removeEventListener('click', th.__clickHandler);
-      var field = th.getAttribute('data-summary-field');
-      var handler = function() { setSortColumn('summary:' + field); };
       th.__clickHandler = handler;
       th.addEventListener('click', handler);
     });
@@ -846,7 +610,6 @@
         
         setStatus('Renderizando...');
         renderCurrencySelector();
-        renderSummarySelector();
         renderTable();
         updateTimestamp();
         setStatus('Listo.');
@@ -902,10 +665,6 @@
             <strong>Divisas:</strong>
             <div id="wdCurrencySelector"></div>
           </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <strong>Campos:</strong>
-            <div id="wdSummarySelector"></div>
-          </div>
           <div style="display:flex; gap:8px; margin-left:auto;">
             <button id="wdRefreshBtn" class="btn btn--ghost" style="display:inline-flex; align-items:center; gap:6px;">
               <img src="assets/icons/Welcome/834002.png" width="14" height="14" alt="Refrescar"> Refrescar
@@ -949,7 +708,6 @@
       // Cargar preferencias
       loadSortPreference();
       loadSelectedCurrencies();
-      loadSelectedSummaryFields();
       
       // Conectar eventos de botones (los botones ya existen después de ensurePanelContent)
       var refreshBtn = document.getElementById('wdRefreshBtn');
@@ -1011,5 +769,5 @@
 
   root.WalletDashboard = WalletDashboard;
 
-  console.info(LOG, 'ready v2.6.0 — Vista multicuenta: columnas Personajes/AP/Raids + KPIs resumen');
+  console.info(LOG, 'ready v2.4.0 — Reintento de renderizado si la tabla no existe');
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

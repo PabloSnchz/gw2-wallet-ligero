@@ -233,32 +233,6 @@
   }
 
   // ========================================================================
-  // Character count
-  // ========================================================================
-  function getCharacterCount(token, opts) {
-    opts = opts || {};
-    if (!token) return Promise.reject(new Error('Falta access_token'));
-
-    var key = 'char_count';
-    var cached = getCache(key, TTL.ACCOUNT, token, opts.nocache);
-    if (cached !== null && typeof cached === 'number') return Promise.resolve(cached);
-
-    var url = withToken(CFG.API_BASE + '/v2/characters', token);
-    var ikey = 'if:char_count:' + fpToken(token);
-
-    return inflightOnce(ikey, function () {
-      return fetchWithRetry(url, opts).then(function (data) {
-        var count = Array.isArray(data) ? data.length : 0;
-        putCache(key, count, token, TTL.ACCOUNT);
-        return count;
-      }).catch(function (error) {
-        console.warn(LOGP, 'Error getting character count:', error);
-        return 0;
-      });
-    });
-  }
-
-  // ========================================================================
   // Raids
   // ========================================================================
   function getAccountRaids(token, opts) {
@@ -722,7 +696,6 @@
     // Account info (con last_modified para detectar actividad)
     getAccountInfo: getAccountInfo,
     isRecentlyActive: isRecentlyActive,
-    getCharacterCount: getCharacterCount,
 
     // Raids
     getAccountRaids: getAccountRaids,
