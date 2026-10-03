@@ -219,13 +219,18 @@
     if (q) q.addEventListener('input', function () { st.q = (q.value || '').trim().toLowerCase(); WVShopUI.render(); });
     if (v) v.addEventListener('click', function () {
       st.view = (st.view === 'cards') ? 'table' : 'cards';
-      try { localStorage.setItem('gw2_wv_view_v1', st.view); } catch (_) {}
+      // FIX hb98: escribir la legacy a pelo dejaba gn:wv:shop:view CONGELADA.
+      // storage.js corre en modo copy: la gn: nace de la legacy en el arranque 1
+      // y la migracion ya no la toca. Hay que pasar por Storage.set, que escribe
+      // las dos. Mismo criterio que saveView() en router.js:257.
+      try { Storage.set(Storage.STORAGE_KEYS.WV_SHOP_VIEW, st.view); } catch (_) {}
       WVShopUI.render();
     });
     if (r) r.addEventListener('click', function () { WVShopUI.refresh(true); });
     if (lf) lf.addEventListener('change', function () {
       st.legacyFilter = lf.value || 'show';
-      try { localStorage.setItem('gw2_wv_legacy_filter_v1', st.legacyFilter); } catch (_) {}
+      // FIX hb98: misma congelacion que la de la linea de arriba, misma causa.
+      try { Storage.set(Storage.STORAGE_KEYS.WV_SHOP_LEGACY_FILTER, st.legacyFilter); } catch (_) {}
       WVShopUI.render();
     });
 

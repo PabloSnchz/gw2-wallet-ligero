@@ -1,7 +1,7 @@
 /*!
  * js/inventory-hub.js — Inventario y Personajes (Hub principal)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.3.1 (2026-05-03)
+ * Versión: 1.4.0 (2026-09-30) — allSettled + aviso de lectura incompleta (Idea 47 c1)
  *
  * v1.3.1:
  *  - Fix: KPIs en fila al volver de una sección
@@ -138,6 +138,9 @@
     filters: { q: '', rarity: '', location: 'all' },
     kpis: { bankUsed: 0, bankTotal: 0, materialsCount: 0, armoryCount: 0, characterCount: 0 },
     loading: false,
+    // Fuentes que no se pudieron leer en la ultima carga. Vacio = carga limpia.
+    // Mientras este vacio, un 0 en los KPIs es indistinguible de "no tenes nada".
+    readErrors: [],
     view: 'hub',
     activeSection: null,
     bankPage: 0
@@ -153,11 +156,27 @@
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
   function esc(s) { return String(s || '').replace(/[&<>"']/g, function(m) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]); }); }
   function fmtInt(n) { n = Number(n || 0); return n.toLocaleString('es-AR'); }
+  /**
+   * Token de la cuenta seleccionada.
+   *
+   * ANTES: `localStorage.getItem('gw2_selected_key_v1')` a pelo. Eso salteaba la
+   * capa `Storage` y leia la legacy por la puerta de atrás (T19-c).
+   *
+   * AHORA: `Storage.get(ACCOUNT_SELECTED)`, que resuelve en este orden:
+   * espejo (legacy) -> gn: -> FALLBACK_MAP. La gn: es la que sube el Gist, asi que
+   * leerla directo dejaba al backup con una foto distinta de la de la pantalla.
+   *
+   * FALLBACK DEL DOM — INTENCIONAL, no es residuo de un copiado: el
+   * `<select id="keySelectGlobal">` gana cuando tiene valor, y eso es lo que
+   * ocurre hoy. El DOM se llena desde `KeyManager.state.selected`, que a su vez
+   * viene de la misma clave, o sea que el `<select>` refleja la seleccion mas
+   * rapido que el disco. Se conserva tal cual; cambiarlo es otro ciclo.
+   */
   function getSelectedToken() {
     try {
       var sel = document.getElementById('keySelectGlobal');
       if (sel && sel.value) return sel.value.trim();
-      return localStorage.getItem('gw2_selected_key_v1') || null;
+      return Storage.get(Storage.STORAGE_KEYS.ACCOUNT_SELECTED) || null;
     } catch (e) { return null; }
   }
   function getItemName(item) { return item ? (item.name || ('Ítem #' + item.id)) : '—'; }
@@ -204,15 +223,34 @@
     if (!token) { state.bank = []; state.materials = []; state.armory = []; state.characters = []; return; }
     state.loading = true;
 
+    // Promise.allSettled (no Promise.all): un fallo en una de las tres fuentes no debe
+    // abortar las otras dos. Con Promise.all, un unico rechazo dejaba state.bank/materials/
+    // armory con el valor STALE de la carga anterior y saltea loadItemsMetadata(), sin
+    // mostrar nada. Con allSettled cada fuente se resuelve o se marca, siempre.
     try {
-      var res = await Promise.all([
+      var res = await Promise.allSettled([
         root.GW2Api.getAccountBank(token, { nocache: !!forceNoCache }),
         root.GW2Api.getAccountMaterials(token, { nocache: !!forceNoCache }),
         root.GW2Api.getAccountLegendaryArmory(token, { nocache: !!forceNoCache })
       ]);
-      state.bank = Array.isArray(res[0]) ? res[0] : [];
-      state.materials = Array.isArray(res[1]) ? res[1] : [];
-      state.armory = Array.isArray(res[2]) ? res[2] : [];
+      var bankRes = res[0], matRes = res[1], armoryRes = res[2];
+
+      state.bank = bankRes.status === 'fulfilled' && Array.isArray(bankRes.value) ? bankRes.value : [];
+      state.materials = matRes.status === 'fulfilled' && Array.isArray(matRes.value) ? matRes.value : [];
+      state.armory = armoryRes.status === 'fulfilled' && Array.isArray(armoryRes.value) ? armoryRes.value : [];
+
+      // Superficie de error: "no pude leer" no es "no tenes nada". Sin esto el panel
+      // muestra 0 slots con la misma tipografia que una cuenta vacia.
+      var readErrors = [];
+      if (bankRes.status === 'rejected') readErrors.push('banco');
+      if (matRes.status === 'rejected') readErrors.push('materiales');
+      if (armoryRes.status === 'rejected') readErrors.push('armeria');
+      state.readErrors = readErrors;
+      if (readErrors.length) {
+        console.warn(LOG, 'No se pudieron leer:', readErrors.join(', '),
+          bankRes.reason || matRes.reason || armoryRes.reason);
+      }
+
       if (root.Characters && typeof root.Characters.getCharacterList === 'function') {
         state.characters = root.Characters.getCharacterList() || [];
       } else { state.characters = []; }
@@ -426,6 +464,16 @@
       return;
     }
 
+    // Banner de lectura incompleta. Sin esto, una API key vencida se ve igual que una
+    // cuenta vacia: los KPIs muestran 0 y no hay nada que diga que no se pudo leer.
+    // Mismo patrón que raid-tracker.js:1745 / strike-tracker.js:1117.
+    var readErrBanner = (state.readErrors && state.readErrors.length)
+      ? '<div class="inv-read-error">' +
+          '⚠️ No se pudo leer: ' + esc(state.readErrors.join(', ')) +
+          '<br><small>Los 0 de abajo son de esta carga, no de tu cuenta. Verificá que la API key no esté vencida.</small>' +
+        '</div>'
+      : '';
+
     var sections = buildSectionData();
 
     var hasAny = false;
@@ -434,7 +482,10 @@
     });
 
     if (!hasAny) {
-      container.innerHTML = '<div class="muted" style="text-align:center;padding:40px;">🔍 No se encontraron objetos con los filtros actuales</div>';
+      // El banner va tambien aca: "no se encontraron objetos" y "no se pudo leer"
+      // comparten este return, y sin el banner el segundo caso es invisible.
+      container.innerHTML = readErrBanner +
+        '<div class="muted" style="text-align:center;padding:40px;">🔍 No se encontraron objetos con los filtros actuales</div>';
       return;
     }
 
@@ -525,7 +576,7 @@
     });
 
     html += '</div>';
-    container.innerHTML = html;
+    container.innerHTML = readErrBanner + html;
 
     wireHubChips(container);
     wireHubItemCards(container);

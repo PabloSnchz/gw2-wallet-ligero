@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Bóveda del Gato Negro — Main CSS v2.7.0
+   Bóveda del Gato Negro — Main CSS v2.9.0
    Layout + estructura + tipografía
    Todos los colores usan variables CSS (definidas en css/themes/*.css)
    ========================================================================== */
@@ -451,8 +451,10 @@ select:focus, input:focus{
 .fade-in{ animation:fadeIn .18s ease-out }
 @keyframes fadeIn{ from{ opacity:0; transform:translateY(4px) } to{ opacity:1; transform:translateY(0) } }
 
-/* Toasts */
-.toasts{ position:fixed; right:16px; bottom:16px; display:grid; gap:8px; z-index:9999 }
+/* Toasts. z-index 10001: tiene que quedar POR ENCIMA de `.modal` (10000), que
+   es donde se disparan los toasts de error (el submit de #keysModal vive
+   adentro del modal). Con 9999 el toast salia debajo del backdrop. */
+.toasts{ position:fixed; right:16px; bottom:16px; display:grid; gap:8px; z-index:10001 }
 .toast{
   background:var(--bg-1); color:var(--text);
   border:1px solid var(--bd-1); border-radius:8px;
@@ -663,7 +665,7 @@ select option:disabled{ color:var(--tx-3) }
 .overlay-tabs{ display:none!important }
 
 /* Toasts compat */
-.toasts{ position:fixed; right:14px; bottom:14px; display:grid; gap:8px; z-index:9999 }
+.toasts{ position:fixed; right:14px; bottom:14px; display:grid; gap:8px; z-index:10001 }
 .toast{
   display:flex; align-items:center; gap:10px; padding:10px 12px;
   border-radius:10px; background:var(--bg-1);
@@ -1343,4 +1345,263 @@ th.sortable:hover{ background:var(--bg-2) }
   background: var(--bg-1);
   border-color: var(--bd-1);
   color: var(--muted);
+}
+
+/* ==================== Fractales (actividades.js -> renderFractals) =========
+ * Estructura del bloque de fractales. CAPA 1 (main.css) = layout, sin bordes.
+ *
+ * Por qué estas reglas existen: `.card` (main.css) trae `display:grid`,
+ * `grid-template-rows:auto auto auto`, `min-height:126px` y `padding-right:60px`
+ * porque está pensada para las cards de wallet (icono izq / título / amount).
+ * La card de fractal es otra cosa: columna centrada de icono + nombre + badge.
+ * Estos overrides son los mismos valores que el `style=` inline tenía hardcodeados
+ * en el commit 27b8394 — se extraen sin cambiar el resultado en pantalla.
+ *
+ * El `borderLeft` NO está acá: lo aplica js/fractal-tracker-theme.js (capa 3).
+ * El borde neutro del aviso tampoco: vive en theme-polish.css (capa 2).
+ */
+.card.fractal-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  grid-template-rows: none;
+  min-height: 0;
+  padding: 10px 12px;
+}
+
+.fractals-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.fractal-card__icon {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fractal-card__body {
+  width: 100%;
+}
+
+.fractal-card__name {
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fractal-card__name--wrap {
+  white-space: normal;
+}
+
+.fractal-card__tag {
+  margin-top: 6px;
+}
+
+.fractal-card__cm-badge,
+.fractal-card__scale-badge {
+  font-size: 0.6rem;
+  padding: 2px 6px;
+}
+
+/* Aviso "rotación no disponible": es texto, no una card de dato. */
+.fractal-notice {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  padding: 10px 12px;
+}
+
+.fractals-section__title {
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fractals-section__hint {
+  font-size: 0.85rem;
+}
+
+.fractals-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.fractals-cm {
+  margin-top: 20px;
+  padding-top: 16px;
+}
+
+.fractals-cm__title {
+  margin: 0 0 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fractals-cm__badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.fractals-cm__badge {
+  font-size: 0.65rem;
+  padding: 3px 8px;
+}
+
+.fractals-cm__needs-key {
+  margin-top: 8px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fractals-tomorrow {
+  margin-top: 16px;
+  padding-top: 12px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* ==================== Caja del Trading Post (converter-modal) ===============
+ * Estructura del banner "caja del TP sin cobrar". CAPA 1 = layout, sin bordes.
+ *
+ * Por qué existe: getCommerceDelivery() ya estaba implementado en
+ * js/api-gw2.js (v2.16.0) pero sin un solo consumidor — código muerto
+ * (hallazgo transversal #10). Este bloque es su vista, y responde a una
+ * fricción real reportada por el PO: un ítem que quedó en la caja hace
+ * semanas figurando como venta hecha, sin ninguna señal de que el dinero
+ * nunca se cobró.
+ *
+ * El `borderLeft` de color NO está acá: lo aplica
+ * js/commerce-delivery-theme.js (capa 3). El borde neutro tampoco: vive en
+ * theme-polish.css (capa 2). Este archivo pone estructura y nada más.
+ */
+.cv-delivery {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+.cv-delivery__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cv-delivery__icon {
+  font-size: 1rem;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.cv-delivery__title {
+  font-weight: 700;
+  font-size: 0.85rem;
+  line-height: 1.3;
+}
+
+.cv-delivery__body {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.cv-delivery__body strong {
+  color: var(--tx-1);
+}
+
+.cv-delivery__body code {
+  font-family: monospace;
+  font-size: 0.72rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--bg-1);
+}
+
+.cv-delivery__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.cv-delivery__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 200px;
+  padding: 3px 8px 3px 4px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  background: var(--bg-1);
+  color: var(--tx-1);
+}
+
+.cv-delivery__chip img {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+
+.cv-delivery__chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cv-delivery__chip-qty {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--muted);
+  flex: 0 0 auto;
+}
+
+.cv-delivery__more {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0 4px;
+}
+
+.cv-delivery .btn--xs {
+  align-self: flex-start;
+}
+
+/* === Aviso de lectura incompleta (Idea 47 commit 1) ===
+   Un error que se muestra como un 0 es indistinguible de "no tenes nada".
+   inventory-hub lo usa cuando una fuente (banco/materiales/armeria) no se pudo
+   leer: el numero de abajo es de ESTA carga, no de la cuenta.
+   Capa 1 (main.css): solo estructura. Sin borde ni box-shadow — el borderLeft
+   semantico va por tema, como el resto de la app. */
+.inv-read-error {
+  text-align: center;
+  padding: 14px;
+  margin-bottom: 16px;
+  color: var(--color-red);
+  font-size: 0.8rem;
+}
+.inv-read-error small {
+  color: var(--muted);
+  font-size: 0.72rem;
 }

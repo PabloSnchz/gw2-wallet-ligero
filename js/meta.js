@@ -5,7 +5,7 @@
   const $  = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => Array.from((r||document).querySelectorAll(s));
 
-  console.info('%cMetaEventos meta.js v3.4.0 — Sin marcado manual (solo API)',
+  console.info('%cMetaEventos meta.js v3.4.1 — Sin marcado manual (solo API)',
     'color:#7dd3fc; font-weight:700');
 
   // --------- Elementos del DOM ----------
@@ -248,8 +248,18 @@
   var _leyLineCache = { mapName: null, ts: 0 };
   var LEY_LINE_TTL = 2 * 60 * 1000; // 2 minutos
 
+  // v3.21.1: /v2/events esta RETIRADO. Verificado 2026-09-29 18:06 UTC:
+  // responde 503 {"text":"API not active"} mientras /v2/maps, /v2/worlds y
+  // /v2/continents responden 200 -> no es una caida transitoria, es retiro.
+  // No existe endpoint sustituto: la rotacion de Ley Line Anomaly no esta
+  // expuesta en la GW2 API. El waypoint cae al valor estatico de meta.chat
+  // (ver render, `inst._activeWaypoint || meta.chat`).
+  // Para revertir: poner en false. La logica de abajo queda intacta.
+  var LEY_LINE_ENDPOINT_RETIRED = true;
+
   async function fetchLeyLineActiveMap(eventIds) {
     if (!eventIds || !eventIds.length) return null;
+    if (LEY_LINE_ENDPOINT_RETIRED) return _leyLineCache.mapName || null;
     var now = Date.now();
     if (_leyLineCache.mapName && (now - _leyLineCache.ts) < LEY_LINE_TTL) {
       return _leyLineCache.mapName;

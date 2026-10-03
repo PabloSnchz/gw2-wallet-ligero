@@ -1,7 +1,27 @@
-﻿/*!
+/*!
  * js/raid-tracker.js — Seguimiento de Raids Semanales
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.8.0 (2026-04-23) — Modal con tabs funcionando + LI disponibles (ID 70)
+ * Versión: 1.10.1 (2026-09-30) — Clave "ura" duplicada en REWARDS_DATA y BOSS_DETAILS
+ *
+ * 1.10.1 - Correccion del 1.10.0. El renombre ura_guardian->"ura" creo una clave
+ *   DUPLICADA en REWARDS_DATA y en BOSS_DETAILS (ganaba la ultima: la ficha
+ *   correcta de "Ura, la Aulladora de Vapores"). Se borra el bloque "Guardián
+ *   Ura", que era la entrada huerfana. Sin cambio visual. Ademas la ficha de
+ *   Ura apuntaba a ura_detail.png, que NO existe; ahora apunta a
+ *   ura_guardian.png, que si (createSafeIcon ya caia al fallback).
+ *   Correccion al texto del 1.10.0: la ficha de Ura NUNCA estuvo rota
+ *   (BOSS_DETAILS ya tenia la clave "ura"), y REWARDS_DATA no tiene ningun
+ *   lector en el repo: es codigo muerto que el test si valida.
+ * 1.10.0 - La API devuelve el id real del encuentro; 4 de los 30 ids del modulo
+ *   no existian en /v2/raids, asi que esas tarjetas NUNCA se podian marcar.
+ *   Renombrados: siege_the_stronghold->escort, desmina->soulless_horror,
+ *   dhuum->voice_in_the_void, gates_of_ahdashim->gate (por ala + posicion +
+ *   nombre, contra el catalogo medido). Ademas ura_guardian no era el id de
+ *   ningun encuentro (el de Ura es "ura"), pero su entrada ya estaba muerta
+ *   desde antes: BOSS_DETAILS resolvia a la ficha correcta por "ura".
+ *   Se borro "the_threshold", clave muerta sin encuentro. Total de encuentros
+ *   sin cambio: 30. La correspondencia esta en tests/idea52.raid-encounter-ids.test.js
+ * 1.9.0 - allSettled defensivo en raids + LI (Idea 47 c1)
  */
 
 (function (root) {
@@ -46,7 +66,7 @@
       expansion: "Heart of Thorns",
       icon: "assets/icons/raids/wing3.png",
       encounters: [
-        { id: "siege_the_stronghold", name: "Escolta de Glenna", nameEn: "Siege the Stronghold", type: "evento", li: 1, icon: "assets/icons/raids/bosses/siege_the_stronghold.png" },
+        { id: "escort", name: "Escolta de Glenna", nameEn: "Siege the Stronghold", type: "evento", li: 1, icon: "assets/icons/raids/bosses/siege_the_stronghold.png" },
         { id: "keep_construct", name: "Ensamblaje de la Fortaleza", nameEn: "Keep Construct", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/keep_construct.png" },
         { id: "twisted_castle", name: "Castillo retorcido", nameEn: "Twisted Castle", type: "evento", li: 1, icon: "assets/icons/raids/bosses/twisted_castle.png" },
         { id: "xera", name: "Xera", nameEn: "Xera", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/xera.png" }
@@ -72,10 +92,10 @@
       expansion: "Path of Fire",
       icon: "assets/icons/raids/wing5.png",
       encounters: [
-        { id: "desmina", name: "Horror sin alma", nameEn: "Soulless Horror", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/desmina.png" },
+        { id: "soulless_horror", name: "Horror sin alma", nameEn: "Soulless Horror", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/desmina.png" },
         { id: "river_of_souls", name: "Río de Almas", nameEn: "River of Souls", type: "evento", li: 1, icon: "assets/icons/raids/bosses/river_of_souls.png" },
         { id: "statues_of_grenth", name: "Estatuas de Grenth", nameEn: "Statues of Grenth", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/statues_of_grenth.png" },
-        { id: "dhuum", name: "Dhuum", nameEn: "Dhuum", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/dhuum.png" }
+        { id: "voice_in_the_void", name: "Dhuum", nameEn: "Dhuum", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/dhuum.png" }
       ]
     },
     {
@@ -97,7 +117,7 @@
       expansion: "Path of Fire",
       icon: "assets/icons/raids/wing7.png",
       encounters: [
-        { id: "gates_of_ahdashim", name: "Puertas de Ahdashim", nameEn: "Gates of Ahdashim", type: "evento", li: 0, icon: "assets/icons/raids/bosses/gates_of_ahdashim.png" },
+        { id: "gate", name: "Puertas de Ahdashim", nameEn: "Gates of Ahdashim", type: "evento", li: 0, icon: "assets/icons/raids/bosses/gates_of_ahdashim.png" },
         { id: "adina", name: "Adina", nameEn: "Adina", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/adina.png" },
         { id: "sabir", name: "Sabir", nameEn: "Sabir", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/sabir.png" },
         { id: "qadim_the_peerless", name: "Qadim el Simpar", nameEn: "Qadim the Peerless", type: "jefe", li: 1, icon: "assets/icons/raids/bosses/qadim_the_peerless.png" }
@@ -199,13 +219,13 @@
         { id: 91520, name: "Mochila de Deimos", icon: "assets/icons/raids/rewards/deimos_backpack.png" }
       ]
     },
-    "desmina": {
+    "soulless_horror": {
       drops: [
         { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
         { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
       ]
     },
-    "dhuum": {
+    "voice_in_the_void": {
       drops: [
         { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
         { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" },
@@ -252,7 +272,7 @@
         { id: 91525, name: "Mochila de Qadim el sin par", icon: "assets/icons/raids/rewards/qadim_peerless_backpack.png" }
       ]
     },
-    "ura_guardian": {
+    "ura": {
       drops: [
         { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
         { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
@@ -265,12 +285,6 @@
       ]
     },
     "decima": {
-      drops: [
-        { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
-        { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
-      ]
-    },
-    "ura": {
       drops: [
         { id: 79722, name: "Insight legendaria", icon: "assets/icons/raids/rewards/legendary_insight.png" },
         { id: 79921, name: "Fragmento de fe ascendido", icon: "assets/icons/raids/rewards/ascended_fragment.png" }
@@ -416,7 +430,7 @@
       wiki: "https://wiki.guildwars2.com/wiki/Matthias_Gabrel",
       image: "assets/icons/raids/bosses/matthias_detail.jpg"
     },
-    "siege_the_stronghold": {
+    "escort": {
       description: [
         "• Escolta de Glenna es un evento donde hay que proteger a un NPC mientras destruye puertas.",
         "• Aparecen oleadas de enemigos que atacan a Glenna.",
@@ -568,7 +582,7 @@
       wiki: "https://wiki.guildwars2.com/wiki/Deimos",
       image: "assets/icons/raids/bosses/deimos_detail.jpg"
     },
-    "desmina": {
+    "soulless_horror": {
       description: [
         "• Desmina invoca esclavos que deben ser eliminados.",
         "• Los esclavos lanzan niebla que daña al grupo.",
@@ -625,7 +639,7 @@
       wiki: "https://wiki.guildwars2.com/wiki/Statues_of_Grenth",
       image: "assets/icons/raids/bosses/statues_of_grenth_detail.png"
     },
-    "dhuum": {
+    "voice_in_the_void": {
       description: [
         "• Dhuum es el jefe final del ala 5, requiere mecánicas complejas.",
         "• Tiene múltiples fases con mecánicas complejas.",
@@ -701,7 +715,7 @@
       wiki: "https://wiki.guildwars2.com/wiki/Qadim",
       image: "assets/icons/raids/bosses/qadim_detail.jpg"
     },
-    "gates_of_ahdashim": {
+    "gate": {
       description: [
         "• Puertas de Ahdashim es el evento de apertura del ala 7.",
         "• Hay que destruir las puertas mientras se protege a los NPC aliados.",
@@ -777,44 +791,6 @@
       wiki: "https://wiki.guildwars2.com/wiki/Qadim_the_Peerless",
       image: "assets/icons/raids/bosses/qadim_the_peerless_detail.png"
     },
-    "ura_guardian": {
-      description: [
-        "• Guardián Ura es el primer encuentro del ala 8.",
-        "• Tiene mecánicas de luz y oscuridad.",
-        "• Invoca orbes que deben ser recolectados según el color.",
-        "• También tiene un ataque de área que debe ser evitado.",
-        "• En la fase final, los orbes son más difíciles de conseguir."
-      ],
-      strategy: [
-        "• TANQUE: Mantener al jefe centrado.",
-        "• DPS: Recoger orbes del color correcto.",
-        "• APOYO: Curar a los jugadores con orbes.",
-        "• TODOS: Evitar el ataque de área.",
-        "• CRÍTICO: Coordinar la recolección de orbes."
-      ],
-      video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-      wiki: "https://wiki.guildwars2.com/wiki/Ura_Guardian",
-      image: "assets/icons/raids/bosses/ura_guardian_detail.png"
-    },
-    "the_threshold": {
-      description: [
-        "• El Límite es un evento de transición.",
-        "• Hay que cruzar una zona peligrosa mientras se lucha contra enemigos.",
-        "• También hay que activar mecanismos para avanzar.",
-        "• Si el grupo se separa, el daño aumenta.",
-        "• Es un encuentro de coordinación y movimiento."
-      ],
-      strategy: [
-        "• TANQUE: Proteger al grupo de los enemigos grandes.",
-        "• DPS: Matar enemigos rápidamente.",
-        "• APOYO: Curar a los jugadores en la zona peligrosa.",
-        "• TODOS: Mantenerse juntos.",
-        "• CRÍTICO: No separarse del grupo."
-      ],
-      video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-      wiki: "https://wiki.guildwars2.com/wiki/The_Threshold",
-      image: "assets/icons/raids/bosses/the_threshold_detail.png"
-    },
     "greer": {
       description: [
         "• Greer, el Portarruina, es el primer desafío del Monte Balrior.",
@@ -870,7 +846,7 @@
       ],
       video: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       wiki: "https://wiki.guildwars2.com/wiki/Ura",
-      image: "assets/icons/raids/bosses/ura_detail.png"
+      image: "assets/icons/raids/bosses/ura_guardian.png"
     }
   };
 
@@ -908,11 +884,55 @@
     });
   }
 
+  // ── Preferencia de la pestana Raids/Strikes ─────────────────────────────
+  // Los nombres salen de storage.js cuando esta disponible, y el literal queda
+  // como red por si el modulo se carga sin el (raid-tracker.js no depende de
+  // storage.js para nada mas). La legacy va explicita en la llamada, no
+  // adivinada adentro: asi el par (gn:, legacy) se lee en el call-site, que es
+  // donde la fila 081 dijo que estaba el problema y no en los nombres.
+  var STORAGE_KEYS_RT = (typeof Storage !== 'undefined' && Storage && Storage.STORAGE_KEYS)
+    ? Storage.STORAGE_KEYS
+    : null;
+
+  function prefGet(key, legacy) {
+    try {
+      if (STORAGE_KEYS_RT && typeof Storage.getRaw === 'function') {
+        return Storage.getRaw(STORAGE_KEYS_RT[key] || key);
+      }
+    } catch (e) {}
+    try { return localStorage.getItem(legacy); } catch (e) {}
+    return null;
+  }
+
+  function prefSet(key, legacy, value) {
+    try {
+      if (STORAGE_KEYS_RT && typeof Storage.set === 'function') {
+        Storage.set(STORAGE_KEYS_RT[key] || key, value);
+        return;
+      }
+    } catch (e) {}
+    try { localStorage.setItem(legacy, value); } catch (e) {}
+  }
+
+  /**
+   * Token de la cuenta seleccionada.
+   *
+   * ANTES: `localStorage.getItem('gw2_selected_key_v1')` a pelo, o sea por
+   * debajo de la capa `Storage` (T19-c).
+   * AHORA: `Storage.get(ACCOUNT_SELECTED)` — espejo (legacy) -> gn: -> fallback.
+   * La gn: es la que sube el Gist; leer solo la legacy hacia que el backup
+   * guardara una foto distinta de la que muestra la pantalla.
+   *
+   * FALLBACK DEL DOM — INTENCIONAL: el `<select id="keySelectGlobal">` gana
+   * cuando tiene valor, que es lo que pasa hoy (se llena desde
+   * `KeyManager.state.selected`, que viene de la misma clave). No es residuo de
+   * un copiado; cambiar esta precedencia es otro ciclo.
+   */
   function getSelectedToken() {
     try {
       var sel = document.getElementById('keySelectGlobal');
       if (sel && sel.value) return sel.value.trim();
-      var stored = localStorage.getItem('gw2_selected_key_v1');
+      var stored = Storage.get(Storage.STORAGE_KEYS.ACCOUNT_SELECTED);
       if (stored) return stored;
     } catch (e) {}
     return null;
@@ -1025,19 +1045,58 @@
     if (liAvailableEl) liAvailableEl.textContent = state.liAvailable.toLocaleString();
   }
 
-  function wireViewToggle() {
-    var raidsBtn = document.getElementById('viewRaidsBtn');
-    var strikesBtn = document.getElementById('viewStrikesBtn');
+  // T12 (HB#101). El flag de "ya cableado" va EN EL BOTON, no en el scope del
+  // modulo, a proposito: ensurePanelContent() puede re-inyectar el panel y
+  // crear botones NUEVOS. Con un flag de modulo, esos botones nuevos heredarian
+  // un "ya cableado" falso y quedarian MUERTOS: el bug volveria, y solo en el
+  // caso de reconstruir el panel, que es el mas dificil de ver. El elemento que
+  // se cablea es el que lleva la marca, asi que el estado sigue siendo cierto
+  // aunque el DOM se rehaga. Mismo patron que el `btn.__wired` de mas abajo.
+  //
+  // T12-b (HB#125). Este es el ESCRITOR COMUN de las dos parejas de botones, y
+  // por eso se parametrizan los ids: el par de Raids y el de Strikes son dos
+  // strips distintos que mueven los MISMOS dos paneles, y antes cada uno tenia su
+  // escritor. El de Strikes (que vivia en strike-tracker.js, `wireStrikeViewToggle`)
+  // NO leia ni escribia la preferencia: por eso los dos strips podian mostrar
+  // vistas distintas, y recargar perdia la eleccion de Pablo en uno de los dos.
+  //
+  // El flag sigue siendo POR ELEMENTO, asi que la idempotencia sale POR PAREJA
+  // sin codigo extra: el par de Strikes marca su propio boton, no el de Raids.
+  // Ese detalle es lo que hace viable (3a) — con un flag compartido, la 2da
+  // pareja se apoyaria en la marca de la 1ra y no correria nunca, porque la
+  // pareja de Strikes NACE DENTRO de `setActiveView()` de la 1ra.
+  function wireViewToggle(raidsBtnId, strikesBtnId) {
+    var raidsBtn = document.getElementById(raidsBtnId || 'viewRaidsBtn');
+    var strikesBtn = document.getElementById(strikesBtnId || 'viewStrikesBtn');
     var raidsPanel = document.getElementById('raidTrackerPanel');
     var strikesPanel = document.getElementById('strikeTrackerPanel');
-    
+
+    // Guard POR PAREJA: cada strip se cablea si tiene SUS dos botones. Los dos
+    // paneles son los mismos para las dos parejas y estan en index.html, asi que
+    // no son parte de la identidad del par. Medido: el par de Raids nace en
+    // `ensurePanelContent()` de raid-tracker y el de Strikes en el suyo, y en la
+    // ruta `#/account/strikes` (router.js:1600) solo se construye el segundo: un
+    // guard "todo o nada" sobre los 4 elementos no cablearia ninguno de los dos.
     if (!raidsBtn || !strikesBtn || !raidsPanel || !strikesPanel) return;
-    
-    var activeView = localStorage.getItem('raid_strike_view') || 'raids';
-    
+
+    // La preferencia vive en la gn: (STORAGE_KEYS.RAIDS_STRIKE_VIEW), que es la
+    // que storage.js nombra y migra. La legacy queda como FALLBACK, asi que una
+    // instalacion vieja sigue leyendo su pestana. NO esta en MIRROR_MAP (medido),
+    // y por eso antes la gn: se quedaba con la foto del PRIMER arranque: la
+    // migracion la escribia una vez y nadie la actualizaba nunca. Escribir solo
+    // la gn: es lo que invierte eso, y no rompe a nadie porque no hay otro
+    // lector (tests/hb78-preferencia-pestana.test.js §5 lo cuenta).
+    //
+    // El default va ACA, que es politica de UI y no de almacenamiento, y con
+    // guard de valores validos: `setActiveView` abre Strikes en su `else`, o sea
+    // que CUALQUIER valor que no sea exactamente 'raids' -- '', 'STRIKES', un
+    // 'strikes ' editado a mano -- abria Strikes solo, sin que nadie lo pidiera.
+    var storedView = prefGet(STORAGE_KEYS_RT.RAIDS_STRIKE_VIEW, 'raid_strike_view');
+    var activeView = storedView === 'strikes' ? 'strikes' : 'raids';
+
     function setActiveView(view) {
       activeView = view;
-      localStorage.setItem('raid_strike_view', view);
+      prefSet(STORAGE_KEYS_RT.RAIDS_STRIKE_VIEW, 'raid_strike_view', view);
       
       if (view === 'raids') {
         raidsPanel.removeAttribute('hidden');
@@ -1062,6 +1121,26 @@
       }
     }
     
+    // Solo el resaltado, sin disparar refresh()/activate().
+    function pintarSolo() {
+      if (activeView === 'raids') {
+        raidsBtn.classList.add('btn--accent'); raidsBtn.classList.remove('btn--ghost');
+        strikesBtn.classList.add('btn--ghost'); strikesBtn.classList.remove('btn--accent');
+      } else {
+        strikesBtn.classList.add('btn--accent'); strikesBtn.classList.remove('btn--ghost');
+        raidsBtn.classList.add('btn--ghost'); raidsBtn.classList.remove('btn--accent');
+      }
+    }
+
+    // Ya cableado: re-sincroniza el resaltado y NO vuelve a disparar
+    // refresh()/activate(). Ese no-disparo es lo que corta el ciclo
+    // ensurePanelContent() -> wireViewToggle() -> setActiveView() -> refresh()
+    // -> loadRaidData() -> ensurePanelContent(), que si no cierra aqui (medido
+    // con tools/hb101-t12a-recursion.mjs). Sin esto, cada recarga pegaria un par
+    // de listeners sobre el mismo boton y un click dispararia N veces.
+    if (raidsBtn.__viewToggleWired) { pintarSolo(); return; }
+    raidsBtn.__viewToggleWired = true;
+
     raidsBtn.addEventListener('click', function() { setActiveView('raids'); });
     strikesBtn.addEventListener('click', function() { setActiveView('strikes'); });
     
@@ -1213,6 +1292,18 @@
       `;
       console.log(LOG, 'Estructura del panel creada');
     }
+
+    // T12 (HB#101): los botones #viewRaidsBtn / #viewStrikesBtn se cablean ACA,
+    // en el mismo lugar donde nacen, y no solo desde activate(). Motivo medido:
+    // el camino Strikes -> Raids entra por refresh() -> loadRaidData() -> esta
+    // funcion, y ahi se llegaba al panel con los dos botones sin listener
+    // (tests/hb101-t12-camino.test.js, seccion "CASO REAL"). Va despues del
+    // `if (!body.querySelector('#raidUtcTime'))` a proposito: corre tambien
+    // cuando el panel ya existia, que es justo el caso roto. Idempotente por
+    // `raidsBtn.__viewToggleWired`, asi que la segunda y siguientes solo
+    // re-sincronizan el resaltado.
+    wireViewToggle();
+
     return true;
   }
 
@@ -1364,7 +1455,7 @@
             { name: "Mochila de Deimos", type: "Mochila", icon: "assets/icons/raids/bosses/deimos_backpack.png" }
           ],
           // Ala 5
-          "dhuum": [
+          "voice_in_the_void": [
             { name: "Silla del Último Juez amortajada", type: "Silla", icon: "assets/icons/raids/bosses/Silla_del_Último_Juez_amortajada.png" },
             { name: "Cofre de Armadura de Dhuum", type: "Infusión cosmética", icon: "assets/icons/raids/bosses/Cofre_de_armadura_de_Dhuum.png" }
           ],
@@ -1722,11 +1813,32 @@
       startTimers();
 
       try {
-        var [completed, liAvailable] = await Promise.all([
+        // allSettled en vez de Promise.all. OJO: este bloque NO cambia el
+        // comportamiento observable hoy, y no pretende.
+        //   - Si getAccountRaids falla, el `throw` de abajo reproduce exactamente
+        //     lo que hacia Promise.all: cae al catch que renderiza
+        //     "Error al cargar datos de raids". La columna de LI NO sobrevive a
+        //     un fallo de raids; para eso habria que renderizar en parcial, que
+        //     es un cambio de comportamiento y no entra en el commit 1.
+        //   - La unica ganancia real es defensiva: un rechazo inesperado de
+        //     loadLiAvailable ya no puede tumbar la carga de raids, y LI conserva
+        //     el valor previo en vez de volverse null (updateLiDisplay() le
+        //     llama .toLocaleString(), que revienta con null).
+        var settled = await Promise.allSettled([
           root.GW2Api.getAccountRaids(token, { nocache: !!forceNoCache }),
           loadLiAvailable(token)
         ]);
-        
+        if (settled[0].status === 'rejected') throw settled[0].reason;
+        // loadLiAvailable ya tiene su propio catch y devuelve 0, asi que en la practica
+        // esto no rechaza. Si alguna vez lo hiciera, conservamos el valor previo en vez
+        // de dejar null: updateLiDisplay() llama .toLocaleString() sobre este valor.
+        if (settled[1].status === 'rejected') {
+          console.warn(LOG, 'No se pudo leer la disponibilidad de LI:', settled[1].reason);
+        }
+
+        var completed = settled[0].value;
+        var liAvailable = settled[1].status === 'fulfilled' ? settled[1].value : state.liAvailable;
+
         state.completedEncounters = Array.isArray(completed) ? completed : [];
         state.liAvailable = liAvailable;
         
@@ -1742,20 +1854,45 @@
         hideSkeleton();
         var gridContainer = document.getElementById('raidWingsGrid');
         if (gridContainer) {
-          gridContainer.innerHTML = `<div class="error" style="text-align: center; padding: 40px; color: var(--color-red);">❌ Error al cargar datos de raids: ${esc(error.message)}<br><small>Verificá que la API key tenga permiso "progression"</small></div>`;
+          // F1 del Code-Reviewer (task-b20623f46caa, follow-up 1): desde la
+          // v2.24.0 la API tambien puede rechazar por FORMA, y ese es un
+          // caso en el que el permiso esta perfecto. Sugerir siempre
+          // "verifica la key" manda a Pablo a borrar y re-agregar la key,
+          // que es el bucle hostil de ALERT-32. La primera linea ya trae el
+          // motivo real, asi que la pista de permiso solo va cuando el
+          // fallo NO es de forma.
+          var hint = /forma no soportada/.test(error && error.message || '')
+            ? ''
+            : '<br><small>Verificá que la API key tenga permiso "progression"</small>';
+          gridContainer.innerHTML = `<div class="error" style="text-align: center; padding: 40px; color: var(--color-red);">❌ Error al cargar datos de raids: ${esc(error.message)}${hint}</div>`;
         }
       } finally {
         state.loading = false;
       }
     }
 
+  // T9 (HB#90). El mutex anterior era `if (_refreshInFlight) return
+  // _refreshInFlight;`, que NO postpone la carga nueva: la descarta antes de
+  // pedirla. Con `gn:tokenchange` -> refresh(true) sobre una carga en vuelo,
+  // la red no recibia NINGUNA peticion para la cuenta nueva, no habia reintento
+  // cuando la vieja terminaba, y no habia forma de recuperarse: el desplegable
+  // decia B y la pantalla mostraba A.
+  //
+  // Ahora el mutex ESPERA y despues carga, y `_refreshSeq` (que ya estaba
+  // declarado y se publicaba en el diagnostico, siempre en 0) decide si la
+  // carga que espero todavia es la ultima pedida. Mismo patron que
+  // `safeRefresh` de wv-purchase-detail.js, que ya lo tenia bien.
   async function refresh(forceNoCache) {
-    if (_refreshInFlight) return _refreshInFlight;
+    var mySeq = ++_refreshSeq;
+    if (_refreshInFlight) {
+      try { await _refreshInFlight; } catch (_) {}
+      if (mySeq !== _refreshSeq) return;   // otra carga la reemplazo: esta no va
+    }
     try {
       _refreshInFlight = loadRaidData(!!forceNoCache);
       await _refreshInFlight;
     } finally {
-      _refreshInFlight = null;
+      if (mySeq === _refreshSeq) _refreshInFlight = null;
     }
   }
 
@@ -1887,6 +2024,17 @@
   };
 
   root.RaidTracker = RaidTracker;
+
+  // T12-b (HB#125). Se expone UNA FUNCION DE INTENCION por `__GN__`, no el
+  // modulo entero: `wireViewToggle` necesita el par de Strikes
+  // (strike-tracker.js:1213) para cablearlo con el MISMO escritor que lee y
+  // escribe la preferencia, y ese modulo no importa `RaidTracker` (seria una
+  // dependencia de modulo nueva). Exponer el modulo completo en `RaidTracker`
+  // reabriria justo lo que T1 cerro: la superficie publica como contrato.
+  root.__GN__ = root.__GN__ || {};
+  root.__GN__.wireViewTogglePair = function (raidsBtnId, strikesBtnId) {
+    return wireViewToggle(raidsBtnId, strikesBtnId);
+  };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initOnce);

@@ -1,7 +1,13 @@
 /*!
  * js/inventory-dashboard.js — Dashboard de Inventario Multi-Cuenta
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.0.0 (2026-05-07)
+ * Versión: 1.2.0 (2026-09-30) — allSettled en FASE 1 + error por fuente (Idea 47 c1)
+ *
+ * Cambios v1.1.0:
+ *  - FASE 2 de la carga (loadCharactersInBackground) pasa de `accounts.map()` a un pool de
+ *    concurrencia (mapWithPool, max 3). Antes disparaba 2 requests por cuenta de golpe
+ *    (27 cuentas = 54 simultáneos, sin pool y con `fetch` crudo, que no reintenta 429).
+ *    Misma concurrencia que la FASE 1. Medido antes/después: pico 27 -> 3.
  *
  * Características:
  *  - Tabla de cuentas vs ítems seleccionados (banco + materiales combinados)
@@ -283,11 +289,13 @@
         return { name: activeChar, bags: [] };
       } finally {
         clearTimeout(t2);
+        c2.abort();
       }
     } catch(e) {
       return { name: null, bags: [] };
     } finally {
       clearTimeout(t1);
+      c1.abort();
     }
   }
 
@@ -312,20 +320,34 @@
             var token = k.value;
             var label = k.label || ('Key ' + fpToken(token));
             var fp = fpToken(token);
-            Promise.all([
+            // allSettled (no Promise.all): si el banco falla, los materiales y el
+            // accountInfo de ESA cuenta siguen siendo datos validos. Con Promise.all
+            // un unico rechazo caia al catch de abajo y descartaba los tres.
+            // getAccountInfo ya degrada a null (tiene su propio catch), lo que el codigo
+            // de abajo convierte en el error de "cuenta sin acceso al juego".
+            // Antes este string era 'account does not have game access' (ingles, sin
+            // contexto). Ahora nombra QUE no se pudo leer, que es lo que el tooltip muestra.
+            Promise.allSettled([
               root.GW2Api.getAccountBank(token, { nocache: !!forceNoCache }),
               root.GW2Api.getAccountMaterials(token, { nocache: !!forceNoCache }),
               root.GW2Api.getAccountInfo(token, { nocache: !!forceNoCache }).catch(function() { return null; })
             ])
               .then(function(results) {
-                var bankData = Array.isArray(results[0]) ? results[0] : [];
-                var materialsData = Array.isArray(results[1]) ? results[1] : [];
-                var accountInfo = results[2];
-                
-                // Si getAccountInfo falló (devuelve null), la cuenta no tiene acceso al juego
+                var bankData = results[0].status === 'fulfilled' && Array.isArray(results[0].value) ? results[0].value : [];
+                var materialsData = results[1].status === 'fulfilled' && Array.isArray(results[1].value) ? results[1].value : [];
+                var accountInfo = results[2].status === 'fulfilled' ? results[2].value : null;
+
+                // Distinguir "no pude leer" de "no tenes nada": cada rejection se
+                // nombra, en vez de dejar un 0 indistinguible de una cuenta vacia.
                 var error = null;
-                if (!accountInfo) {
-                  error = 'account does not have game access';
+                var unread = [];
+                if (results[0].status === 'rejected') unread.push('banco');
+                if (results[1].status === 'rejected') unread.push('materiales');
+                if (!accountInfo) unread.push('cuenta sin acceso al juego');
+                if (unread.length) error = 'No se pudo leer: ' + unread.join(', ');
+                if (results[0].status === 'rejected' || results[1].status === 'rejected') {
+                  console.warn(LOG, 'Error reading inventory for', label,
+                    results[0].reason || results[1].reason);
                 }
                 
                 out.push({
@@ -371,6 +393,38 @@
     loadCharactersInBackground(out);
   }
 
+  // ------------------------------ Pool de concurrencia ------------------------------
+  // La GW2 API impone 600 requests/minuto (verificado en vivo: header X-Rate-Limit-Limit).
+  // La FASE 1 de loadAllInventories ya limita a MAX=3, pero la FASE 2 mapeaba TODAS las
+  // cuentas de una: con 27 cuentas son 54 requests simultáneos, y sin pool no hay backpressure
+  // — al llegar a un límite global, fetchWithRetry reintenta solo en la capa GW2Api, pero
+  // estas llamadas usan fetch crudo y no reintentan nada.
+  // maxConcurrent: 3 = misma concurrencia que la FASE 1. No es un número mágico.
+  async function mapWithPool(items, maxConcurrent, worker) {
+    var results = new Array(items.length);
+    var idx = 0, active = 0;
+
+    await new Promise(function (resolve) {
+      function next() {
+        if (idx >= items.length && active === 0) return resolve();
+        while (active < maxConcurrent && idx < items.length) {
+          var i = idx++;
+          active++;
+          (function (index) {
+            Promise.resolve()
+              .then(function () { return worker(items[index], index); })
+              .then(function (value) { results[index] = value; })
+              .catch(function () { results[index] = undefined; })
+              .then(function () { active--; next(); });
+          })(i);
+        }
+      }
+      next();
+    });
+
+    return results;
+  }
+
   async function loadCharactersInBackground(accounts) {
     // Guardar snapshot de valores antes de actualizar bags
     var activeItems = getActiveItems();
@@ -381,7 +435,9 @@
       });
     });
 
-    var promises = accounts.map(function(acc) {
+    var CONCURRENCY_CHARACTERS = 3;
+
+    await mapWithPool(accounts, CONCURRENCY_CHARACTERS, function(acc) {
       return loadActiveCharacterInventory(acc.token)
         .then(function(charData) {
           acc.activeCharName = charData.name;
@@ -396,7 +452,6 @@
           updateCharCell(acc);
         });
     });
-    await Promise.allSettled(promises);
     console.log(LOG, 'Fase 2 completada: personajes activos cargados');
     updateTotalGoldBadge();
     var currentItems = getActiveItems();

@@ -1,6 +1,11 @@
 /* ===========================================================================
  * js/achievements.js — Logros enfocado en "próximo a completar"
- * Versión: 3.2.0 (2026-04-28)
+ * Versión: 3.2.1 (2026-09-30)
+ *  - Idea 55 Tramo 3a: fetchAccountAP() pide /v2/account por
+ *    GW2Api.getAccountInfo en vez de fetch crudo con cache:no-store.
+ *    El wrapper ya existia (api-gw2.js:393). Se conserva nocache:true,
+ *    que es el equivalente del no-store de antes: el AP se relee siempre,
+ *    no se mete un TTL de 30 s donde antes no habia ninguno.
  *  - Grid único de pendientes (sin completados, sin resumen duplicado)
  *  - Recompensas visibles: items, títulos, maestrías con íconos y nombres oficiales
  *  - Toolbar unificada con 3 dropdowns personalizados (Umbral, Categoría, Recompensa)
@@ -907,8 +912,7 @@
 
   function fillCategoryDropdown(){
     var list = document.getElementById('achDropdownCat');
-    if (!list || list.__filled) return;
-    list.__filled = true;
+    if (!list) return;
 
     var categories = state.categories.slice().sort(function(a,b){
       return String(a?.name || '').localeCompare(String(b?.name || ''));
@@ -1020,10 +1024,12 @@
   }
 
   async function fetchAccountAP(token){
-    var url = 'https://api.guildwars2.com/v2/account?access_token='+encodeURIComponent(token);
-    var r = await fetch(url, { headers: { 'Accept':'application/json' }, cache: 'no-store' });
-    if (!r.ok) throw new Error('account HTTP '+r.status);
-    var o = await r.json();
+    // Idea 55 Tramo 3a: /v2/account pasa por la capa GW2Api. Antes hacia `fetch`
+    // crudo con `cache:'no-store'`, o sea sin TTL, sin retry, sin pool y
+    // saltandose la dedupe de inflight: el mismo payload ya lo piden por la capa
+    // characters.js (loadAccountData) y accounts-panel.js, en la misma carga.
+    // `nocache:true` conserva el `no-store` de antes: el AP se relee siempre.
+    var o = await root.GW2Api.getAccountInfo(token, { nocache: true });
     var daily = Number(o?.daily_ap || 0);
     var monthly = Number(o?.monthly_ap || 0);
     return { dailyHist: daily + monthly, raw: o };
@@ -1045,7 +1051,7 @@
         if (!token) {
           state.token = null; state.acc = []; state.metaById = new Map();
           state.apDailyHist = 0; state.apPermanent = 0; state.apLegacyDelta = 0;
-          await ensureCategories(); fillCategoryDropdown(); ensureAside(); renderAside([]);
+          await ensureCategories(); discoverLegendaryCategory(); fillCategoryDropdown(); ensureAside(); renderAside([]);
           renderMainGrid();
           var pot = document.querySelector('.ach-potential');
           if (pot) pot.remove();

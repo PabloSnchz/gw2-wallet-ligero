@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Bóveda del Gato Negro — Theme Polish v2.2.0
+   Bóveda del Gato Negro — Theme Polish v2.4.0
    Componentes genéricos + piel unificada
    Todos los colores usan variables CSS (definidas en css/themes/*.css)
    ========================================================================== */
@@ -115,7 +115,7 @@ select:disabled { opacity:.55; cursor:not-allowed; }
 }
 .side-nav__link:hover { background:var(--bg-2); border-color: var(--bd-1); color: var(--tx-1); }
 .side-nav__link.is-active { background:var(--bg-2); border-color:var(--bd-2); color: var(--tx-1); }
-.side-nav__icon { width:18px; height:18px; display:grid; place-items:center; flex: 0 0 18px; }
+.side-nav__icon { width:18px; height:18px; place-items:center; flex: 0 0 18px; }
 
 .side-nav__link:focus-visible {
   outline: 2px solid var(--acc-1);
@@ -130,7 +130,12 @@ select:disabled { opacity:.55; cursor:not-allowed; }
 #sideAccountPanel .icon-img { width:40px; height:40px }
 
 /* =========================== TOOLTIPS / TOASTS =========================== */
-.toasts { display:grid; gap:10px; position:fixed; right:14px; bottom:16px; z-index:60; }
+/* z-index NO va aca: es propiedad estructural y es de la capa 1 (main.css).
+   Antes esta linea declaraba `z-index:60` y, como theme-polish.css carga
+   DESPUES de main.css con la misma especificidad, ganaba por orden de carga:
+   el host de los toasts quedaba en 60, debajo de `.modal` (10000), y los
+   toasts se dibujaban DETRAS del backdrop del modal. En main.css esta en 10001. */
+.toasts { display:grid; gap:10px; position:fixed; right:14px; bottom:16px; }
 .toast {
   border-radius: var(--radius-md);
   border:1px solid var(--bd-1);
@@ -151,9 +156,34 @@ select:disabled { opacity:.55; cursor:not-allowed; }
 .empty { color:var(--tx-3); display:flex; align-items:center; gap:10px; }
 
 /* ========================== MOTION RESPONSABLE =========================== */
-@media (prefers-reduced-motion: reduce) {
-  * { animation: none !important; transition: none !important; }
-}
+/* T10 (HB#96, veredicto del Reviewer): esta politica se BORRA, no se corrige.
+ *
+ * Habia DOS politicas distintas de movimiento reducido y una ganaba por orden de
+ * carga: esta ponia `animation: none`, que no frena la animacion, la CANCELA; sin
+ * ella no hay `forwards` y gana el estado inicial de la regla. Para .raid-wing-card
+ * ese estado inicial es `opacity: 0` (theme-polish.css:824-828), o sea la tarjeta
+ * se queda invisible y con ella se pierden los encuentros que se renderizan
+ * DENTRO. Con "Efectos de animacion" apagado en Accesibilidad, el Raid Tracker
+ * aparecia EN BLANCO. Medido por el PO contando pixeles de un PNG con el CSS real
+ * (control 82.5% de pixeles no-fondo, caso real 0.0% de 68.640).
+ *
+ * El criterio sano ya estaba escrito y EN ESTE MISMO REPO: main.css:686-688 usa
+ * `animation-duration:.001ms` + `animation-iteration-count:1`, que deja la
+ * animacion CORRER a duracion ~0 y por lo tanto terminar en su estado final
+ * (visible). Ademas cubre `transition-duration` y `scroll-behavior`.
+ *
+ * Por que se borra esta y no se arregla .raid-wing-card: el inline de
+ * raid-tracker.js:1437 repite el mismo par "ocultar + animar", asi que un arreglo a
+ * nivel de clase sin `!important` arregla strike-tracker.js:699 y deja el Raid
+ * Tracker en blanco. Medido por el Reviewer en Chrome real con los 3 estilosheets
+ * del repo. Esta regla es la unica que cubre los dos call sites.
+ *
+ * Por que NO se corrige la tarjeta: `animation:none` en la capa 2 ya era una
+ * inversion de capa, y `opacity:0` como estado base es el unico de todo css/ que
+ * depende de una animacion para su estado final (el resto son `from{opacity:0}`
+ * DENTRO de un keyframe, que es seguro). El criterio de fondo ("ninguna regla
+ * depende de una animacion para su estado final") es un paso aparte que toca JS.
+ */
 
 /* ============================ MICRO-PERFORMANCE ========================== */
 #metaList, #walletCards {
@@ -1417,6 +1447,14 @@ aside.col-side .panel-head img {
 .id-status-msg.error {
   color: var(--color-red);
 }
+
+/* Aviso de lectura incompleta (Idea 47 commit 1). Capa 2: borde unificado.
+   Solo borderLeft, como el resto de los avisos por color. */
+.inv-read-error {
+  border-left: 3px solid var(--color-red);
+  background: var(--bg-1);
+  border-radius: 8px;
+}
 .id-timestamp {
   color: var(--tx-3);
   font-family: monospace;
@@ -1517,4 +1555,27 @@ aside.col-side .panel-head img {
   background: transparent;
   border: none;
   box-shadow: none;
+}
+
+/* Fractales — piel unificada del aviso de rotación (capa 2).
+ * El borde neutro va acá; el `borderLeft` de color lo pone
+ * js/fractal-tracker-theme.js (capa 3). La estructura (padding, tipografía)
+ * vive en main.css (capa 1). */
+.fractal-notice {
+  border: 1px solid var(--bd-1);
+  border-radius: 8px;
+}
+
+.fractals-cm,
+.fractals-tomorrow {
+  border-top: 1px solid var(--bd-1);
+}
+
+/* Caja del Trading Post — piel unificada del banner (capa 2).
+ * El borde neutro y el radio van acá; el `borderLeft` de color lo pone
+ * js/commerce-delivery-theme.js (capa 3). La estructura (padding, flex, gap,
+ * tipografía) vive en main.css (capa 1). */
+.cv-delivery {
+  border: 1px solid var(--bd-1);
+  border-radius: 8px;
 }

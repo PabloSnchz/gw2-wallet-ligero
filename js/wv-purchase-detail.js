@@ -1,7 +1,24 @@
 /*!
  * js/wv-purchase-detail.js — Vista de Detalle de Compras (Wizard's Vault)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.13.1 (2026-04-05) — Estado online basado en last_modified
+ * Versión: 1.14.0 (2026-09-30) — refreshAllOnlineStatus en paralelo + progreso con ETA
+ *
+ * Cambios v1.14.0 (Idea 55 Tramo 2):
+ *  - refreshAllOnlineStatus() ya no recorre las cuentas con un `await` DENTRO
+ *    del `for`. Hacía los N requests en serie: con 27 cuentas y ~500 ms de
+ *    latencia mediana eran ~13 s, y lo único visible era un toast de 1,5 s.
+ *    Ahora salen todos juntos y el estrangulamiento lo pone la capa
+ *    (jfetch -> poolRun, POOL_MAX = 6). No se agregó un pool local: el global
+ *    ya existe y dos estranguladores anidados fue el defecto de la Idea 46.
+ *  - Progreso real en #wvpdStatusMsg ("Estado online: 7/27 — ~20 s restantes")
+ *    con la ETA de js/progress-eta.js. Antes no había ningún indicador.
+ *  - Si una cuenta falla (token revocado, 500) se cuenta y se avisa al final.
+ *    Antes el `catch` por cuenta tragaba el error, pero en serie un throw
+ *    escapado cortaba el recorrido entero; ahora cada cuenta settlea sola.
+ *  - El cálculo de ETA se extrajo a js/progress-eta.js porque ya existía en
+ *    wallet-dashboard.js (Idea 48 Tramo B) y copiarlo sería la segunda copia
+ *    de un helper con 29 aserciones de test. wallet-dashboard mantiene su
+ *    copia por ahora; migrarla es el mismo trabajo, menos urgente.
  *
  * Cambios v1.13.0:
  *  - REEMPLAZADA lógica de PvP por last_modified de /v2/account
@@ -959,57 +976,95 @@ function hidePanel(){
   }
 
   // ====== FUNCIÓN PARA ACTUALIZAR TODOS LOS ESTADOS ONLINE (VÍA LAST_MODIFIED) ======
+  //
+  // Idea 55 Tramo 2. ANTES: un `for` con `await` ADENTRO, o sea los N requests
+  // uno detras de otro. Con las 27 cuentas de Pablo y ~500 ms de latencia
+  // mediana eso son ~13 s, y lo unico que se ve meanwhile es un toast que dura
+  // 1,5 s: 11,5 s de pantalla sin ningun indicio de que esta pasando algo.
+  //
+  // AHORA: los N requests salen juntos y el estrangulamiento lo pone la capa
+  // (api-gw2.js jfetch -> poolRun, POOL_MAX = 6). No se mete un pool local
+  // acá a proposito: el global ya existe, y dos estranguladores anidados es
+  // exactamente el defecto de la Idea 46 (un MAX local de 3 con un Promise.all
+  // de 3 DENTRO dava 9 requests reales).
+  //
+  // El progreso va por setStatus(), que escribe en #wvpdStatusMsg (el mismo
+  // lugar que usa el resto del panel), con la ETA de GN.progressEta. El toast
+  // inicial se conserva: avisa que arranco la accion.
   async function refreshAllOnlineStatus() {
     console.log(LOG, 'Actualizando estado online de todas las cuentas (vía last_modified)...');
     if (!state.accounts || state.accounts.length === 0) {
       console.warn(LOG, 'No hay cuentas cargadas');
       return;
     }
-    
+
     if (window.toast) {
       window.toast('info', 'Actualizando estado online...', { ttl: 1500 });
     }
-    
+
+    var total = state.accounts.length;
+    var startedAt = Date.now();
     var updatedCount = 0;
     var onlineCount = 0;
-    
-    for (var i = 0; i < state.accounts.length; i++) {
-      var acc = state.accounts[i];
-      try {
-        // Obtener account info con last_modified
-        const accountInfo = await root.GW2Api.getAccountInfo(acc.token, { nocache: true });
-        const isOnline = root.GW2Api.isRecentlyActive(accountInfo, 10); // 10 minutos de umbral
-        var lastPlayedChar = null;
-        
-        if (isOnline && accountInfo && accountInfo.last_modified) {
-          const lastModified = new Date(accountInfo.last_modified);
-          const now = new Date();
-          const minutesSince = Math.floor((now - lastModified) / (1000 * 60));
-          lastPlayedChar = `Actividad hace ${minutesSince} min`;
-        }
-        
-        if (acc.isOnline !== isOnline || acc.lastPlayedChar !== lastPlayedChar) {
-          acc.isOnline = isOnline;
-          acc.lastPlayedChar = lastPlayedChar;
-          // Buscar por token en vez de por índice
-          updateSingleAccountRow(acc.token, acc);
-          updatedCount++;
-        }
-        if (isOnline) onlineCount++;
-        
-      } catch(e) {
-        console.warn(LOG, 'Error refreshing online status for', acc.label, e);
-      }
+    var failedCount = 0;
+    var done = 0;
+
+    function reportProgress() {
+      var msg = 'Estado online: ' + done + '/' + total;
+      var e = GN.progressEta.computeEta(startedAt, done, total, Date.now());
+      if (e) msg += ' — ' + GN.progressEta.fmtEta(e.secs) + ' restantes';
+      if (failedCount) msg += ' · ' + failedCount + ' con error';
+      setStatus(msg, failedCount ? 'error' : undefined);
     }
-    
+
+    // Un settle por cuenta. El Promise.allSettled es lo que evita que el fallo
+    // de una cuenta (un token revocado, un 500) se lleve por delante el
+    // resultado de las otras 26: el catch por cuenta ya existia, pero en serie
+    // un throw escapado al for cortaba el recorrido entero.
+    var results = await Promise.allSettled(state.accounts.map(function (acc) {
+      return root.GW2Api.getAccountInfo(acc.token, { nocache: true })
+        .then(function (accountInfo) {
+          var isOnline = root.GW2Api.isRecentlyActive(accountInfo, 10); // 10 minutos de umbral
+          var lastPlayedChar = null;
+
+          if (isOnline && accountInfo && accountInfo.last_modified) {
+            var lastModified = new Date(accountInfo.last_modified);
+            var now = new Date();
+            var minutesSince = Math.floor((now - lastModified) / (1000 * 60));
+            lastPlayedChar = 'Actividad hace ' + minutesSince + ' min';
+          }
+
+          if (acc.isOnline !== isOnline || acc.lastPlayedChar !== lastPlayedChar) {
+            acc.isOnline = isOnline;
+            acc.lastPlayedChar = lastPlayedChar;
+            // Buscar por token en vez de por índice
+            updateSingleAccountRow(acc.token, acc);
+            updatedCount++;
+          }
+          if (isOnline) onlineCount++;
+          return true;
+        })
+        .then(function (v) { done++; reportProgress(); return v; },
+              function (e) { done++; failedCount++; reportProgress(); throw e; });
+    }));
+
+    results.forEach(function (r, i) {
+      if (r.status === 'rejected') {
+        console.warn(LOG, 'Error refreshing online status for', state.accounts[i].label, r.reason);
+      }
+    });
+
     if (window.toast) {
+      if (failedCount) {
+        window.toast('info', failedCount + ' cuenta(s) no se pudieron leer', { ttl: 2500 });
+      }
       if (onlineCount > 0) {
         window.toast('success', onlineCount + ' cuenta(s) activa(s) en los últimos 10 min', { ttl: 2000 });
       } else {
         window.toast('info', 'No se encontraron cuentas con actividad reciente', { ttl: 1500 });
       }
     }
-    console.log(LOG, 'Actualización completada: ' + updatedCount + ' cambios, ' + onlineCount + ' activas');
+    console.log(LOG, 'Actualización completada: ' + updatedCount + ' cambios, ' + onlineCount + ' activas, ' + failedCount + ' errores');
   }
 
   // ====== LOADALL CON ESTADO ONLINE BASADO EN LAST_MODIFIED ======
@@ -1780,11 +1835,24 @@ function hidePanel(){
     });
   }
 
+  /**
+   * Token de la cuenta seleccionada.
+   *
+   * ANTES: `localStorage.getItem('gw2_selected_key_v1')` a pelo, por debajo de la
+   * capa `Storage` (T19-c). Este modulo tiene OTRO raw legitimo en `:858`
+   * (`gw2_keys`), que NO se toca: son dos legacy distintas y el guard de idea61
+   * las vigila por par justamente para que sigan siendo dos.
+   * AHORA: `Storage.get(ACCOUNT_SELECTED)` — espejo (legacy) -> gn: -> fallback.
+   *
+   * FALLBACK DEL DOM — INTENCIONAL: el `<select id="keySelectGlobal">` gana
+   * cuando tiene valor, que es lo que pasa hoy. No es residuo de un copiado;
+   * cambiar esta precedencia es otro ciclo.
+   */
   function getSelectedToken() {
     try {
       var sel = document.getElementById('keySelectGlobal');
       if (sel && sel.value) return sel.value.trim();
-      var stored = localStorage.getItem('gw2_selected_key_v1');
+      var stored = Storage.get(Storage.STORAGE_KEYS.ACCOUNT_SELECTED);
       if (stored) return stored;
     } catch(e) {}
     return null;

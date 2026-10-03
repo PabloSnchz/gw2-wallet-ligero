@@ -1,5 +1,13 @@
-﻿/*!
+/*!
  * js/accounts-panel.js — Panel de Cuentas (cifrado local)
+ * v2.0.2 (2026-09-30) - Idea 55 Tramo 3a
+ *  - enrichWithGW2API() pide /v2/account por GW2Api.getAccountInfo
+ *    en vez de `fetch` crudo. El wrapper ya existia (api-gw2.js:393).
+ *    El try/catch por cuenta NO cambio: una cuenta rota sigue sin
+ *    cortar el enriquecimiento de las otras.
+ *  - /v2/account/home/nodes SIGUE crudo a proposito: no tiene wrapper
+ *    en la capa y es otro endpoint.
+ *
  * v2.0.0 (2026-05-03) — Rediseño "Profile Card" premium
  *
  * MEJORAS v2.0.0:
@@ -159,7 +167,19 @@
   function syncAccountTagsToKeys(accounts) {
     if (!accounts || !Array.isArray(accounts)) return;
     try {
-      var keys = JSON.parse(localStorage.getItem('gw2_keys') || '[]');
+      // Idea 64: esto leia la LEGACY a pelo (`localStorage.getItem('gw2_keys')`),
+      // que es exactamente el LECTOR CRUDO que la Idea 61 seccion 6 dice que hay
+      // que PROHIBIR: es el unico camino que se saltaria el espejo
+      // gn:<->legacy. Su test daba 0 porque no era la clase que vigilaba
+      // (coherencia de claves, no concurrencia), y despues porque el assert que
+      // la nominaba matcheaba ESTE MISMO comentario. Por la API, que devuelve
+      // el valor vigente por el camino soportado.
+      //
+      // El literal de arriba esta aqui a proposito: es lo que obliga al assert a
+      // ser ciego a la prosa (`cuerpoSinComentarios` en
+      // tests/idea64-dos-pestanas.test.js). Si lo borras de este comentario, el
+      // assert sigue verde y el helper deja de estar probado.
+      var keys = Storage.get(Storage.STORAGE_KEYS.ACCOUNT_KEYS) || [];
       if (!keys.length) return;
       var changed = false;
       accounts.forEach(function(acc) {
@@ -170,7 +190,12 @@
         var found = keys.find(function(k) { return k.value === apiKey; });
         if (found && found.tag !== tipo) { found.tag = tipo; changed = true; }
       });
-      if (changed) localStorage.setItem('gw2_keys', JSON.stringify(keys));
+      if (changed) {
+        // Storage.set escribe la gn: y su legacy. Antes escribia solo la legacy
+        // (localStorage.setItem), y la gn: quedaba con la foto del primer
+        // arranque: es la que sube el Gist.
+        Storage.set(Storage.STORAGE_KEYS.ACCOUNT_KEYS, keys);
+      }
     } catch(_) {}
   }
 
@@ -315,7 +340,7 @@
 
     if (state.compact) {
       // VISTA COMPACTA
-      return '<article class="card account-card" style="border-left:3px solid ' + bLeft + ';cursor:pointer;" data-account-id="' + acc.id + '" data-toggle-expand-name>' +
+      return '<article class="card account-card" style="border-left:3px solid ' + bLeft + ';">' +
         '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;">' +
           '<div style="width:36px;height:36px;border-radius:10px;background:var(--bg-1);display:flex;align-items:center;justify-content:center;box-shadow:' + iGlow + ';flex-shrink:0;"><img src="' + displayIcon + '" width="24" height="24" style="filter:brightness(0.9);"></div>' +
           '<div style="flex:1;min-width:0;">' +
@@ -342,7 +367,7 @@
         '<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">' +
           '<div style="width:52px;height:52px;border-radius:14px;background:var(--bg-1);display:flex;align-items:center;justify-content:center;box-shadow:' + iGlow + ';flex-shrink:0;"><img src="' + displayIcon + '" width="34" height="34" style="filter:brightness(0.9);"></div>' +
           '<div style="flex:1;min-width:0;">' +
-            '<div style="font-weight:700;font-size:1.05rem;color:var(--tx-1);cursor:pointer;" data-account-id="' + acc.id + '" data-toggle-expand-name>' + esc(acc.name || 'Cuenta') + '</div>' +
+            '<div style="font-weight:700;font-size:1.05rem;color:var(--tx-1);">' + esc(acc.name || 'Cuenta') + '</div>' +
             '<div style="font-size:0.82rem;color:' + typeColor + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;" data-copy="' + esc(login.email || '') + '" data-field="Email">' + esc(login.email || '—') + '</div>' +
             (tagIconsHtml ? '<div style="display:flex;align-items:center;gap:5px;margin-top:4px;">' + tagIconsHtml + '</div>' : '') +
           '</div>' +
@@ -423,9 +448,6 @@
     // Wire: toggle secciones colapsables (expansiones)
     document.querySelectorAll('[data-toggle-section]').forEach(function(el) { if (el.__wiredSection) return; el.__wiredSection = true;
       el.addEventListener('click', function(e) { e.stopPropagation(); var id = el.getAttribute('data-toggle-section'); var section = el.getAttribute('data-section'); var current = state.expandedAccounts[id] || {}; current[section] = !current[section]; state.expandedAccounts[id] = current; renderList(); }); });
-    // Wire: expandir al click en nombre
-    document.querySelectorAll('[data-toggle-expand-name]').forEach(function(el) { if (el.__wiredName) return; el.__wiredName = true;
-      el.addEventListener('click', function(e) { e.stopPropagation(); var id = el.getAttribute('data-account-id'); state.view = state.view === 'cards' ? 'table' : 'cards'; renderList(); }); });
     // Wire: copiar al portapapeles
     document.querySelectorAll('[data-copy]').forEach(function(el) { if (el.__wiredCopy) return; el.__wiredCopy = true;
       el.addEventListener('click', function(e) { e.stopPropagation(); var t = el.getAttribute('data-copy'), f = el.getAttribute('data-field')||'Texto'; if (t && t!=='—') copyToClipboard(t, f); else window.toast('info', 'No hay ' + f + ' para copiar', {ttl:1500}); }); });
@@ -800,8 +822,10 @@
     for (var i = 0; i < accounts.length; i++) {
       var acc = accounts[i], apiKey = acc.apiKey?.value || acc.apiKey; if (!apiKey) continue;
       try {
-        var info = await (await fetch('https://api.guildwars2.com/v2/account?access_token=' + encodeURIComponent(apiKey))).json();
+        var info = await root.GW2Api.getAccountInfo(apiKey);
         acc.gw2 = acc.gw2 || {}; acc.gw2.accountName = info.name; acc.gw2.created = info.created; acc.gw2.achievementPoints = info.achievement_points; acc.gw2.characterSlots = info.slots; acc.gw2.bagSlots = info.bag_slots; acc.gw2.bankSlots = info.bank_slots; acc.gw2.materialStorage = info.material_storage;
+        // /v2/account/home/nodes sigue crudo a proposito: NO tiene wrapper en la
+        // capa y no es lo que esta Rama del Idea 55. Queda anotado como pendiente.
         var nodes = await (await fetch('https://api.guildwars2.com/v2/account/home/nodes?access_token=' + encodeURIComponent(apiKey))).json();
         acc.expansions = acc.expansions || {};
         if (nodes.some(function(n) { return n.includes('hot') || n.includes('heart_of_thorns'); })) acc.expansions.heartOfThorns = true;

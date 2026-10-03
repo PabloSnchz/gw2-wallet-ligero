@@ -121,7 +121,8 @@
           '#/wallet/dashboard':'walletDashboard',
           '#/inventory/dashboard':'inventoryDashboard',
           '#/account/raids':'raids',
-          '#/account/strikes':'strikes'
+          '#/account/strikes':'strikes',
+          '#/account/legendary-armory':'legendaryArmory'
         };
         var dv = map[h]; if (dv) found = links.find(function (a) { return (a.getAttribute('data-view')||'').trim().toLowerCase()===dv; }) || null;
       }
@@ -142,13 +143,14 @@
       else if (view==='walletDashboard'){ /* no sidebar específico */ }
       else if (view==='raids'){ /* no sidebar específico para raids */ }
       else if (view==='strikes'){ /* no sidebar específico para strikes */ }
+      else if (view==='legendaryArmory'){ /* no sidebar específico para arm. legendaria */ }
       else if (view==='inventory'){ /* no sidebar específico para inventario */ }
       else if (view==='inventoryDashboard'){ /* no sidebar específico */ }
     } catch (e) { console.warn('[router] updateSidebarFor error', e); }
   }
 
   function showPanel(idToShow) {
-    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','inventoryPanel','charactersPanel','accountsPanel','welcomePanel','walletDashboardPanel','inventoryDashboardPanel','wvObjectivesDashboardPanel','raidTrackerPanel','strikeTrackerPanel'].forEach(function(id){
+    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','inventoryPanel','charactersPanel','accountsPanel','welcomePanel','walletDashboardPanel','inventoryDashboardPanel','wvObjectivesDashboardPanel','raidTrackerPanel','strikeTrackerPanel','legendaryArmoryPanel'].forEach(function(id){
       var node=el(id); if (!node) return;
       if (id===idToShow) node.removeAttribute('hidden'); else node.setAttribute('hidden','hidden');
     });
@@ -1480,9 +1482,63 @@
     if (pdBtn) pdBtn.hidden = true;
   }
 
+  // T13-a: los modulos con latch en activate() (`if (state.active) return;`)
+  // nunca lo bajan, porque su deactivate() no llegaba desde acá. Medido en
+  // HB#106/108: irse a Meta dejaba 6 timers vivos con 1 solo panel visible.
+  //
+  // El PREDICADO es el DOM, POSPUESTO a que el módulo resolvió la visibilidad.
+  // NO es la pref y NO es el hash, y esa es la parte importante (veredicto del
+  // Reviewer, P1): la pref gn:raids:strike:view NO es la verdad de "qué panel
+  // va a quedar visible" porque hay DOS toggles y no coinciden. Medido en
+  // tools/hb108-toggle-divergencia.mjs: wireViewToggle (raid-tracker.js)
+  // escribe la pref; wireStrikeViewToggle (strike-tracker.js:1202) cambia la
+  // visibilidad de los 2 paneles y NO toca la pref. O sea el estado
+  // {visible=raids, pref=strikes} es alcanzable por un click y es estable: un
+  // deactivate() keyed en la pref apagaría el módulo que Pablo está mirando.
+  //
+  // Por eso la condición es "mi panel NO quedó visible", y no "desactivo todo".
+  // Es lo que protege a InventoryHub, cuyo deactivate() además resetea la
+  // subvista (inventory-hub.js:1455): si su panel quedó visible, no se toca.
+  //
+  // HomesteadTracker NO entra, y es una decisión explícita, no una omisión:
+  // su deactivate() (homestead-tracker.js:403) solo hace abortLastFetch() y no
+  // tiene panel propio -- escribe en `homesteadTrackerBody`, que no existe en
+  // index.html (medido: 0 matches). Además nadie lo activa: `HomesteadTracker
+  // .activate` no aparece en ningún call site de js/ (medido: 0 matches). Su
+  // latch es inerte por partida doble, y sin panel no hay predicado posible.
+  var MODULOS_CON_LATCH = [
+    { mod: 'RaidTracker',     panel: 'raidTrackerPanel' },
+    { mod: 'StrikeTracker',   panel: 'strikeTrackerPanel' },
+    { mod: 'LegendaryTracker', panel: 'legendaryArmoryPanel' },
+    { mod: 'InventoryHub',    panel: 'inventoryPanel' }
+  ];
+
+  function barridoLatch(){
+    for (var i = 0; i < MODULOS_CON_LATCH.length; i++) {
+      var e = MODULOS_CON_LATCH[i];
+      var p = el(e.panel);
+      // Su panel quedó visible: es el dueño de la pantalla, no se toca.
+      if (p && !p.hasAttribute('hidden')) continue;
+      var m = window[e.mod];
+      if (!m || typeof m.deactivate !== 'function') continue;
+      try { m.deactivate(); } catch (_) {}
+    }
+  }
+
   function route() {
       clearTimeout(_routeT);
       _routeT = setTimeout(function () {
+        // T13-a: el barrido va en un `finally` que ABRAZA TODO EL CUERPO, y
+        // no al final de la cadena de ifs. Motivo medido (P3 del Reviewer):
+        // el callback tiene un `return` por rama (14 ramas, cada una con su
+        // try/finally), así que un barrido escrito después de la cadena NUNCA
+        // se ejecutaría. El código se vería bien y la suite de capitalización
+        // daría igual, porque el barrido no corrió.
+        //
+        // Va al FINAL a propósito: tiene que ver el DOM POST-activate, o sea
+        // después de que wireViewToggle/setActiveView movieran los paneles
+        // según la pref. Ponerlo antes apagaría el módulo que quedó visible.
+        try {
         var h = normHash(location.hash || '#/cards');
 
         if (h !== '#/account/wizards-vault' && WV && typeof WV.deactivate === 'function') {
@@ -1552,6 +1608,22 @@
             console.warn('[router] show strikes error', e);
           } finally {
             updateSidebarFor('strikes');
+            setActiveNav(h);
+          }
+          return;
+        }
+
+        if (h === '#/account/legendary-armory') {
+          try {
+            showPanel('legendaryArmoryPanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('legendary_armory');
+            if (window.LegendaryTracker && typeof window.LegendaryTracker.activate === 'function') {
+              window.LegendaryTracker.activate();
+            }
+          } catch (e) {
+            console.warn('[router] show legendary armory error', e);
+          } finally {
+            updateSidebarFor('legendaryArmory');
             setActiveNav(h);
           }
           return;
@@ -1700,6 +1772,11 @@
         }
         catch (e) { console.warn('[router] fallback show wallet error', e); }
         finally { updateSidebarFor('cards'); setActiveNav('#/cards'); }
+        } finally {
+          // Un panel visible con su módulo apagado es peor que un timer de más:
+          // por eso el predicado mira el DOM y no la pref (ver arriba).
+          barridoLatch();
+        }
       }, 35);
     }
 
@@ -1794,6 +1871,12 @@
           window.StrikeTracker.refresh(true);
         } else if (window.StrikeTracker && typeof window.StrikeTracker.activate === 'function') {
           window.StrikeTracker.activate();
+        }
+      } else if (h === '#/account/legendary-armory') {
+        if (window.LegendaryTracker && typeof window.LegendaryTracker.refresh === 'function') {
+          window.LegendaryTracker.refresh(true);
+        } else if (window.LegendaryTracker && typeof window.LegendaryTracker.activate === 'function') {
+          window.LegendaryTracker.activate();
         }
       }
 

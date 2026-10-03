@@ -1,6 +1,6 @@
 /*!
  * Activities Theme — migración a componentes canónicos (estilo Purchase Detail)
- * v2.6.0 (2026-03-23)
+ * v2.6.1 (2026-09-30)
  *
  * MEJORAS v2.6.0:
  *  - Adaptación a nueva estructura: Home Nodes aislado en su propia pestaña
@@ -360,7 +360,8 @@
       var today = getTodayKey();
       var storage = JSON.parse(localStorage.getItem('gn_home_nodes_marked') || '{}');
       storage[today] = marked;
-      localStorage.setItem('gn_home_nodes_marked', JSON.stringify(storage));
+      // Storage.set escribe la gn: y su legacy (storage.js MIRROR_MAP).
+      Storage.set(Storage.STORAGE_KEYS.ACTIVITIES_HOME_NODES, storage);
     } catch (e) {}
   }
 

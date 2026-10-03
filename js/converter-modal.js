@@ -1,9 +1,24 @@
 ﻿/*!
  * js/converter-modal.js — Conversor Gem ↔ Gold (Modal)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.0.0 (2026-05-04)
+ * Versión: 1.2.0 (2026-09-30)
  *
- * Extraído de app.js para independizar el conversor en un modal
+ * v1.2.0: buys/sells distinguen "no leido" de "no tenes" (Idea 47 c4, P1 del
+ *         Code Reviewer). Los dos wrappers de /v2/commerce/transactions YA
+ *         propagan el error desde api-gw2.js v2.18.0, pero el call site lo
+ *         volvia a convertir en [] con un ternario. El efecto era que el
+ *         cambio de contrato no arreglaba nada y ademas duplicaba el
+ *         console.warn: un API key caido se seguia viendo como
+ *         "No tenes ordenes activas en el TP". Ahora cada lado lleva su
+ *         estado y el fallo se nombra.
+ * v1.1.1: el titulo decia "sin cobrar", pero /v2/commerce/delivery devuelve la
+ *         caja ENTERA: ventas sin retirar y compras sin retirar. Para un item
+ *         comprado, "no te abonaron" es falso. Corregido a "sin recoger" con
+ *         un cuerpo que no presupone de que lado viene (correccion del PO).
+ * v1.1.0: banner "caja del Trading Post sin cobrar" (getCommerceDelivery).
+ *         Tres estados distinguibles a proposito: pendiente / vacio real /
+ *         "no se pudo leer". Sin ordenes activas el banner se dibuja igual.
+ * v1.0.0: Extraído de app.js para independizar el conversor en un modal
  * con estructura preparada para futuras tabs (Ofertas, Historial).
  *
  * Fase 1: Conversor funcional completo + tabs placeholder
@@ -35,6 +50,25 @@
       itemsById: {},
       loading: false,
       lastUpdate: 0,
+      delivery: [],
+      // Caja del Trading Post. Cuatro estados, y 'empty' NO es 'error':
+      //   'unknown' = todavia no se consulto
+      //   'pending' = hay items esperando cobro (la alerta que motiva la feature)
+      //   'empty'   = se leyo bien y no hay nada
+      //   'error'   = no se pudo leer (permiso tradingpost ausente, caida, etc.)
+      // La distincion es obligatoria: getCommerceDelivery() propaga el error a
+      // proposito (ver el contrato en js/api-gw2.js) para que un fallo no se
+      // pueda presentar como "caja vacia".
+      deliveryStatus: 'unknown',
+      // Compras y ventas, cada una por separado. Mismo contrato que
+      // deliveryStatus y por el mismo motivo: los dos wrappers de
+      // transactions propagan el error (api-gw2.js v2.18.0), asi que "no pude
+      // leer" y "no tenes" son estados distintos y no pueden verse igual.
+      //   'unknown' = todavia no se consulto
+      //   'ok'      = se leyo bien (puede ser [])
+      //   'error'   = no se pudo leer
+      buysStatus: 'unknown',
+      sellsStatus: 'unknown',
       filters: {
         type: 'all' // 'all', 'buys', 'sells'
       }
@@ -531,6 +565,7 @@
     var isLegendaryFilter = state.ofertas.filters.rarity === 'Legendary';
 
     var html =
+      renderDeliveryBanner() +
       '<div style="margin-bottom:8px;font-size:0.75rem;color:var(--muted);line-height:1.5;">' +
         (isLegendaryFilter
           ? '💜 <strong>Legendarias más activas:</strong> ordenadas por cantidad de gente vendiendo. A más vendedores, más liquidez y precios más competitivos.'
@@ -686,20 +721,58 @@
       var token = getSelectedTokenForCommerce();
       if (!token) {
         st.buys = []; st.sells = []; st.lastUpdate = Date.now();
+        st.buysStatus = 'unknown'; st.sellsStatus = 'unknown';
         return;
       }
 
+      // allSettled + estado por lado (v1.2.0). Antes: `status === 'fulfilled'
+      // ? value : []`, que deshacia el contrato de api-gw2.js v2.18.0 y
+      // volvia a presentar un fallo de red como "no tenes ordenes".
+      st.buysStatus = 'unknown';
+      st.sellsStatus = 'unknown';
       var results = await Promise.allSettled([
         root.GW2Api.getCommerceTransactionsBuys(token, { nocache: !!forceNoCache }),
         root.GW2Api.getCommerceTransactionsSells(token, { nocache: !!forceNoCache })
       ]);
 
-      var buys = results[0].status === 'fulfilled' ? results[0].value : [];
-      var sells = results[1].status === 'fulfilled' ? results[1].value : [];
+      var buys = [];
+      if (results[0].status === 'fulfilled') {
+        buys = Array.isArray(results[0].value) ? results[0].value : [];
+        st.buysStatus = 'ok';
+      } else {
+        st.buysStatus = 'error';
+        console.warn(LOG, 'No se pudieron leer las compras del TP:', results[0].reason);
+      }
 
-      // Obtener metadatos de items
+      var sells = [];
+      if (results[1].status === 'fulfilled') {
+        sells = Array.isArray(results[1].value) ? results[1].value : [];
+        st.sellsStatus = 'ok';
+      } else {
+        st.sellsStatus = 'error';
+        console.warn(LOG, 'No se pudieron leer las ventas del TP:', results[1].reason);
+      }
+
+      // Caja del Trading Post: lo que quedo sin cobrar.
+      // Los tres wrappers (buys, sells, delivery) propagan el error; aca se
+      // traduce cada uno a un estado explicito para que la UI distinga
+      // "no hay nada" de "no se pudo leer".
+      st.delivery = [];
+      st.deliveryStatus = 'empty';
+      try {
+        var delivery = await root.GW2Api.getCommerceDelivery(token, { nocache: !!forceNoCache });
+        st.delivery = Array.isArray(delivery) ? delivery : [];
+        st.deliveryStatus = st.delivery.length ? 'pending' : 'empty';
+      } catch (deliveryErr) {
+        st.delivery = [];
+        st.deliveryStatus = 'error';
+        console.warn(LOG, 'No se pudo leer la caja del Trading Post:', deliveryErr);
+      }
+
+      // Obtener metadatos de items (ordenes + caja)
       var itemIds = buys.concat(sells).map(function (tx) { return tx.item_id; }).filter(Boolean);
-      var uniqueIds = Array.from(new Set(itemIds));
+      var deliveryIds = st.delivery.map(function (d) { return d && d.item_id; }).filter(Boolean);
+      var uniqueIds = Array.from(new Set(itemIds.concat(deliveryIds)));
       var items = await root.GW2Api.getItemsMany(uniqueIds, { nocache: false });
       var itemsById = {};
       items.forEach(function (it) { if (it && it.id != null) itemsById[it.id] = it; });
@@ -714,6 +787,70 @@
       st.loading = false;
       renderTransacciones();
     }
+  }
+
+  /**
+   * Bloque "caja del Trading Post sin cobrar".
+   *
+   * Tres estados visibles y genuinamente distintos entre si:
+   *  - 'pending': hay items esperando. Es la alerta que motiva la feature.
+   *  - 'error':   no se pudo leer. Tambien se muestra, porque en un panel cuyo
+   *               unico proposito es avisar, un fallo silencioso es peor que
+   *               un panel vacio: el usuario creeria que no debe nada.
+   *  - 'empty':   se leyo bien y no hay nada. No se dibuja nada (silencio = OK).
+   *
+   * Este render solo escribe el atributo `data-cv-color`. El color lo aplica
+   * commerce-delivery-theme.js (capa 3); la estructura vive en main.css
+   * (capa 1) y la piel neutra en theme-polish.css (capa 2).
+   */
+  function renderDeliveryBanner() {
+    var st = state.transacciones;
+    if (st.deliveryStatus !== 'pending' && st.deliveryStatus !== 'error') return '';
+
+    if (st.deliveryStatus === 'error') {
+      return '<div class="cv-delivery" data-cv-color="error" role="status">' +
+        '<div class="cv-delivery__head">' +
+          '<span class="cv-delivery__icon" aria-hidden="true">⚠️</span>' +
+          '<span class="cv-delivery__title">No se pudo leer tu caja del Trading Post</span>' +
+        '</div>' +
+        '<p class="cv-delivery__body">Lo usual es que la API Key no tenga el permiso <code>tradingpost</code>, ' +
+        'o que la API haya caído en ese momento. Las órdenes de abajo sí son datos ya leídos y no se ven afectados.</p>' +
+        '<button id="cvDeliveryRetry" class="btn btn--ghost btn--xs">Reintentar</button>' +
+        '</div>';
+    }
+
+    // 'pending'
+    var count = st.delivery.length;
+    var totalUnits = st.delivery.reduce(function (sum, d) { return sum + (Number(d && d.quantity) || 0); }, 0);
+    var MAX_CHIPS = 12;
+
+    var chips = st.delivery.slice(0, MAX_CHIPS).map(function (d) {
+      var item = st.itemsById[d.item_id] || {};
+      var name = item.name || ('Ítem #' + d.item_id);
+      var qty = Number(d.quantity) || 0;
+      return '<span class="cv-delivery__chip" title="' + esc(name) + '">' +
+        (item.icon ? '<img src="' + esc(item.icon) + '" width="16" height="16" alt="">' : '') +
+        '<span class="cv-delivery__chip-name">' + esc(name) + '</span>' +
+        (qty > 1 ? '<em class="cv-delivery__chip-qty">×' + qty + '</em>' : '') +
+        '</span>';
+    }).join('');
+
+    var more = count > MAX_CHIPS
+      ? '<span class="cv-delivery__more">+' + (count - MAX_CHIPS) + '</span>'
+      : '';
+
+    return '<div class="cv-delivery" data-cv-color="pending" role="status">' +
+      '<div class="cv-delivery__head">' +
+        '<span class="cv-delivery__icon" aria-hidden="true">📦</span>' +
+      '<span class="cv-delivery__title">' + count + ' ítem' + (count === 1 ? '' : 's') + ' sin recoger</span>' +
+      '</div>' +
+      '<p class="cv-delivery__body">Están en tu caja del Trading Post. Hasta que no los retires no los tenés ' +
+      'en tus manos, y si son ventas el dinero tampoco está acreditado todavía. La caja no dice cuáles son ' +
+      'compras y cuáles ventas.' +
+      (totalUnits > 1 ? ' (<strong>' + totalUnits + '</strong> unidades en total)' : '') +
+      ' Se recogen en el Trading Post de la Wilderness, o desde la pestaña Commerce de tu cuenta.</p>' +
+      '<div class="cv-delivery__chips">' + chips + more + '</div>' +
+      '</div>';
   }
 
   function getFilteredTransacciones() {
@@ -758,6 +895,52 @@
     return all;
   }
 
+  /**
+   * Banner de "no se pudo leer" para compras y ventas (v1.2.0).
+   *
+   * Reutiliza a proposito las clases de la caja del TP en vez de crear unas
+   * nuevas: son las mismas tres capas (main.css estructura, theme-polish.css
+   * borde neutro, commerce-delivery-theme.js borderLeft de color) y el estado
+   * 'error' ya existe en COLORS. Un banner nuevo habia exigido CSS nuevo, y
+   * con el riesgo de duplicar la receta visual en otra capa.
+   *
+   * Se dibuja TAMBIEN cuando no hay ordenes, porque ese es justamente el
+   * estado en el que el fallo era invisible: sin este bloque, un API key
+   * caido se renderizaba como "No tenes ordenes activas en el TP".
+   */
+  function renderTransErrorBanner() {
+    var st = state.transacciones;
+    var failBuys = st.buysStatus === 'error';
+    var failSells = st.sellsStatus === 'error';
+    if (!failBuys && !failSells) return '';
+
+    var failed, ok;
+    if (failBuys && failSells) {
+      failed = 'las compras ni las ventas';
+      ok = 'La caja del Trading Post';
+    } else if (failBuys) {
+      failed = 'las compras';
+      ok = 'las ventas y la caja del Trading Post';
+    } else {
+      failed = 'las ventas';
+      ok = 'las compras y la caja del Trading Post';
+    }
+
+    return '<div class="cv-delivery" data-cv-color="error" role="status">' +
+      '<div class="cv-delivery__head">' +
+        '<span class="cv-delivery__icon" aria-hidden="true">⚠️</span>' +
+        '<span class="cv-delivery__title">No se pudo leer ' + esc(failed) + ' del Trading Post</span>' +
+      '</div>' +
+      '<p class="cv-delivery__body">Lo usual es que la API Key no tenga el permiso <code>tradingpost</code>, ' +
+      'o que la API haya caído en ese momento. Lo que sí se pudo leer — ' + esc(ok) + ' — no se ve afectado. ' +
+      'Si recargás y sigue igual, revisá el permiso de la Key.</p>' +
+      // Reusa el id que wireTransaccionesEvents() ya escuchaba y que ningun
+      // markup dibujaba (handler muerto hasta ahora, hallazgo #10). Usar el id
+      // del boton del estado vacio habria dejado DOS nodos con el mismo id.
+      '<button id="cvTransaccionesRetry" class="btn btn--ghost btn--xs">Reintentar</button>' +
+      '</div>';
+  }
+
   function renderTransacciones() {
     var container = document.querySelector('#convModal .conv-tab-content[data-tab="transacciones"]');
     if (!container) return;
@@ -779,7 +962,13 @@
     }
 
     if (!st.buys.length && !st.sells.length) {
-      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">' +
+      // Los banners van PRIMERO y se dibujan igual: "cero órdenes activas" es
+      // precisamente el caso donde la caja del TP puede seguir llena, y antes
+      // de este bloque ese estado se renderizaba como vacío de verdad. Y es
+      // también el estado donde un fallo de lectura era invisible, porque se
+      // confundía con "no tenés órdenes" (v1.2.0).
+      container.innerHTML = renderTransErrorBanner() + renderDeliveryBanner() +
+        '<div style="text-align:center;padding:40px;color:var(--muted);">' +
         '<img src="assets/icons/155033.png" width="48" height="48" alt="" style="opacity:0.3;margin-bottom:16px;"><br>' +
         '📭 No tenés órdenes activas en el TP.<br>' +
         '<button id="cvTransaccionesRefresh" class="btn btn--ghost" style="margin-top:16px;">Refrescar</button></div>';
@@ -798,6 +987,8 @@
     var balanceSign = balance >= 0 ? '+' : '';
 
     var html =
+      renderTransErrorBanner() +
+      renderDeliveryBanner() +
       '<div style="margin-bottom:8px;font-size:0.75rem;color:var(--muted);line-height:1.5;">' +
         '📋 <strong>Tus órdenes activas</strong> en la Compañía de Comercio. ' +
         'Compras: <span style="color:var(--color-green);">' + st.buys.length + '</span> · ' +
@@ -881,9 +1072,11 @@
     var typeSel = document.getElementById('cvTransaccionesType');
     var refreshBtn = document.getElementById('cvTransaccionesRefresh');
     var retryBtn = document.getElementById('cvTransaccionesRetry');
+    var deliveryRetry = document.getElementById('cvDeliveryRetry');
     if (typeSel && !typeSel.__wired) { typeSel.__wired = true; typeSel.addEventListener('change', function () { state.transacciones.filters.type = typeSel.value || 'all'; renderTransacciones(); }); }
     if (refreshBtn && !refreshBtn.__wired) { refreshBtn.__wired = true; refreshBtn.addEventListener('click', function () { loadTransacciones(true); }); }
     if (retryBtn && !retryBtn.__wired) { retryBtn.__wired = true; retryBtn.addEventListener('click', function () { loadTransacciones(true); }); }
+    if (deliveryRetry && !deliveryRetry.__wired) { deliveryRetry.__wired = true; deliveryRetry.addEventListener('click', function () { loadTransacciones(true); }); }
   }
 
   function getSelectedTokenForCommerce() {

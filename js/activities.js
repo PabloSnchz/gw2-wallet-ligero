@@ -1,5 +1,45 @@
 /*!
  * js/activities.js — Panel de Actividades (Objetivos / Home Nodes)
+ * v3.20.4 (2026-09-30) - Fix: activate() ya no borra la cache de logros de otro modulo
+ *
+ * CAMBIOS v3.20.3:
+ * - activate() llamaba a cleanAchievementsCache(), que borra TODAS las claves
+ *   localStorage con prefijo 'ach_'. Esa es exactamente la familia que escribe
+ *   api-gw2.js putCache() para los logros: ach_acc:<fp> (TTL 2 min) y
+ *   ach_meta_v2:es:<ids> (TTL 12 h, la cara). router.js invoca
+ *   Activities.activate() en cada navegacion a #/activities, asi que abrir el
+ *   panel dejaba sin cache de logros a TODAS las cuentas y la pagina de Logros
+ *   arrancaba en frio (~433 requests) aunque acabas de cargar.
+ * - cleanActivitiesCache() SE CONSERVA: borra prefijos 'psna:' y
+ *   ACTIVITIES_CACHE_KEYS, que son datos de este mismo modulo. La regla
+ *   aplicada es "un modulo no borra la cache de otro".
+ * - cleanAchievementsCache() sigue definida, para cuando se quiera llamar a
+ *   proposito. No se borro ninguna funcion.
+ * - Sin cambio de UI: no toca CSS ni estructura. tests/idea49.activities-cache-wipe.test.js
+ *
+ *
+ * CAMBIOS v3.20.2:
+ * - El bloque de fractales escribia sus estilos en `style=` inline, mezclando las
+ *   3 capas de CSS y metiendo literales rgba() de color semantico dentro del JS.
+ *   El Code Reviewer lo marco en el COMM 019 (task-4a1841efc329).
+ * - La estructura (padding, flex, grid, tipografia) se movio a main.css (capa 1)
+ *   bajo .fractals-stack / .fractal-card y sus clases hijas.
+ * - La piel (borde neutro, border-radius) se movio a theme-polish.css (capa 2).
+ * - El color semantico se movio al nuevo js/fractal-tracker-theme.js, que es la
+ *   UNICA capa autorizada a escribir `borderLeft`. activities.js solo marca el rol
+ *   con `data-fl-color` ("info" | "t4" | "cm"); el theme lo resuelve.
+ * - Sin cambio funcional: mismos datos, misma estructura, mismo texto.
+ *
+ * CAMBIOS v3.20.1:
+ * - loadToday() y loadTomorrow() hardcodeaban 3 fractales T4 + 3 escalas cada una,
+ *   de modo que el panel mostraba SIEMPRE los mismos nombres, presentados como los
+ *   "dailies de hoy" y los "dailies de mañana". Era informacion falsa.
+ * - La API GW2 no expone esa rotacion: /v2/fractals -> {"error":"not found"} y
+ *   /v2/achievements/daily -> {"text":"API not active"} (retirado tras Wizard's Vault).
+ * - Ahora la rotacion queda marcada rotationAvailable:false y el panel muestra un
+ *   aviso explicito. El tracker de Solitary Throne CM NO se toca: ese es real
+ *   (viene de getAccountAchievements).
+ *
  * v3.19.6 (2026-04-05) - Persistencia robusta de Piedras Vetustas (sin Promesas como claves)
  *
  * CAMBIOS v3.19.6:
@@ -47,6 +87,13 @@
       fractals: {
         status: 'idle',
         error: null,
+        // La API GW2 NO expone la rotación diaria de fractales: /v2/fractals
+        // devuelve {"error":"not found"} y /v2/achievements/daily responde
+        // {"text":"API not active"} (retirado tras la rework de Wizard's Vault).
+        // Por eso `t4` y `rec` quedan vacíos y `rotationAvailable:false`:
+        // preferimos mostrar "no disponible" antes que inventar nombres.
+        // El tracker de CM (abajo) SÍ es real (viene de getAccountAchievements).
+        rotationAvailable: false,
         today: { t4: [], rec: [] },
         tomorrow: { t4: [], rec: [] },
         cmAchievements: new Set()
@@ -442,7 +489,10 @@
 
   function saveToggles() {
     try {
-      localStorage.setItem('gn_activities_toggles', JSON.stringify(state.toggles));
+      // Storage.set escribe la gn: y su legacy (storage.js MIRROR_MAP). Antes
+      // escribia solo 'gn_activities_toggles', y la gn: que sube el Gist
+      // quedaba con la foto del primer arranque.
+      Storage.set(Storage.STORAGE_KEYS.ACTIVITIES_TOGGLES, state.toggles);
     } catch (e) {
       console.warn(LOG, 'Error saving toggles', e);
     }
@@ -830,12 +880,16 @@
   var Fractals = {
     _cachedIcons: new Map(),
     _cmFetchId: 0,
+    // La rotación diaria de fractales NO viene de la API (ver state.daily.fractals).
+    // Antes esta función hardcodeaba 3 T4 + 3 escalas y loadTomorrow() hardcodeaba
+    // otros 3, de modo que el panel siempre mostraba los MISMOS nombres todos los
+    // días. Eso es información falsa: el jugador creía que eran los dailies reales.
+    // Ahora no se pinta nada hasta que haya una fuente real de datos.
     loadToday: async function() {
       state.daily.fractals.status = 'ready';
-      state.daily.fractals.today = {
-        t4: [{ name: 'Twilight Oasis', cm: false }, { name: 'Cliffside', cm: false }, { name: 'Chaos', cm: false }],
-        rec: [{ scale: 10, name: 'Scale 10' }, { scale: 32, name: 'Scale 32' }, { scale: 65, name: 'Scale 65' }]
-      };
+      state.daily.fractals.rotationAvailable = false;
+      state.daily.fractals.today = { t4: [], rec: [] };
+      state.daily.fractals.tomorrow = { t4: [], rec: [] };
       renderFractals();
     },
 
@@ -867,10 +921,8 @@
       renderFractals();
     },
     loadTomorrow: async function() {
-      state.daily.fractals.tomorrow = {
-        t4: [{ name: 'Solid Ocean', cm: false }, { name: 'Uncategorized', cm: false }, { name: 'Urban Battleground', cm: false }],
-        rec: [{ scale: 20, name: 'Scale 20' }, { scale: 45, name: 'Scale 45' }, { scale: 78, name: 'Scale 78' }]
-      };
+      // Sin fuente de datos para la rotación de mañana: no se inventa.
+      state.daily.fractals.tomorrow = { t4: [], rec: [] };
       renderFractals();
     }
   };
@@ -881,54 +933,71 @@
     if (state.daily.fractals.status === 'error') { host.innerHTML = '<p class="muted error">Error cargando fractales</p>'; return; }
     var t4 = state.daily.fractals.today.t4 || [];
     var rec = state.daily.fractals.today.rec || [];
-    var html = '<div style="display: flex; flex-direction: column; gap: 20px;">';
-    html += '<div><h4 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;"><span class="badge badge--success" style="background: var(--color-green-bg); border: none;">🌀 T4</span><span style="font-size: 0.85rem;">Fractales diarios</span></h4><div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">';
+    var html = '<div class="fractals-stack">';
+    // La API GW2 no expone la rotación de fractales. Antes se hardcodeaban
+    // nombres fijos y el panel los presentaba como "dailies de hoy", lo cual
+    // era falso. Ahora mostramos un aviso explícito en su lugar.
+    //
+    // Estilos: la estructura va en main.css (capa 1) y la piel en
+    // theme-polish.css (capa 2). El `borderLeft` lo aplica
+    // fractal-tracker-theme.js (capa 3, color semántico) leyendo `data-fl-color`.
+    // Este archivo ya no escribe `style=` inline en este bloque.
+    // Ver COMM 019 / task-4a1841efc329.
+    if (!state.daily.fractals.rotationAvailable) {
+      html += '<div class="muted fractal-notice" data-fl-color="info">' +
+              'ℹ️ <strong>Rotación diaria no disponible.</strong> La API de GW2 no expone qué fractales son los diarios ni las escalas recomendadas del día ' +
+              '(<code>/v2/fractals</code> no existe y <code>/v2/achievements/daily</code> fue retirado). ' +
+              'El tracker de Solitary Throne CM de abajo <strong>sí</strong> es real: refleja tus logros de la cuenta.' +
+              '</div>';
+    }
+    if (t4.length) {
+    html += '<div class="fractals-section"><h4 class="fractals-section__title"><span class="badge badge--success" style="background: var(--color-green-bg); border: none;">🌀 T4</span><span class="fractals-section__hint">Fractales diarios</span></h4><div class="fractals-grid">';
     t4.forEach(function(fractal) {
       var name = typeof fractal === 'string' ? fractal : fractal.name;
       var hasCM = fractal.cm === true;
-      var bLeftT4 = hasCM ? 'rgba(255,211,107,0.5)' : 'rgba(160,255,200,0.5)';
-      html += '<article class="card fractal-card" style="padding: 10px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid ' + bLeftT4 + '; box-shadow: 0 0 8px rgba(90,110,154,0.12); border-radius: 10px;">' +
-              '<div style="width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;">' + getFractalIconHtml(name, 48) + '</div>' +
-              '<div style="width: 100%;"><div style="font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="' + esc(name) + '">' + esc(name) + '</div>' +
-              (hasCM ? '<div style="margin-top: 6px;"><span class="badge badge--warning" style="font-size: 0.6rem; padding: 2px 6px;">⚠️ CM</span></div>' : '') +
+      html += '<article class="card fractal-card" data-fl-color="' + (hasCM ? 'cm' : 't4') + '">' +
+              '<div class="fractal-card__icon">' + getFractalIconHtml(name, 48) + '</div>' +
+              '<div class="fractal-card__body"><div class="fractal-card__name" title="' + esc(name) + '">' + esc(name) + '</div>' +
+              (hasCM ? '<div class="fractal-card__tag"><span class="badge badge--warning fractal-card__cm-badge">⚠️ CM</span></div>' : '') +
               '</div></article>';
     });
     html += '</div></div>';
-    html += '<div><h4 style="margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px;"><span class="badge badge--info" style="background: var(--color-blue-bg); border: none;">🎯 Recomendados</span><span style="font-size: 0.85rem;">Escalas del día</span></h4><div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">';
+    html += '<div class="fractals-section"><h4 class="fractals-section__title"><span class="badge badge--info" style="background: var(--color-blue-bg); border: none;">🎯 Recomendados</span><span class="fractals-section__hint">Escalas del día</span></h4><div class="fractals-grid">';
     rec.forEach(function(r) {
       var scaleNum = r.scale || parseInt(String(r.name || r).match(/\d+/)?.[0] || '0', 10);
       var scaleName = typeof r === 'string' ? r : (r.name || 'Scale ' + scaleNum);
-      var bLeftRec = 'rgba(123,194,255,0.5)';
-      html += '<article class="card fractal-card" style="padding: 10px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid ' + bLeftRec + '; box-shadow: 0 0 8px rgba(90,110,154,0.12); border-radius: 10px;">' +
-              '<div style="width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;">' + getScaleIconHtml(scaleNum, 48) + '</div>' +
-              '<div style="width: 100%;"><div style="font-weight: 600; font-size: 0.85rem;">' + esc(scaleName) + '</div>' +
-              '<div style="margin-top: 6px;"><span class="badge badge--info" style="font-size: 0.6rem; padding: 2px 6px;">📊 Escala ' + scaleNum + '</span></div></div></article>';
+      html += '<article class="card fractal-card" data-fl-color="info">' +
+              '<div class="fractal-card__icon">' + getScaleIconHtml(scaleNum, 48) + '</div>' +
+              '<div class="fractal-card__body"><div class="fractal-card__name fractal-card__name--wrap">' + esc(scaleName) + '</div>' +
+              '<div class="fractal-card__tag"><span class="badge badge--info fractal-card__scale-badge">📊 Escala ' + scaleNum + '</span></div></div></article>';
     });
-    html += '</div></div></div>';
+    html += '</div></div>';
+    } // fin if (t4.length)
+    html += '</div>';
 
     // --- Solitary Throne CM daily tracker ---
     var cmDone = state.daily.fractals.cmAchievements || new Set();
     var cmToken = state.token;
-    html += '<div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--bd-1);">';
-    html += '<h4 style="margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px;"><span class="badge badge--warning" style="background: var(--color-amber-bg); border: none;">👑 Solitary Throne CM</span><span style="font-size: 0.85rem;">Logros diarios</span></h4>';
-    html += '<div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">';
+    html += '<div class="fractals-cm">';
+    html += '<h4 class="fractals-cm__title"><span class="badge badge--warning" style="background: var(--color-amber-bg); border: none;">👑 Solitary Throne CM</span><span class="fractals-section__hint">Logros diarios</span></h4>';
+    html += '<div class="fractals-cm__badges">';
     Object.keys(SOLITARY_THRONE_CM_ACHIEVEMENTS).forEach(function(achId) {
       var tier = SOLITARY_THRONE_CM_ACHIEVEMENTS[achId];
       var isDone = cmDone.has(+achId);
       var badgeClass = isDone ? 'badge--success' : 'badge--warning';
       var label = isDone ? '✅ ' + tier.name + ' hecho' : '⏳ ' + tier.name + ' pendiente';
-      html += '<span class="badge ' + badgeClass + '" style="font-size: 0.65rem; padding: 3px 8px;">' + label + '</span>';
+      html += '<span class="badge ' + badgeClass + ' fractals-cm__badge">' + label + '</span>';
     });
     html += '</div>';
     if (!cmToken) {
-      html += '<div class="muted" style="margin-top: 8px; font-size: 0.7rem; display: flex; align-items: center; gap: 4px;">🔑 Necesit\'s una API key para ver el progreso</div>';
+      html += '<div class="muted fractals-cm__needs-key">🔑 Necesit\'s una API key para ver el progreso</div>';
     }
     html += '</div>';
 
     if (state.daily.fractals.tomorrow && state.daily.fractals.tomorrow.t4 && state.daily.fractals.tomorrow.t4.length) {
       var tomorrowNames = state.daily.fractals.tomorrow.t4.map(function(f) { return typeof f === 'string' ? f : f.name; });
       if (tomorrowNames.length && tomorrowNames[0]) {
-        html += '<div class="muted" style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--bd-1); font-size: 0.7rem; display: flex; align-items: center; justify-content: center; gap: 8px;">' +
+        html += '<div class="muted fractals-tomorrow">' +
                 '<span>📅</span> <span>Mañana: ' + esc(tomorrowNames.join(', ')) + '</span></div>';
       }
     }
@@ -1105,8 +1174,23 @@
   // =======================================================================
   async function activate() {
     console.log(LOG, '🚀 activate() llamado');
+    // cleanActivitiesCache() SI se queda: borra prefijos 'psna:' y
+    // ACTIVITIES_CACHE_KEYS, que son datos de ESTE modulo. Entrar al panel
+    //Activities puede querer datos frescos de hoy.
     cleanActivitiesCache();
-    cleanAchievementsCache();
+    // cleanAchievementsCache() NO se llama aqui, y antes si. Era un bug:
+    // borra toda clave que empiece con 'ach_', y esa es justo la familia que
+    // api-gw2.js putCache() escribe para logros (ach_acc:<fp>, TTL 2 min, y
+    // ach_meta_v2:es:<ids>, TTL 12 h). Router llama a activate() en cada
+    // navegacion a #/activities, asi que abrir el panel dejaba sin cache de
+    // logros a TODAS las cuentas y la pagina de Logros arrancaba en frio
+    // cada vez. Medido: la metadata sola son ~3.6 MB por id-set de cuenta
+    // (35 chunks de 200 ids x 536 B reales).
+    // La regla que se aplica: un modulo no borra la cache de otro. Limpiar la
+    // cache es trabajo de una accion explicita del usuario, no de entrar a un
+    // panel. La funcion sigue existiendo para cuando haga falta llamarla a
+    // proposito.
+    // Ver tests/idea49.activities-cache-wipe.test.js
     state.active = true;
     ensurePanel().removeAttribute('hidden');
     state.homeNodesRendered = false;

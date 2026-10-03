@@ -1,6 +1,29 @@
-﻿/*!
+/*!
  * js/characters.js — Panel de Personajes y Localización
- * v2.3.0 (2026-03-24)
+ * v2.4.1 (2026-09-30)
+ *
+ * CAMBIOS v2.4.1 (Idea 55 Tramo 3a):
+ * - loadAccountData() ya no hace `fetch` crudo de /v2/account. Usa
+ *   GW2Api.getAccountInfo(token), que ya existia (api-gw2.js:393) y ya
+ *   consumian wallet-dashboard.js:445, wv-purchase-detail.js:1025/1118 e
+ *   inventory-dashboard.js:333. O sea que el mismo payload se bajaba 3 veces
+ *   SIN cache (esta, achievements.js y accounts-panel.js) y 5 veces CON cache,
+ *   del mismo endpoint, en la misma sesion.
+ * - El contrato de error NO cambio: antes `if (accountRes.ok)` era un skip
+ *   (si fallaba, se seguia al resto de la carga). El wrapper RECHAZA, asi que
+ *   la llamada va en su propio try/catch y el guard de exito paso a ser
+ *   `if (accountInfo)`. Sin ese catch, el rechazo se comia el try externo y
+ *   PvP/WvW quedaban sin leer -> las 3 filas del header en '-'.
+ *
+ * CAMBIOS v2.4.0 (Idea 55 Tramo 1):
+ * - loadAccountData() ya no hace `fetch` crudo de /v2/account/achievements.
+ *   Usa GW2Api.getAccountAchievements(token), que es el mismo wrapper que
+ *   consumen achievements.js:1058 y activities.js:902. Antes la app bajaba
+ *   los ~364 KB de ese payload DOS veces por cambio de cuenta: una por la
+ *   capa (cacheada) y otra aqui (sin cache, sin retry, fuera del pool).
+ * - El fallo de ese endpoint sigue SIN abortar el resto de loadAccountData:
+ *   conserva su propio catch local, igual que antes hacia el `if (achRes.ok)`.
+ *   Ver el bloque en loadAccountData() para el porqué.
  *
  * CAMBIOS v2.3.0:
  * - Agregado ícono al título del panel (156678.png)
@@ -407,13 +430,34 @@
   // =======================================================================
   async function loadAccountData(token) {
     try {
-      var achRes = await fetch('https://api.guildwars2.com/v2/account/achievements?access_token=' + encodeURIComponent(token));
-      if (achRes.ok) {
-        var achData = await achRes.json();
+      // Idea 55 Tramo 1: este endpoint ya lo expone la capa como
+      // GW2Api.getAccountAchievements(token), con cache, TTL, inflightOnce,
+      // pool y fetchWithRetry. El fetch crudo de antes descargaba los ~364 KB
+      // de /v2/account/achievements en CADA cambio de cuenta (wireGlobal ->
+      // gn:tokenchange) sin cache y sin retry, y ademas duplicaba el payload:
+      // achievements.js:1058 y activities.js:902 piden exactamente el mismo
+      // dato por la capa, o sea que la app bajaba dos veces el objeto mas caro
+      // del codebase, una cacheada y otra no.
+      //
+      // El catch es PROPIO y no el del try de loadAccountData: antes, un fallo
+      // de este endpoint (achRes.ok === false) solo saltaba el bloque y
+      // seguia con PvP y WvW. Sin este catch local, el rechazo del wrapper
+      // abortaria el resto de la funcion y las tres filas del header quedarian
+      // en '—'. Es el contrato de error del modulo, y por eso se preserva.
+      try {
+        var achData = await root.GW2Api.getAccountAchievements(token);
         var total = 0;
-        achData.forEach(function(a) { if (a.done) total += a.current; });
+        // `Number(a.current) || 0` y no `a.current` a pelo: la API omite
+        // `current` en un logro completado SIN tiers (ej. {id:202, done:true},
+        // literal de la wiki de /account/achievements). Sumar `undefined` sobre
+        // un numero da NaN, y el NaN se propaga a TODOS los logros que se
+        // sumen despues: la fila muestra "NaN" en vez de la cuenta. Con la
+        // guarda, un ausente cuenta 0 y el resto del total sigue siendo real.
+        (achData || []).forEach(function(a) { if (a.done) total += (Number(a.current) || 0); });
         state.accountAchievements = total;
         console.log(LOG, 'Puntos de logros:', total);
+      } catch (achErr) {
+        console.warn(LOG, 'No se pudieron leer los logros de la cuenta', achErr);
       }
 
       console.log(LOG, 'Solicitando PvP stats...');
@@ -442,13 +486,21 @@
       }
 
       console.log(LOG, 'Solicitando account info...');
-      var accountRes = await fetch('https://api.guildwars2.com/v2/account?access_token=' + encodeURIComponent(token));
-      console.log(LOG, 'Account info - status:', accountRes.status);
-
-      if (accountRes.ok) {
-        var accountInfo = await accountRes.json();
+      // Idea 55 Tramo 3a: /v2/account pasa por la capa GW2Api.
+      // Antes era `fetch` crudo, sin cache, sin retry y sin pool, y ademas se
+      // pedia DOS veces por carga de cuenta: wallet-dashboard.js:445 y
+      // wv-purchase-detail.js:1025 ya usaban este mismo wrapper. El catch
+      // local preserva el contrato viejo: `if (accountRes.ok)` era un skip
+      // (si el endpoint fallaba, se seguia al resto), y el wrapper RECHAZA.
+      var accountInfo = null;
+      try {
+        accountInfo = await root.GW2Api.getAccountInfo(token);
         console.log(LOG, 'Account info respuesta:', accountInfo);
+      } catch (accErr) {
+        console.warn(LOG, 'Account info no disponible, se sigue sin rango WvW:', accErr);
+      }
 
+      if (accountInfo) {
         if (state.wvwRanksList.length === 0) {
           var wvwRanksRes = await fetch('https://api.guildwars2.com/v2/wvw/ranks?ids=all');
           if (wvwRanksRes.ok) {
@@ -1048,6 +1100,14 @@
     });
 
     state.pagination.total = filtered.length;
+    // Idea 63 T1: el clamp es la garantia de fondo. El reset del handler de
+    // tokenchange evita el caso conocido, pero cualquier otro camino que
+    // achique la lista (una cache mas chica, un filtro nuevo) deja la pagina
+    // fuera de rango y slice() devuelve [] igual. Con el clamp, una pagina
+    // imposible se corrige sola en vez de borrar el panel.
+    var totalPages = Math.ceil(filtered.length / state.pagination.perPage);
+    if (totalPages > 0 && state.pagination.page > totalPages) state.pagination.page = totalPages;
+    if (state.pagination.page < 1) state.pagination.page = 1;
     var start = (state.pagination.page - 1) * state.pagination.perPage;
     var paginated = filtered.slice(start, start + state.pagination.perPage);
 
@@ -1065,6 +1125,46 @@
         }
       }, 'Cargando personajes... ' + state.loadingState.loaded + '/' + state.loadingState.total);
       container.appendChild(loadingEl);
+    }
+
+    // Idea 63 T2: el estado vacio es un estado de la pantalla, no la nada.
+    // Antes una lista de 0 items pintaba el panel VACIO y sin una palabra, que
+    // no se puede distinguir de "la cuenta no tiene personajes" ni de "fallo la
+    // carga". Se distingue cual de los dos es, y en el caso del filtro se
+    // ofrece la salida. Mismo criterio que achievements.js:674.
+    if (!paginated.length && !state.loadingState.inProgress) {
+      var hayFiltro = !!(state.filters.search || state.filters.map ||
+                         state.filters.profession || state.filters.poiCategory);
+      var hayPersonas = state.characters.length > 0;
+      var vacio = createEl('div', {
+        className: 'muted',
+        style: { padding: '20px', textAlign: 'center' }
+      });
+      if (hayFiltro && hayPersonas) {
+        vacio.appendChild(document.createTextNode(
+          'Ningun personaje coincide con los filtros. Hay ' + state.characters.length +
+          ' en esta cuenta.'));
+        vacio.appendChild(document.createElement('br'));
+        var btn = createEl('button', {
+          className: 'btn btn--xs',
+          style: { marginTop: '10px' }
+        }, 'Limpiar filtros');
+        btn.addEventListener('click', function() {
+          state.filters.search = '';
+          state.filters.map = '';
+          state.filters.profession = '';
+          state.filters.poiCategory = '';
+          state.pagination.page = 1;
+          render();
+        });
+        vacio.appendChild(btn);
+      } else {
+        vacio.appendChild(document.createTextNode(
+          'No hay personajes para mostrar en esta cuenta.'));
+      }
+      container.appendChild(vacio);
+      renderPagination();
+      return;
     }
 
     if (state.view === 'table') {
@@ -1418,6 +1518,17 @@
       var tok = ev && ev.detail ? ev.detail.token : null;
       state.token = tok;
       if (!state.active) return;
+      // Idea 63 T1: los filtros y la pagina son de la cuenta que se estaba
+      // mirando. Al cambiar de cuenta describen a la anterior: sin esto, un
+      // filtro que deja 0 filas pinta un panel VACIO y sin una palabra, y la
+      // pagina sobrevive a un total mas chico (slice(20,40) sobre 12 = []).
+      // Se resetean aqui y NO en loadCharacters, porque el que dispara el
+      // cambio de cuenta es este handler.
+      state.filters.search = '';
+      state.filters.map = '';
+      state.filters.profession = '';
+      state.filters.poiCategory = '';
+      state.pagination.page = 1;
       loadAssignments();
       loadLocationHistory();
       if (tok) {

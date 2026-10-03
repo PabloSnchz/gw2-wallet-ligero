@@ -409,7 +409,19 @@
     
     // Actualizar Gist
     var updated = await updateGist(gistId, content);
-    
+
+    // HB#135 T20-b: queda acordada la INSTANTE de esta subida. Sin esto, el
+    // confirm de la descarga tendria que comparar el remoto contra el remoto y
+    // no podria decir nunca si el remoto tiene lo ultimo (el `exportedAt` del
+    // JSON lo genera `exportData()` en este mismo comando, o sea el remoto es
+    // SIEMPRE mas nuevo que el). Esto es lo que hace la comparacion real.
+    try {
+      var lastUploadKey = (root.Storage && root.Storage.STORAGE_KEYS && root.Storage.STORAGE_KEYS.GIST_LAST_UPLOAD) || 'gn:github:last_upload';
+      var stamped = updated && updated.updated_at ? updated.updated_at : new Date().toISOString();
+      if (root.Storage && typeof root.Storage.set === 'function') root.Storage.set(lastUploadKey, stamped);
+      else root.localStorage.setItem(lastUploadKey, stamped);
+    } catch (_) { /* sin referencia no hay direccion, y la descarga lo dice */ }
+
     console.log(LOG, 'Configuración subida correctamente');
     return { success: true, gistId: gistId, updatedAt: updated.updated_at };
   }
@@ -443,11 +455,106 @@
     var configData = JSON.parse(rawText);
     
     // Importar configuración usando SettingsManager
+    // HB#119 T20-a: el confirm del Gist tiene que decir lo mismo que el del
+    // archivo. Antes decia "Esto sobrescribira tu configuracion local" y nada
+    // mas: 0 de las 7 familias, 0 cifras. Lo unico del backup que NO se
+    // regenera con un click son las API keys -- una key de GW2 no se vuelve a
+    // bajar de ArenaNet; si no la guardaste, hay que crear otra. El precedente
+    // es literal y esta 60 lineas mas arriba, en settings-manager.js:594-603.
+    // HB#120 T20-c: la foto sale ANTES del confirm, no despues. Sin esto,
+    // confirmar es un acto irreversible y el unico backup es el remoto, que es
+    // justamente lo que se esta a punto de sobrescribir. Si el remoto esta
+    // viejo, no queda nada. El camino del archivo ya resolvio el otro problema
+    // del mismo par ("aplicar antes de preguntar", HB#104); este es el hermano
+    // que faltaba: "no hay de donde volver".
+    //
+    // CANCELAR NO DEJA RASTRO: se guarda el valor previo y se vuelve a poner si
+    // Pablo dice que no. Escribir la foto y dejarla ahi seria cambiar el
+    // almacenamiento por haber mirado un cartel.
+    var snapshotKey = (window.Storage && window.Storage.STORAGE_KEYS &&
+                       window.Storage.STORAGE_KEYS.GIST_SAFETY_SNAPSHOT) || 'gn:github:gist_snapshot';
+    var prevSnapshot = null;
+    try { prevSnapshot = localStorage.getItem(snapshotKey); } catch (_) { prevSnapshot = null; }
+
+    var snap = { ok: false, reason: 'no se pudo guardar' };
+    if (window.SettingsManager && typeof window.SettingsManager.createSafetySnapshot === 'function') {
+      snap = await window.SettingsManager.createSafetySnapshot();
+    }
+
+    var keyCount = configData?.data?.apiKeys?.list?.length || 0;
+
+    // HB#135 T20-b — LA DIRECCION. T20-a ya decia CUANTAS claves trae el
+    // remoto, pero no si son LAS MIAS o las 15 que me faltan: "12 claves" es
+    // la misma frase para un backup al dia y para uno de la semana pasada. El
+    // propio PO lo escribio asi: "sin esto, T20-a le muestra 12 claves a Pablo
+    // y aun asi no puede saber si son sus 12 o las 15 que le faltan".
+    //
+    // LA PREMISA QUE YO PRIMERO ESCRIBE ERA FALSA, y la midio el arnés de este
+    // commit al EJECUTAR el fragmento, no al leerlo: la idea era comparar
+    // `gist.updated_at` contra `configData.exportedAt`, los dos "del remoto".
+    // Pero `uploadConfig` arma el JSON con `exportData()` — quepone
+    // `exportedAt = new Date()` (:208) — y lo subeActo seguido. O sea
+    // `updated_at` es SIEMPOSTras `exportedAt` por el tiempo de la red, y la
+    // rama "viejo" no podria dispararse NUNCA. Un confirm con la direccion
+    // siempre en "al dia" es peor que no tener direccion: le dice a Pablo que
+    // no va a perder nada, siempre.
+    //
+    // LA REFERENCIA QUE SÍ SIRVE es local y hay que crearla: cuando subi yo por
+    // ultima vez. Todo cambio local posterior a ese instante es lo que se
+    // pierde al sincronizar, y eso es lo unico que la palabra "viejo" quiere
+    // decir. `gn:github:last_upload` va en el namespace `github:` para que
+    // `KNOWN_NAMESPACES` lo traiga de vuelta en un restore (mismo criterio que
+    // `gn:github:gist_snapshot` en T20-c).
+    //
+    // Y SI NO HAY REFERENCIA no se inventa una direccion: se dice que no se pudo
+    // leer. Un "no se" honesto le sirve; un "el remoto esta al dia" con la
+    // comparacion rota lo hace confirmar un backup viejo creyendo que no.
+    var remotoTs = Date.parse(gist.updated_at || '');
+    var ultimaSubidaTs = Date.parse(
+      (root.Storage && root.Storage.get(root.Storage.STORAGE_KEYS.GIST_LAST_UPLOAD))
+      || 'gn:github:last_upload' || '');
+    var direccion = null;   // 'viejo' | 'al-dia' | null (no se pudo leer)
+    if (!isNaN(remotoTs) && !isNaN(ultimaSubidaTs)) {
+      direccion = remotoTs > ultimaSubidaTs ? 'al-dia' : 'viejo';
+    }
+    var lineaDireccion =
+      direccion === 'viejo'
+        ? 'ATENCIÓN: el remoto es más viejo que tu última subida.\n' +
+          'Si confirmás, vas a perder los cambios que hiciste desde entonces.\n\n'
+        : direccion === 'al-dia'
+          ? 'El remoto tiene lo último que subiste.\n\n'
+          : '';
+
     var confirmMsg = '¿Sincronizar desde la nube?\n\n' +
       'Se descargará y aplicará la configuración remota.\n' +
-      'Esto sobrescribirá tu configuración local.\n\n' +
+      lineaDireccion +
+      'Esto SOBRESCRIBE tu configuración local:\n\n' +
+      '• API Keys (' + keyCount + ' claves)\n' +
+      '• Wizard\'s Vault (pins y marcas)\n' +
+      '• Wallet (pins, snapshots, vista compacta)\n' +
+      '• Activities (toggles, home nodes)\n' +
+      '• Characters (POIs, ubicaciones)\n' +
+      '• Meta (favoritos, hecho hoy)\n' +
+      '• Configuración global\n\n' +
+      // El mensaje dice la verdad en los DOS sentidos: si la foto esta, se dice
+      // que se puede volver; si NO esta (cuota llena, almacenamiento
+      // bloqueado), se dice que no se puede. "Se guardo una copia" sin haberla
+      // guardado seria peor que no decir nada.
+      //
+      // Y NO promete una pantalla que no existe: `GistSync` todavia no esta
+      // montado en ningun HTML (medido, `git grep GistSync` = 3 matches, los 3
+      // dentro del propio gist-sync.js). Decir "restaurar desde Ajustes" seria
+      // mandarlo a una pantalla inexistente. El destino real es el
+      // `SettingsManager.restoreSafetySnapshot()` que queda expuesto para
+      // cuando ese boton se monte.
+      (snap.ok
+        ? 'Antes se guardó una copia de tu configuración actual.\n' +
+          'Si algo sale mal, se puede restaurar con\n' +
+          'SettingsManager.restoreSafetySnapshot().\n\n'
+        : 'ATENCIÓN: no se pudo guardar una copia de tu configuración actual\n' +
+          '(' + snap.reason + '). Si esto sale mal, no vas a poder volver atrás.\n\n') +
       '¿Continuar?';
-    
+
     if (confirm(confirmMsg)) {
       await window.SettingsManager.importFromData(configData);
       if (window.toast) {
@@ -456,6 +563,14 @@
       setTimeout(function() {
         location.reload();
       }, 500);
+    } else {
+      // Cancelar no deja rastro: se devuelve el almacenamiento al estado previo.
+      // Mirar un cartel no es una accion que deba cambiar nada en disco.
+      try {
+        if (prevSnapshot === null) localStorage.removeItem(snapshotKey);
+        else localStorage.setItem(snapshotKey, prevSnapshot);
+      } catch (_) { /* sin foto no hay nada que deshacer */ }
+      return { success: false, cancelled: true, updatedAt: gist.updated_at };
     }
     
     return { success: true, updatedAt: gist.updated_at };
