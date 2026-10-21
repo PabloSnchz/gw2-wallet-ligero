@@ -5,7 +5,7 @@
   const $  = (s, r=document) => r.querySelector(s);
   const $$ = (s, r=document) => Array.from((r||document).querySelectorAll(s));
 
-  console.info('%cMetaEventos meta.js v3.4.1 — Sin marcado manual (solo API)',
+  console.info('%cMetaEventos meta.js v3.5.0 — Sin marcado manual (solo API)',
     'color:#7dd3fc; font-weight:700');
 
   // --------- Elementos del DOM ----------
@@ -91,6 +91,41 @@
     livingworlds4: 'assets/icons/expansions/ls4.png',
     icebroodsaga: 'assets/icons/expansions/is ls5.png'
   };
+
+  // --------- Filtro de expansión desde los datos (BL-034) ----------
+  // index.html trae las opciones históricas; acá agrego las que falten para que
+  // ninguna expansión de meta-events.json quede sin filtro (p. ej. Visions of Eternity).
+  const EXP_LABEL = { 'Janthir': 'Janthir Wilds' };
+  const EXP_ORDER = ['Core', 'Living World S2', 'HoT', 'PoF', 'Living World S4', 'Icebrood Saga',
+                     'EoD', 'SotO', 'Janthir', 'Visions of Eternity'];
+
+  function expansionOptions(existing, metas){
+    const have = new Set(existing || []);
+    const out = [];
+    (metas || []).forEach(function(m){
+      const v = m && m.expansion;
+      if (!v || have.has(v)) return;
+      have.add(v);
+      out.push({ value: v, label: EXP_LABEL[v] || v });
+    });
+    const rank = function(v){ const i = EXP_ORDER.indexOf(v); return i < 0 ? EXP_ORDER.length : i; };
+    return out.sort(function(a, b){ return rank(a.value) - rank(b.value); });
+  }
+
+  function syncExpansionOptions(){
+    const sel = el.exp;
+    if (!sel) return;
+    Array.from(sel.options).forEach(function(o){
+      if (EXP_LABEL[o.value]) o.textContent = EXP_LABEL[o.value];
+    });
+    const existing = Array.from(sel.options).map(function(o){ return o.value; });
+    expansionOptions(existing, seed).forEach(function(opt){
+      const o = document.createElement('option');
+      o.value = opt.value;
+      o.textContent = opt.label;
+      sel.appendChild(o);
+    });
+  }
 
   let seed = [];
   let favs = new Set();
@@ -185,7 +220,7 @@
   }
 
   async function loadSeed(){
-    const r = await fetch('assets/meta-events.json?v=2.5.0', { headers:{'Accept':'application/json'} });
+    const r = await fetch('assets/meta-events.json?v=2.6.0', { headers:{'Accept':'application/json'} });
     if(!r.ok) throw new Error('No se pudo cargar meta-events.json');
     seed = await r.json();
     await loadExternalDrops();
@@ -935,6 +970,7 @@ ${foot ? '<div style="padding:0 16px 8px 16px;margin-top:0!important;border-top:
       loadFavs();
       await loadSeed();
       window._metaSeed = seed;
+      syncExpansionOptions();
 
       await refreshAccountFlags({ token: window.__GN__?.getSelectedToken?.() ?? null });
       await render();
@@ -967,6 +1003,7 @@ ${foot ? '<div style="padding:0 16px 8px 16px;margin-top:0!important;border-top:
 
   // ---------- API pública ----------
   window.Meta = window.Meta || {};
+  window.Meta._expansionOptions = expansionOptions;
   window.Meta.refresh = async function metaRefresh({ token, nocache = false } = {}){
     try {
       await refreshAccountFlags({ token: token ?? (window.__GN__?.getSelectedToken?.() ?? null) });
