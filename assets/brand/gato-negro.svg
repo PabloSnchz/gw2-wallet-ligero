@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-labelledby="gn-title">
+  <title id="gn-title">Gato Negro Factory</title>
+  <!-- Marca oficial de Gato Negro Factory (DEC-024 §1, DEC-025). Misma geometría que brandMark() del panel;
+       colores del Gato Design System resueltos: surface-2, brand-frame (arcano-500), bg (obsidiana-950), brand-eyes (ámbar-500).
+       No modificar: tests/brand.test.cjs lo verifica. -->
+  <rect x="1" y="1" width="30" height="30" rx="8" fill="#232A3A" stroke="#7B5CFF"/>
+  <path d="M8 25V12l3-5 3 4h4l3-4 3 5v13c0 1-1 2-2 2H10c-1 0-2-1-2-2z" fill="#0F1117"/>
+  <ellipse cx="13" cy="17" rx="1.6" ry="2.2" fill="#F2B94B"/>
+  <ellipse cx="19" cy="17" rx="1.6" ry="2.2" fill="#F2B94B"/>
+</svg>

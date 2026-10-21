@@ -1,6 +1,6 @@
 /*!
  * js/theme-selector.js — Selector de Temas
- * Versión: 1.1.0
+ * Versión: 1.2.0
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
  *
  * Responsabilidad:
@@ -8,6 +8,12 @@
  *  - Cambio dinámico del <link id="themeStylesheet">
  *  - Persistencia en localStorage (gn_theme)
  *  - Soporte para modo aleatorio
+ *
+ * 1.2.0 (DEC-025): "Gato Negro" es el theme oficial y el de por defecto.
+ *  - Migración de una sola vez: quien tenía "Bóveda" guardado (el default anterior,
+ *    que init() guardaba siempre) pasa a "Gato Negro". Si después elige Bóveda,
+ *    se respeta: la marca gn:theme:official impide repetir la migración.
+ *  - La etiqueta "Activo" elige el texto más legible sobre el acento de cada theme.
  */
 
 (function (root) {
@@ -15,9 +21,12 @@
 
   var LOGT = '[ThemeSelector]';
   var LS_THEME = (typeof Storage !== 'undefined' && Storage.STORAGE_KEYS) ? Storage.STORAGE_KEYS.THEME : 'gn:theme';
-  var DEFAULT_THEME = 'boveda';
+  var DEFAULT_THEME = 'gato';
+  var LS_OFFICIAL = 'gn:theme:official';
+  var OFFICIAL_MARK = 'gato-v1';
 
   var THEMES = [
+    { id: 'gato',            name: 'Gato Negro',      mood: 'oficial',    colors: ['#0F1117', '#1A1F2B', '#A896FF', '#F2B94B'] },
     { id: 'boveda',          name: 'Bóveda',          mood: 'serio',      colors: ['#0e0e10', '#15151a', '#ffd966', '#7bc2ff'] },
     { id: 'catppuccin',      name: 'Catppuccin',      mood: 'pastel',     colors: ['#1e1e2e', '#28283a', '#f5c2e7', '#89b4fa'] },
     { id: 'cyberpunk',       name: 'Cyberpunk',       mood: 'agresivo',   colors: ['#0a0a0f', '#12121a', '#ff00ff', '#00ffff'] },
@@ -53,6 +62,33 @@
 
   function setSavedTheme(theme) {
     try { Storage.set(LS_THEME, theme); } catch (_) {}
+  }
+
+  // Una sola vez por navegador: el default anterior pasa al theme oficial.
+  function migrateToOfficial() {
+    try {
+      if (Storage.get(LS_OFFICIAL) === OFFICIAL_MARK) return false;
+      var saved = Storage.get(LS_THEME);
+      var migrated = (!saved || saved === 'boveda');
+      if (migrated) Storage.set(LS_THEME, DEFAULT_THEME);
+      Storage.set(LS_OFFICIAL, OFFICIAL_MARK);
+      return migrated;
+    } catch (_) { return false; }
+  }
+
+  // Texto de la etiqueta "Activo": blanco u oscuro, el que más contraste tenga sobre el acento.
+  function luminance(hex) {
+    var c = String(hex).replace('#', '');
+    return [0, 2, 4].map(function (i) {
+      var v = parseInt(c.slice(i, i + 2), 16) / 255;
+      return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    }).reduce(function (acc, v, i) { return acc + v * [0.2126, 0.7152, 0.0722][i]; }, 0);
+  }
+  function readableOn(hex) {
+    var l = luminance(hex);
+    var white = 1.05 / (l + 0.05);
+    var dark = (l + 0.05) / (luminance('#0F1117') + 0.05);
+    return white >= dark ? '#ffffff' : '#0F1117';
   }
 
   function applyTheme(theme) {
@@ -153,7 +189,7 @@
             '<span style="font-size:0.85rem;font-weight:700;color:' + accentColor + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(theme.name) + '</span>',
             '<span style="font-size:0.7rem;color:' + accent2Color + ';text-transform:lowercase;">' + esc(theme.mood || '') + '</span>',
           '</div>',
-          (isActive ? '<span style="font-size:0.65rem;color:#ffffff;background:' + accentColor + ';padding:2px 8px;border-radius:20px;flex-shrink:0;font-weight:700;">✓ Activo</span>' : ''),
+          (isActive ? '<span style="font-size:0.65rem;color:' + readableOn(accentColor) + ';background:' + accentColor + ';padding:2px 8px;border-radius:20px;flex-shrink:0;font-weight:700;">✓ Activo</span>' : ''),
         '</button>'
       ].join('');
     });
@@ -244,6 +280,7 @@
   }
 
   function init() {
+    migrateToOfficial();
     var saved = getSavedTheme();
     applyTheme(saved);
 
@@ -253,7 +290,7 @@
       injectThemeButton();
     }
 
-    console.info(LOGT, 'OK v1.1.0 — Temas disponibles:', THEMES.length);
+    console.info(LOGT, 'OK v1.2.0 — Temas disponibles:', THEMES.length);
   }
 
   root.ThemeSelector = {
@@ -263,6 +300,7 @@
     closeModal: closeModal,
     getThemes: function() { return THEMES.slice(); },
     getCurrentTheme: function() { return state.currentTheme; },
+    _readableOn: readableOn,
     _debug: function() { return state; }
   };
 

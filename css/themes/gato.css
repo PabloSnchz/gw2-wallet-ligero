@@ -1,0 +1,133 @@
+/* ==========================================================================
+   Bóveda del Gato Negro — Tema Gato Negro (oficial, DEC-025)
+   Construido con el Gato Design System (gw2-factory-dashboard/gds, DEC-010):
+   obsidiana para fondos, niebla para texto, arcano para acción e identidad,
+   ámbar para el oro y la marca. El contraste lo verifica tests/theme-gato.test.cjs.
+   ========================================================================== */
+
+:root,
+[data-theme="gato"] {
+  /* Colores base (obsidiana) */
+  --bg: #0F1117;
+  --bg-0: #0F1117;
+  --bg-1: #1A1F2B;
+  --bg-2: #1A1F2B;
+  --panel: #1A1F2B;
+  --panel-border: #2E3649;
+  --panel-outline: #232A3A;
+
+  /* Bordes */
+  --bd-1: #2E3649;
+  --bd-2: #3B4560;
+
+  /* Texto (niebla) */
+  --text: #F4F6FA;
+  --tx-1: #F4F6FA;
+  --tx-2: #C9D0DA;
+  --tx-3: #8E96A3;
+  --muted: #8E96A3;
+
+  /* Acentos: arcano para acción, ámbar para el oro */
+  --acc-1: #A896FF;
+  --acc-2: #3CC48A;
+  --acc-warn: #F2B94B;
+  --acc-err: #F47C7C;
+  --gn-gold: #F2B94B;
+  --gn-gold-2: #F2B94B;
+  --accent: #A896FF;
+  --accent-2: #6EA3FF;
+
+  /* Colores semánticos (tintes del GDS compuestos sobre la superficie) */
+  --color-green: #3CC48A;
+  --color-green-bg: #1D3436;
+  --color-amber: #F2B94B;
+  --color-amber-bg: #38352F;
+  --color-red: #F47C7C;
+  --color-red-bg: #392630;
+  --color-blue: #6EA3FF;
+  --color-blue-bg: #212E49;
+  --color-gray: #8E96A3;
+  --color-gray-bg: #232A3A;
+
+  /* Botones */
+  --btn: #232A3A;
+  --btn-border: #6B7690;
+  --btn-hover: #2E3649;
+
+  /* Glow y elevaciones (halo arcano tenue) */
+  --glow-base: rgba(123, 92, 255, 0.12);
+  --elev-0: none;
+  --elev-1: 0 1px 0 0 rgba(255,255,255,0.02) inset, 0 0 0 1px rgba(255,255,255,0.02);
+  --elev-2: 0 6px 16px rgba(0,0,0,.35), 0 0 0 1px rgba(123,92,255,.10);
+  --elev-hover: 0 10px 28px rgba(0,0,0,0.45), 0 0 16px rgba(123,92,255,0.18), 0 0 0 1px rgba(123,92,255,0.35);
+
+  /* Geometría (radios del GDS: 4 · 8 · 12 · 16) */
+  --radius: 8px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --pill-radius: 999px;
+  --card-radius: 12px;
+  --gap-sm: 8px;
+  --gap-md: 12px;
+  --gap-lg: 16px;
+
+  /* Motion (respeta prefers-reduced-motion en main.css) */
+  --ease-1: cubic-bezier(0.2, 0, 0, 1);
+  --dur-1: .12s;
+  --transition-fast: 0.12s ease;
+  --transition-normal: 0.2s ease;
+  --transition-speed: 0.2s;
+
+  /* Tipografía */
+  --font: "Inter", system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Sombras */
+  --shadow: 0 0 0 1px #232A3A inset;
+  --shadow-hover: 0 0 0 1px #7B5CFF, 0 4px 12px rgba(123,92,255,.25);
+
+  /* Hover */
+  --hover-effect: shadow;
+  --hover-scale: 1;
+  --hover-filter: none;
+  --card-scale: 1;
+
+  /* Espaciado */
+  --spacing: 16px;
+
+  /* Textura de fondo */
+  --bg-texture: none;
+
+  /* Scrollbar */
+  --scrollbar-color: #3B4560;
+
+  /* Animación */
+  --animation: fadeIn 0.2s ease-out;
+
+  /* Mood */
+  --mood: oficial;
+
+  /* Glow extra */
+  --glow-color: rgba(123,92,255,0.35);
+
+  /* Home Nodes */
+  --gw-mining-bg: linear-gradient(180deg,#232A3A,#1A1F2B);
+  --gw-logging-bg: linear-gradient(180deg,#1E2A2B,#151C1F);
+  --gw-harvest-bg: linear-gradient(180deg,#22263A,#1A1F2B);
+
+  /* Activities */
+  --gw-card-bg: #1A1F2B;
+  --gw-card-borda: #2E3649;
+  --gw-card-borda-hover: #3B4560;
+  --gw-muted: #8E96A3;
+  --gw-ok: #3CC48A;
+  --gw-bad: #F47C7C;
+  --gw-chip-bg: linear-gradient(180deg,#232A3A,#1A1F2B);
+  --gw-chip-borda: #3B4560;
+  --gw-pill-ok-bg: rgba(47,182,124,.14);
+  --gw-pill-bad-bg: rgba(217,74,74,.16);
+  --gw-shadow: 0 0 0 1px rgba(59,69,96,.6) inset, 0 2px 18px rgba(8,9,13,.6);
+
+  /* Esquema de color nativo */
+  color-scheme: dark;
+}
