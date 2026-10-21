@@ -4,6 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bóveda del Gato Negro — Guía de usuario</title>
+  <!-- Identidad Gato Negro (DEC-025): favicon oficial y el mismo theme que el jugador eligió en La Bóveda -->
+  <link rel="icon" type="image/svg+xml" href="../assets/brand/gato-negro.svg"/>
+  <link rel="stylesheet" href="../css/themes/gato.css?v=1.0.0" id="themeStylesheet">
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('gn:theme') || localStorage.getItem('gn_theme');
+        if (t && t.charAt(0) === '"') t = JSON.parse(t);
+        if (!t || !/^[a-z0-9-]+$/.test(t)) t = 'gato';
+        document.getElementById('themeStylesheet').href = '../css/themes/' + t + '.css?v=1.0.0';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (_) {}
+    })();
+  </script>
   <style>
     * {
       margin: 0;
@@ -11,8 +25,8 @@
       box-sizing: border-box;
     }
     body {
-      background: #0e0e10;
-      color: #e9e9ee;
+      background: var(--bg, #0F1117);
+      color: var(--text, #F4F6FA);
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
       line-height: 1.5;
       padding: 40px 20px;
@@ -20,10 +34,10 @@
     .container {
       max-width: 1000px;
       margin: 0 auto;
-      background: #141418;
+      background: var(--panel, #1A1F2B);
       border-radius: 24px;
       padding: 40px;
-      box-shadow: 0 0 0 1px #1d1d20 inset, 0 8px 24px rgba(0,0,0,0.3);
+      box-shadow: 0 0 0 1px var(--panel-outline, #232A3A) inset, 0 8px 24px rgba(0,0,0,0.3);
     }
     h1 {
       font-size: 2rem;
@@ -38,27 +52,27 @@
       height: 48px;
     }
     .version {
-      color: #a0a0a6;
+      color: var(--muted, #8E96A3);
       margin-bottom: 24px;
       padding-bottom: 16px;
-      border-bottom: 1px solid #242428;
+      border-bottom: 1px solid var(--panel-border, #2E3649);
     }
     h2 {
       font-size: 1.5rem;
       margin: 32px 0 16px 0;
       padding-bottom: 8px;
-      border-bottom: 2px solid #ffd966;
+      border-bottom: 2px solid var(--gn-gold, #F2B94B);
       display: inline-block;
     }
     h3 {
       font-size: 1.25rem;
       margin: 24px 0 12px 0;
-      color: #ffd966;
+      color: var(--gn-gold, #F2B94B);
     }
     h4 {
       font-size: 1.1rem;
       margin: 16px 0 8px 0;
-      color: #bcd0ff;
+      color: var(--accent-2, #6EA3FF);
     }
     .module-grid {
       display: grid;
@@ -67,8 +81,8 @@
       margin: 20px 0;
     }
     .module-card {
-      background: #1a1e2a;
-      border: 1px solid #2a2c35;
+      background: var(--btn, #232A3A);
+      border: 1px solid var(--bd-1, #2E3649);
       border-radius: 16px;
       padding: 16px;
       display: flex;
@@ -79,7 +93,7 @@
       width: 40px;
       height: 40px;
       flex-shrink: 0;
-      background: #0f1116;
+      background: var(--bg-0, #0F1117);
       border-radius: 10px;
       display: flex;
       align-items: center;
@@ -101,7 +115,7 @@
     }
     .badge {
       display: inline-block;
-      background: #2a2c35;
+      background: var(--bd-1, #2E3649);
       padding: 4px 10px;
       border-radius: 20px;
       font-size: 0.7rem;
@@ -109,15 +123,15 @@
       margin-top: 8px;
     }
     .badge-success {
-      background: #1f3328;
-      color: #a7f3d0;
+      background: var(--color-green-bg, #1D3436);
+      color: var(--color-green, #3CC48A);
     }
     .badge-info {
-      background: #1a2a3a;
-      color: #bcd0ff;
+      background: var(--color-blue-bg, #212E49);
+      color: var(--accent-2, #6EA3FF);
     }
     .steps {
-      background: #0f1116;
+      background: var(--bg-0, #0F1117);
       border-radius: 12px;
       padding: 20px;
       margin: 16px 0;
@@ -132,8 +146,8 @@
       margin-bottom: 0;
     }
     .step-number {
-      background: #ffd966;
-      color: #0e0e10;
+      background: var(--gn-gold, #F2B94B);
+      color: var(--bg, #0F1117);
       width: 32px;
       height: 32px;
       border-radius: 50%;
@@ -147,15 +161,15 @@
       flex: 1;
     }
     hr {
-      border-color: #2a2c35;
+      border-color: var(--bd-1, #2E3649);
       margin: 24px 0;
     }
     .footer-note {
       text-align: center;
       margin-top: 32px;
       padding-top: 16px;
-      border-top: 1px solid #2a2c35;
-      color: #a0a0a6;
+      border-top: 1px solid var(--bd-1, #2E3649);
+      color: var(--muted, #8E96A3);
       font-size: 0.85rem;
     }
     ul, ol {
@@ -166,14 +180,14 @@
       margin: 6px 0;
     }
     a {
-      color: #ffd966;
+      color: var(--gn-gold, #F2B94B);
       text-decoration: none;
     }
     a:hover {
       text-decoration: underline;
     }
     code {
-      background: #0a0c10;
+      background: var(--bg-0, #0F1117);
       padding: 2px 6px;
       border-radius: 6px;
       font-family: monospace;
@@ -188,10 +202,10 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: #1a1e2a;
+      background: var(--btn, #232A3A);
       padding: 8px 16px;
       border-radius: 40px;
-      border: 1px solid #2a2c35;
+      border: 1px solid var(--bd-1, #2E3649);
     }
     .social-link img {
       width: 20px;
@@ -204,10 +218,10 @@
       margin: 20px 0;
     }
     .feature-card {
-      background: #0f1116;
+      background: var(--bg-0, #0F1117);
       border-radius: 16px;
       padding: 20px;
-      border: 1px solid #2a2c35;
+      border: 1px solid var(--bd-1, #2E3649);
     }
     .feature-card h4 {
       margin-top: 0;
@@ -245,7 +259,7 @@
 <body>
   <div class="container">
     <h1>
-      <img src="../assets/logo-gato-negro.png" alt="Logo">
+      <img src="../assets/brand/gato-negro.svg" alt="Gato Negro Factory">
       Bóveda del Gato Negro
     </h1>
     <div class="version">📘 Guía de usuario — v6.4.0</div>
