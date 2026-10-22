@@ -1,6 +1,9 @@
 /*!
  * js/render-catologo.js — Render del catálogo y filtros
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
+ * v1.1.0 (2026-10-21) — BL-046: chips con la jerga de la comunidad (Abalorio,
+ *   Espaldar) y la expansión real de cada legendaria (Secrets of the Obscure,
+ *   Janthir Wilds y Visions of Eternity incluidas), con filtros en orden de salida.
  * v1.0.0 (Phase 3 Commit 1)
  *
  * Funciones de render para el grid del catálogo de legendarias y la barra
@@ -30,8 +33,9 @@
   var TYPE_LABELS = {
     'weapon':           'Arma',
     'armor':            'Armadura',
-    'trinket':          'Joya',
-    'back':             'Capa',
+    // Jerga de la comunidad hispana (pedido de Pablo, BL-046).
+    'trinket':          'Abalorio',
+    'back':             'Espaldar',
     'upgradecomponent': 'Componente',
     'relic':            'Reliquia'
   };
@@ -49,15 +53,104 @@
     'Core': 'Clásico',
     'HoT':  'Heart of Thorns',
     'PoF':  'Path of Fire',
-    'EoD':  'End of Dragons'
+    'EoD':  'End of Dragons',
+    'SotO': 'Secrets of the Obscure',
+    'JW':   'Janthir Wilds',
+    'VoE':  'Visions of Eternity'
   };
 
   var EXPANSION_COLORS = {
     'Core': '#974EFF',
     'HoT':  '#63B37A',
     'PoF':  '#D5A021',
-    'EoD':  '#4DA6FF'
+    'EoD':  '#4DA6FF',
+    'SotO': '#E0663F',
+    'JW':   '#3FB8AF',
+    'VoE':  '#E46FB5'
   };
+
+  // Orden de salida del juego. Lo usan los filtros y la grilla.
+  var EXPANSION_ORDER = ['Core', 'HoT', 'PoF', 'EoD', 'SotO', 'JW', 'VoE'];
+
+  // =======================================================================
+  // EXPANSION REAL DE CADA LEGENDARIA (BL-046)
+  // =======================================================================
+  // `legendary-data.js` se genero cuando solo existian 4 expansiones y adivino
+  // la de cada pieza por generacion: Klobjarne Geirr (Janthir Wilds) y Verano
+  // Infinito (Visions of Eternity) salian como Path of Fire. Ese archivo pesa
+  // 83 KB y no entra en una publicacion de la Factory (LES-028), asi que la
+  // correccion vive aca y se aplica al catalogo al cargar: filtros, chips y
+  // orden leen el mismo dato.
+  //
+  // Regla: la expansion es la que hace falta para conseguir la pieza. Si no hace
+  // falta ninguna (PvP, WvW, fractales, mejoras gratuitas), es Clasico. Las de
+  // segunda generacion que aceptan maestria de HoT o de PoF van con PoF, el ciclo
+  // en que salieron. Fuentes (2026-10-21): wiki oficial (Legendary weapon,
+  // Legendary trinket, Legendary back item, Legendary armor), GuildJen y Snow Crows.
+  var EXPANSION_FIX = {
+    // Heart of Thorns: Chuka y Champawat (una de las 4 de segunda generacion con
+    // coleccion) y Aurora (Mundo Viviente 3). Ad Infinitum ya venia bien.
+    78556: 'HoT',   // Chuka y Champawat
+    81908: 'HoT',   // Aurora
+    // Path of Fire
+    87109: 'PoF',   // Garra del Khan-Ur (segunda generacion, no tercera)
+    95380: 'PoF',   // Insignia de Campeon Prismatico (Mundo Viviente 2 a 5)
+    // Clasico: competitivo y mejoras que no piden expansion
+    92991: 'Core',  // Trascendencia (PvP)
+    93105: 'Core',  // Confluencia (WvW)
+    95093: 'Core',  // marcador de cuenta
+    77474: 'Core',  // La Ascension (PvP)
+    91505: 'Core',  // Sello legendario
+    91536: 'Core',  // Runa legendaria
+    // Secrets of the Obscure
+    101582: 'SotO', // Reliquia legendaria
+    // Janthir Wilds
+    103815: 'JW',   // Klobjarne Geirr
+    104857: 'JW',   // Orrax Manifestado
+    // Visions of Eternity
+    105653: 'VoE',  // Ancora Pax
+    106273: 'VoE',  // Ancora Bellum
+    110020: 'VoE',  // Jornal Estelar
+    107022: 'VoE',  // Verano Infinito
+    109012: 'VoE',  // Conflicto Interminable (WvW, pide VoE)
+    109070: 'VoE'   // Estela radiante
+  };
+
+  // Armaduras: por set, con el nombre en ingles del catalogo.
+  var EXPANSION_FIX_ARMOR = [
+    [/^Perfected Envoy/, 'HoT'],                    // incursiones
+    [/^Obsidian /, 'SotO'],                         // mundo abierto de SotO
+    [/^Selachimorpha/, 'VoE'],                      // respirador acuatico
+    [/^Eikasia/, 'Core'],                           // fractales, actualizacion gratuita
+    [/Hero's|^Ardent Glorious|^Mistforged|^Sublime Mistforged/, 'Core'] // PvP y WvW
+  ];
+
+  function expansionReal(item) {
+    if (!item) return null;
+    if (Object.prototype.hasOwnProperty.call(EXPANSION_FIX, item.id)) return EXPANSION_FIX[item.id];
+    if (item.type === 'armor') {
+      for (var i = 0; i < EXPANSION_FIX_ARMOR.length; i++) {
+        if (EXPANSION_FIX_ARMOR[i][0].test(item.name || '')) return EXPANSION_FIX_ARMOR[i][1];
+      }
+    }
+    return item.expansion;
+  }
+
+  // Corrige el catalogo en el lugar. Idempotente: se puede llamar en cada render.
+  function corregirExpansiones(items) {
+    (items || []).forEach(function (it) {
+      var e = expansionReal(it);
+      if (e && it.expansion !== e) it.expansion = e;
+    });
+    return items;
+  }
+
+  function ordenExpansion(e) {
+    var i = EXPANSION_ORDER.indexOf(e);
+    return i === -1 ? EXPANSION_ORDER.length : i;
+  }
+
+  if (root.LegendaryCatalog && root.LegendaryCatalog.items) corregirExpansiones(root.LegendaryCatalog.items);
 
   var GEN_LABELS = { 1: 'Gen 1', 2: 'Gen 2', 3: 'Gen 3' };
 
@@ -129,6 +222,7 @@
   // RENDER: BARRA DE FILTROS
   // =======================================================================
   function renderFilterBar(filters, catalog) {
+    corregirExpansiones(catalog);
     var opts = getFilterOptions(catalog || []);
 
     // Type buttons (orden: weapon, armor, trinket, back, upgradecomponent, relic)
@@ -163,8 +257,8 @@
         esc(label) + ' (' + count + ')</button>';
     });
 
-    // Expansion buttons (order: EoD, PoF, HoT, Core)
-    var expOrder = ['EoD', 'PoF', 'HoT', 'Core'];
+    // Expansion buttons: en orden de salida (BL-046)
+    var expOrder = EXPANSION_ORDER;
     var expBtns = expOrder.map(function (e) {
       var label = EXPANSION_LABELS[e] || e;
       var count = opts.exps[e] || 0;
@@ -268,9 +362,16 @@
         '</div>';
     }
 
+    // Agrupada por expansion, en orden de salida; dentro de cada una se
+    // conserva el orden del catalogo (BL-046).
+    var ordenados = items.map(function (it, i) { return { it: it, i: i }; });
+    ordenados.sort(function (a, b) {
+      return (ordenExpansion(expansionReal(a.it)) - ordenExpansion(expansionReal(b.it))) || (a.i - b.i);
+    });
+
     var cola = colaActual();
-    var cards = items.map(function (item, idx) {
-      return renderItemCard(item, owned, idx, cola);
+    var cards = ordenados.map(function (x, idx) {
+      return renderItemCard(x.it, owned, idx, cola);
     });
 
     return '<div class="lt-catalog-grid" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;">' +
@@ -585,6 +686,13 @@
     s.textContent = css;
     document.head.appendChild(s);
   }
+
+  root.LegendaryCatalogUI = {
+    expansionReal: expansionReal,
+    corregirExpansiones: corregirExpansiones,
+    EXPANSION_ORDER: EXPANSION_ORDER.slice(),
+    TYPE_LABELS: TYPE_LABELS
+  };
 
   // =======================================================================
   // REGISTRO
