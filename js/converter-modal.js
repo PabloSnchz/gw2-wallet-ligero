@@ -1,49 +1,42 @@
-﻿/*!
- * js/converter-modal.js — Conversor Gem ↔ Gold (Modal)
+/*!
+ * js/converter-modal.js — Cambio de divisas (oro ↔ gemas y tu Trading Post)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 1.2.0 (2026-09-30)
+ * Versión: 2.0.0 (2026-10-22)
  *
- * v1.2.0: buys/sells distinguen "no leido" de "no tenes" (Idea 47 c4, P1 del
- *         Code Reviewer). Los dos wrappers de /v2/commerce/transactions YA
- *         propagan el error desde api-gw2.js v2.18.0, pero el call site lo
- *         volvia a convertir en [] con un ternario. El efecto era que el
- *         cambio de contrato no arreglaba nada y ademas duplicaba el
- *         console.warn: un API key caido se seguia viendo como
- *         "No tenes ordenes activas en el TP". Ahora cada lado lleva su
- *         estado y el fallo se nombra.
- * v1.1.1: el titulo decia "sin cobrar", pero /v2/commerce/delivery devuelve la
- *         caja ENTERA: ventas sin retirar y compras sin retirar. Para un item
- *         comprado, "no te abonaron" es falso. Corregido a "sin recoger" con
- *         un cuerpo que no presupone de que lado viene (correccion del PO).
- * v1.1.0: banner "caja del Trading Post sin cobrar" (getCommerceDelivery).
- *         Tres estados distinguibles a proposito: pendiente / vacio real /
- *         "no se pudo leer". Sin ordenes activas el banner se dibuja igual.
- * v1.0.0: Extraído de app.js para independizar el conversor en un modal
- * con estructura preparada para futuras tabs (Ofertas, Historial).
- *
- * Fase 1: Conversor funcional completo + tabs placeholder
- * Fase 2 (futura): Tab "Ofertas" con Compañía de Comercio
- * Fase 3 (futura): Tab "Historial" con tendencia de gemas
+ * v2.0.0 (BL-056, CAR-2A): el conversor deja de ser un modal de 580 px con
+ *         cuatro pestañas y pasa a ser una vista con aire, la que se aprobó
+ *         en la propuesta CAR-0:
+ *           - izquierda: calculadora en espejo (oro → gemas, gemas → oro), el
+ *             precio de 400 gemas en grande, la conveniencia y mi recomendación;
+ *           - derecha: tu Trading Post, primero lo que tenés para recoger y
+ *             después tus órdenes; «Populares» queda plegado abajo.
+ *         La pestaña «Historial» se va: decía «Próximamente» y no se muestra
+ *         lo que no existe.
+ *         API: mount(host) dibuja la vista donde se le pida (la Cartera la
+ *         monta en su pestaña). open() pide esa pestaña a la Cartera y, si no
+ *         está, muestra la misma vista dentro de un modal.
+ *         Arreglos: el Escape se borraba después del primer cierre; el ícono
+ *         155048 no existe; renderSkeletonOfertas() no estaba definida, así
+ *         que «Populares» quedaba colgado en «cargando» para siempre.
+ *         Estilos: clases con las variables del theme (antes, inline).
+ * v1.2.0: compras y ventas distinguen "no leído" de "no tenés" (Idea 47 c4).
+ * v1.1.x: caja del Trading Post "sin recoger" (getCommerceDelivery).
+ * v1.0.0: extraído de app.js.
  */
 
 (function (root) {
   'use strict';
 
+  var VERSION = '2.0.0';
   var LOG = '[ConverterModal]';
-  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var ICON = 'assets/icons/';
+  var I_GEM = ICON + '502065.png', I_GOLD = ICON + '619316.png', I_TP = ICON + '155033.png';
 
-  // =======================================================================
-  // CONFIGURACIÓN
-  // =======================================================================
   var LS_CONV = 'gw2_conv_cache_v3';
   var CONV_TTL = 1000 * 60 * 30; // 30 minutos
 
-  // =======================================================================
-  // ESTADO
-  // =======================================================================
   var state = {
     inited: false,
-    activeTab: 'cambio', // 'cambio' | 'ofertas' | 'historial'
     transacciones: {
       buys: [],
       sells: [],
@@ -51,27 +44,15 @@
       loading: false,
       lastUpdate: 0,
       delivery: [],
-      // Caja del Trading Post. Cuatro estados, y 'empty' NO es 'error':
-      //   'unknown' = todavia no se consulto
-      //   'pending' = hay items esperando cobro (la alerta que motiva la feature)
-      //   'empty'   = se leyo bien y no hay nada
-      //   'error'   = no se pudo leer (permiso tradingpost ausente, caida, etc.)
-      // La distincion es obligatoria: getCommerceDelivery() propaga el error a
-      // proposito (ver el contrato en js/api-gw2.js) para que un fallo no se
-      // pueda presentar como "caja vacia".
+      // Caja del Trading Post: 'unknown' | 'pending' | 'empty' | 'error'.
+      // 'empty' NO es 'error': getCommerceDelivery() propaga el error a
+      // propósito para que un fallo no se presente como "caja vacía".
       deliveryStatus: 'unknown',
-      // Compras y ventas, cada una por separado. Mismo contrato que
-      // deliveryStatus y por el mismo motivo: los dos wrappers de
-      // transactions propagan el error (api-gw2.js v2.18.0), asi que "no pude
-      // leer" y "no tenes" son estados distintos y no pueden verse igual.
-      //   'unknown' = todavia no se consulto
-      //   'ok'      = se leyo bien (puede ser [])
-      //   'error'   = no se pudo leer
+      // Compras y ventas por separado, mismo contrato: 'unknown' | 'ok' | 'error'.
       buysStatus: 'unknown',
       sellsStatus: 'unknown',
-      filters: {
-        type: 'all' // 'all', 'buys', 'sells'
-      }
+      noPermission: false,
+      filters: { type: 'all' } // 'all' | 'buys' | 'sells'
     },
     ofertas: {
       listings: [],
@@ -79,15 +60,12 @@
       itemsById: {},
       loading: false,
       lastUpdate: 0,
-      filters: {
-        rarity: '',
-        minVolume: 0
-      }
+      filters: { rarity: '', minVolume: 0 }
     }
   };
 
   // =======================================================================
-  // UTILIDADES
+  // UTILIDADES PURAS
   // =======================================================================
   function esc(s) {
     return String(s || '').replace(/[&<>"']/g, function (m) {
@@ -96,139 +74,35 @@
   }
 
   function splitCopper(v) {
-    var g = Math.floor(v / 10000);
-    var s = Math.floor((v % 10000) / 100);
-    var c = v % 100;
-    return { g: g, s: s, c: c };
+    v = Math.max(0, Math.floor(Number(v) || 0));
+    return { g: Math.floor(v / 10000), s: Math.floor((v % 10000) / 100), c: v % 100 };
   }
 
-  function badgesHTMLFromCopper(copper) {
-    var coins = splitCopper(copper || 0);
-    var p = [];
-    if (coins.g) p.push('<span class="coin coin--g">' + coins.g.toLocaleString() + '</span>');
-    if (coins.s) p.push('<span class="coin coin--s">' + coins.s + '</span>');
-    if (coins.c) p.push('<span class="coin coin--c">' + coins.c + '</span>');
-    return p.length ? p.join('') : '0';
+  /** Monedas con el estilo de la Cartera: 142 g 07 s (el cobre solo debajo de 1 g). */
+  function coinHTML(copper) {
+    var n = Number(copper);
+    if (!Number.isFinite(n) || n <= 0) return '—';
+    var p = splitCopper(n), out = [];
+    if (p.g) out.push('<b class="cx-g">' + p.g.toLocaleString('es-AR') + '</b><small>g</small>');
+    if (p.s || p.g) out.push('<b class="cx-s">' + (p.g ? String(p.s).padStart(2, '0') : p.s) + '</b><small>s</small>');
+    if (!p.g) out.push('<b class="cx-c">' + p.c + '</b><small>c</small>');
+    return '<span class="cx-coin">' + out.join('') + '</span>';
   }
 
-  function markUpdated(node, ttl) {
-    try {
-      if (!node) return;
-      node.classList.remove('updated');
-      void node.offsetHeight;
-      node.classList.add('updated');
-      setTimeout(function () { node.classList.remove('updated'); }, ttl || 220);
-    } catch (_) {}
-  }
-
-  // =======================================================================
-  // CACHÉ DE CONVERSIÓN
-  // =======================================================================
-  function convGet() {
-    try { return JSON.parse(localStorage.getItem(LS_CONV) || '{}'); } catch (_) { return {}; }
-  }
-  function convPut(k, v) {
-    try {
-      var m = convGet();
-      m[k] = { v: v, ts: Date.now() };
-      localStorage.setItem(LS_CONV, JSON.stringify(m));
-    } catch (_) {}
-  }
-  function convVal(k) {
-    var m = convGet();
-    if (!m[k]) return null;
-    if ((Date.now() - m[k].ts) > CONV_TTL) return null;
-    return m[k].v;
+  function relTime(iso, now) {
+    var t = new Date(iso).getTime();
+    if (!Number.isFinite(t)) return '';
+    var m = Math.max(0, Math.round(((now || Date.now()) - t) / 60000));
+    if (m < 1) return 'recién';
+    if (m < 60) return 'hace ' + m + ' min';
+    var h = Math.round(m / 60);
+    if (h < 24) return 'hace ' + h + ' h';
+    var d = Math.round(h / 24);
+    return 'hace ' + d + (d === 1 ? ' día' : ' días');
   }
 
   // =======================================================================
-  // API DE CONVERSIÓN
-  // =======================================================================
-  function apiCoinsRaw(copper) {
-    var url = 'https://api.guildwars2.com/v2/commerce/exchange/coins?quantity=' + copper;
-    return fetch(url, { headers: { 'Accept': 'application/json' } }).then(function (r) {
-      return r.text().then(function (raw) {
-        if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (raw || ''));
-        var o;
-        try { o = JSON.parse(raw); } catch (e) { throw new Error('JSON inválido (coins): ' + (raw || '').slice(0, 200)); }
-        return o;
-      });
-    });
-  }
-
-  function apiGemsRaw(gems) {
-    var url = 'https://api.guildwars2.com/v2/commerce/exchange/gems?quantity=' + gems;
-    return fetch(url, { headers: { 'Accept': 'application/json' } }).then(function (r) {
-      return r.text().then(function (raw) {
-        if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (raw || ''));
-        var o;
-        try { o = JSON.parse(raw); } catch (e) { throw new Error('JSON inválido (gems): ' + (raw || '').slice(0, 200)); }
-        return o;
-      });
-    });
-  }
-
-  async function gemsForCoins(copper) {
-    var k = 'coins2gems_' + copper;
-    var v = convVal(k);
-    if (v != null) return v;
-    var o = await apiCoinsRaw(copper);
-    var gems = Number.isFinite(+o?.quantity) ? +o.quantity
-      : Number.isFinite(+o?.gems) ? +o.gems
-      : (Number.isFinite(+o?.coins_per_gem) ? Math.floor(+copper / +o.coins_per_gem) : NaN);
-    if (!Number.isFinite(gems)) throw new Error('Respuesta inválida coins->gems');
-    convPut(k, gems);
-    return gems;
-  }
-
-  async function coinsForGems(gems) {
-    var k = 'gems2coins_' + gems;
-    var v = convVal(k);
-    if (v != null) return v;
-    var o = await apiGemsRaw(gems);
-    var copper = Number.isFinite(+o?.quantity) ? +o.quantity
-      : Number.isFinite(+o?.coins) ? +o.coins
-      : (Number.isFinite(+o?.coins_per_gem) ? Math.floor(+gems * +o.coins_per_gem) : NaN);
-    if (!Number.isFinite(copper)) throw new Error('Respuesta inválida gems->coins');
-    convPut(k, copper);
-    return copper;
-  }
-
-  async function costToBuyGems_coinsMarket(targetGems) {
-    if (targetGems <= 0) return 0;
-    var lo = 0;
-    var hi = 10000 * 10000;
-    while (await gemsForCoins(hi) < targetGems) {
-      hi = Math.min(hi * 2, 5e11);
-      if (hi >= 5e11) break;
-    }
-    while (lo < hi) {
-      var mid = Math.floor((lo + hi) / 2);
-      var g = await gemsForCoins(mid);
-      if (g >= targetGems) hi = mid;
-      else lo = mid + 1;
-    }
-    return lo;
-  }
-
-  async function gemsToBuyGold_gemsMarket(targetCopper) {
-    if (targetCopper <= 0) return 0;
-    var lo = 0, hi = 100;
-    while (await coinsForGems(hi) < targetCopper) {
-      hi = Math.min(hi * 2, 3e6);
-      if (hi >= 3e6) break;
-    }
-    while (lo < hi) {
-      var mid = Math.floor((lo + hi) / 2);
-      var c = await coinsForGems(mid);
-      if (c >= targetCopper) hi = mid;
-      else lo = mid + 1;
-    }
-    return lo;
-  }
-
-  // =======================================================================
-  // CONVENIENCIA (400 GEMAS)
+  // CONVENIENCIA (400 GEMAS) — referencia 120–130 g
   // =======================================================================
   function scoreFromPrice400(priceGold) {
     var p = Number(priceGold || 0);
@@ -251,163 +125,232 @@
 
   function classForScore(score) {
     if (score >= 0.95) return 'is-exc';
-    if (score >= 0.80) return 'is-good';
     if (score >= 0.65) return 'is-good';
     if (score >= 0.45) return 'is-mid';
     if (score >= 0.25) return 'is-low';
     return 'is-bad';
   }
 
-  function renderConvenience(priceCopperFor400) {
+  /** Mi recomendación según el precio de 400 gemas (en oro, con decimales). */
+  function adviceFor(gold400) {
+    var g = Number(gold400);
+    if (!Number.isFinite(g) || g <= 0) return null;
+    var n = Math.round(g) + ' g';
+    if (g < 120) return { kind: 'recomienda', text: 'Hoy 400 gemas cuestan ' + n + ', por debajo de la referencia de 120–130 g. Si tenés pensado comprar gemas con oro, es un buen momento.' };
+    if (g <= 130) return { kind: 'recomienda', text: 'Hoy 400 gemas cuestan ' + n + ', dentro de la referencia de 120–130 g. Es un precio normal: comprá si las necesitás.' };
+    if (g < 145) return { kind: 'recomienda', text: 'Hoy 400 gemas cuestan ' + n + ', por encima de la referencia de 120–130 g. Si no te urge, esperá; si las necesitás ya, no es un mal precio.' };
+    if (g < 160) return { kind: 'recomienda', text: 'Hoy 400 gemas cuestan ' + n + ', bastante por encima de la referencia de 120–130 g. Si podés, esperá unos días.' };
+    return { kind: 'advierte', text: 'Hoy 400 gemas cuestan ' + n + ', muy por encima de la referencia de 120–130 g. No es momento de cambiar oro por gemas; al revés, si necesitás oro, tus gemas rinden más que de costumbre.' };
+  }
+
+  function countOrders(st) {
+    return { all: st.buys.length + st.sells.length, buys: st.buys.length, sells: st.sells.length };
+  }
+
+  // =======================================================================
+  // CACHÉ Y API DE CONVERSIÓN
+  // =======================================================================
+  function convGet() {
+    try { return JSON.parse(localStorage.getItem(LS_CONV) || '{}'); } catch (_) { return {}; }
+  }
+  function convPut(k, v) {
     try {
-      var elBar  = document.getElementById('cvScoreBar');
-      var elLbl  = document.getElementById('cvScoreLabel');
-      var elHint = document.getElementById('cvScoreHint');
-      var meter  = document.querySelector('#convModal .conv2-meter');
-      if (!elBar || !elLbl || !elHint || !meter) return;
-
-      var gold = Number(priceCopperFor400 || 0) / 10000;
-      if (!Number.isFinite(gold) || gold <= 0) {
-        elBar.style.width = '0%';
-        elBar.className = 'conv2-meter__fill';
-        elLbl.textContent = '—';
-        elHint.textContent = 'Sin datos de referencia aún.';
-        meter.setAttribute('aria-valuenow', '0');
-        return;
-      }
-
-      var result = scoreFromPrice400(gold);
-      var pct = Math.round(result.score * 100);
-      var cls = classForScore(result.score);
-      var lbl = labelForScore(result.score);
-
-      elBar.className = 'conv2-meter__fill ' + cls;
-      elBar.style.width = pct + '%';
-      elLbl.textContent = lbl + ' (' + gold.toFixed(2) + ' o / 400)';
-      elHint.textContent = (result.score >= 0.65)
-        ? 'Es un buen momento según la referencia definida (120–130 o/400).'
-        : (result.score >= 0.45)
-          ? 'En línea con valores normales.'
-          : 'Poco conveniente frente a la referencia (120–130 o/400).';
-      meter.setAttribute('aria-valuenow', String(pct));
-      markUpdated(elBar);
+      var m = convGet();
+      m[k] = { v: v, ts: Date.now() };
+      localStorage.setItem(LS_CONV, JSON.stringify(m));
     } catch (_) {}
   }
-
-  // =======================================================================
-  // EVENTOS DEL CONVERSOR
-  // =======================================================================
-  var _convTimer = null;
-
-  function setGemsOut(val) {
-    var el = document.getElementById('cvGoldOut');
-    if (!el) return;
-    if (!Number.isFinite(val) || val <= 0) { el.textContent = '—'; return; }
-    el.textContent = String(Math.floor(val));
-    markUpdated(el);
+  function convVal(k) {
+    var m = convGet();
+    if (!m[k]) return null;
+    if ((Date.now() - m[k].ts) > CONV_TTL) return null;
+    return m[k].v;
   }
 
-  function setBadges(container, copper) {
-    if (!container) return;
-    if (!Number.isFinite(copper) || copper <= 0) { container.innerHTML = '—'; return; }
-    container.innerHTML = badgesHTMLFromCopper(copper);
-    markUpdated(container);
+  function apiExchange(kind, quantity) {
+    var url = 'https://api.guildwars2.com/v2/commerce/exchange/' + kind + '?quantity=' + quantity;
+    return fetch(url, { headers: { 'Accept': 'application/json' } }).then(function (r) {
+      return r.text().then(function (raw) {
+        if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + (raw || ''));
+        try { return JSON.parse(raw); } catch (e) { throw new Error('JSON inválido (' + kind + '): ' + (raw || '').slice(0, 200)); }
+      });
+    });
   }
+
+  async function gemsForCoins(copper) {
+    var k = 'coins2gems_' + copper;
+    var v = convVal(k);
+    if (v != null) return v;
+    var o = await apiExchange('coins', copper);
+    var gems = Number.isFinite(+o?.quantity) ? +o.quantity
+      : Number.isFinite(+o?.gems) ? +o.gems
+      : (Number.isFinite(+o?.coins_per_gem) ? Math.floor(+copper / +o.coins_per_gem) : NaN);
+    if (!Number.isFinite(gems)) throw new Error('Respuesta inválida coins->gems');
+    convPut(k, gems);
+    return gems;
+  }
+
+  async function coinsForGems(gems) {
+    var k = 'gems2coins_' + gems;
+    var v = convVal(k);
+    if (v != null) return v;
+    var o = await apiExchange('gems', gems);
+    var copper = Number.isFinite(+o?.quantity) ? +o.quantity
+      : Number.isFinite(+o?.coins) ? +o.coins
+      : (Number.isFinite(+o?.coins_per_gem) ? Math.floor(+gems * +o.coins_per_gem) : NaN);
+    if (!Number.isFinite(copper)) throw new Error('Respuesta inválida gems->coins');
+    convPut(k, copper);
+    return copper;
+  }
+
+  /** Cobre mínimo para conseguir `targetGems` gemas (búsqueda binaria sobre la API). */
+  async function costToBuyGems_coinsMarket(targetGems) {
+    if (targetGems <= 0) return 0;
+    var lo = 0, hi = 10000 * 10000;
+    while (await gemsForCoins(hi) < targetGems) {
+      hi = Math.min(hi * 2, 5e11);
+      if (hi >= 5e11) break;
+    }
+    while (lo < hi) {
+      var mid = Math.floor((lo + hi) / 2);
+      if (await gemsForCoins(mid) >= targetGems) hi = mid; else lo = mid + 1;
+    }
+    return lo;
+  }
+
+  /** Gemas mínimas para conseguir `targetCopper` de oro. */
+  async function gemsToBuyGold_gemsMarket(targetCopper) {
+    if (targetCopper <= 0) return 0;
+    var lo = 0, hi = 100;
+    while (await coinsForGems(hi) < targetCopper) {
+      hi = Math.min(hi * 2, 3e6);
+      if (hi >= 3e6) break;
+    }
+    while (lo < hi) {
+      var mid = Math.floor((lo + hi) / 2);
+      if (await coinsForGems(mid) >= targetCopper) hi = mid; else lo = mid + 1;
+    }
+    return lo;
+  }
+
+  // =======================================================================
+  // CALCULADORA
+  // =======================================================================
+  function byId(id) { return document.getElementById(id); }
 
   function setConvState(msg, kind) {
-    var el = document.getElementById('cvState');
+    var el = byId('cvState');
     if (!el) return;
     el.textContent = msg;
-    el.style.color = (kind === 'error') ? 'var(--color-red)' : 'var(--muted)';
+    el.classList.toggle('is-error', kind === 'error');
   }
 
-  async function onTopInput() {
-    try {
-      var gs = String(document.getElementById('cvGems')?.value || '').trim();
-      if (gs === '' || Number(gs) <= 0) {
-        document.getElementById('cvGems').value = '';
-        setBadges(document.getElementById('cvGemsOut'), 0);
-        setConvState('Ingresá gemas.');
-        renderConvenience(0);
-        return;
+  function renderConvenience(priceCopperFor400) {
+    var bar = byId('cvScoreBar'), lbl = byId('cvScoreLabel'), num = byId('cvScoreNum');
+    var meter = byId('cvMeter'), ref = byId('cvRef400'), voiceHost = byId('cvVoice');
+    if (!bar || !lbl || !meter) return;
+    var gold = Number(priceCopperFor400 || 0) / 10000;
+    if (!Number.isFinite(gold) || gold <= 0) {
+      bar.style.width = '0%';
+      bar.className = 'cx-fill';
+      lbl.textContent = 'Conveniencia: sin datos';
+      if (num) num.textContent = '';
+      if (ref) ref.innerHTML = '—';
+      meter.setAttribute('aria-valuenow', '0');
+      if (voiceHost) voiceHost.innerHTML = '';
+      return;
+    }
+    var r = scoreFromPrice400(gold);
+    var pct = Math.round(r.score * 100);
+    bar.className = 'cx-fill ' + classForScore(r.score);
+    bar.style.width = pct + '%';
+    lbl.textContent = 'Conveniencia: ' + labelForScore(r.score);
+    if (num) num.textContent = pct + ' / 100';
+    if (ref) ref.innerHTML = coinHTML(priceCopperFor400);
+    meter.setAttribute('aria-valuenow', String(pct));
+    if (voiceHost) {
+      voiceHost.innerHTML = '';
+      var a = adviceFor(gold);
+      if (a && root.Shiruvana && typeof root.Shiruvana.voice === 'function') {
+        voiceHost.appendChild(root.Shiruvana.voice({ kind: a.kind, text: a.text }));
       }
-      var gems = Math.max(0, Math.floor(Number(gs)));
-      document.getElementById('cvGems').value = String(gems);
-      setConvState('Calculando costo (coins→gems)…');
+    }
+  }
+
+  async function onGemsInput() {
+    var input = byId('cvGems'), out = byId('cvGemsOut');
+    if (!input || !out) return;
+    var gems = Math.max(0, Math.floor(Number(String(input.value || '').trim()) || 0));
+    if (!gems) { input.value = ''; out.innerHTML = '—'; return; }
+    input.value = String(gems);
+    setConvState('Calculando…');
+    try {
       var copper = await costToBuyGems_coinsMarket(gems);
-      setBadges(document.getElementById('cvGemsOut'), copper);
-      setConvState('Actualizado.');
-      if (gems > 0) {
-        var copperFor400 = Math.round((copper / gems) * 400);
-        renderConvenience(copperFor400);
-      }
+      out.innerHTML = coinHTML(copper);
+      setConvState('Cotización al día.');
     } catch (e) {
-      console.error('[Conv] top', e);
-      setBadges(document.getElementById('cvGemsOut'), 0);
-      setConvState('No se pudo calcular costo.', 'error');
-      renderConvenience(0);
+      console.error(LOG, 'gemas → oro', e);
+      out.innerHTML = '—';
+      setConvState('No se pudo calcular. Probá «Actualizar cotización».', 'error');
     }
   }
 
-  async function onBottomInput() {
+  async function onGoldInput() {
+    var input = byId('cvGold'), out = byId('cvGoldOut');
+    if (!input || !out) return;
+    var gold = Math.max(0, Math.floor(Number(String(input.value || '').trim()) || 0));
+    if (!gold) { input.value = ''; out.textContent = '—'; return; }
+    input.value = String(gold);
+    setConvState('Calculando…');
     try {
-      var g = String(document.getElementById('cvGold')?.value || '').trim();
-      if (g === '' || Number(g) <= 0) {
-        document.getElementById('cvGold').value = '';
-        setGemsOut(0);
-        setConvState('Ingresá oro.');
-        return;
-      }
-      var gold = Math.max(0, Math.floor(Number(g)));
-      document.getElementById('cvGold').value = String(gold);
-      var copper = gold * 10000;
-      setConvState('Calculando gemas (gems→coins)…');
-      var gems = await gemsToBuyGold_gemsMarket(copper);
-      setGemsOut(gems);
-      setConvState('Actualizado.');
+      var gems = await gemsToBuyGold_gemsMarket(gold * 10000);
+      out.textContent = Math.floor(gems).toLocaleString('es-AR');
+      setConvState('Cotización al día.');
     } catch (e) {
-      console.error('[Conv] bottom', e);
-      setGemsOut(0);
-      setConvState('No se pudo calcular gemas.', 'error');
+      console.error(LOG, 'oro → gemas', e);
+      out.textContent = '—';
+      setConvState('No se pudo calcular. Probá «Actualizar cotización».', 'error');
     }
   }
 
-  async function updateRef400() {
+  async function updateRef400(force) {
     try {
       var k = 'ref_400_v3';
-      var copper = convVal(k);
+      var copper = force ? null : convVal(k);
       if (copper == null) {
         copper = await costToBuyGems_coinsMarket(400);
         convPut(k, copper);
       }
-      var el = document.getElementById('cvRef400');
-      if (el) {
-        el.innerHTML = '<span style="display:inline-flex;gap:6px;align-items:center;margin-right:8px">' +
-          '<img src="assets/icons/502065.png" width="24" height="24" style="vertical-align:-2px" alt="">' +
-          '<strong>400</strong></span> ' + badgesHTMLFromCopper(copper);
-        markUpdated(el);
-      }
       renderConvenience(copper);
-      root.toast?.('success', 'Referencia 400 actualizada', { ttl: 1500 });
     } catch (e) {
-      console.warn('[Conv] ref400', e);
-      var elRef = document.getElementById('cvRef400');
-      if (elRef) elRef.textContent = '—';
+      console.warn(LOG, 'ref400', e);
       renderConvenience(0);
-      root.toast?.('warn', 'No se pudo actualizar la referencia 400', { ttl: 2000 });
+      setConvState('No se pudo leer el precio de las gemas.', 'error');
+    }
+  }
+
+  /** «Todo mi oro»: el oro de la cuenta elegida. */
+  async function fillAllGold() {
+    var input = byId('cvGold');
+    var token = getSelectedTokenForCommerce();
+    if (!input || !token || !root.GW2Api || typeof root.GW2Api.getAccountWallet !== 'function') {
+      setConvState('Elegí una cuenta para usar tu oro.', 'error');
+      return;
+    }
+    try {
+      var wallet = await root.GW2Api.getAccountWallet(token, { nocache: false });
+      var coin = (wallet || []).filter(function (w) { return w && w.id === 1; })[0];
+      input.value = String(Math.floor(((coin && coin.value) || 0) / 10000));
+      onGoldInput();
+    } catch (e) {
+      console.warn(LOG, 'oro de la cuenta', e);
+      setConvState('No se pudo leer el oro de la cuenta.', 'error');
     }
   }
 
   // =======================================================================
-  // OFERTAS — ITEMS POPULARES EN EL TRADING POST
+  // POPULARES — lo más comerciado (plegado)
   // =======================================================================
-  //
-  // Muestra los ítems con mayor volumen de transacciones en la Compañía
-  // de Comercio. Ordenado por cantidad total de órdenes (compras + ventas).
-  //
-  // Útil para saber qué items se mueven rápido, qué legendarias tienen
-  // más liquidez, y entender el pulso del mercado.
-
   var RARITY_COLORS = {
     'Junk': '#AAAAAA', 'Basic': '#FFFFFF', 'Fine': '#62A4DA',
     'Masterwork': '#1A9306', 'Rare': '#FCD00B', 'Exotic': '#FFA405',
@@ -423,50 +366,26 @@
     return map[r] || r || '—';
   }
 
-  function getRarityOrder(rarity) {
-    var order = {
-      'Junk': 0, 'Basic': 1, 'Fine': 2, 'Masterwork': 3,
-      'Rare': 4, 'Exotic': 5, 'Ascended': 6, 'Legendary': 7
-    };
-    return order[rarity] != null ? order[rarity] : -1;
-  }
-
   async function loadOfertas(forceNoCache) {
     var st = state.ofertas;
     if (st.loading) return;
-    
-    // Usar caché si los datos son recientes (menos de 2 minutos)
     if (!forceNoCache && st.lastUpdate && (Date.now() - st.lastUpdate) < 120000 && st.prices.length) {
-      console.log(LOG, 'Usando caché de ofertas (reciente)');
       renderOfertas();
       return;
     }
-    
     st.loading = true;
     renderOfertas();
-
     try {
-      // Paso 1: Obtener listado de IDs del TP
       var allIds = await root.GW2Api.getCommerceListings({ nocache: !!forceNoCache });
       if (!allIds || !allIds.length) {
-        st.listings = [];
-        st.prices = [];
-        st.lastUpdate = Date.now();
+        st.listings = []; st.prices = []; st.lastUpdate = Date.now();
         return;
       }
-
-      // Tomar últimos 200 IDs (los más nuevos, suelen ser los más activos)
       var sampleIds = allIds.slice(-200);
-
-      // Paso 2: Obtener precios
       var prices = await root.GW2Api.getCommercePrices(sampleIds, { nocache: !!forceNoCache });
-
-      // Paso 3: Obtener metadatos de items
-      var itemIds = prices.map(function (p) { return p.id; });
-      var items = await root.GW2Api.getItemsMany(itemIds, { nocache: false });
+      var items = await root.GW2Api.getItemsMany(prices.map(function (p) { return p.id; }), { nocache: false });
       var itemsById = {};
       items.forEach(function (it) { if (it && it.id != null) itemsById[it.id] = it; });
-
       st.listings = sampleIds;
       st.prices = prices;
       st.itemsById = itemsById;
@@ -479,243 +398,84 @@
     }
   }
 
-  function getFilteredOfertas() {
-    var st = state.ofertas;
+  function getFilteredOfertas(st) {
+    st = st || state.ofertas;
     var f = st.filters;
-
     return st.prices
-      .filter(function (p) {
-        // Necesitamos al menos compras o ventas
-        var totalVol = (p.buys ? p.buys.quantity || 0 : 0) + (p.sells ? p.sells.quantity || 0 : 0);
-        if (totalVol <= 0) return false;
-
-        if (f.rarity) {
-          var item = st.itemsById[p.id];
-          if (!item || !item.rarity) return false;
-
-          // Si el filtro es "Legendary", mostrar solo Legendary
-          // Si es otro, excluir Legendary y Ascended (dominan el top)
-          if (f.rarity === 'Legendary') {
-            if (item.rarity !== 'Legendary') return false;
-          } else if (f.rarity === 'Ascended') {
-            if (item.rarity !== 'Ascended') return false;
-          } else if (f.rarity === 'non_legendary') {
-            if (item.rarity === 'Legendary' || item.rarity === 'Ascended') return false;
-          } else {
-            if (item.rarity !== f.rarity) return false;
-          }
-        }
-
-        if (f.minVolume > 0 && totalVol < f.minVolume) return false;
-
-        return true;
-      })
       .map(function (p) {
-        var item = st.itemsById[p.id] || {};
         var buyQty = p.buys ? p.buys.quantity || 0 : 0;
         var sellQty = p.sells ? p.sells.quantity || 0 : 0;
-        var totalVol = buyQty + sellQty;
-        var spread = p.sells && p.buys ? p.sells.unit_price - p.buys.unit_price : 0;
-        var spreadPct = p.buys && p.buys.unit_price > 0 ? ((spread / p.buys.unit_price) * 100) : 0;
-
-        return {
-          id: p.id,
-          buys: p.buys,
-          sells: p.sells,
-          item: item,
-          buyQty: buyQty,
-          sellQty: sellQty,
-          totalVol: totalVol,
-          spread: spread,
-          spreadPct: spreadPct
-        };
+        return { id: p.id, buys: p.buys, sells: p.sells, item: st.itemsById[p.id] || {},
+          buyQty: buyQty, sellQty: sellQty, totalVol: buyQty + sellQty };
+      })
+      .filter(function (p) {
+        if (p.totalVol <= 0) return false;
+        if (f.rarity) {
+          var r = p.item.rarity;
+          if (!r) return false;
+          if (f.rarity === 'non_legendary') { if (r === 'Legendary' || r === 'Ascended') return false; }
+          else if (r !== f.rarity) return false;
+        }
+        return !(f.minVolume > 0 && p.totalVol < f.minVolume);
       })
       .sort(function (a, b) {
-        // Legendarias: ordenar por volumen de venta (sellQty)
-        if (state.ofertas.filters.rarity === 'Legendary') {
-          return b.sellQty - a.sellQty;
-        }
-        // Resto: ordenar por volumen total
-        return b.totalVol - a.totalVol;
+        return f.rarity === 'Legendary' ? b.sellQty - a.sellQty : b.totalVol - a.totalVol;
       })
       .slice(0, 15);
   }
 
   function renderOfertas() {
-    var container = document.querySelector('#convModal .conv-tab-content[data-tab="populares"]');
-    if (!container) return;
-
+    var box = byId('cvPop');
+    if (!box) return;
     var st = state.ofertas;
-
-    if (st.loading) {
-      container.innerHTML = renderSkeletonOfertas();
-      return;
-    }
-
+    if (st.loading) { box.innerHTML = '<p class="cx-empty">Cargando el mercado…</p>'; return; }
     if (!st.prices.length) {
-      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">' +
-        '<img src="assets/icons/155033.png" width="48" height="48" alt="" style="opacity:0.3;margin-bottom:16px;"><br>' +
-        'No se pudieron cargar los datos del mercado.<br>' +
-        '<button id="cvOfertasRetry" class="btn btn--ghost" style="margin-top:16px;">Reintentar</button></div>';
+      box.innerHTML = '<p class="cx-empty">No se pudieron cargar los datos del mercado.</p>' +
+        '<p class="cx-center"><button type="button" class="cx-btn" data-cx="pop-refresh">Reintentar</button></p>';
       return;
     }
-
-    var filtered = getFilteredOfertas();
-    var lastUpdateStr = st.lastUpdate ? 'Actualizado hace ' + Math.floor((Date.now() - st.lastUpdate) / 1000) + 's' : '—';
-    var isLegendaryFilter = state.ofertas.filters.rarity === 'Legendary';
-
-    var html =
-      renderDeliveryBanner() +
-      '<div style="margin-bottom:8px;font-size:0.75rem;color:var(--muted);line-height:1.5;">' +
-        (isLegendaryFilter
-          ? '💜 <strong>Legendarias más activas:</strong> ordenadas por cantidad de gente vendiendo. A más vendedores, más liquidez y precios más competitivos.'
-          : '📊 <strong>Ítems más populares:</strong> ordenados por volumen total de órdenes de compra y venta. Mostrando los que más se mueven. Usá el filtro de rareza para enfocarte.') +
-      '</div>' +
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">' +
-        '<select id="cvOfertasRarity" style="background:var(--bg-1);border:1px solid var(--bd-1);border-radius:20px;color:var(--tx-1);padding:6px 12px;font-size:0.75rem;">' +
-          '<option value="">Todas las rarezas</option>' +
-          '<option value="Legendary">💜 Legendarias</option>' +
-          '<option value="Ascended">Ascendido</option>' +
-          '<option value="Exotic">Exótico</option>' +
-          '<option value="Rare">Raro</option>' +
-          '<option value="Masterwork">Obra maestra</option>' +
-          '<option value="Fine">Bueno</option>' +
-          '<option value="non_legendary">No legendario/ascendido</option>' +
-        '</select>' +
-        '<select id="cvOfertasVolume" style="background:var(--bg-1);border:1px solid var(--bd-1);border-radius:20px;color:var(--tx-1);padding:6px 12px;font-size:0.75rem;">' +
-          '<option value="0">Cualquier volumen</option>' +
-          '<option value="100">> 100 unidades</option>' +
-          '<option value="500">> 500 unidades</option>' +
-          '<option value="1000">> 1,000 unidades</option>' +
-        '</select>' +
-        '<button id="cvOfertasRefresh" class="btn btn--ghost btn--xs" style="display:inline-flex;align-items:center;gap:4px;">' +
-          '<img src="assets/icons/Welcome/834002.png" width="12" height="12" alt="">Refrescar</button>' +
-        '<span class="muted" style="font-size:0.7rem;margin-left:auto;">' + esc(lastUpdateStr) + '</span>' +
-      '</div>';
-
-    if (!filtered.length) {
-      html += '<div class="muted" style="text-align:center;padding:30px;">' +
-        '� No se encontraron ítems con esos filtros.<br>' +
-        '<span style="font-size:0.75rem;">Probá con una rareza diferente.</span></div>';
+    var f = st.filters, legend = f.rarity === 'Legendary';
+    var rows = getFilteredOfertas(st);
+    var opt = function (v, l, cur) { return '<option value="' + v + '"' + (String(cur) === String(v) ? ' selected' : '') + '>' + l + '</option>'; };
+    var html = '<div class="cx-tools">' +
+      '<select class="cx-select" data-cx="pop-rarity" aria-label="Rareza">' +
+        opt('', 'Todas las rarezas', f.rarity) + opt('Legendary', 'Legendarias', f.rarity) + opt('Ascended', 'Ascendido', f.rarity) +
+        opt('Exotic', 'Exótico', f.rarity) + opt('Rare', 'Raro', f.rarity) + opt('Masterwork', 'Obra maestra', f.rarity) +
+        opt('Fine', 'Bueno', f.rarity) + opt('non_legendary', 'Sin legendarias ni ascendidas', f.rarity) +
+      '</select>' +
+      '<select class="cx-select" data-cx="pop-volume" aria-label="Volumen">' +
+        opt(0, 'Cualquier volumen', f.minVolume) + opt(100, 'Más de 100', f.minVolume) + opt(500, 'Más de 500', f.minVolume) + opt(1000, 'Más de 1.000', f.minVolume) +
+      '</select>' +
+      '<button type="button" class="cx-btn" data-cx="pop-refresh">Refrescar</button></div>' +
+      '<p class="cx-note">' + (legend
+        ? 'Legendarias ordenadas por cantidad de vendedores: a más vendedores, más fácil comprar a buen precio.'
+        : 'Ordenados por órdenes de compra y venta: lo que más se mueve hoy.') + '</p>';
+    if (!rows.length) {
+      html += '<p class="cx-empty">Nada con esos filtros. Probá otra rareza.</p>';
     } else {
-      html +=
-        '<div style="overflow-x:auto;">' +
-          '<table style="width:100%;border-collapse:collapse;font-size:0.78rem;">' +
-            '<thead>' +
-              '<tr style="border-bottom:2px solid var(--bd-1);">' +
-                '<th style="padding:8px 6px;text-align:left;color:var(--muted);font-weight:600;">Ítem</th>' +
-                '<th style="padding:8px 6px;text-align:right;color:var(--muted);font-weight:600;">Compra</th>' +
-                '<th style="padding:8px 6px;text-align:right;color:var(--muted);font-weight:600;">Venta</th>' +
-                '<th style="padding:8px 6px;text-align:right;color:var(--muted);font-weight:600;">' + (isLegendaryFilter ? 'Vendedores' : 'Vol. total') + '</th>' +
-              '</tr>' +
-            '</thead>' +
-            '<tbody>';
-
-      filtered.forEach(function (p, idx) {
-        var item = p.item || {};
-        var icon = item.icon || '';
-        var name = item.name || ('Ítem #' + p.id);
-        var rarity = item.rarity || '';
-        var rarityLabel = getRarityLabel(rarity);
-        var rarityColor = RARITY_COLORS[rarity] || '#FFFFFF';
-        var spread = p.spread;
-        var spreadPct = p.spreadPct.toFixed(1);
-        var spreadColor = spread > 0 ? 'var(--color-green)' : 'var(--muted)';
-
-        html +=
-          '<tr style="border-bottom:1px solid var(--bd-1);' + (idx % 2 === 0 ? 'background:var(--bg-0);' : '') + '">' +
-            '<td style="padding:8px 6px;display:flex;align-items:center;gap:6px;">' +
-              (icon ? '<img src="' + esc(icon) + '" width="28" height="28" alt="" style="border-radius:4px;">' : '') +
-              '<div>' +
-                '<div style="font-weight:600;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(name) + '">' + esc(name) + '</div>' +
-                '<span style="font-size:0.65rem;color:' + rarityColor + ';">' + esc(rarityLabel) + '</span>' +
-              '</div>' +
-            '</td>' +
-            '<td style="padding:8px 6px;text-align:right;font-family:monospace;">' +
-              (p.buys ? formatCoinsShort(p.buys.unit_price) : '—') +
-              '<div style="font-size:0.6rem;color:var(--muted);">' + (p.buyQty ? p.buyQty.toLocaleString('es-AR') + ' comp' : '') + '</div>' +
-            '</td>' +
-            '<td style="padding:8px 6px;text-align:right;font-family:monospace;">' +
-              (p.sells ? formatCoinsShort(p.sells.unit_price) : '—') +
-              '<div style="font-size:0.6rem;color:var(--muted);">' + (p.sellQty ? p.sellQty.toLocaleString('es-AR') + ' vend' : '') + '</div>' +
-            '</td>' +
-            '<td style="padding:8px 6px;text-align:right;">' +
-              (isLegendaryFilter
-                ? '<span style="color:var(--color-amber);font-weight:600;">' + p.sellQty.toLocaleString('es-AR') + '</span>'
-                : '<span style="color:var(--color-blue);font-weight:600;">' + p.totalVol.toLocaleString('es-AR') + '</span>'
-              ) +
-            '</td>' +
-          '</tr>';
-      });
-
-      html +=
-            '</tbody>' +
-          '</table>' +
-        '</div>' +
-        '<div class="muted" style="text-align:center;padding:8px;font-size:0.7rem;">Mostrando ' + filtered.length + ' de ' + st.prices.length + ' ítems analizados · ' + esc(lastUpdateStr) + '</div>';
+      html += '<div class="cx-list">' + rows.map(function (p) {
+        var it = p.item, name = it.name || ('Ítem #' + p.id);
+        return '<div class="cx-ord cx-ord--pop">' +
+          (it.icon ? '<img class="cx-ico" src="' + esc(it.icon) + '" alt="" loading="lazy">' : '<span class="cx-ico"></span>') +
+          '<div class="cx-min"><b class="cx-name" title="' + esc(name) + '">' + esc(name) + '</b>' +
+          '<div class="cx-q" style="color:' + (RARITY_COLORS[it.rarity] || 'inherit') + '">' + esc(getRarityLabel(it.rarity)) + '</div></div>' +
+          '<div class="cx-r cx-hm"><div>' + (p.buys ? coinHTML(p.buys.unit_price) : '—') + '</div><div class="cx-q">compra</div></div>' +
+          '<div class="cx-r cx-hm"><div>' + (p.sells ? coinHTML(p.sells.unit_price) : '—') + '</div><div class="cx-q">venta</div></div>' +
+          '<div class="cx-r"><b>' + (legend ? p.sellQty : p.totalVol).toLocaleString('es-AR') + '</b><div class="cx-q">' + (legend ? 'vendedores' : 'órdenes') + '</div></div>' +
+          '</div>';
+      }).join('') + '</div>';
     }
-
-    container.innerHTML = html;
-    wireOfertasEvents();
-  }
-
-  function formatCoinsShort(copper) {
-    if (!copper || copper <= 0) return '—';
-    var g = Math.floor(copper / 10000);
-    var s = Math.floor((copper % 10000) / 100);
-    var c = copper % 100;
-    var parts = [];
-    if (g > 0) parts.push('<span style="color:#f4c542;font-weight:600;">' + g + '</span> <span style="color:var(--muted);">g</span>');
-    if (s > 0) parts.push('<span style="color:#e0e0e0;font-weight:500;">' + s + '</span> <span style="color:var(--muted);">s</span>');
-    parts.push('<span style="color:#b87333;font-weight:500;">' + c + '</span> <span style="color:var(--muted);">c</span>');
-    return parts.join(' ');
-  }
-
-  function wireOfertasEvents() {
-    var raritySel = document.getElementById('cvOfertasRarity');
-    var volumeSel = document.getElementById('cvOfertasVolume');
-    var refreshBtn = document.getElementById('cvOfertasRefresh');
-    var retryBtn = document.getElementById('cvOfertasRetry');
-
-    if (raritySel && !raritySel.__wired) {
-      raritySel.__wired = true;
-      raritySel.addEventListener('change', function () {
-        state.ofertas.filters.rarity = raritySel.value || '';
-        renderOfertas();
-      });
-    }
-    if (volumeSel && !volumeSel.__wired) {
-      volumeSel.__wired = true;
-      volumeSel.addEventListener('change', function () {
-        state.ofertas.filters.minVolume = Number(volumeSel.value) || 0;
-        renderOfertas();
-      });
-    }
-    if (refreshBtn && !refreshBtn.__wired) {
-      refreshBtn.__wired = true;
-      refreshBtn.addEventListener('click', function () {
-        loadOfertas(true);
-      });
-    }
-    if (retryBtn && !retryBtn.__wired) {
-      retryBtn.__wired = true;
-      retryBtn.addEventListener('click', function () {
-        loadOfertas(true);
-      });
-    }
+    box.innerHTML = html;
   }
 
   // =======================================================================
-  // MIS TRANSACCIONES — ÓRDENES ACTIVAS EN EL TP
+  // TU TRADING POST — caja y órdenes activas (requiere permiso tradingpost)
   // =======================================================================
-  //
-  // Muestra las órdenes de compra y venta activas del jugador en la
-  // Compañía de Comercio. Requiere token con permiso 'tradingpost'.
-
   async function loadTransacciones(forceNoCache) {
     var st = state.transacciones;
     if (st.loading) return;
     st.loading = true;
+    renderTransacciones();
 
     try {
       var token = getSelectedTokenForCommerce();
@@ -725,9 +485,8 @@
         return;
       }
 
-      // allSettled + estado por lado (v1.2.0). Antes: `status === 'fulfilled'
-      // ? value : []`, que deshacia el contrato de api-gw2.js v2.18.0 y
-      // volvia a presentar un fallo de red como "no tenes ordenes".
+      // allSettled + estado por lado (v1.2.0): un fallo de red no puede
+      // verse como "no tenés órdenes".
       st.buysStatus = 'unknown';
       st.sellsStatus = 'unknown';
       var results = await Promise.allSettled([
@@ -753,10 +512,6 @@
         console.warn(LOG, 'No se pudieron leer las ventas del TP:', results[1].reason);
       }
 
-      // Caja del Trading Post: lo que quedo sin cobrar.
-      // Los tres wrappers (buys, sells, delivery) propagan el error; aca se
-      // traduce cada uno a un estado explicito para que la UI distinga
-      // "no hay nada" de "no se pudo leer".
       st.delivery = [];
       st.deliveryStatus = 'empty';
       try {
@@ -769,11 +524,10 @@
         console.warn(LOG, 'No se pudo leer la caja del Trading Post:', deliveryErr);
       }
 
-      // Obtener metadatos de items (ordenes + caja)
       var itemIds = buys.concat(sells).map(function (tx) { return tx.item_id; }).filter(Boolean);
       var deliveryIds = st.delivery.map(function (d) { return d && d.item_id; }).filter(Boolean);
       var uniqueIds = Array.from(new Set(itemIds.concat(deliveryIds)));
-      var items = await root.GW2Api.getItemsMany(uniqueIds, { nocache: false });
+      var items = uniqueIds.length ? await root.GW2Api.getItemsMany(uniqueIds, { nocache: false }) : [];
       var itemsById = {};
       items.forEach(function (it) { if (it && it.id != null) itemsById[it.id] = it; });
 
@@ -790,18 +544,10 @@
   }
 
   /**
-   * Bloque "caja del Trading Post sin cobrar".
-   *
-   * Tres estados visibles y genuinamente distintos entre si:
-   *  - 'pending': hay items esperando. Es la alerta que motiva la feature.
-   *  - 'error':   no se pudo leer. Tambien se muestra, porque en un panel cuyo
-   *               unico proposito es avisar, un fallo silencioso es peor que
-   *               un panel vacio: el usuario creeria que no debe nada.
-   *  - 'empty':   se leyo bien y no hay nada. No se dibuja nada (silencio = OK).
-   *
-   * Este render solo escribe el atributo `data-cv-color`. El color lo aplica
-   * commerce-delivery-theme.js (capa 3); la estructura vive en main.css
-   * (capa 1) y la piel neutra en theme-polish.css (capa 2).
+   * Caja del Trading Post. Tres estados visibles: 'pending' (la alerta),
+   * 'error' (también se muestra: un fallo silencioso haría creer que no hay
+   * nada) y 'empty' (silencio = OK). El color lo pone commerce-delivery-theme.js
+   * a partir de data-cv-color; acá no va ningún estilo inline.
    */
   function renderDeliveryBanner() {
     var st = state.transacciones;
@@ -819,7 +565,6 @@
         '</div>';
     }
 
-    // 'pending'
     var count = st.delivery.length;
     var totalUnits = st.delivery.reduce(function (sum, d) { return sum + (Number(d && d.quantity) || 0); }, 0);
     var MAX_CHIPS = 12;
@@ -844,70 +589,30 @@
         '<span class="cv-delivery__icon" aria-hidden="true">📦</span>' +
       '<span class="cv-delivery__title">' + count + ' ítem' + (count === 1 ? '' : 's') + ' sin recoger</span>' +
       '</div>' +
-      '<p class="cv-delivery__body">Están en tu caja del Trading Post. Hasta que no los retires no los tenés ' +
-      'en tus manos, y si son ventas el dinero tampoco está acreditado todavía. La caja no dice cuáles son ' +
-      'compras y cuáles ventas.' +
+      '<p class="cv-delivery__body">Están en tu caja del Trading Post: hasta que los retires no los tenés, ' +
+      'y si son ventas el dinero tampoco está acreditado. La caja no dice cuáles son compras y cuáles ventas.' +
       (totalUnits > 1 ? ' (<strong>' + totalUnits + '</strong> unidades en total)' : '') +
-      ' Se recogen en el Trading Post de la Wilderness, o desde la pestaña Commerce de tu cuenta.</p>' +
+      ' Retiralos con un mercader del León Negro (hay en todas las ciudades) o con un Trading Post Express.</p>' +
       '<div class="cv-delivery__chips">' + chips + more + '</div>' +
       '</div>';
   }
 
-  function getFilteredTransacciones() {
-    var st = state.transacciones;
-    var f = st.filters;
-    var all = [];
-
-    if (f.type === 'all' || f.type === 'buys') {
-      st.buys.forEach(function (tx) {
-        all.push({
-          id: tx.id,
-          item_id: tx.item_id,
-          type: 'buy',
-          price: tx.price,
-          quantity: tx.quantity,
-          total: tx.price * tx.quantity,
-          created: tx.created,
-          item: st.itemsById[tx.item_id] || {}
-        });
+  function getFilteredTransacciones(st) {
+    st = st || state.transacciones;
+    var type = st.filters.type, all = [];
+    function add(list, kind) {
+      list.forEach(function (tx) {
+        all.push({ id: tx.id, item_id: tx.item_id, type: kind, price: tx.price, quantity: tx.quantity,
+          total: tx.price * tx.quantity, created: tx.created, item: st.itemsById[tx.item_id] || {} });
       });
     }
-
-    if (f.type === 'all' || f.type === 'sells') {
-      st.sells.forEach(function (tx) {
-        all.push({
-          id: tx.id,
-          item_id: tx.item_id,
-          type: 'sell',
-          price: tx.price,
-          quantity: tx.quantity,
-          total: tx.price * tx.quantity,
-          created: tx.created,
-          item: st.itemsById[tx.item_id] || {}
-        });
-      });
-    }
-
-    all.sort(function (a, b) {
-      return new Date(b.created).getTime() - new Date(a.created).getTime();
-    });
-
+    if (type === 'all' || type === 'buys') add(st.buys, 'buy');
+    if (type === 'all' || type === 'sells') add(st.sells, 'sell');
+    all.sort(function (a, b) { return new Date(b.created).getTime() - new Date(a.created).getTime(); });
     return all;
   }
 
-  /**
-   * Banner de "no se pudo leer" para compras y ventas (v1.2.0).
-   *
-   * Reutiliza a proposito las clases de la caja del TP en vez de crear unas
-   * nuevas: son las mismas tres capas (main.css estructura, theme-polish.css
-   * borde neutro, commerce-delivery-theme.js borderLeft de color) y el estado
-   * 'error' ya existe en COLORS. Un banner nuevo habia exigido CSS nuevo, y
-   * con el riesgo de duplicar la receta visual en otra capa.
-   *
-   * Se dibuja TAMBIEN cuando no hay ordenes, porque ese es justamente el
-   * estado en el que el fallo era invisible: sin este bloque, un API key
-   * caido se renderizaba como "No tenes ordenes activas en el TP".
-   */
+  /** Aviso de "no se pudo leer" para compras y ventas (v1.2.0). */
   function renderTransErrorBanner() {
     var st = state.transacciones;
     var failBuys = st.buysStatus === 'error';
@@ -934,506 +639,361 @@
       '<p class="cv-delivery__body">Lo usual es que la API Key no tenga el permiso <code>tradingpost</code>, ' +
       'o que la API haya caído en ese momento. Lo que sí se pudo leer — ' + esc(ok) + ' — no se ve afectado. ' +
       'Si recargás y sigue igual, revisá el permiso de la Key.</p>' +
-      // Reusa el id que wireTransaccionesEvents() ya escuchaba y que ningun
-      // markup dibujaba (handler muerto hasta ahora, hallazgo #10). Usar el id
-      // del boton del estado vacio habria dejado DOS nodos con el mismo id.
       '<button id="cvTransaccionesRetry" class="btn btn--ghost btn--xs">Reintentar</button>' +
       '</div>';
   }
 
+  function tpMessage(title, body, link) {
+    return '<div class="cx-msg"><img src="' + I_TP + '" width="40" height="40" alt="">' +
+      '<b>' + title + '</b><p>' + body + '</p>' +
+      (link ? '<a class="cx-btn" href="https://account.arena.net/applications" target="_blank" rel="noopener">Crear una API Key con tradingpost</a>' : '') +
+      '</div>';
+  }
+
   function renderTransacciones() {
-    var container = document.querySelector('#convModal .conv-tab-content[data-tab="transacciones"]');
+    var container = byId('cvTrans');
     if (!container) return;
     var st = state.transacciones;
 
     if (st.loading) {
-      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">' +
-        '<div class="skeleton-enhanced" style="height:200px;margin-bottom:16px;"></div>Cargando tus transacciones…</div>';
+      container.innerHTML = '<p class="cx-empty">Leyendo tu Trading Post…</p>';
       return;
     }
 
     var token = getSelectedTokenForCommerce();
     if (!token) {
-      container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);">' +
-        '<img src="assets/icons/155048.png" width="48" height="48" alt="" style="opacity:0.3;margin-bottom:16px;"><br>' +
-        '🔑 Necesitás una API Key con permiso <strong>tradingpost</strong>.<br>' +
-        '<span style="font-size:0.75rem;">Agregala en <a href="https://account.arena.net/applications" target="_blank" rel="noopener" style="color:var(--color-blue);">account.arena.net</a></span></div>';
+      container.innerHTML = tpMessage('Elegí una cuenta', 'Con una API Key con permiso <code>tradingpost</code> te muestro lo que tenés para recoger y tus órdenes.', true);
+      return;
+    }
+    if (st.noPermission) {
+      container.innerHTML = tpMessage('Falta el permiso tradingpost', 'Esta API Key no puede leer tu Trading Post. Creá una con ese permiso para ver tus órdenes y tu caja.', true);
       return;
     }
 
     if (!st.buys.length && !st.sells.length) {
-      // Los banners van PRIMERO y se dibujan igual: "cero órdenes activas" es
-      // precisamente el caso donde la caja del TP puede seguir llena, y antes
-      // de este bloque ese estado se renderizaba como vacío de verdad. Y es
-      // también el estado donde un fallo de lectura era invisible, porque se
-      // confundía con "no tenés órdenes" (v1.2.0).
+      // Los banners van primero y se dibujan igual: sin órdenes, la caja puede
+      // seguir llena, y un fallo de lectura no puede verse como "no tenés".
       container.innerHTML = renderTransErrorBanner() + renderDeliveryBanner() +
-        '<div style="text-align:center;padding:40px;color:var(--muted);">' +
-        '<img src="assets/icons/155033.png" width="48" height="48" alt="" style="opacity:0.3;margin-bottom:16px;"><br>' +
-        '📭 No tenés órdenes activas en el TP.<br>' +
-        '<button id="cvTransaccionesRefresh" class="btn btn--ghost" style="margin-top:16px;">Refrescar</button></div>';
-      wireTransaccionesEvents();
+        '<p class="cx-empty">No tenés órdenes activas en el Trading Post.</p>' +
+        '<p class="cx-center"><button type="button" id="cvTransaccionesRefresh" class="cx-btn">Refrescar</button></p>';
       return;
     }
 
-    var filtered = getFilteredTransacciones();
-    var lastUpdateStr = st.lastUpdate ? 'Actualizado hace ' + Math.floor((Date.now() - st.lastUpdate) / 1000) + 's' : '—';
-
-    // Calcular totales
-    var totalCompras = st.buys.reduce(function(sum, tx) { return sum + (tx.price * tx.quantity); }, 0);
-    var totalVentas = st.sells.reduce(function(sum, tx) { return sum + (tx.price * tx.quantity); }, 0);
-    var balance = totalVentas - totalCompras;
-    var balanceColor = balance >= 0 ? 'var(--color-green)' : 'var(--color-red)';
-    var balanceSign = balance >= 0 ? '+' : '';
+    var n = countOrders(st), type = st.filters.type;
+    var rows = getFilteredTransacciones(st);
+    var totalBuys = st.buys.reduce(function (s, tx) { return s + tx.price * tx.quantity; }, 0);
+    var totalSells = st.sells.reduce(function (s, tx) { return s + tx.price * tx.quantity; }, 0);
+    var seg = function (k, label, c) {
+      return '<button type="button" data-cx-type="' + k + '" aria-pressed="' + (type === k) + '"' + (type === k ? ' class="is-on"' : '') + '>' + label + ' (' + c + ')</button>';
+    };
 
     var html =
       renderTransErrorBanner() +
       renderDeliveryBanner() +
-      '<div style="margin-bottom:8px;font-size:0.75rem;color:var(--muted);line-height:1.5;">' +
-        '📋 <strong>Tus órdenes activas</strong> en la Compañía de Comercio. ' +
-        'Compras: <span style="color:var(--color-green);">' + st.buys.length + '</span> · ' +
-        'Ventas: <span style="color:var(--color-red);">' + st.sells.length + '</span>' +
-      '</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">' +
-        '<div style="background:var(--bg-1);border-radius:8px;padding:8px 10px;border-left:3px solid var(--color-red);box-shadow:0 0 6px rgba(255,157,157,0.12);">' +
-          '<div style="font-size:0.6rem;color:var(--tx-3);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">💰 Total en compras</div>' +
-          '<div style="font-weight:700;color:var(--color-red);font-size:0.85rem;">' + formatCoinsShort(totalCompras) + '</div>' +
-        '</div>' +
-        '<div style="background:var(--bg-1);border-radius:8px;padding:8px 10px;border-left:3px solid var(--color-green);box-shadow:0 0 6px rgba(160,255,200,0.12);">' +
-          '<div style="font-size:0.6rem;color:var(--tx-3);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">📈 Total en ventas</div>' +
-          '<div style="font-weight:700;color:var(--color-green);font-size:0.85rem;">' + formatCoinsShort(totalVentas) + '</div>' +
-        '</div>' +
-        '<div style="background:var(--bg-1);border-radius:8px;padding:8px 10px;border-left:3px solid ' + (balance >= 0 ? 'var(--color-green)' : 'var(--color-red)') + ';box-shadow:0 0 6px ' + (balance >= 0 ? 'rgba(160,255,200,0.15)' : 'rgba(255,157,157,0.15)') + ';">' +
-          '<div style="font-size:0.6rem;color:var(--tx-3);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:2px;">⚖️ Balance</div>' +
-          '<div style="font-weight:700;color:' + balanceColor + ';font-size:0.85rem;">' + balanceSign + formatCoinsShort(Math.abs(balance)) + '</div>' +
-        '</div>' +
-      '</div>' +
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">' +
-        '<select id="cvTransaccionesType" style="background:var(--bg-1);border:1px solid var(--bd-1);border-radius:20px;color:var(--tx-1);padding:6px 12px;font-size:0.75rem;">' +
-          '<option value="all">Todas las órdenes</option>' +
-          '<option value="buys">🟢 Solo compras</option>' +
-          '<option value="sells">🔴 Solo ventas</option>' +
-        '</select>' +
-        '<button id="cvTransaccionesRefresh" class="btn btn--ghost btn--xs" style="display:inline-flex;align-items:center;gap:4px;">' +
-          '<img src="assets/icons/Welcome/834002.png" width="12" height="12" alt="">Refrescar</button>' +
-        '<span class="muted" style="font-size:0.7rem;margin-left:auto;">' + esc(lastUpdateStr) + '</span>' +
-      '</div>';
-
-    if (!filtered.length) {
-      html += '<div class="muted" style="text-align:center;padding:30px;">📭 No se encontraron órdenes con ese filtro.</div>';
-    } else {
-      html +=
-        '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.78rem;">' +
-          '<thead><tr style="border-bottom:2px solid var(--bd-1);">' +
-            '<th style="padding:8px 6px;text-align:left;color:var(--muted);font-weight:600;">Ítem</th>' +
-            '<th style="padding:8px 6px;text-align:center;color:var(--muted);font-weight:600;">Tipo</th>' +
-            '<th style="padding:8px 6px;text-align:right;color:var(--muted);font-weight:600;">Cantidad</th>' +
-            '<th style="padding:8px 6px;text-align:right;color:var(--muted);font-weight:600;">Precio</th>' +
-            '<th style="padding:8px 6px;text-align:right;color:var(--muted);font-weight:600;">Total</th>' +
-            '<th style="padding:8px 6px;text-align:right;color:var(--muted);font-weight:600;">Creada</th>' +
-          '</tr></thead><tbody>';
-
-      filtered.forEach(function (tx, idx) {
-        var item = tx.item || {};
-        var icon = item.icon || '';
-        var name = item.name || ('Ítem #' + tx.item_id);
-        var rarityLabel = getRarityLabel(item.rarity || '');
-        var rarityColor = RARITY_COLORS[item.rarity] || '#FFFFFF';
-        var isBuy = tx.type === 'buy';
-        var typeLabel = isBuy ? '🟢 Compra' : '🔴 Venta';
-        var dateStr = tx.created ? new Date(tx.created).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
-
-        html +=
-          '<tr style="border-bottom:1px solid var(--bd-1);' + (idx % 2 === 0 ? 'background:var(--bg-0);' : '') + '">' +
-            '<td style="padding:8px 6px;display:flex;align-items:center;gap:6px;">' +
-              (icon ? '<img src="' + esc(icon) + '" width="28" height="28" alt="" style="border-radius:4px;">' : '') +
-              '<div>' +
-                '<div style="font-weight:600;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(name) + '">' + esc(name) + '</div>' +
-                '<span style="font-size:0.65rem;color:' + rarityColor + ';">' + esc(rarityLabel) + '</span>' +
-              '</div>' +
-            '</td>' +
-            '<td style="padding:8px 6px;text-align:center;font-size:0.7rem;">' + typeLabel + '</td>' +
-            '<td style="padding:8px 6px;text-align:right;">' + tx.quantity.toLocaleString('es-AR') + '</td>' +
-            '<td style="padding:8px 6px;text-align:right;font-family:monospace;">' + formatCoinsShort(tx.price) + '</td>' +
-            '<td style="padding:8px 6px;text-align:right;font-family:monospace;font-weight:600;color:' + (isBuy ? 'var(--color-red)' : 'var(--color-green)') + ';">' + formatCoinsShort(tx.total) + '</td>' +
-            '<td style="padding:8px 6px;text-align:right;font-size:0.65rem;color:var(--muted);">' + dateStr + '</td>' +
-          '</tr>';
-      });
-
-      html += '</tbody></table></div>' +
-        '<div class="muted" style="text-align:center;padding:8px;font-size:0.7rem;">' + filtered.length + ' órdenes activas · ' + esc(lastUpdateStr) + '</div>';
-    }
+      '<div class="cx-tools"><div class="cx-seg" role="group" aria-label="Órdenes">' +
+        seg('all', 'Todas', n.all) + seg('buys', 'Compras', n.buys) + seg('sells', 'Ventas', n.sells) + '</div>' +
+        '<button type="button" id="cvTransaccionesRefresh" class="cx-btn">Refrescar</button></div>' +
+      '<div class="cx-sum"><span>Comprometido en compras ' + coinHTML(totalBuys) + '</span><span>Publicado en ventas ' + coinHTML(totalSells) + '</span></div>' +
+      '<div class="cx-list">' + rows.map(function (tx) {
+        var it = tx.item, name = it.name || ('Ítem #' + tx.item_id), buy = tx.type === 'buy';
+        return '<div class="cx-ord">' +
+          (it.icon ? '<img class="cx-ico" src="' + esc(it.icon) + '" alt="" loading="lazy">' : '<span class="cx-ico"></span>') +
+          '<div class="cx-min"><b class="cx-name" title="' + esc(name) + '">' + esc(name) + '</b>' +
+          '<div class="cx-q">×' + Number(tx.quantity || 0).toLocaleString('es-AR') + ' · ' + esc(relTime(tx.created)) + '</div></div>' +
+          '<span class="cx-tag ' + (buy ? 'cx-buy' : 'cx-sell') + '">' + (buy ? 'Compra' : 'Venta') + '</span>' +
+          '<div class="cx-r">' + coinHTML(tx.price) + '<div class="cx-q">c/u</div></div>' +
+          '</div>';
+      }).join('') + '</div>';
 
     container.innerHTML = html;
-    wireTransaccionesEvents();
-  }
-
-  function wireTransaccionesEvents() {
-    var typeSel = document.getElementById('cvTransaccionesType');
-    var refreshBtn = document.getElementById('cvTransaccionesRefresh');
-    var retryBtn = document.getElementById('cvTransaccionesRetry');
-    var deliveryRetry = document.getElementById('cvDeliveryRetry');
-    if (typeSel && !typeSel.__wired) { typeSel.__wired = true; typeSel.addEventListener('change', function () { state.transacciones.filters.type = typeSel.value || 'all'; renderTransacciones(); }); }
-    if (refreshBtn && !refreshBtn.__wired) { refreshBtn.__wired = true; refreshBtn.addEventListener('click', function () { loadTransacciones(true); }); }
-    if (retryBtn && !retryBtn.__wired) { retryBtn.__wired = true; retryBtn.addEventListener('click', function () { loadTransacciones(true); }); }
-    if (deliveryRetry && !deliveryRetry.__wired) { deliveryRetry.__wired = true; deliveryRetry.addEventListener('click', function () { loadTransacciones(true); }); }
   }
 
   function getSelectedTokenForCommerce() {
     try {
-      var sel = document.getElementById('keySelectGlobal');
+      var sel = byId('keySelectGlobal');
       return sel ? (sel.value || '').trim() : null;
     } catch (e) { return null; }
   }
 
-  // Cache de permisos para no llamar a la API repetidamente
   var _permissionsCache = {};
   var _permissionsCacheTs = 0;
-  var PERMISSIONS_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+  var PERMISSIONS_CACHE_TTL = 5 * 60 * 1000;
 
   function hasTradingPostPermission(token) {
-    return new Promise(function(resolve) {
-      if (!token) {
-        resolve(false);
-        return;
-      }
-      
-      // Verificar caché
+    return new Promise(function (resolve) {
+      if (!token) { resolve(false); return; }
       var now = Date.now();
       if (_permissionsCache[token] !== undefined && (now - _permissionsCacheTs) < PERMISSIONS_CACHE_TTL) {
         resolve(_permissionsCache[token]);
         return;
       }
-      
-      // Consultar API
       root.GW2Api.getTokenInfo(token, { nocache: false })
-        .then(function(info) {
+        .then(function (info) {
           var perms = info && info.permissions ? info.permissions : [];
-          var hasTP = perms.includes('tradingpost');
+          var hasTP = perms.indexOf('tradingpost') >= 0;
           _permissionsCache[token] = hasTP;
           _permissionsCacheTs = now;
           resolve(hasTP);
         })
-        .catch(function() {
-          resolve(false);
-        });
+        .catch(function () { resolve(false); });
+    });
+  }
+
+  /** Lee el Trading Post de la cuenta elegida (permiso primero). */
+  function refreshTradingPost(force) {
+    var st = state.transacciones;
+    var token = getSelectedTokenForCommerce();
+    st.noPermission = false;
+    if (!token || !root.GW2Api) { renderTransacciones(); return; }
+    hasTradingPostPermission(token).then(function (ok) {
+      if (!ok) { st.noPermission = true; renderTransacciones(); return; }
+      if (force || !st.lastUpdate) loadTransacciones(!!force); else renderTransacciones();
     });
   }
 
   // =======================================================================
-  // RENDERIZADO DEL MODAL
+  // VISTA
+  // =======================================================================
+  function viewHTML() {
+    var q = function (attr, list) {
+      return list.map(function (v) { return '<button type="button" ' + attr + '="' + v[0] + '">' + v[1] + '</button>'; }).join('');
+    };
+    return '<div class="cx-grid">' +
+      '<section class="cx-panel" aria-labelledby="cxCalcTitle">' +
+        '<h3 id="cxCalcTitle"><img src="' + I_GEM + '" width="22" height="22" alt=""> Calculadora oro ↔ gemas</h3>' +
+        '<div class="cx-conv">' +
+          '<label class="cx-box" for="cvGold"><span class="cx-lbl"><img src="' + I_GOLD + '" width="16" height="16" alt="">Tengo oro</span>' +
+            '<span class="cx-in"><input id="cvGold" type="number" min="0" max="99999" step="1" inputmode="numeric" autocomplete="off" placeholder="0"><small>g</small></span></label>' +
+          '<span class="cx-arrow" aria-hidden="true">→</span>' +
+          '<div class="cx-box"><span class="cx-lbl"><img src="' + I_GEM + '" width="16" height="16" alt="">Me dan</span>' +
+            '<span class="cx-in cx-gem"><output id="cvGoldOut" for="cvGold">—</output><small>gemas</small></span></div>' +
+          '<div class="cx-quick" aria-label="Atajos de oro">' + q('data-gold', [['10', '10 g'], ['100', '100 g'], ['250', '250 g'], ['all', 'Todo mi oro']]) + '</div>' +
+        '</div>' +
+        '<div class="cx-conv">' +
+          '<label class="cx-box" for="cvGems"><span class="cx-lbl"><img src="' + I_GEM + '" width="16" height="16" alt="">Quiero gemas</span>' +
+            '<span class="cx-in"><input id="cvGems" type="number" min="0" max="99999" step="1" inputmode="numeric" autocomplete="off" placeholder="0"></span></label>' +
+          '<span class="cx-arrow" aria-hidden="true">→</span>' +
+          '<div class="cx-box"><span class="cx-lbl"><img src="' + I_GOLD + '" width="16" height="16" alt="">Me cuestan</span>' +
+            '<span class="cx-in"><output id="cvGemsOut" for="cvGems">—</output></span></div>' +
+          '<div class="cx-quick" aria-label="Atajos de gemas">' + q('data-gems', [['400', '400'], ['800', '800'], ['1200', '1.200'], ['2000', '2.000']]) + '</div>' +
+        '</div>' +
+        '<div class="cx-ref">' +
+          '<div><div class="cx-q">400 gemas hoy</div><div class="cx-big" id="cvRef400">—</div></div>' +
+          '<div class="cx-meterbox"><div class="cx-mhead"><b id="cvScoreLabel">Conveniencia: …</b><span id="cvScoreNum" class="cx-q"></span></div>' +
+            '<div class="cx-meter" id="cvMeter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Conveniencia para comprar gemas"><i id="cvScoreBar" class="cx-fill"></i></div>' +
+            '<div class="cx-scale"><span>Muy bajo</span><span>Referencia: 120–130 g</span><span>Excelente</span></div></div>' +
+        '</div>' +
+        '<div class="cx-foot"><span id="cvState" class="cx-state" aria-live="polite"></span>' +
+          '<button type="button" id="cvRefresh" class="cx-btn">Actualizar cotización</button></div>' +
+        '<div id="cvVoice" class="cx-voice"></div>' +
+      '</section>' +
+      '<section class="cx-panel" aria-labelledby="cxTpTitle">' +
+        '<h3 id="cxTpTitle"><img src="' + I_TP + '" width="22" height="22" alt=""> León Negro: tu Trading Post</h3>' +
+        '<div id="cvTrans" aria-live="polite"></div>' +
+        '<details class="cx-pop" id="cvPopDetails"><summary>Lo más comerciado hoy</summary><div id="cvPop"></div></details>' +
+      '</section>' +
+    '</div>';
+  }
+
+  // Un temporizador por campo: escribir en uno no cancela el cálculo del otro.
+  var _deb = {};
+  function debounce(key, fn) { clearTimeout(_deb[key]); _deb[key] = setTimeout(fn, 300); }
+
+  function onViewClick(e) {
+    var t = e.target, b;
+    if (!t || !t.closest) return;
+    if ((b = t.closest('[data-gold]'))) {
+      var g = b.getAttribute('data-gold');
+      if (g === 'all') { fillAllGold(); return; }
+      byId('cvGold').value = g; onGoldInput(); return;
+    }
+    if ((b = t.closest('[data-gems]'))) { byId('cvGems').value = b.getAttribute('data-gems'); onGemsInput(); return; }
+    if (t.closest('#cvRefresh')) { updateRef400(true); onGemsInput(); onGoldInput(); return; }
+    if ((b = t.closest('[data-cx-type]'))) { state.transacciones.filters.type = b.getAttribute('data-cx-type'); renderTransacciones(); return; }
+    if (t.closest('#cvTransaccionesRefresh') || t.closest('#cvTransaccionesRetry') || t.closest('#cvDeliveryRetry')) { loadTransacciones(true); return; }
+    if (t.closest('[data-cx="pop-refresh"]')) loadOfertas(true);
+  }
+
+  function onViewChange(e) {
+    var t = e.target, k = t && t.getAttribute && t.getAttribute('data-cx');
+    if (k === 'pop-rarity') { state.ofertas.filters.rarity = t.value || ''; renderOfertas(); }
+    else if (k === 'pop-volume') { state.ofertas.filters.minVolume = Number(t.value) || 0; renderOfertas(); }
+  }
+
+  function wireView(view) {
+    view.addEventListener('click', onViewClick);
+    view.addEventListener('change', onViewChange);
+    byId('cvGold').addEventListener('input', function () { debounce('gold', onGoldInput); });
+    byId('cvGems').addEventListener('input', function () { debounce('gems', onGemsInput); });
+    var det = byId('cvPopDetails');
+    if (det) det.addEventListener('toggle', function () { if (det.open) loadOfertas(false); });
+  }
+
+  /** Dibuja (o mueve) la vista dentro de `host` y la pone al día. */
+  function mount(host) {
+    if (!host) return null;
+    injectCSS();
+    var view = byId('cxRoot');
+    if (!view) {
+      view = document.createElement('div');
+      view.id = 'cxRoot';
+      view.className = 'cx';
+      view.innerHTML = viewHTML();
+      host.appendChild(view);
+      wireView(view);
+    } else if (view.parentNode !== host) {
+      host.appendChild(view);
+    }
+    updateRef400(false);
+    refreshTradingPost(false);
+    return view;
+  }
+
+  // =======================================================================
+  // MODAL (solo si la Cartera no ofrece la pestaña)
   // =======================================================================
   function ensureModal() {
-    var modal = document.getElementById('convModal');
+    var modal = byId('convModal');
     if (modal) return modal;
-
     modal = document.createElement('div');
     modal.id = 'convModal';
     modal.className = 'modal';
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'convModalTitle');
     modal.setAttribute('hidden', '');
     modal.innerHTML =
       '<div class="modal__backdrop" data-close="1"></div>' +
-      '<div class="modal__dialog" style="max-width: 580px;">' +
-        '<header class="modal__header">' +
-          '<h3 id="convModalTitle" style="display:flex;align-items:center;gap:10px;color:#fbe6b2;text-shadow:0 0 8px rgba(255,230,180,0.35);">' +
-            '<img src="assets/icons/502065.png" width="22" height="22" alt="" style="filter:drop-shadow(0 0 4px rgba(75,189,240,0.5));">' +
-            'Cambio de Divisas' +
-            '<img src="assets/icons/784280.png" width="14" height="14" alt="↔" style="opacity:0.4;">' +
-            '<img src="assets/icons/619316.png" width="22" height="22" alt="" style="filter:drop-shadow(0 0 4px rgba(244,197,66,0.5));">' +
-          '</h3>' +
-          '<button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button>' +
-        '</header>' +
-        // Tabs (Fase 2 y 3 como placeholder)
-        '<div class="conv-modal-tabs" style="display:flex;gap:4px;padding:0 16px;border-bottom:1px solid var(--bd-1);background:var(--bg-1);">' +
-          '<button class="conv-modal-tab active" data-tab="cambio" style="background:transparent;border:none;padding:10px 16px;font-size:0.82rem;color:var(--color-blue);cursor:pointer;border-bottom:2px solid var(--color-blue);margin-bottom:-1px;transition:all 0.15s ease;font-weight:600;">' +
-            '<img src="assets/icons/502065.png" width="16" height="16" alt="" style="vertical-align:middle;margin-right:5px;filter:drop-shadow(0 0 3px rgba(75,189,240,0.5));">Cambio' +
-          '</button>' +
-          '<button class="conv-modal-tab" data-tab="transacciones" style="background:transparent;border:none;padding:10px 16px;font-size:0.82rem;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s ease;" onmouseover="this.style.color=\'var(--tx-1)\';this.style.background=\'rgba(123,194,255,0.05)\'" onmouseout="this.style.color=\'var(--muted)\';this.style.background=\'transparent\'">' +
-            '<img src="assets/icons/155033.png" width="16" height="16" alt="" style="vertical-align:middle;margin-right:5px;opacity:0.6;">Transacciones' +
-          '</button>' +
-          '<button class="conv-modal-tab" data-tab="populares" style="background:transparent;border:none;padding:10px 16px;font-size:0.82rem;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s ease;" onmouseover="this.style.color=\'var(--tx-1)\';this.style.background=\'rgba(123,194,255,0.05)\'" onmouseout="this.style.color=\'var(--muted)\';this.style.background=\'transparent\'">' +
-            '<img src="assets/icons/155033.png" width="16" height="16" alt="" style="vertical-align:middle;margin-right:5px;opacity:0.6;">Populares' +
-          '</button>' +
-          '<button class="conv-modal-tab" data-tab="historial" style="background:transparent;border:none;padding:10px 16px;font-size:0.82rem;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all 0.15s ease;" onmouseover="this.style.color=\'var(--tx-1)\';this.style.background=\'rgba(123,194,255,0.05)\'" onmouseout="this.style.color=\'var(--muted)\';this.style.background=\'transparent\'">' +
-            '<img src="assets/icons/Welcome/3124974.png" width="16" height="16" alt="" style="vertical-align:middle;margin-right:5px;opacity:0.6;">Historial' +
-          '</button>' +
-        '</div>' +
-        '<div class="modal__body" style="max-height:65vh;overflow-y:auto;">' +
-          // Tab: Cambio
-          '<div class="conv-tab-content" data-tab="cambio">' +
-            '<div id="convWrap" class="conv2 conv2--clean" aria-live="polite" style="display:flex;flex-direction:column;gap:12px;">' +
-              '<h4 class="conv2-label" style="display:inline-flex;align-items:center;gap:8px;margin:6px 0 4px;font-size:14px;">' +
-                '<span style="width:32px;height:32px;border-radius:8px;background:rgba(75,189,240,0.1);display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(75,189,240,0.25);">' +
-                  '<img src="assets/icons/502065.png" width="20" height="20" alt="Gemas" style="display:block;">' +
-                '</span>' +
-                '<span style="color:#7dd3fc;font-weight:600;">Conseguir Gemas</span>' +
-              '</h4>' +
-              '<div class="conv2-card" style="background:var(--bg-1);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:8px 10px;box-shadow:0 0 6px rgba(90,110,154,0.08);">' +
-                '<div class="conv2-row" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;">' +
-                  '<input id="cvGems" class="conv2-entry" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Gemas" style="background:transparent;border:0;outline:none;width:100%;color:var(--text);font-size:18px;">' +
-                  '<div id="cvGemsOut" class="coin-badges coin-badges--lg" style="display:inline-flex;gap:6px;align-items:center;background:var(--bg-0);padding:6px 10px;border-radius:8px;border:1px solid var(--bd-1);min-width:80px;justify-content:flex-end;">—</div>' +
-                '</div>' +
-                '<div class="conv2-quick" id="cvGemsQuick" aria-label="Atajos de gemas" style="display:flex;gap:6px;margin-top:8px;">' +
-                  '<button type="button" data-gems="100" class="conv2-chip" style="display:inline-flex;align-items:center;justify-content:center;padding:3px 8px;border-radius:14px;font-size:0.7rem;font-weight:600;background:var(--bg-1);border:1px solid var(--bd-1);color:var(--tx-3);cursor:pointer;transition:all 0.15s ease;">100</button>' +
-                  '<button type="button" data-gems="400" class="conv2-chip">400</button>' +
-                  '<button type="button" data-gems="800" class="conv2-chip">800</button>' +
-                  '<button type="button" data-gems="1200" class="conv2-chip">1200</button>' +
-                '</div>' +
-              '</div>' +
-              '<h4 class="conv2-label" style="display:inline-flex;align-items:center;gap:8px;margin:6px 0 4px;font-size:14px;">' +
-                '<span style="width:32px;height:32px;border-radius:8px;background:rgba(244,197,66,0.1);display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(244,197,66,0.25);">' +
-                  '<img src="assets/icons/619316.png" width="20" height="20" alt="Oro" style="display:block;">' +
-                '</span>' +
-                '<span style="color:#f1cc7a;font-weight:600;">Conseguir Oro</span>' +
-              '</h4>' +
-              '<div class="conv2-card" style="background:var(--bg-1);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:8px 10px;box-shadow:0 0 6px rgba(90,110,154,0.08);">' +
-                '<div class="conv2-row" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;">' +
-                  '<input id="cvGold" class="conv2-entry conv2-gold" type="number" min="0" max="9999" step="1" inputmode="numeric" autocomplete="off" placeholder="Oro (g)" style="background:transparent;border:0;outline:none;width:100%;color:#d7b062;font-size:18px;">' +
-                  '<output id="cvGoldOut" class="conv2-gems" style="color:var(--text);background:var(--bg-0);padding:6px 10px;border-radius:8px;border:1px solid var(--bd-1);min-width:80px;text-align:right;font-weight:600;">—</output>' +
-                '</div>' +
-                '<div class="conv2-quick" id="cvGoldQuick" aria-label="Atajos de oro" style="display:flex;gap:6px;margin-top:8px;">' +
-                  '<button type="button" data-gold="10" class="conv2-chip">10 g</button>' +
-                  '<button type="button" data-gold="100" class="conv2-chip">100 g</button>' +
-                  '<button type="button" data-gold="250" class="conv2-chip">250 g</button>' +
-                '</div>' +
-              '</div>' +
-              '<div class="conv2-actions" style="display:flex;align-items:center;justify-content:space-between;margin-top:4px;">' +
-                '<button id="cvRefresh" class="btn" title="Actualizar cotización" style="display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:6px 14px;">' +
-                  '<img src="assets/icons/Welcome/834002.png" width="14" height="14" alt="">Actualizar' +
-                '</button>' +
-                '<span id="cvState" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:10px;font-size:0.7rem;background:var(--color-green-bg);color:var(--color-green);border:1px solid var(--color-green);margin:0;">✅ Listo.</span>' +
-              '</div>' +
-              '<hr class="hr-hairline">' +
-              '<div class="conv2-refline" style="display:flex;justify-content:center;padding:4px 0;">' +
-                '<span id="cvRef400" style="display:inline-flex;align-items:center;gap:8px;background:var(--bg-1);padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);box-shadow:0 0 8px rgba(90,110,154,0.08);">—</span>' +
-              '</div>' +
-              '<hr class="hr-hairline">' +
-              '<div id="convScore" class="conv2-score" aria-live="polite" style="display:grid;gap:8px;">' +
-                '<div class="conv2-score__head" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
-                  '<strong>Índice de conveniencia (400 gemas)</strong>' +
-                  '<span id="cvScoreLabel" class="conv2-score__label">—</span>' +
-                '</div>' +
-                '<div class="conv2-meter" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Conveniencia para comprar gemas">' +
-                  '<div id="cvScoreBar" class="conv2-meter__fill" style="width:0%"></div>' +
-                '</div>' +
-                '<p id="cvScoreHint" class="muted" style="margin:6px 0 0">Calculando…</p>' +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-          // Tab: Mis Transacciones
-          '<div class="conv-tab-content" data-tab="transacciones" style="display:none;"></div>' +
-          // Tab: Populares
-          '<div class="conv-tab-content" data-tab="populares" style="display:none;"></div>' +
-          // Tab: Historial (placeholder Fase 3)
-          '<div class="conv-tab-content" data-tab="historial" style="display:none;">' +
-            '<div style="text-align:center;padding:40px;color:var(--muted);">' +
-              '<img src="assets/icons/Welcome/3124974.png" width="48" height="48" alt="" style="opacity:0.3;margin-bottom:16px;"><br>' +
-              'Historial de tendencia de gemas<br>' +
-              '<span style="font-size:0.8rem;">Próximamente</span>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
+      '<div class="modal__dialog cx-modal">' +
+        '<header class="modal__header"><h3 id="convModalTitle">Cambio de divisas</h3>' +
+        '<button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button></header>' +
+        '<div class="modal__body" id="convModalBody"></div>' +
       '</div>';
-
     document.body.appendChild(modal);
-
-    // Wire: cerrar modal
     modal.addEventListener('click', function (e) {
-      if (e.target.getAttribute('data-close') === '1') closeModal();
+      if (e.target && e.target.getAttribute && e.target.getAttribute('data-close') === '1') closeModal();
     });
-    document.addEventListener('keydown', function onEsc(e) {
-      if (e.key === 'Escape' && modal && !modal.hasAttribute('hidden')) {
-        closeModal();
-        document.removeEventListener('keydown', onEsc);
-      }
-    });
-
     return modal;
   }
 
-  function wireConversorEvents() {
-    // Inputs con debounce
-    var t = null;
-    var deb = function (fn, ms) {
-      return function () {
-        var args = arguments;
-        clearTimeout(t);
-        t = setTimeout(function () { fn.apply(null, args); }, ms || 300);
-      };
-    };
-
-    var cvGems = document.getElementById('cvGems');
-    var cvGold = document.getElementById('cvGold');
-    var cvRefresh = document.getElementById('cvRefresh');
-
-    if (cvGems && !cvGems.__wired) {
-      cvGems.__wired = true;
-      cvGems.addEventListener('input', deb(onTopInput));
-    }
-    if (cvGold && !cvGold.__wired) {
-      cvGold.__wired = true;
-      cvGold.addEventListener('input', deb(onBottomInput));
-    }
-    if (cvRefresh && !cvRefresh.__wired) {
-      cvRefresh.__wired = true;
-      cvRefresh.addEventListener('click', function () {
-        updateRef400().catch(function () {});
-        onTopInput();
-        onBottomInput();
-      });
-    }
-
-    // Quick chips — Gemas
-    var gemsQuick = document.getElementById('cvGemsQuick');
-    if (gemsQuick) {
-      var gemBtns = gemsQuick.querySelectorAll('[data-gems]');
-      for (var i = 0; i < gemBtns.length; i++) {
-        var btn = gemBtns[i];
-        if (btn.__wired) continue;
-        btn.__wired = true;
-        btn.addEventListener('click', function () {
-          var n = Number(this.getAttribute('data-gems')) || 0;
-          var input = document.getElementById('cvGems');
-          if (input) input.value = String(n);
-          onTopInput();
-        });
-      }
-    }
-
-    // Quick chips — Oro
-    var goldQuick = document.getElementById('cvGoldQuick');
-    if (goldQuick) {
-      var goldBtns = goldQuick.querySelectorAll('[data-gold]');
-      for (var j = 0; j < goldBtns.length; j++) {
-        var btnGold = goldBtns[j];
-        if (btnGold.__wired) continue;
-        btnGold.__wired = true;
-        btnGold.addEventListener('click', function () {
-          var n = Number(this.getAttribute('data-gold')) || 0;
-          var input = document.getElementById('cvGold');
-          if (input) input.value = String(n);
-          onBottomInput();
-        });
-      }
-    }
-
-    // Tabs
-    var tabBtns = document.querySelectorAll('#convModal .conv-modal-tab');
-    for (var k = 0; k < tabBtns.length; k++) {
-      var tabBtn = tabBtns[k];
-      if (tabBtn.__wired) continue;
-      tabBtn.__wired = true;
-      tabBtn.addEventListener('click', function () {
-        var tabId = this.getAttribute('data-tab');
-        switchTab(tabId);
-      });
-    }
-  }
-
-  function switchTab(tabId) {
-    state.activeTab = tabId;
-
-    // Actualizar botones
-    var tabBtns = document.querySelectorAll('#convModal .conv-modal-tab');
-    for (var i = 0; i < tabBtns.length; i++) {
-      var btn = tabBtns[i];
-      var isActive = btn.getAttribute('data-tab') === tabId;
-      btn.classList.toggle('active', isActive);
-      btn.style.color = isActive ? 'var(--color-blue)' : 'var(--muted)';
-      btn.style.borderBottomColor = isActive ? 'var(--color-blue)' : 'transparent';
-    }
-
-    // Actualizar contenidos
-    var contents = document.querySelectorAll('#convModal .conv-tab-content');
-    for (var j = 0; j < contents.length; j++) {
-      var content = contents[j];
-      content.style.display = content.getAttribute('data-tab') === tabId ? 'block' : 'none';
-    }
-
-    // Cargar datos al cambiar de tab
-    if (tabId === 'transacciones') {
-      var token = getSelectedTokenForCommerce();
-      if (token) {
-        hasTradingPostPermission(token).then(function(hasTP) {
-          if (!hasTP) {
-            var container = document.querySelector('.conv-tab-content[data-tab="transacciones"]');
-            if (container) {
-              container.innerHTML = 
-                '<div style="text-align:center;padding:40px;">' +
-                  '<img src="assets/icons/Welcome/156107.png" width="48" height="48" alt="" style="margin-bottom:16px;opacity:0.7;">' +
-                  '<h4 style="margin:0 0 12px 0;color:#b71c1c;text-shadow:0 0 6px rgba(255,59,59,0.55);">⚠️ Permiso requerido</h4>' +
-                  '<p style="margin:0 0 8px 0;color:var(--muted);">Esta API Key no tiene el permiso <strong style="color:#b71c1c;">tradingpost</strong>.</p>' +
-                  '<p style="margin:0 0 16px 0;color:var(--muted);font-size:0.8rem;">Para ver tus órdenes activas, necesitás una key con ese permiso.</p>' +
-                  '<a href="https://account.arena.net/applications" target="_blank" rel="noopener" class="an-util-link" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;background:var(--bg-1);border:1px solid var(--bd-1);border-radius:8px;padding:8px 14px;color:#b71c1c;text-shadow:0 0 6px rgba(255,59,59,0.55);">' +
-                    '<img src="assets/icons/Welcome/547832.png" width="16" height="16" alt="">' +
-                    'Crear API Key con tradingpost' +
-                  '</a>' +
-                '</div>';
-            }
-            return;
-          }
-          if (!state.transacciones.buys.length && !state.transacciones.sells.length) {
-            loadTransacciones(false);
-          } else {
-            renderTransacciones();
-          }
-        });
-      } else {
-        var container = document.querySelector('.conv-tab-content[data-tab="transacciones"]');
-        if (container && (!container.innerHTML || container.innerHTML.includes('Cargando') || container.innerHTML.includes('perdido'))) {
-          container.innerHTML = 
-            '<div style="text-align:center;padding:40px;color:var(--muted);">' +
-              '<img src="assets/icons/155048.png" width="48" height="48" alt="" style="opacity:0.3;margin-bottom:16px;">' +
-              '<p>Seleccioná una API Key para ver tus transacciones.</p>' +
-            '</div>';
-        }
-      }
-    } else if (tabId === 'populares' && !state.ofertas.prices.length) {
-      loadOfertas(false);
-    }
-  }
-
   function closeModal() {
-    var modal = document.getElementById('convModal');
+    var modal = byId('convModal');
     if (modal) modal.setAttribute('hidden', '');
+  }
+
+  function openModal() {
+    var wt = root.WalletTheme;
+    if (wt && typeof wt.showTab === 'function' && wt.showTab('cambio')) return;
+    var modal = ensureModal();
+    mount(byId('convModalBody'));
+    modal.removeAttribute('hidden');
+    var close = modal.querySelector('.modal__close');
+    if (close && close.focus) close.focus();
+  }
+
+  // =======================================================================
+  // ESTILOS
+  // =======================================================================
+  var CSS = [
+    '.cx{color:var(--tx-1)}',
+    '.cx-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:16px;align-items:start}',
+    '.cx-panel{background:var(--bg-1);border:1px solid var(--bd-1);border-radius:16px;padding:18px;min-width:0}',
+    '.cx-panel h3{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:1.05rem}',
+    '.cx-conv{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:stretch;margin-bottom:12px}',
+    '.cx-box{display:grid;gap:6px;background:var(--bg-0);border:1px solid var(--bd-1);border-radius:12px;padding:10px 12px;min-width:0}',
+    'label.cx-box:focus-within{border-color:var(--acc-1)}',
+    '.cx-lbl{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--tx-3)}',
+    '.cx-in{display:flex;align-items:baseline;gap:6px;font-size:1.45rem;font-weight:700;min-width:0}',
+    '.cx-in input{background:none;border:0;outline:none;color:inherit;font:inherit;width:100%;min-width:0;padding:0}',
+    '.cx-in small{font-size:.85rem;font-weight:500;color:var(--tx-3)}',
+    '.cx-gem{color:var(--color-blue,#7dd3fc)}',
+    '.cx-arrow{align-self:center;color:var(--tx-3);font-size:1.2rem}',
+    '.cx-quick{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}',
+    '.cx-quick button,.cx-btn{background:var(--bg-0);border:1px solid var(--bd-1);color:var(--tx-2);border-radius:999px;padding:5px 12px;font:inherit;font-size:.8rem;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}',
+    '.cx-quick button:hover,.cx-btn:hover{border-color:var(--acc-1);color:var(--tx-1)}',
+    '.cx-ref{display:flex;gap:16px;align-items:center;background:var(--bg-0);border:1px solid var(--bd-1);border-radius:12px;padding:12px 14px;margin-top:4px}',
+    '.cx-big{font-size:1.6rem;font-weight:800;white-space:nowrap}',
+    '.cx-meterbox{flex:1;min-width:0}.cx-mhead{display:flex;justify-content:space-between;gap:8px;font-size:.82rem}',
+    '.cx-meter{height:10px;border-radius:999px;background:var(--bg-2,var(--bd-1));overflow:hidden;margin-top:6px}',
+    '.cx-fill{display:block;height:100%;width:0;background:var(--acc-1);transition:width .3s}',
+    '.cx-fill.is-exc,.cx-fill.is-good{background:var(--color-green,#34d399)}.cx-fill.is-mid{background:var(--gn-gold,#F2B94B)}.cx-fill.is-low,.cx-fill.is-bad{background:var(--color-red,#ef4444)}',
+    '.cx-scale{display:flex;justify-content:space-between;gap:6px;font-size:.7rem;color:var(--tx-3);margin-top:4px}',
+    '.cx-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px}',
+    '.cx-state{font-size:.78rem;color:var(--tx-3)}.cx-state.is-error{color:var(--color-red,#ef4444)}',
+    '.cx-voice{margin-top:14px}.cx-voice .shv-voice{margin:0}',
+    '.cx-coin{font-variant-numeric:tabular-nums;white-space:nowrap}.cx-coin small{color:var(--tx-3);font-weight:500;margin:0 3px 0 1px;font-size:.75em}',
+    '.cx-g{color:var(--gn-gold,#F2B94B)}.cx-s{color:var(--tx-1)}.cx-c{color:#c98a5a}',
+    '.cx .cv-delivery{margin:0 0 12px;border-radius:12px}',
+    '.cx-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}.cx-tools .cx-btn{margin-left:auto}',
+    '.cx-seg{display:inline-flex;border:1px solid var(--bd-1);border-radius:10px;overflow:hidden}',
+    '.cx-seg button{background:var(--bg-0);border:0;color:var(--tx-3);padding:6px 11px;font:inherit;font-size:.8rem;cursor:pointer}',
+    '.cx-seg button.is-on{background:var(--bg-2,var(--bg-1));color:var(--tx-1);box-shadow:inset 0 -2px 0 var(--acc-1)}',
+    '.cx-sum{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.78rem;color:var(--tx-3);margin-bottom:10px}',
+    '.cx-list{display:flex;flex-direction:column;gap:6px}',
+    '.cx-ord{display:grid;grid-template-columns:32px minmax(0,1fr) auto auto;gap:10px;align-items:center;background:var(--bg-0);border:1px solid var(--bd-1);border-radius:10px;padding:8px 10px}',
+    '.cx-ord--pop{grid-template-columns:32px minmax(0,1fr) auto auto auto}',
+    '.cx-ico{width:32px;height:32px;border-radius:6px;background:var(--bg-2,var(--bg-1));display:block}',
+    '.cx-min{min-width:0}.cx-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.88rem}',
+    '.cx-q{font-size:.74rem;color:var(--tx-3)}.cx-r{text-align:right;font-size:.85rem}',
+    '.cx-tag{font-size:.72rem;font-weight:700;border-radius:999px;padding:2px 9px;border:1px solid currentColor}',
+    '.cx-buy{color:var(--color-green,#34d399)}.cx-sell{color:var(--gn-gold,#F2B94B)}',
+    '.cx-select{background:var(--bg-0);border:1px solid var(--bd-1);color:var(--tx-1);border-radius:10px;padding:6px 10px;font:inherit;font-size:.8rem}',
+    '.cx-pop{margin-top:14px;border-top:1px solid var(--bd-1);padding-top:10px}',
+    '.cx-pop summary{cursor:pointer;color:var(--tx-2);font-weight:600;font-size:.88rem;padding:4px 0}',
+    '.cx-pop[open] summary{margin-bottom:10px}.cx-note{font-size:.76rem;color:var(--tx-3);margin:0 0 10px}',
+    '.cx-empty{text-align:center;color:var(--tx-3);padding:18px 8px;margin:0}.cx-center{text-align:center;margin:0 0 8px}',
+    '.cx-msg{display:grid;justify-items:center;gap:8px;text-align:center;padding:22px 10px;color:var(--tx-2)}.cx-msg p{margin:0;font-size:.85rem;color:var(--tx-3)}.cx-msg img{opacity:.8}',
+    '.cx-modal{max-width:min(1100px,96vw);width:96vw}',
+    '.cx button:focus-visible,.cx a:focus-visible,.cx select:focus-visible,.cx summary:focus-visible{outline:2px solid var(--acc-1);outline-offset:2px}',
+    '@media (max-width:900px){.cx-grid{grid-template-columns:1fr}}',
+    '@media (max-width:520px){.cx-conv{grid-template-columns:1fr}.cx-arrow{transform:rotate(90deg);justify-self:center}.cx-ref{flex-direction:column;align-items:stretch}.cx-ord--pop{grid-template-columns:32px minmax(0,1fr) auto}.cx-hm{display:none}}',
+    '@media (prefers-reduced-motion:reduce){.cx-fill{transition:none}}'
+  ].join('\n');
+
+  function injectCSS() {
+    if (byId('cx-style')) return;
+    var s = document.createElement('style');
+    s.id = 'cx-style';
+    s.textContent = CSS;
+    (document.head || document.documentElement).appendChild(s);
   }
 
   // =======================================================================
   // API PÚBLICA
   // =======================================================================
-  function openModal() {
-    var modal = ensureModal();
-    modal.removeAttribute('hidden');
-    wireConversorEvents();
-    updateRef400().catch(function () {});
-    onTopInput();
-    onBottomInput();
-  }
-
   function initOnce() {
     if (state.inited) return;
-    ensureModal();
     state.inited = true;
-    console.info(LOG, 'ready v1.0.0');
+    // Un solo oyente, para siempre (antes se borraba tras el primer cierre).
+    document.addEventListener('keydown', function (e) {
+      var modal = byId('convModal');
+      if (e.key === 'Escape' && modal && !modal.hasAttribute('hidden')) closeModal();
+    });
+    document.addEventListener('gn:tokenchange', function () {
+      var st = state.transacciones;
+      st.buys = []; st.sells = []; st.delivery = []; st.lastUpdate = 0;
+      st.buysStatus = 'unknown'; st.sellsStatus = 'unknown'; st.deliveryStatus = 'unknown';
+      if (byId('cxRoot')) refreshTradingPost(false);
+    });
+    console.info(LOG, 'ready v' + VERSION);
   }
 
-  var ConverterModal = {
+  root.ConverterModal = {
+    version: VERSION,
     initOnce: initOnce,
+    mount: mount,
     open: openModal,
     close: closeModal,
-    _debug: function () {
-      return { inited: state.inited, activeTab: state.activeTab };
+    _debug: function () { return { inited: state.inited, mounted: !!byId('cxRoot') }; },
+    _state: state,
+    _pure: {
+      splitCopper: splitCopper, coinHTML: coinHTML, relTime: relTime, scoreFromPrice400: scoreFromPrice400,
+      labelForScore: labelForScore, classForScore: classForScore, adviceFor: adviceFor,
+      getFilteredOfertas: getFilteredOfertas, getFilteredTransacciones: getFilteredTransacciones, countOrders: countOrders
     }
   };
 
-  root.ConverterModal = ConverterModal;
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initOnce);
-  } else {
-    initOnce();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initOnce);
+  else initOnce();
 
 })(typeof window !== 'undefined' ? window : this);
