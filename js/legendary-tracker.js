@@ -1,6 +1,18 @@
 /*!
  * js/legendary-tracker.js — Armería Legendaria
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
+ * Versión: 1.3.0 (2026-10-22) — BL-049: la legendaria se abre como PANTALLA dentro
+ *   de la Armería (reemplaza al catálogo, con "Volver" y Escape), no en un
+ *   diálogo. Íconos: primero los del árbol abierto; si el camino normal
+ *   (ItemIcons) no responde en 6 s o vuelve vacío, se piden directo a la API
+ *   con tiempo límite; y si igual fallan, la pantalla lo dice con "Reintentar".
+ * Versión: 1.2.0 (2026-10-21) — BL-047: la legendaria se abre en una FICHA de
+ *   pantalla completa (antes un modal de 680 px): cabecera grande con ícono,
+ *   tipo, expansión y generación, resumen, y Receta y Materiales totales lado a
+ *   lado (LegendaryTreeUI.renderSheetHTML). Ícono y nombre en español con
+ *   respaldo del catálogo cuando la API todavía no los trajo.
+ * Versión: 1.1.1 (2026-10-21) — BL-045: "Tengo" de Materiales totales lee el banco
+ *   y el almacén de materiales (stockMap), no las legendarias desbloqueadas.
  * Versión: 1.1.0 (2026-09-30) — T3+T4 (ALERT-84): contrato de registro + render real
  *
  * Módulo que reemplaza al filtro Legendario dentro de Logros (achievements.js).
@@ -26,7 +38,7 @@
   // 1.1.0 (ALERT-84 T3+T4): la puerta de registro existe y el render usa las
   // funciones registradas. NO es la T3 completa del PO (sigue sin datos de API:
   // loadLegendaryData() es un stub) — es el CONTRATO y el cableado.
-  var VER = '1.1.0';
+  var VER = '1.3.0';
 
   // ========================================================================
   // 1. CONFIGURACIÓN / ESTADO
@@ -107,22 +119,8 @@
   // Filtros activos. Los consume `renderFilterBar(filters, catalog)`; los
   // aplica `catalogItems()`.
   //
-  // QUE CAMBIA (punto 2.2, 2026-10-02): estos tres filtros eran estado
-  // compartido pero los aplicaba SOLO `catalogItems()`, que corre unicamente en
-  // el Catalogo. `renderProgress()` filtraba por `owned` y nada mas. El
-  // resultado era un control visible que en "Mi progreso" no hacia nada: se
-  // podia tocar "Armas" y la vista no cambiaba. Un control visible que no
-  // hace nada es peor que no dibujarlo.
-  // `ownership` es el filtro "Tengo / Me faltan" del catalogo (2026-10-02). Se
-  // declara en el estado inicial aunque hoy valga `null`: un filtro sin off
-  // declarado no tiene forma de apagarse y se parece a uno que funciona.
-  //
-  // NO es el switch "Desbloqueadas / Solo faltantes" que se CAyo a proposito
-  // (`hb126-cola-crafteo.test.js`, COLA-11 y COLA-12 siguen afirmando que no
-  // existen `data-scope=` ni `setScope`). Aquel elegia que lista mostrar sobre
-  // una vista que ya no existe; este recorta el catalogo por la MISMA senal que
-  // ya pinta en cada card. Por eso el eje se llama `ownership` y no `scope`:
-  // el nombre sigue siendo parte del contrato, no una etiqueta.
+  // Catalogo y "Mi progreso" aplican los mismos filtros (punto 2.2). `ownership`
+  // es "Tengo / Me faltan" del catalogo; arranca apagado (null).
   var filters = { type: null, generation: null, expansion: null, ownership: null };
 
   // Alcance de "Mi progreso" (punto 2.2). Es estado PROPIO y no un cuarto
@@ -503,55 +501,45 @@
     return base;
   }
 
-  // El modal se crea una vez y se reutiliza: el proyecto ya tiene el patron
-  // (`#convModal`, clase `modal` de main.css) y copiarlo es lo que evita
-  // inventar una segunda piel de dialogo que se desincroniza del tema.
-  function ensureItemModal() {
-    var m = document.getElementById('ltItemModal');
-    if (m) return m;
-    m = document.createElement('div');
-    m.id = 'ltItemModal';
-    m.className = 'modal';
-    m.setAttribute('role', 'dialog');
-    m.setAttribute('aria-modal', 'true');
-    m.hidden = true;
-    m.innerHTML =
-      '<div class="modal__backdrop" data-close="1"></div>' +
-      '<div class="modal__dialog" style="max-width: 680px;">' +
-        // El header va STICKY, y va por estilo en linea y NO por una regla de
-        // theme-polish.css: `.modal__header` es compartido con el conversor y
-        // con los demas dialogos, y hacer sticky el de todos cambiaria el
-        // scroll de pantallas que no son de la Armeria. Acotado a este id, el
-        // radio de impacto es este modal y nada mas.
-        //
-        // Y es sticky PORQUE `.modal__dialog` tiene `overflow:auto`: sin esto,
-        // con un arbol de 55 nodos el boton de "Agregar a la cola" se va de
-        // pantalla y agregar pasa a ser un trabajo de cuatro clics.
-        '<header class="modal__header" style="position:sticky;top:0;z-index:2;' +
-          'background:var(--panel);">' +
-          '<h3 id="ltItemModalTitle" style="font-size:0.95rem;flex:1;' +
-            'min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Legendaria</h3>' +
-          '<div id="ltItemModalActions" style="display:flex;align-items:center;gap:6px;' +
-            'flex-shrink:0;"></div>' +
-          '<button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button>' +
-        '</header>' +
-        '<div class="modal__body" id="ltItemModalBody"></div>' +
-      '</div>';
-    document.body.appendChild(m);
+  // La legendaria se abre como PANTALLA dentro de la Armería (BL-049). Pablo
+  // probó el modal de 680 px y la ficha en diálogo de 96vw y en los dos casos
+  // la receta quedaba chica. Ahora la ficha ocupa el lugar del catálogo, con la
+  // página entera para la receta, y "Volver" lo trae de vuelta donde estaba.
+  // Los ids `ltFichaTitle` / `ltFichaActions` / `ltFichaBody` son los que pinta
+  // `pintarModalLegendaria`.
+  var _scrollAntes = 0;
 
-    // El cierre se cablea ACÁ, con el nodo recien creado, y no en
-    // wireItemCards: este modal todavia no existe cuando se cablean las cards,
-    // asi que ahi no habria nada a que engancharse. `data-close` es el mismo
-    // atributo que usa el conversor, para que el gesto se lea igual en los dos.
-    m.addEventListener('click', function (e) {
+  function ensureItemModal() {
+    var host = document.getElementById('ltFicha');
+    if (host) return host;
+    var body = $('#legendaryArmoryBody');
+    if (!body) return null;
+    host = document.createElement('section');
+    host.id = 'ltFicha';
+    host.className = 'lt-ficha';
+    host.hidden = true;
+    host.setAttribute('aria-labelledby', 'ltFichaTitle');
+    host.innerHTML =
+      '<div class="lt-ficha__bar">' +
+        '<button type="button" class="lt-back" data-close="1">← Volver a la Armería</button>' +
+        '<span class="lt-ficha__crumb">Armería legendaria · Receta</span>' +
+      '</div>' +
+      '<header class="lt-ficha__head">' +
+        '<div id="ltFichaTitle" class="lt-ficha__title">Legendaria</div>' +
+        '<div id="ltFichaActions" class="lt-ficha__actions"></div>' +
+      '</header>' +
+      '<div id="ltFichaIcons"></div>' +
+      '<div id="ltFichaBody"></div>';
+    body.appendChild(host);
+
+    // Un solo listener para toda la pantalla, igual que antes en el modal.
+    host.addEventListener('click', function (e) {
       var t = e.target;
       if (!t || !t.getAttribute) return;
 
       if (t.getAttribute('data-close') === '1') { closeItemModal(); return; }
 
-      // Cabecera. Cambiar de vista y mover el item en la cola son DOS
-      // acciones, y por eso son DOS botones: uno que hace las dos cosas es un
-      // gesto que el usuario no puede predecir.
+      // Pestañas (pantalla angosta): cambian qué panel se ve.
       var v = t.getAttribute('data-lt-view');
       if (v) { vistaModal = v; pintarModalLegendaria(); return; }
 
@@ -560,9 +548,6 @@
         var res = encolarConAviso(q);
         if (!res.ok) return;
         pintarModalLegendaria();
-        // El contador de la cabecera dice "3/5" y la cola se ve en Mi progreso:
-        // sin este repintado el modal queda diciendo la verdad y la pantalla
-        // de al lado queda mintiendo.
         renderCurrentMode();
         return;
       }
@@ -577,11 +562,14 @@
         return;
       }
 
-      // Nodos del arbol. Un listener sobre el modal, no uno por nodo: con 55
-      // nodos abiertos a la vez, 55 closures por repintado es una fuga que se
-      // nota en el scroll.
+      if (t.getAttribute('data-lt-icons-retry') === '1') {
+        pedirIconos(state.openItemId, true);
+        return;
+      }
+
+      // Nodos del árbol: un listener para todos, no uno por nodo.
       var walk = t;
-      while (walk && walk !== m) {
+      while (walk && walk !== host) {
         var nid = walk.getAttribute && walk.getAttribute('data-lt-toggle');
         if (nid) {
           var k = Number(nid);
@@ -593,12 +581,44 @@
       }
     });
 
-    return m;
+    // Escape vuelve al catálogo, como cerrar un diálogo.
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      var h = document.getElementById('ltFicha');
+      if (h && !h.hidden) closeItemModal();
+    });
+
+    return host;
+  }
+
+  // Muestra la pantalla de la legendaria o vuelve al catálogo. El catálogo no
+  // se destruye: se oculta, y al volver queda en el mismo lugar del scroll.
+  function mostrarFicha(abrir) {
+    var host = document.getElementById('ltFicha');
+    var toggle = $('#legendaryArmoryBody .legendary-view-toggle');
+    var content = $('#legendaryModeContent');
+    if (abrir) {
+      _scrollAntes = (typeof window !== 'undefined' && window.scrollY) || 0;
+      if (toggle) toggle.hidden = true;
+      if (content) content.hidden = true;
+      if (host) host.hidden = false;
+      var panel = el('legendaryArmoryPanel') || host;
+      if (panel && panel.scrollIntoView) panel.scrollIntoView({ block: 'start' });
+      var back = host && host.querySelector('.lt-back');
+      if (back && back.focus) back.focus({ preventScroll: true });
+    } else {
+      if (host) host.hidden = true;
+      if (toggle) toggle.hidden = false;
+      if (content) content.hidden = false;
+      if (typeof window !== 'undefined' && window.scrollTo) window.scrollTo(0, _scrollAntes);
+    }
   }
 
   function closeItemModal() {
-    var m = document.getElementById('ltItemModal');
-    if (m) m.hidden = true;
+    var host = document.getElementById('ltFicha');
+    if (!host || host.hidden) return;
+    state.openItemId = null;
+    mostrarFicha(false);
   }
 
   // Que vista esta abierta dentro del modal. El arbol es la de entrada porque
@@ -617,9 +637,56 @@
   // despacha a LegendaryTreeUI para el arbol o los totales. Con el mismo nombre
   // habria dos cosas distintas con un solo nombre, que es la confusion que ese
   // invariante existe para evitar.
+  // Ícono, nombre en español y color de una pieza. Primero lo que trajo la API
+  // (ItemIcons); si todavía no llegó o falló, lo que ya tiene el catálogo para
+  // las 206 legendarias (icono y nameEs vienen en legendary-data.js). Sin esto
+  // la raíz del árbol salía en inglés y sin ícono (captura de Pablo, 23:18Z).
+  var _catPorId = null;
+  function itemDelCatalogo(iid) {
+    if (!_catPorId) {
+      var items = (root.LegendaryCatalog && root.LegendaryCatalog.items) || [];
+      if (!items.length) return null;
+      _catPorId = {};
+      items.forEach(function (x) { _catPorId[String(x.id)] = x; });
+    }
+    return _catPorId[String(iid)] || null;
+  }
+  function infoPieza(iid) {
+    var Icons = root.ItemIcons;
+    var info = Icons && Icons.de ? Icons.de(iid) : null;
+    var dir = (typeof _iconosDirectos !== 'undefined') ? _iconosDirectos[String(iid)] : null;
+    if (dir && !(info && info.icon)) {
+      info = { icon: dir.icon, name: (info && info.name) || dir.name, color: (info && info.color) || dir.color,
+        rarity: (info && info.rarity) || null };
+    }
+    var cat = itemDelCatalogo(iid);
+    if (!cat) return info;
+    return {
+      icon: (info && info.icon) || cat.icon || null,
+      name: (info && info.name) || cat.nameEs || cat.name || null,
+      color: (info && info.color) || '#974EFF',
+      rarity: (info && info.rarity) || null
+    };
+  }
+  function metaCabecera(id) {
+    var item = itemDelCatalogo(id);
+    var info = infoPieza(id) || {};
+    var CUI = root.LegendaryCatalogUI;
+    var exp = item ? ((CUI && CUI.expansionReal) ? CUI.expansionReal(item) : item.expansion) : null;
+    return {
+      name: info.name || (item ? (item.nameEs || item.name) : '#' + id),
+      icon: info.icon || null,
+      color: info.color || 'var(--tx-1)',
+      tipo: item && CUI && CUI.TYPE_LABELS ? (CUI.TYPE_LABELS[item.type] || item.type) : (item ? item.type : null),
+      expansion: exp,
+      generation: item ? item.generation : null
+    };
+  }
+
   function pintarModalLegendaria() {
-    var body = document.getElementById('ltItemModalBody');
-    var actions = document.getElementById('ltItemModalActions');
+    var body = document.getElementById('ltFichaBody');
+    var actions = document.getElementById('ltFichaActions');
+    var avisoIconos = document.getElementById('ltFichaIcons');
     if (!body) return;
     var id = state.openItemId;
     var UI = root.LegendaryTreeUI;
@@ -640,15 +707,27 @@
     // los dos lo piden al mismo resolvedor, no hay dos caminos. Si todavia no
     // esta, `de` es null y la vista dibuja sin icono y sin color, que es lo
     // que tiene que pasar mientras la red responde o si nunca responde.
-    var Icons = root.ItemIcons;
     var opts = {
       esc: esc,
       abiertos: abiertosArbol,
-      de: Icons ? function (iid) { return Icons.de(iid); } : null
+      vista: vistaModal,
+      de: infoPieza
     };
 
-    body.innerHTML = (vistaModal === 'totales')
-      ? UI.renderTotalsHTML(res, ownedMap(), opts)
+    // La cabecera grande se repinta con la ficha: cuando llegan los íconos de
+    // la API, también cambia el de la cabecera.
+    var titleEl = document.getElementById('ltFichaTitle');
+    if (avisoIconos && UI.renderIconStatusHTML) avisoIconos.innerHTML = UI.renderIconStatusHTML(estadoIconos);
+    if (titleEl && UI.renderHeroHTML) titleEl.innerHTML = UI.renderHeroHTML(metaCabecera(id), esc);
+
+    // Ficha completa (BL-047): Receta y Materiales totales lado a lado.
+    // "Tengo" es el inventario de materiales (stockMap, BL-045).
+    if (UI.renderSheetHTML) body.innerHTML = UI.renderSheetHTML(res, stockMap(), opts);
+    else body.innerHTML = (vistaModal === 'totales')
+      // "Tengo" es el inventario de materiales (banco + almacen), no las
+      // legendarias desbloqueadas: con ownedMap() la columna salia siempre en 0
+      // (BL-045, tests/legendary-totals-stock.test.cjs).
+      ? UI.renderTotalsHTML(res, stockMap(), opts)
       : UI.renderTreeHTML(res, opts);
 
     // El boton de la cola va en el HEADER. No en el pie: Frostfang son 55
@@ -657,12 +736,14 @@
     if (actions) {
       var enCola = state.queue.indexOf(Number(id)) !== -1;
       var btn = 'padding:5px 11px;border-radius:20px;font-size:0.68rem;cursor:pointer;' +
-        'border:1px solid var(--bd-1);white-space:nowrap;';
-      actions.innerHTML =
+        'border:1px solid var(--bd-1);white-space:nowrap;font:inherit;';
+      // Con la ficha, Receta y Materiales totales se ven juntos (y en pantalla
+      // angosta las pestañas están dentro de la ficha): en la cabecera queda la cola.
+      actions.innerHTML = (UI.renderSheetHTML ? '' :
         '<button type="button" data-lt-view="' + (vistaModal === 'totales' ? 'arbol' : 'totales') +
           '" style="' + btn + 'background:var(--bg-1);color:var(--tx-2);">' +
-          (vistaModal === 'totales' ? 'Ver árbol' : 'Materiales totales') + '</button>' +
-        '<button type="button" data-lt-queue="' + Number(id) + '" style="' + btn +
+          (vistaModal === 'totales' ? 'Ver árbol' : 'Materiales totales') + '</button>') +
+        '<button type="button" data-lt-queue="' + Number(id) + '" style="' + btn + 'padding:10px 18px;font-size:0.85rem;' +
           'background:var(--bg-2);color:var(--tx-1);">' +
           (enCola ? 'Quitar de la cola' : 'Agregar a la cola') + '</button>';
     }
@@ -671,93 +752,137 @@
   // Abre el modal de una legendaria. Es API publica a proposito: la cola de
   // crafteo va a llamarla con el item de la tarjeta, y un deep-link tambien.
   function openItemModal(itemId) {
-    var m = ensureItemModal();
+    var host = ensureItemModal();
     var id = Number(itemId);
-    var item = ((root.LegendaryCatalog && root.LegendaryCatalog.items) || [])
-      .filter(function (x) { return x.id === id; })[0];
-
-    var nombre = item ? (item.nameEs || item.name) : ('#' + id);
-
-    // El icono y el color del titulo salen del DATO, no del markup. El <h3>
-    // traia `color:var(--tx-1)` en su style INLINE, que gana contra cualquier
-    // CSS: aunque se definiera una regla para el titulo, no se veria. Por eso se
-    // saca el color del style y lo pone esta funcion con el color de rareza
-    // real. Si todavia no hay dato, queda el neutro de la app y no un morado
-    // inventado — el modo claro no puede quedar con un morado falso.
-    //
-    // MEDIDO (HB#157): el icono del titulo no estaba y no era un dato faltante.
-    // `pedirIconos` pedia solo `byItem` (907 ids de precursores) y las 206
-    // legendarias del catalogo — que son las RAICES y viven en
-    // `legendary-recipes.js` — quedaban fuera. Ahora se piden las dos.
-    // El color es el de `RARITY_COLORS['Legendario']` (#974EFF), el mismo que ya
-    // usa la cola: no se invento un morado nuevo para el titulo.
-    var title = document.getElementById('ltItemModalTitle');
-    if (title) {
-      title.textContent = nombre;
-      var infoT = (root.ItemIcons && root.ItemIcons.de) ? root.ItemIcons.de(id) : null;
-      var hayIconoT = !!(infoT && infoT.icon);
-      title.style.color = (infoT && infoT.color) ? infoT.color : 'var(--tx-1)';
-      if (hayIconoT) {
-        title.innerHTML = '<img src="' + esc(infoT.icon) + '" alt="" width="16" height="16"' +
-          ' style="width:16px;height:16px;vertical-align:-3px;margin-right:6px;' +
-          'border-radius:2px;">' + esc(nombre);
-      } else {
-        title.textContent = nombre;
-      }
-    }
+    if (!host) return;
 
     state.openItemId = id;
     vistaModal = 'arbol';
     abiertosArbol = {};
-    m.hidden = false;
+    estadoIconos = { estado: 'cargando' };
+    mostrarFicha(true);
     pintarModalLegendaria();
 
     // Los precursores son 268 KB y se piden la PRIMERA vez que se abre un
-    // arbol, no al arrancar la app. `ensurePrecursors` es idempotente: si ya
-    // estan, responde al instante sin tocar el DOM.
+    // arbol. `ensurePrecursors` es idempotente: si ya estan, responde al toque.
     var UI = root.LegendaryTreeUI;
     if (UI) {
       UI.ensurePrecursors(function (okPrec) {
-        // Solo se repinta si el modal sigue abierto. Volver a pintar un modal
-        // cerrado no se ve, pero puede pisar lo que el usuario esta mirando si
-        // abrio otra cosa mientras cargaba.
-        var mm = document.getElementById('ltItemModal');
-        var abierto = mm && !mm.hidden && state.openItemId === id;
+        var abierto = fichaAbierta(id);
         if (okPrec && abierto) pedirIconos(id);
-        else if (abierto) pintarModalLegendaria();
+        // Sin precursores no hay arbol que iluminar: el aviso de carga se apaga.
+        else if (abierto) { estadoIconos = { estado: 'ok' }; pintarModalLegendaria(); }
       });
     }
   }
 
-  // Icono y rareza del contrato COMPLETO de precursores, MAS las 206
-  // legendarias del catalogo. La razon de pedir el contrato entero es el costo:
-  // el usuario abre el arbol de otra legendaria al toque, y pedirlo por arbol
-  // serian 5 lotes por cada legendary que mire.
+  function fichaAbierta(id) {
+    var h = document.getElementById('ltFicha');
+    return !!(h && !h.hidden && state.openItemId === id);
+  }
+
+  // Íconos y nombres en español de las piezas, vía ItemIcons (GW2Api.getItemsMany).
   //
-  // MEDIDO (HB#157) por que hacen falta TAMBIEN las del catalogo: los ids que se
-  // PINTAN en "Materiales Totales" estan 100% dentro de `byItem` (0 de 7258
-  // filas quedan afuera), pero los 206 nodos RAIZ del arbol estan FUERA: son las
-  // legendarias, y viven en `legendary-recipes.js`, no en el contrato de
-  // precursores. Pedir solo `byItem` dejaba la raiz —la fila que Pablo ve
-  // primero— sin icono y sin color, y con ella el titulo del modal.
-  function pedirIconos(id) {
+  // BL-049: Pablo sigue viendo la ficha sin íconos. Desde la Factory no se
+  // puede ver la red del navegador, así que el camino se hizo más corto y más
+  // honesto: (1) primero los ids del árbol ABIERTO (decenas, no 1.200), (2) si
+  // ItemIcons no responde en 6 s o vuelve sin íconos, se piden esos ids directo
+  // a /v2/items con tiempo límite, y (3) si igual no hay, la pantalla lo dice
+  // con "Reintentar" en vez de quedar en silencio. El resto del contrato se
+  // sigue pidiendo después, para que el próximo árbol abra con íconos.
+  var estadoIconos = { estado: 'ok' };
+  var _iconosDirectos = {};   // id -> { icon, name, color } del respaldo directo
+  var COLOR_RAREZA = { Legendary: '#974EFF', Ascended: '#FB3E8D', Exotic: '#FFA405', Rare: '#FCD00B',
+    Masterwork: '#1A9306', Fine: '#62A4DA', Basic: '#FFFFFF', Junk: '#AAAAAA',
+    Legendario: '#974EFF', Ascendido: '#FB3E8D', 'Exótico': '#FFA405', Raro: '#FCD00B',
+    'Obra maestra': '#1A9306', Bueno: '#62A4DA', 'Básico': '#FFFFFF', Chatarra: '#AAAAAA' };
+
+  function idsDelArbol(res) {
+    var ids = [];
+    (function walk(n) {
+      if (!n) return;
+      if (n.id) ids.push(Number(n.id));
+      (n.children || []).forEach(walk);
+    })(res && res.node);
+    ((res && res.totals && res.totals.rows) || []).forEach(function (r) { if (r.itemId) ids.push(Number(r.itemId)); });
+    var visto = {};
+    return ids.filter(function (x) { if (!x || visto[x]) return false; visto[x] = 1; return true; });
+  }
+
+  function conIcono(ids) {
+    var n = 0;
+    ids.forEach(function (x) { var i = infoPieza(x); if (i && i.icon) n++; });
+    return n;
+  }
+
+  // Respaldo directo: lotes de 150 ids, 10 s de tiempo límite por lote.
+  function traerDirecto(ids) {
+    var faltan = ids.filter(function (x) { var i = infoPieza(x); return !(i && i.icon); });
+    if (!faltan.length || typeof fetch !== 'function') return Promise.resolve(0);
+    var lotes = [];
+    for (var k = 0; k < faltan.length; k += 150) lotes.push(faltan.slice(k, k + 150));
+    var traidos = 0;
+    return Promise.all(lotes.map(function (lote) {
+      var ctl = typeof AbortController === 'function' ? new AbortController() : null;
+      var timer = ctl ? setTimeout(function () { ctl.abort(); }, 10000) : null;
+      return fetch('https://api.guildwars2.com/v2/items?lang=es&ids=' + lote.join(','), ctl ? { signal: ctl.signal } : {})
+        .then(function (r) { return r.ok || r.status === 206 ? r.json() : []; })
+        .then(function (arr) {
+          (Array.isArray(arr) ? arr : []).forEach(function (it) {
+            if (!it || !it.id) return;
+            _iconosDirectos[String(it.id)] = { icon: it.icon || null, name: it.name || null,
+              color: COLOR_RAREZA[it.rarity] || null };
+            if (it.icon) traidos++;
+          });
+        })
+        .catch(function (e) { console.warn(LOG, 'íconos: respaldo directo falló', e && e.name, e && e.message); })
+        .then(function () { if (timer) clearTimeout(timer); });
+    })).then(function () { return traidos; });
+  }
+
+  function pedirIconos(id, forzar) {
+    var T = root.LegendaryTree;
+    var res = T ? T.build(id) : null;
+    var arbol = idsDelArbol(res);
+    if (!arbol.length) { estadoIconos = { estado: 'ok' }; return; }
+    if (forzar) { estadoIconos = { estado: 'cargando' }; if (fichaAbierta(id)) pintarModalLegendaria(); }
+
+    var terminar = function () {
+      var con = conIcono(arbol);
+      // Alcanza con que estén casi todos: algunos ids de la fuente no existen en la API.
+      estadoIconos = (con >= Math.ceil(arbol.length * 0.8)) ? { estado: 'ok' }
+        : { estado: 'fallo', con: con, total: arbol.length };
+      if (estadoIconos.estado === 'fallo') {
+        console.warn(LOG, 'íconos: ' + con + ' de ' + arbol.length + ' para el árbol ' + id +
+          ' (ItemIcons: ' + (root.ItemIcons ? 'sí' : 'no') + ', GW2Api: ' + (root.GW2Api ? 'sí' : 'no') + ')');
+      }
+      if (fichaAbierta(id)) pintarModalLegendaria();
+    };
+
     var Icons = root.ItemIcons;
+    var normal = (Icons && typeof Icons.cargar === 'function') ? Icons.cargar(arbol) : Promise.resolve();
+    var limite = new Promise(function (r) { setTimeout(function () { r('tarde'); }, 6000); });
+
+    Promise.race([normal.then(function () { return 'ok'; }, function () { return 'error'; }), limite])
+      .then(function (como) {
+        if (fichaAbierta(id)) pintarModalLegendaria();
+        if (como === 'ok' && conIcono(arbol) >= Math.ceil(arbol.length * 0.8)) return null;
+        console.warn(LOG, 'íconos: ItemIcons ' + como + ', ' + conIcono(arbol) + ' de ' + arbol.length + '; pruebo directo');
+        return traerDirecto(arbol);
+      })
+      .then(terminar, terminar);
+
+    // El resto del contrato, en segundo plano, para que el próximo árbol abra
+    // con íconos (y el título de cada legendaria del catálogo).
     var Prec = root.LegendaryPrecursors;
-    if (!Icons || typeof Icons.cargar !== 'function') return;
-    if (!Prec || !Prec.byItem) return;
-
-    var ids = Object.keys(Prec.byItem);
-    var Cat = root.LegendaryCatalog;
-    var catalogo = (Cat && Cat.items) || [];
-    for (var i = 0; i < catalogo.length; i++) {
-      var cid = Number(catalogo[i].id);
-      if (cid && isFinite(cid)) ids.push(String(cid));
+    if (Icons && typeof Icons.cargar === 'function' && Prec && Prec.byItem) {
+      var todos = Object.keys(Prec.byItem);
+      var cat = (root.LegendaryCatalog && root.LegendaryCatalog.items) || [];
+      for (var i = 0; i < cat.length; i++) if (cat[i].id) todos.push(String(cat[i].id));
+      normal.then(function () { return Icons.cargar(todos); }, function () {}).then(function () {
+        if (fichaAbierta(id)) pintarModalLegendaria();
+      }, function () {});
     }
-
-    Icons.cargar(ids).then(function () {
-      var mm = document.getElementById('ltItemModal');
-      if (mm && !mm.hidden && state.openItemId === id) pintarModalLegendaria();
-    });
   }
 
   // Delegacion: un solo listener sobre el contenedor, no uno por card. Con
@@ -977,28 +1102,8 @@
     });
   }
 
-  // ALERT-84 (PO, ronda 17). Estas dos funciones se llamaban "skeleton" y decian
-  // "Cargando catalogo de legendarias..." PARA SIEMPRE. La cadena era:
-  //
-  //     doRefresh() -> loadLegendaryData()  // stub, resuelve [] en microsegundos
-  //                 -> renderCatalogSkeleton()
-  //
-  // El stub resuelve, no rechaza, y no hay timeout ni reintento: el ciclo
-  // termina y lo que queda painted es la palabra "Cargando". Un error se
-  // investiga; un "Cargando" infinito se espera.
-  //
-  // Lo que cambia aqui NO es la funcionalidad (T3/T4 la implementan) sino el
-  // ESTADO que la app dice de si misma. El item de menu es visible
-  // (`index.html:761` de ESTE arbol; en `main@d328969` es 750, 11 menos: el boton
-  // de cache suma 11 lineas antes), la ruta esta registrada (`router.js:125`) y
-  // el panel existe (`index.html:539`): desde el momento en que eso es cierto, el
-  // esqueleto dejo de ser una etapa interna y paso a ser una PROMESA, y no hay
-  // forma de retractarla porque no existe el estado "todavia no".
-  //
-  // Se conservan los `id` (`legendaryCatalogGrid`, `legendaryProgressList`) y el
-  // grid de 5 columnas: son el contrato que `render-catologo.js` (Phase 3
-  // Commit 1, todavia no cableado) va a usar cuando T3/T4 lo enganchen. Lo que
-  // no se conserva es la palabra "Cargando".
+  // ALERT-84: mensaje honesto cuando el render no se registro (antes decia
+  // "Cargando" para siempre). Se conservan los ids del contrato de render.
   function renderCatalogSkeleton() {
     var content = $('#legendaryModeContent');
     if (!content) return;
@@ -1027,25 +1132,8 @@
   // 4. API — /v2/account/legendaryarmory (+ bank/materials para el modal)
   // ========================================================================
   //
-  // POR QUE ESTA FUNCION EXISTIA COMO STUB (y por que el bug era invisible):
-  // devuelve `[]` sin preguntar nada. El ciclo `doRefresh -> loadLegendaryData
-  // -> renderCurrentMode` termina en microsegundos, con exito, y pinta "aun no
-  // posees ninguna legendaria". Un modulo que no consulto la API y uno que
-  // consulto y recibio [] pintan EXACTAMENTE lo mismo: no hay forma de
-  // distinguirlos desde la pantalla.
-  //
-  // La API existe y funciona: `GW2Api.getAccountLegendaryArmory()`
-  // (api-gw2.js:1243) ya la consumia `inventory-hub.js:218` desde antes de que
-  // este modulo existiera. Por eso el fix NO es "arreglar la API": es conectar la
-  // llamada. Y por eso lo que Pablo vio en el Inventario (armeria poblada) y
-  // lo que veia aqui (vacio) no se contradician: son dos consumidores del
-  // mismo endpoint, y solo uno lo llamaba.
-  //
-  // `allSettled` y NO `Promise.all`, por la misma razon que inventory-hub.js:210
-  // lo documenta: si un solo origen rechaza, `Promise.all` aborta y el resto
-  // queda con el valor STALE de la carga anterior, que es peor que no tener.
-  // Un fallo de red se muestra como tal (state.readErrors), no como "no tenes
-  // ninguna": son dos hechos distintos y la UI los distingue.
+  // Lee armeria, banco y materiales con allSettled: un origen que falla no
+  // tumba a los otros, y "no pude leer" se distingue de "no tenes" (readErrors).
   async function loadLegendaryData(nocache) {
     var token = getSelectedToken();
     if (!token) {
@@ -1175,6 +1263,11 @@
 
     var panel = el('legendaryArmoryPanel');
     if (panel) panel.setAttribute('hidden', 'hidden');
+    // Al salir de la Armería, la próxima vez se entra por el catálogo.
+    var ficha = document.getElementById('ltFicha');
+    if (ficha && !ficha.hidden) { state.openItemId = null; ficha.hidden = true;
+      var tg = $('#legendaryArmoryBody .legendary-view-toggle'); if (tg) tg.hidden = false;
+      var ct = $('#legendaryModeContent'); if (ct) ct.hidden = false; }
   }
 
   function prefetch(ctx) {
@@ -1302,7 +1395,7 @@
       // Si hay un modal abierto con el render viejo, se repinta con el nuevo:
       // el registro puede ocurrir DESPUES del primer click (los <script> van
       // con defer y el orden solo garantiza tracker -> render-catologo).
-      if (state.openItemId && !document.getElementById('ltItemModal').hidden) {
+      if (state.openItemId && document.getElementById('ltFicha') && !document.getElementById('ltFicha').hidden) {
         openItemModal(state.openItemId);
       }
       return true;
