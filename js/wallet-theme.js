@@ -1,6 +1,12 @@
 /*!
  * js/wallet-theme.js — La Cartera renovada (BL-056, propuesta aprobada por Pablo el 2026-10-22)
- * v2.0.0 (2026-10-22)
+ * v2.1.0 (2026-10-22)
+ *
+ * v2.1.0 (CAR-2B): la pestaña «Cambio de divisas» ya no abre un modal: muestra la vista de
+ *   converter-modal.js 2.0.0 dentro de la Cartera, en lugar de Mi cartera, con su API pública
+ *   (ConverterModal.mount). WalletTheme.showTab('cards'|'cambio') es lo que usa
+ *   ConverterModal.open(); si devuelve false (no hay Cartera), el conversor cae a su modal.
+ *   Al irse de la Cartera, vuelve a Mi cartera. Lo que el conversor redibuja no dispara la capa.
  *
  * Capa de vista sobre lo que dibuja app.js. app.js sigue siendo el dueño de los datos,
  * los filtros de búsqueda y orden, la vista tarjetas/tabla y los botones de fijar: acá
@@ -19,7 +25,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '2.0.0';
+  var VERSION = '2.1.0';
   var LS_HIDEZERO = 'gn:wallet:hidezero';
   var LS_CURR = 'gw2_currencies_cache_v1';
   var ICON = 'assets/icons/';
@@ -133,7 +139,7 @@
   function txt(n) { return n ? String(n.textContent || '').trim() : ''; }
   function el(tag, cls, html) { var n = doc.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; }
 
-  var S = { cat: '', hideZero: true, models: [], tmodels: [], lastAt: 0, busy: false, mo: null, catalog: null };
+  var S = { cat: '', hideZero: true, models: [], tmodels: [], lastAt: 0, busy: false, mo: null, catalog: null, tab: 'cards', pendingCambio: false };
   try { S.hideZero = root.localStorage.getItem(LS_HIDEZERO) !== '0'; } catch (_) {}
 
   function catalog() {
@@ -264,7 +270,41 @@
     if (sort) { sort.classList.add('wn-sel'); $('.wn-sortslot', tools).appendChild(sort); }
     $$('.panel-head, .chips, hr.hr-hairline', body).forEach(function (n) { n.classList.add('wn-hide'); });
     var wc = $('#walletCards', panel); if (wc) wc.classList.add('wn-on');
+    var cx = el('section', 'wn-cambio'); cx.hidden = true; cx.setAttribute('aria-label', 'Cambio de divisas');
+    panel.appendChild(cx);
     return panel;
+  }
+
+  // Pestañas de la Cartera: Mi cartera (lo de app.js) o Cambio de divisas (converter-modal.js).
+  function setTabUI(t) {
+    $$('#walletPanel .wn-head .wn-tab').forEach(function (b) {
+      var on = b.getAttribute('data-wn-go') === t;
+      b.classList.toggle('is-on', on);
+      if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+  }
+  function showTab(t) {
+    var panel = ensureShell(); if (!panel) return false;
+    var host = $('.wn-cambio', panel), CM = root.ConverterModal;
+    if (t === 'cambio') {
+      if (!host || !CM || typeof CM.mount !== 'function') return false;
+      S.tab = 'cambio'; panel.classList.add('wn-cx-on'); host.hidden = false;
+      CM.mount(host);
+      if (panel.hasAttribute('hidden') && root.location.hash !== '#/cards') { S.pendingCambio = true; root.location.hash = '#/cards'; }
+    } else {
+      S.tab = 'cards'; panel.classList.remove('wn-cx-on'); if (host) host.hidden = true;
+    }
+    setTabUI(S.tab);
+    return true;
+  }
+  function onHash() {
+    ensureDashTabs();
+    if (S.pendingCambio) S.pendingCambio = false;
+    else if (S.tab === 'cambio') showTab('cards');
+  }
+  function inCambio(n) {
+    var e = n && n.nodeType === 1 ? n : n && n.parentNode;
+    return !!(e && e.closest && e.closest('.wn-cambio'));
   }
 
   // «Todas las cuentas» es otro panel (wallet-dashboard.js): mismas pestañas arriba.
@@ -377,9 +417,9 @@
     if (!t || !t.closest) return;
     if ((b = t.closest('[data-wn-go]'))) {
       var go = b.getAttribute('data-wn-go');
-      if (go === 'cards') root.location.hash = '#/cards';
+      if (go === 'cards') { root.location.hash = '#/cards'; showTab('cards'); }
       else if (go === 'dashboard') root.location.hash = '#/wallet/dashboard';
-      else if (root.ConverterModal && typeof root.ConverterModal.open === 'function') root.ConverterModal.open();
+      else if (!showTab('cambio') && root.ConverterModal && typeof root.ConverterModal.open === 'function') root.ConverterModal.open();
       return;
     }
     if ((b = t.closest('[data-wn-cat]'))) { S.cat = b.getAttribute('data-wn-cat'); guarded(relayout); return; }
@@ -426,6 +466,7 @@
     '.wn-tab:hover{color:var(--tx-1)}.wn-tab.is-on{color:var(--tx-1);border-bottom-color:var(--acc-1)}',
     '.wn-n{font-size:.72rem;background:var(--bg-0);border:1px solid var(--bd-1);border-radius:999px;padding:0 7px;color:var(--tx-2)}',
     '#walletPanel.wn-ready>.panel__body{padding:18px 20px 22px}',
+    '#walletPanel.wn-cx-on>.panel__body,.wn-cambio[hidden]{display:none}.wn-cambio{padding:18px 20px 22px}',
     '.wn-sec{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin:0 0 10px}.wn-sec h3{margin:0;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3)}.wn-hint{font-size:.78rem;color:var(--tx-3)}',
     '.wn-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:18px}',
     '.wn-star{position:relative;background:var(--bg-0);border:1px solid var(--bd-1);border-radius:14px;padding:12px 14px;display:flex;gap:12px;align-items:center;min-width:0}',
@@ -469,7 +510,7 @@
     '#walletTable tr.wn-grow td{background:var(--bg-1);color:var(--tx-2);font-weight:700;font-size:.8rem;padding-top:14px}',
     '.wn-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}',
     '.wn-tab:focus-visible,.wn-cat:focus-visible,.wn-switch:focus-visible,.wn-seg button:focus-visible,.wn-pin:focus-visible,.wn-acc:focus-visible,.wn-ibtn:focus-visible,.wn-add:focus-visible,#walletPanel .wn-card:focus-visible{outline:2px solid var(--acc-1);outline-offset:2px}',
-    '@media (max-width:720px){.wn-hero{flex-wrap:wrap}.wn-hr{margin-left:0}.wn-tabs{padding:0 12px}.wn-tab{padding:10px 8px;font-size:.85rem}#walletPanel.wn-ready>.panel__body{padding:14px 12px}.wn-seg{margin-left:0}}',
+    '@media (max-width:720px){.wn-hero{flex-wrap:wrap}.wn-hr{margin-left:0}.wn-tabs{padding:0 12px}.wn-tab{padding:10px 8px;font-size:.85rem}#walletPanel.wn-ready>.panel__body,.wn-cambio{padding:14px 12px}.wn-seg{margin-left:0}}',
     '@media (prefers-reduced-motion:reduce){#walletPanel .wn-card,.wn-switch i,.wn-switch i::after{transition:none}}'
   ].join('\n');
 
@@ -486,9 +527,13 @@
     doc.addEventListener('click', onClick);
     doc.addEventListener('keydown', onKey);
     doc.addEventListener('gn:tokenchange', function () { S.cat = ''; });
-    root.addEventListener('hashchange', function () { ensureDashTabs(); });
+    root.addEventListener('hashchange', onHash);
     if (typeof root.MutationObserver === 'function') {
-      S.mo = new root.MutationObserver(function () { guarded(process); ensureDashTabs(); });
+      S.mo = new root.MutationObserver(function (recs) {
+        // Lo que redibuja el conversor (cotización, órdenes) no es un dibujo de app.js.
+        if (recs && recs.length && recs.every(function (r) { return inCambio(r.target); })) return;
+        guarded(process); ensureDashTabs();
+      });
       var p = $('#walletPanel'), d = $('#walletDashboardPanel');
       if (p) S.mo.observe(p, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['hidden'] });
       if (d) S.mo.observe(d, { childList: true });
@@ -498,6 +543,7 @@
   function noop() {}
   root.WalletTheme = {
     version: VERSION,
+    showTab: showTab,
     process: function () { guarded(process); },
     themeWalletNow: function () { guarded(process); },
     applyCurrencyTheme: function (card) { var k = card && card.getAttribute('data-cur'); if (k && COLOR_MAP[k]) card.setAttribute('style', '--wn-c:' + COLOR_MAP[k]); },
