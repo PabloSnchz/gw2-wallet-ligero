@@ -1,53 +1,20 @@
 /*!
  * js/activities.js — Panel de Actividades (Objetivos / Home Nodes)
- * v3.20.4 (2026-09-30) - Fix: activate() ya no borra la cache de logros de otro modulo
- *
- * CAMBIOS v3.20.3:
- * - activate() llamaba a cleanAchievementsCache(), que borra TODAS las claves
- *   localStorage con prefijo 'ach_'. Esa es exactamente la familia que escribe
- *   api-gw2.js putCache() para los logros: ach_acc:<fp> (TTL 2 min) y
- *   ach_meta_v2:es:<ids> (TTL 12 h, la cara). router.js invoca
- *   Activities.activate() en cada navegacion a #/activities, asi que abrir el
- *   panel dejaba sin cache de logros a TODAS las cuentas y la pagina de Logros
- *   arrancaba en frio (~433 requests) aunque acabas de cargar.
- * - cleanActivitiesCache() SE CONSERVA: borra prefijos 'psna:' y
- *   ACTIVITIES_CACHE_KEYS, que son datos de este mismo modulo. La regla
- *   aplicada es "un modulo no borra la cache de otro".
- * - cleanAchievementsCache() sigue definida, para cuando se quiera llamar a
- *   proposito. No se borro ninguna funcion.
- * - Sin cambio de UI: no toca CSS ni estructura. tests/idea49.activities-cache-wipe.test.js
- *
- *
- * CAMBIOS v3.20.2:
- * - El bloque de fractales escribia sus estilos en `style=` inline, mezclando las
- *   3 capas de CSS y metiendo literales rgba() de color semantico dentro del JS.
- *   El Code Reviewer lo marco en el COMM 019 (task-4a1841efc329).
- * - La estructura (padding, flex, grid, tipografia) se movio a main.css (capa 1)
- *   bajo .fractals-stack / .fractal-card y sus clases hijas.
- * - La piel (borde neutro, border-radius) se movio a theme-polish.css (capa 2).
- * - El color semantico se movio al nuevo js/fractal-tracker-theme.js, que es la
- *   UNICA capa autorizada a escribir `borderLeft`. activities.js solo marca el rol
- *   con `data-fl-color` ("info" | "t4" | "cm"); el theme lo resuelve.
- * - Sin cambio funcional: mismos datos, misma estructura, mismo texto.
- *
- * CAMBIOS v3.20.1:
- * - loadToday() y loadTomorrow() hardcodeaban 3 fractales T4 + 3 escalas cada una,
- *   de modo que el panel mostraba SIEMPRE los mismos nombres, presentados como los
- *   "dailies de hoy" y los "dailies de mañana". Era informacion falsa.
- * - La API GW2 no expone esa rotacion: /v2/fractals -> {"error":"not found"} y
- *   /v2/achievements/daily -> {"text":"API not active"} (retirado tras Wizard's Vault).
- * - Ahora la rotacion queda marcada rotationAvailable:false y el panel muestra un
- *   aviso explicito. El tracker de Solitary Throne CM NO se toca: ese es real
- *   (viene de getAccountAchievements).
- *
- * v3.19.6 (2026-04-05) - Persistencia robusta de Piedras Vetustas (sin Promesas como claves)
- *
- * CAMBIOS v3.19.6:
- * - Creada función síncrona hashToken16Sync() para evitar Promesas como claves de objeto
- * - Persistencia independiente de piedras en localStorage con clave gn_activities_stones_<hash>_<semana>
- * - setStones y setWeeklyKey ahora usan hash síncrono, garantizando claves strings
- * - Eliminado el bug que generaba "[object Promise]" en localStorage
- * - El contador de piedras persiste correctamente al recargar y al cambiar de API key
+ * v3.23.0 (2026-10-21) - PSNA renovado (BL-048): el dia y la cuenta regresiva en
+ *   grande (se actualiza cada 30 s), lugares como botones grandes con "Copiar" y
+ *   el icono del waypoint servido desde assets/ (el de la wiki dejo de cargar y
+ *   se veia el texto "WP"). Estilos propios en <style id="psnaStyle">, con las
+ *   variables del theme. Funcion pura nueva psnaFalta.
+ * v3.22.0 (2026-10-21) - El PSNA dice de que dia son los lugares y cuando cambian,
+ *   y se actualiza solo en el cambio de las 08:00 UTC aunque la pagina quede
+ *   abierta (BL-044). Funciones puras psnaNextChange y psnaDayText.
+ * v3.21.0 (2026-10-21) - Fix: el PSNA muestra el dia correcto (BL-013): funcion
+ *   pura psnaPickDay, lee solo assets/data/psna-schedule.json, cache 'psna:data:v4'.
+ * v3.20.4 (2026-09-30) - activate() ya no borra la cache de logros de otro modulo.
+ * v3.20.2 - Estilos de fractales movidos a main.css / theme-polish.css.
+ * v3.20.1 - La rotacion de fractales no esta en la API: aviso en vez de datos falsos.
+ * v3.19.6 (2026-04-05) - Persistencia de Piedras Vetustas con hash sincrono.
+ * Historial completo de cambios: git log de este archivo.
  */
 
 (function (root) {
@@ -59,13 +26,13 @@
   // =======================================================================
   var CONFIG = {
     PSNA_DATA_PATHS: [
-      'assets/data/psna-schedule.json',
-      'https://raw.githubusercontent.com/PabloSnchz/gw2-wallet-ligero/main/assets/data/psna-schedule.json'
+      'assets/data/psna-schedule.json'
     ],
-    PSNA_CACHE_KEY: 'psna:schedule',
+    PSNA_CACHE_KEY: 'psna:data:v4',
     PSNA_LAST_UPDATE_KEY: 'psna:lastUpdate',
     PSNA_DAILY_CACHE_PREFIX: 'psna:',
     ACTIVITIES_CACHE_KEYS: [
+      'psna:data:v4',
       'psna:schedule',
       'psna:lastUpdate',
       'gn:wiki:thumbs'
@@ -79,10 +46,11 @@
     inited: false,
     active: false,
     token: null,
-    
+
     daily: {
       psna: null,
       psnaSchedule: null,
+      psnaData: null,
       psnaLastUpdate: null,
       fractals: {
         status: 'idle',
@@ -108,12 +76,12 @@
         collected: {}
       }
     },
-    
+
     weekly: {
       key: false,
       stones: 0
     },
-    
+
     toggles: {
       v: 2,
       date: null,
@@ -121,16 +89,16 @@
       homeNodesCollected: {},
       byKey: {}
     },
-    
+
     assets: {
       key: null,
       stone: null
     },
-    
+
     _psnaFetchId: 0,
     _fractalsFetchId: 0,
     _ectoFetchId: 0,
-    
+
     homeNodesLoaded: false,
     homeNodesRendered: false
   };
@@ -138,116 +106,129 @@
   // =======================================================================
   // 2. DATOS ESTÁTICOS DE RESPALDO
   // =======================================================================
-  var FALLBACK_PSNA_SCHEDULE = [
-    { date: '2026-03-17', waypoints: [
-      'Camp Resolve Waypoint',
-      'Desider Atum Waypoint',
-      'Waste Hollows Waypoint',
-      'Garenhoff',
-      'Travelen\'s Waypoint',
-      'Temperus Point Waypoint'
-    ]},
-    { date: '2026-03-18', waypoints: [
-      'Town of Prosperity',
-      'Swampwatch Post',
-      'Caer Shadowlain',
-      'Shieldbluff Waypoint',
-      'Mennerheim',
-      'Ferrusatos Village'
-    ]},
-    { date: '2026-03-19', waypoints: [
-      'Blue Oasis',
-      'Seraph Protectors',
-      'Armada Harbor',
-      'Altar Brook Trading Post',
-      'Rocklair',
-      'Village of Scalecatch Waypoint'
-    ]},
-    { date: '2026-03-20', waypoints: [
-      'Repair Station',
-      'Breth Ayahusasca',
-      'Shelter Docks',
-      'Pearl Islet Waypoint',
-      'Dolyak Pass Waypoint',
-      'Hawkgates Waypoint'
-    ]},
-    { date: '2026-03-21', waypoints: [
-      'Camp Resolve Waypoint',
-      'Gallant\'s Folly',
-      'Augur\'s Torch',
-      'Vigil Keep Waypoint',
-      'Baldstead',
-      'Bovarin Estate'
-    ]},
-    { date: '2026-03-22', waypoints: [
-      'Azarr\'s Arbor',
-      'Mabon Waypoint',
-      'Fort Trinity Waypoint',
-      'Mudflat Camp',
-      'Blue Ice Shining Waypoint',
-      'Snow Ridge Camp Waypoint'
-    ]},
-    { date: '2026-03-23', waypoints: [
-      'Restoration Refuge',
-      'Lionguard Waystation Waypoint',
-      'Rally Waypoint',
-      'Marshwatch Haven Waypoint',
-      'Ridgerock Camp Waypoint',
-      'Haymal Gore'
-    ]},
-    { date: '2026-03-24', waypoints: [
-      'Camp Resolve Waypoint',
-      'Desider Atum Waypoint',
-      'Waste Hollows Waypoint',
-      'Garenhoff',
-      'Travelen\'s Waypoint',
-      'Temperus Point Waypoint'
-    ]}
-  ];
-
-  var PSNA_CODES = {
-    'Camp Resolve Waypoint': '[&BH8HAAA=]',
-    'Desider Atum Waypoint': '[&BEgAAAA=]',
-    'Waste Hollows Waypoint': '[&BKgCAAA=]',
-    'Garenhoff': '[&BBEAAAA=]',
-    'Travelen\'s Waypoint': '[&BGQCAAA=]',
-    'Temperus Point Waypoint': '[&BIMBAAA=]',
-    'Town of Prosperity': '[&BH4HAAA=]',
-    'Swampwatch Post': '[&BMIAAAA=]',
-    'Caer Shadowlain': '[&BP0CAAA=]',
-    'Shieldbluff Waypoint': '[&BKYAAAA=]',
-    'Mennerheim': '[&BDgDAAA=]',
-    'Ferrusatos Village': '[&BPEBAAA=]',
-    'Blue Oasis': '[&BH8HAAA=]',
-    'Seraph Protectors': '[&BF0AAAA=]',
-    'Armada Harbor': '[&BO4CAAA=]',
-    'Altar Brook Trading Post': '[&BEUDAAA=]',
-    'Rocklair': '[&BJcBAAA=]',
-    'Village of Scalecatch Waypoint': '[&BOcBAAA=]',
-    'Repair Station': '[&BJcHAAA=]',
-    'Breth Ayahusasca': '[&BMwCAAA=]',
-    'Shelter Docks': '[&BKYCAAA=]',
-    'Pearl Islet Waypoint': '[&BNUGAAA=]',
-    'Dolyak Pass Waypoint': '[&BHsBAAA=]',
-    'Hawkgates Waypoint': '[&BNMAAAA=]',
-    'Gallant\'s Folly': '[&BNMCAAA=]',
-    'Augur\'s Torch': '[&BB8DAAA=]',
-    'Vigil Keep Waypoint': '[&BJIBAAA=]',
-    'Baldstead': '[&BE8CAAA=]',
-    'Bovarin Estate': '[&BF8BAAA=]',
-    'Azarr\'s Arbor': '[&BIYHAAA=]',
-    'Mabon Waypoint': '[&BDoBAAA=]',
-    'Fort Trinity Waypoint': '[&BO4CAAA=]',
-    'Mudflat Camp': '[&BKcBAAA=]',
-    'Blue Ice Shining Waypoint': '[&BIUCAAA=]',
-    'Snow Ridge Camp Waypoint': '[&BCECAAA=]',
-    'Restoration Refuge': '[&BIgHAAA=]',
-    'Lionguard Waystation Waypoint': '[&BEwDAAA=]',
-    'Rally Waypoint': '[&BNIEAAA=]',
-    'Marshwatch Haven Waypoint': '[&BKYBAAA=]',
-    'Ridgerock Camp Waypoint': '[&BIMCAAA=]',
-    'Haymal Gore': '[&BB4CAAA=]'
+  // Rotacion semanal verificada contra la wiki el 2026-10-21 (BL-013).
+  // Respaldo si assets/data/psna-schedule.json no se puede leer.
+  var FALLBACK_PSNA_DATA = {
+    resetUtcHour: 8,
+    rotation: {
+      monday: [
+        { name: 'Restoration Refuge', code: '[&BIcHAAA=]' },
+        { name: 'Lionguard Waystation Waypoint', code: '[&BEwDAAA=]' },
+        { name: 'Rally Waypoint', code: '[&BNIEAAA=]' },
+        { name: 'Marshwatch Haven Waypoint', code: '[&BKYBAAA=]' },
+        { name: 'Ridgerock Camp Waypoint', code: '[&BIMCAAA=]' },
+        { name: 'Haymal Gore', code: '[&BA8CAAA=]' }
+      ],
+      tuesday: [
+        { name: 'Camp Resolve Waypoint', code: '[&BH8HAAA=]' },
+        { name: 'Desider Atum Waypoint', code: '[&BEgAAAA=]' },
+        { name: 'Waste Hollows Waypoint', code: '[&BKgCAAA=]' },
+        { name: 'Garenhoff', code: '[&BBkAAAA=]' },
+        { name: 'Travelen\'s Waypoint', code: '[&BGQCAAA=]' },
+        { name: 'Temperus Point Waypoint', code: '[&BIMBAAA=]' }
+      ],
+      wednesday: [
+        { name: 'Town of Prosperity', code: '[&BH4HAAA=]' },
+        { name: 'Swampwatch Post', code: '[&BMIBAAA=]' },
+        { name: 'Caer Shadowfain', code: '[&BP0CAAA=]' },
+        { name: 'Shieldbluff Waypoint', code: '[&BKYAAAA=]' },
+        { name: 'Mennerheim', code: '[&BDgDAAA=]' },
+        { name: 'Ferrusatos Village', code: '[&BPEBAAA=]' }
+      ],
+      thursday: [
+        { name: 'Blue Oasis', code: '[&BKsHAAA=]' },
+        { name: 'Seraph Protectors', code: '[&BF0AAAA=]' },
+        { name: 'Armada Harbor', code: '[&BO4CAAA=]' },
+        { name: 'Altar Brook Trading Post', code: '[&BIMAAAA=]' },
+        { name: 'Rocklair', code: '[&BF0GAAA=]' },
+        { name: 'Village of Scalecatch Waypoint', code: '[&BOcBAAA=]' }
+      ],
+      friday: [
+        { name: 'Repair Station', code: '[&BJQHAAA=]' },
+        { name: 'Breth Ayahusasca', code: '[&BMwCAAA=]' },
+        { name: 'Shelter Docks', code: '[&BJsCAAA=]' },
+        { name: 'Pearl Islet Waypoint', code: '[&BNUGAAA=]' },
+        { name: 'Dolyak Pass Waypoint', code: '[&BHsBAAA=]' },
+        { name: 'Hawkgates Waypoint', code: '[&BNMAAAA=]' }
+      ],
+      saturday: [
+        { name: 'Camp Resolve Waypoint', code: '[&BH8HAAA=]' },
+        { name: 'Gallant\'s Folly', code: '[&BLkCAAA=]' },
+        { name: 'Augur\'s Torch', code: '[&BBEDAAA=]' },
+        { name: 'Vigil Keep Waypoint', code: '[&BJIBAAA=]' },
+        { name: 'Balddistead', code: '[&BEICAAA=]' },
+        { name: 'Bovarin Estate', code: '[&BBABAAA=]' }
+      ],
+      sunday: [
+        { name: 'Azarr\'s Arbor', code: '[&BIkHAAA=]' },
+        { name: 'Mabon Waypoint', code: '[&BDoBAAA=]' },
+        { name: 'Fort Trinity Waypoint', code: '[&BO4CAAA=]' },
+        { name: 'Mudflat Camp', code: '[&BC0AAAA=]' },
+        { name: 'Blue Ice Shining Waypoint', code: '[&BIUCAAA=]' },
+        { name: 'Snow Ridge Camp Waypoint', code: '[&BCECAAA=]' }
+      ]
+    }
   };
+
+  // PSNA-DAY:BEGIN — funcion pura, la prueba tests/psna-day.test.cjs (BL-013)
+  // Devuelve { date, weekday, waypoints, source } con los 6 lugares vigentes en
+  // `now`, o null si no hay datos. La ubicacion cambia a las 08:00 UTC (o
+  // data.resetUtcHour): antes de esa hora vale el dia anterior.
+  // Orden: rotacion semanal -> fecha exacta en schedule -> mismo dia de la
+  // semana en schedule. Nunca devuelve el dia equivocado.
+  var PSNA_WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  function psnaPickDay(data, now) {
+    if (!data || !now || isNaN(now.getTime())) return null;
+    var hour = typeof data.resetUtcHour === 'number' ? data.resetUtcHour : 8;
+    var t = new Date(now.getTime() - hour * 3600000);
+    var key = t.getUTCFullYear() + '-' + String(t.getUTCMonth() + 1).padStart(2, '0') + '-' + String(t.getUTCDate()).padStart(2, '0');
+    var wd = PSNA_WEEKDAYS[t.getUTCDay()];
+    function six(w) { return Array.isArray(w) && w.length === 6 ? w : null; }
+    function out(w, source) { return { date: key, weekday: wd, waypoints: w, source: source }; }
+    if (data.rotation && six(data.rotation[wd])) return out(data.rotation[wd], 'rotation');
+    var list = Array.isArray(data.schedule) ? data.schedule : [];
+    var i;
+    for (i = 0; i < list.length; i++) {
+      if (list[i] && list[i].date === key && six(list[i].waypoints)) return out(list[i].waypoints, 'date');
+    }
+    for (i = 0; i < list.length; i++) {
+      var d = list[i] && list[i].date ? new Date(list[i].date + 'T12:00:00Z') : null;
+      if (d && !isNaN(d.getTime()) && PSNA_WEEKDAYS[d.getUTCDay()] === wd && six(list[i].waypoints)) return out(list[i].waypoints, 'weekday');
+    }
+    return null;
+  }
+
+  // Proximo cambio de ubicacion (Date) despues de `now`, o null.
+  function psnaNextChange(data, now) {
+    if (!now || isNaN(now.getTime())) return null;
+    var hour = (data && typeof data.resetUtcHour === 'number') ? data.resetUtcHour : 8;
+    var n = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hour, 0, 0));
+    if (n.getTime() <= now.getTime()) n = new Date(n.getTime() + 86400000);
+    return n;
+  }
+
+  // Texto para el jugador: de que dia son los lugares y cuanto falta para el cambio.
+  // Ej.: "Lugares del miércoles 21/10 · cambian en 3 h 05 min (08:00 UTC)".
+  var PSNA_DIAS_ES = { sunday: 'domingo', monday: 'lunes', tuesday: 'martes', wednesday: 'miércoles',
+    thursday: 'jueves', friday: 'viernes', saturday: 'sábado' };
+  // Cuanto falta para `next`: "9 h 05 min" o "45 min" ('' si no hay datos).
+  function psnaFalta(next, now) {
+    if (!next || !now) return '';
+    var min = Math.max(0, Math.ceil((next.getTime() - now.getTime()) / 60000));
+    var h = Math.floor(min / 60), m = min % 60;
+    return h ? h + ' h ' + String(m).padStart(2, '0') + ' min' : m + ' min';
+  }
+  function psnaDayText(day, next, now) {
+    if (!day || !day.date) return '';
+    var p = day.date.split('-');
+    var txt = 'Lugares del ' + (PSNA_DIAS_ES[day.weekday] || day.weekday) + ' ' + p[2] + '/' + p[1];
+    if (next && now) {
+      txt += ' · cambian en ' + psnaFalta(next, now) +
+        ' (' + String(next.getUTCHours()).padStart(2, '0') + ':00 UTC)';
+    }
+    return txt;
+  }
+  // PSNA-DAY:END
 
   var PSNA_REGIONS = ['Maguuma Wastes', 'Maguuma Jungle', 'Ruins of Orr', 'Kryta', 'Shiverpeaks', 'Ascalon'];
   var PSNA_NPCS = ['Mehem the Traveled', 'The Fox', 'Specialist Yana', 'Lady Derwena', 'Despina Katelyn', 'Verma Giftrender'];
@@ -256,7 +237,7 @@
   // 3. UTILIDADES BÁSICAS
   // =======================================================================
   function $(s, r) { return (r || document).querySelector(s); }
-  
+
   function esc(s) {
     return String(s || '').replace(/[&<>"']/g, function(m) {
       if (m === '&') return '&amp;';
@@ -266,7 +247,7 @@
       return '&#39;';
     });
   }
-  
+
   function copyToClipboard(txt) {
     try {
       navigator.clipboard.writeText(txt);
@@ -276,14 +257,14 @@
       window.prompt('Copiar:', txt);
     }
   }
-  
+
   function pad2(n) { return String(n).padStart(2, '0'); }
-  
+
   function dayKeyUTC() {
     var d = new Date();
     return d.getUTCFullYear() + '-' + pad2(d.getUTCMonth() + 1) + '-' + pad2(d.getUTCDate());
   }
-  
+
   function weekKeyUTC() {
     var now = new Date();
     var d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
@@ -293,7 +274,7 @@
     var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
     return d.getUTCFullYear() + '-W' + String(weekNo).padStart(2, '0');
   }
-  
+
   function withTimeout(promise, ms, label) {
     return Promise.race([
       promise,
@@ -304,7 +285,7 @@
       })
     ]);
   }
-  
+
   var requestIdle = (typeof window !== 'undefined' && window.requestIdleCallback) ?
     window.requestIdleCallback :
     function(cb) { return setTimeout(function() { cb({ didTimeout: false, timeRemaining: function() { return 0; } }); }, 250); };
@@ -312,7 +293,7 @@
   // =======================================================================
   // 4. PERSISTENCIA (CORREGIDA)
   // =======================================================================
-  
+
   // Versión síncrona del hash (evita Promesas como claves)
   function hashToken16Sync(token) {
     if (!token) return 'no-token';
@@ -323,7 +304,7 @@
     }
     return ('00000000' + (h >>> 0).toString(16)).slice(-8);
   }
-  
+
   // Versión asíncrona (se mantiene por si se necesita en el futuro, pero no se usa para claves)
   async function hashToken16(token) {
     if (!token) return 'no-token';
@@ -343,7 +324,7 @@
       var raw = JSON.parse(localStorage.getItem('gn_activities_toggles') || '{}');
       var today = dayKeyUTC();
       var thisWeek = weekKeyUTC();
-      
+
       var toggles = Object.assign({
         v: 2,
         date: today,
@@ -351,15 +332,15 @@
         homeNodesCollected: {},
         byKey: {}
       }, raw);
-      
+
       if (toggles.date !== today) {
         toggles.date = today;
         toggles.homeNodesCollected = {};
       }
-      
+
       state.toggles = toggles;
       state.daily.homeNodes.collected = toggles.homeNodesCollected;
-      
+
     } catch (e) {
       console.warn(LOG, 'loadToggles error', e);
     }
@@ -417,7 +398,7 @@
         return true;
       });
       const isClaimed = keyFarmers.length > 0;
-      console.log(LOG, '[Key Detection] Resultado:', isClaimed ? 'RECLAMADA ✓' : 'DISPONIBLE', 
+      console.log(LOG, '[Key Detection] Resultado:', isClaimed ? 'RECLAMADA ✓' : 'DISPONIBLE',
                   keyFarmers.length ? `(${keyFarmers.map(f => f.name).join(', ')})` : '');
       return isClaimed;
     } catch (error) {
@@ -463,7 +444,7 @@
   async function loadWeeklyForToken(token) {
     var keyId = hashToken16Sync(token);  // Usamos versión síncrona para la clave del bucket
     var bucket = state.toggles.byKey[keyId] || { week: weekKeyUTC(), weeklyKey: false, antiqueStoneCount: 0 };
-    
+
     var thisWeek = weekKeyUTC();
     if (bucket.week !== thisWeek) {
       bucket = { week: thisWeek, weeklyKey: false, antiqueStoneCount: 0 };
@@ -473,17 +454,17 @@
         console.log(LOG, `[Weekly] Nueva semana (${thisWeek}), detección automática:`, detected);
       }
     }
-    
+
     state.toggles.byKey[keyId] = bucket;
     state.weekly.key = bucket.weeklyKey;
-    
+
     // Cargar piedras desde storage independiente
     const stones = await loadStonesFromStorage(token);
     state.weekly.stones = stones;
     // Actualizar bucket por consistencia
     bucket.antiqueStoneCount = stones;
     state.toggles.byKey[keyId] = bucket;
-    
+
     saveToggles();
   }
 
@@ -512,12 +493,12 @@
   function setStones(value) {
     var newValue = Math.max(0, Math.min(5, Number(value || 0)));
     state.weekly.stones = newValue;
-    
+
     // Guardar en storage independiente
     if (state.token) {
       saveStonesToStorage(state.token, newValue);
     }
-    
+
     // Actualizar bucket por compatibilidad (usando hash síncrono)
     var keyId = hashToken16Sync(state.token);
     if (!state.toggles.byKey[keyId]) {
@@ -525,7 +506,7 @@
     }
     state.toggles.byKey[keyId].antiqueStoneCount = newValue;
     saveToggles();
-    
+
     renderWeekly();
   }
 
@@ -572,7 +553,7 @@
   }
 
   // =======================================================================
-  // 7. SERVICIO PSNA (sin cambios)
+  // 7. SERVICIO PSNA (v3.21.0: dia por rotacion semanal, ver PSNA-DAY)
   // =======================================================================
   var PSNA = {
     loadSchedule: async function(force) {
@@ -584,26 +565,30 @@
         try {
           var cached = localStorage.getItem(CONFIG.PSNA_CACHE_KEY);
           if (cached) {
-            state.daily.psnaSchedule = JSON.parse(cached);
-            console.log(LOG, '📦 Usando schedule cacheado');
-            return true;
+            var cachedData = JSON.parse(cached);
+            if (cachedData && (cachedData.rotation || Array.isArray(cachedData.schedule))) {
+              state.daily.psnaData = cachedData;
+              state.daily.psnaSchedule = cachedData.schedule || null;
+              console.log(LOG, '📦 Usando datos PSNA cacheados');
+              return true;
+            }
           }
         } catch (e) { console.warn(LOG, 'Error reading cache', e); }
       }
       for (var i = 0; i < CONFIG.PSNA_DATA_PATHS.length; i++) {
         var url = CONFIG.PSNA_DATA_PATHS[i];
-        if (url.startsWith('assets/') && window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1')) continue;
         try {
           console.log(LOG, '🌐 Cargando PSNA desde:', url);
           var response = await fetch(url + '?t=' + Date.now());
           if (!response.ok) continue;
           var data = await response.json();
-          if (data && data.schedule && Array.isArray(data.schedule)) {
+          if (data && (data.rotation || Array.isArray(data.schedule))) {
             if (fetchId !== state._psnaFetchId) return false;
-            state.daily.psnaSchedule = data.schedule;
+            state.daily.psnaData = data;
+            state.daily.psnaSchedule = data.schedule || null;
             state.daily.psnaLastUpdate = data.lastUpdated || today;
             try {
-              localStorage.setItem(CONFIG.PSNA_CACHE_KEY, JSON.stringify(data.schedule));
+              localStorage.setItem(CONFIG.PSNA_CACHE_KEY, JSON.stringify(data));
               localStorage.setItem(CONFIG.PSNA_LAST_UPDATE_KEY, today);
             } catch (e) { console.warn(LOG, 'No se pudo guardar en localStorage'); }
             console.log(LOG, '✅ Schedule actualizado desde:', url);
@@ -612,28 +597,39 @@
         } catch (e) { console.warn(LOG, '⚠️ Error cargando desde', url, e.message); }
       }
       if (fetchId !== state._psnaFetchId) return false;
-      console.warn(LOG, '⚠️ Usando schedule de respaldo');
-      state.daily.psnaSchedule = FALLBACK_PSNA_SCHEDULE;
+      console.warn(LOG, '⚠️ Usando rotación de respaldo');
+      state.daily.psnaData = FALLBACK_PSNA_DATA;
+      state.daily.psnaSchedule = null;
       return false;
     },
     load: async function(forceRefresh) {
       console.log(LOG, '📅 PSNA.load llamado');
       await this.loadSchedule(forceRefresh);
-      var today = new Date();
-      var todayStr = today.getUTCFullYear() + '-' + pad2(today.getUTCMonth() + 1) + '-' + pad2(today.getUTCDate());
-      var todayData = null;
-      for (var i = 0; i < state.daily.psnaSchedule.length; i++) {
-        if (state.daily.psnaSchedule[i].date === todayStr) { todayData = state.daily.psnaSchedule[i]; break; }
-      }
-      if (!todayData) {
-        console.warn(LOG, '⚠️ No hay datos para hoy, usando primero');
-        todayData = state.daily.psnaSchedule[0];
+      var now = new Date();
+      var todayData = psnaPickDay(state.daily.psnaData, now);
+      state.daily.psnaDay = todayData;
+      // Se actualiza solo en el proximo cambio (BL-044): sin esto, una pestana
+      // abierta desde la noche sigue mostrando los lugares del dia anterior.
+      if (state._psnaTimer) clearTimeout(state._psnaTimer);
+      var next = psnaNextChange(state.daily.psnaData, now);
+      if (next) {
+        state._psnaTimer = setTimeout(function () {
+          state._psnaTimer = null;
+          if (state.active) PSNA.load(false);
+        }, Math.min(next.getTime() - now.getTime() + 2000, 2147483000));
       }
       var psnaManual = [];
+      if (!todayData) {
+        console.warn(LOG, '⚠️ No hay datos PSNA para hoy: no se muestra un día equivocado');
+        state.daily.psna = psnaManual;
+        renderPSNA();
+        renderDailyKPI();
+        return;
+      }
       for (var j = 0; j < 6; j++) {
         var waypoint = todayData.waypoints[j];
-        var name = typeof waypoint === 'object' ? waypoint.name : waypoint;
-        var code = typeof waypoint === 'object' ? waypoint.code : PSNA_CODES[name];
+        var name = waypoint && typeof waypoint === 'object' ? waypoint.name : String(waypoint || '');
+        var code = waypoint && typeof waypoint === 'object' ? (waypoint.code || '') : '';
         psnaManual.push({
           region: PSNA_REGIONS[j],
           npc: PSNA_NPCS[j],
@@ -650,10 +646,46 @@
   };
 
   // =======================================================================
-  // 8. RENDERIZADO PSNA (sin cambios)
+  // 8. RENDERIZADO PSNA (BL-048)
   // =======================================================================
+  // Icono local: el thumbnail de la wiki dejo de cargar y se veia el alt "WP".
+  var PSNA_WP_ICON = 'assets/icons/733330.png';
+  var PSNA_CSS = [
+    '.psna{margin:20px 0;padding:16px;border:1px solid var(--bd-1,rgba(255,255,255,.08));border-radius:var(--card-radius,12px)}',
+    '.psna__head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}',
+    '.psna__titles{flex:1;min-width:200px}',
+    '.psna__title{margin:0;font-size:1.05rem}',
+    '.psna__sub{margin:2px 0 0;font-size:.8rem;color:var(--muted,#8E96A3)}',
+    '.psna-day{display:flex;align-items:center;gap:12px 28px;flex-wrap:wrap;padding:12px 16px;margin-bottom:12px;border-radius:10px;background:var(--bg-2,rgba(255,255,255,.04));border:1px solid var(--bd-1,rgba(255,255,255,.08));border-left:4px solid var(--gn-gold,#F2B94B)}',
+    '.psna-day__when,.psna-day__next{display:flex;flex-direction:column;gap:2px}',
+    '.psna-day__label{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted,#8E96A3)}',
+    '.psna-day__name{font-size:1.25rem;color:var(--tx-1,#F4F6FA)}',
+    '.psna-day__count{font-size:1.25rem;color:var(--gn-gold,#F2B94B);font-variant-numeric:tabular-nums}',
+    '.psna-day__hour{font-size:.75rem;color:var(--tx-2,#C9D0DA)}',
+    '.psna-day .pill{margin-left:auto}',
+    '.psna__grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}',
+    '.psna-wp{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;text-align:left;font:inherit;color:var(--tx-1,#F4F6FA);background:var(--bg-1,rgba(255,255,255,.03));border:1px solid var(--bd-1,rgba(255,255,255,.08));border-radius:10px;cursor:pointer;transition:border-color .15s,transform .15s}',
+    '.psna-wp:hover:not(:disabled){border-color:var(--gn-gold,#F2B94B);transform:translateY(-1px)}',
+    '.psna-wp:focus-visible{outline:2px solid var(--gn-gold,#F2B94B);outline-offset:2px}',
+    '.psna-wp:disabled{opacity:.6;cursor:not-allowed}',
+    '.psna-wp__icon{flex-shrink:0}',
+    '.psna-wp__body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}',
+    '.psna-wp__name{font-weight:700;font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.psna-wp__npc{font-size:.75rem;color:var(--tx-2,#C9D0DA);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+    '.psna-wp__act{flex-shrink:0;font-size:.72rem;padding:3px 8px;border-radius:999px;border:1px solid var(--bd-2,rgba(255,255,255,.14));color:var(--tx-2,#C9D0DA)}',
+    '.psna-wp.is-copied{border-color:var(--color-green,#3fb950)}',
+    '.psna-wp.is-copied .psna-wp__act{color:var(--color-green,#3fb950);border-color:currentColor}',
+    '@media (prefers-reduced-motion:reduce){.psna-wp{transition:none}.psna-wp:hover:not(:disabled){transform:none}}'
+  ].join('\n');
+  function ensurePsnaStyle() {
+    if (document.getElementById('psnaStyle')) return;
+    var st = document.createElement('style');
+    st.id = 'psnaStyle';
+    st.textContent = PSNA_CSS;
+    document.head.appendChild(st);
+  }
+
   function renderPSNA() {
-    console.log(LOG, '🎨 renderPSNA() llamado');
     var grid = $('#psnaGrid');
     var status = $('#psnaStatus');
     var copyAll = $('#psnaCopyAll');
@@ -661,73 +693,78 @@
       console.error(LOG, '❌ psnaGrid no encontrado en el DOM');
       return;
     }
+    ensurePsnaStyle();
     var list = state.daily.psna || [];
     if (list.length === 0) {
       grid.innerHTML = '<p class="muted">No hay datos PSNA disponibles</p>';
       if (status) status.innerHTML = '<span class="pill s-error">❌ Sin datos</span>';
       return;
     }
-    grid.style.display = 'grid';
-    grid.style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
-    grid.style.gap = '10px';
     var html = '';
     for (var i = 0; i < list.length; i++) {
       var item = list[i];
-      var hasChat = item.chat && item.chat.length > 0;
-      var disabled = hasChat ? '' : ' disabled';
-      var tooltip = hasChat ? 'Copiar waypoint' : 'Código no disponible';
-      html += `
-        <article class="card psna-card" data-psna-region="${esc(item.region)}" style="padding: 10px; display: flex; flex-direction: column; width: 100%; border: 1px solid rgba(255,255,255,0.08); border-left: 3px solid rgba(123,194,255,0.5); box-shadow: 0 0 8px rgba(90,110,154,0.12);">
-          <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-            <img src="https://wiki.guildwars2.com/images/thumb/d/d2/Waypoint_%28map_icon%29.png/32px-Waypoint_%28map_icon%29.png" 
-                 width="24" height="24" alt="WP" loading="lazy" style="flex-shrink: 0;">
-            <button class="btn btn--ghost btn--xs psna-copy-btn" 
-                    data-psna-copy data-psna-index="${i}" 
-                    title="${tooltip}" data-tip="${tooltip}"${disabled}
-                    style="flex: 1; text-align: left; justify-content: flex-start; padding: 4px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-              ${esc(item.wpName)}
-            </button>
-          </div>
-          <div class="muted" style="margin-top: 6px; font-size: 0.7rem; line-height: 1.3;">
-            <div><strong>${esc(item.npc)}</strong> — ${esc(item.region)}</div>
-            <div style="color: var(--muted); font-size: 0.65rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(item.name)}</div>
-          </div>
-          ${!hasChat ? '<div class="pill s-error" style="margin-top: 6px; font-size: 0.6rem; text-align: center;">❌ Sin código</div>' : ''}
-        </article>
-      `;
+      var hasChat = !!(item.chat && item.chat.length);
+      var tip = hasChat ? 'Copiar waypoint ' + item.chat : 'Código no disponible';
+      html += '<button type="button" class="psna-wp" data-psna-copy data-psna-index="' + i + '"' +
+        ' data-psna-region="' + esc(item.region) + '" title="' + esc(tip) + '"' +
+        ' aria-label="' + esc((hasChat ? 'Copiar waypoint de ' : 'Sin código: ') + item.wpName) + '"' +
+        (hasChat ? '' : ' disabled') + '>' +
+        '<img class="psna-wp__icon" src="' + PSNA_WP_ICON + '" width="32" height="32" alt="" loading="lazy">' +
+        '<span class="psna-wp__body"><span class="psna-wp__name">' + esc(item.wpName) + '</span>' +
+        '<span class="psna-wp__npc">' + esc(item.npc) + ' · ' + esc(item.region) + '</span></span>' +
+        '<span class="psna-wp__act">' + (hasChat ? 'Copiar' : 'Sin código') + '</span></button>';
     }
     grid.innerHTML = html;
     var buttons = grid.querySelectorAll('[data-psna-copy]');
     for (var b = 0; b < buttons.length; b++) {
-      var btn = buttons[b];
-      if (btn.__wired) continue;
-      btn.__wired = true;
-      btn.addEventListener('click', function(e) {
+      buttons[b].addEventListener('click', function(e) {
         e.preventDefault();
-        var idx = this.getAttribute('data-psna-index');
-        if (idx === null) return;
-        var item = state.daily.psna[parseInt(idx, 10)];
-        if (item && item.chat) {
-          copyToClipboard(item.chat);
-          this.classList.add('btn--success');
-          setTimeout((function(btn) { return function() { btn.classList.remove('btn--success'); }; })(this), 200);
-        }
+        var it = state.daily.psna[parseInt(this.getAttribute('data-psna-index'), 10)];
+        if (!it || !it.chat) return;
+        copyToClipboard(it.chat);
+        var btn = this, act = btn.querySelector('.psna-wp__act');
+        btn.classList.add('is-copied');
+        if (act) act.textContent = '✓ Copiado';
+        setTimeout(function() {
+          btn.classList.remove('is-copied');
+          if (act) act.textContent = 'Copiar';
+        }, 1500);
       });
     }
+    var valid = 0;
+    for (var v = 0; v < list.length; v++) { if (list[v].chat) valid++; }
     if (copyAll) {
-      var chats = [];
-      for (var c = 0; c < list.length; c++) { if (list[c].chat) chats.push(list[c].chat); }
-      copyAll.disabled = chats.length === 0;
-      copyAll.title = chats.length + '/' + list.length + ' waypoints disponibles';
+      copyAll.disabled = valid === 0;
+      copyAll.title = valid + '/' + list.length + ' waypoints disponibles';
     }
-    if (status) {
-      var total = list.length;
-      var valid = 0;
-      for (var v = 0; v < list.length; v++) { if (list[v].chat) valid++; }
-      if (valid === 0) status.innerHTML = '<span class="pill s-error">❌ Ningún waypoint disponible</span>';
-      else if (valid < total) status.innerHTML = '<span class="pill s-warn">⚠️ ' + valid + '/' + total + ' waypoints disponibles</span>';
-      else status.innerHTML = '<span class="pill s-ok">✅ Todos los waypoints disponibles</span>';
-    }
+    if (!status) return;
+    var pill = valid === list.length ? '<span class="pill s-ok">✅ ' + valid + '/' + list.length + ' waypoints</span>'
+      : valid ? '<span class="pill s-warn">⚠️ ' + valid + '/' + list.length + ' waypoints</span>'
+      : '<span class="pill s-error">❌ Ningún waypoint disponible</span>';
+    // De que dia son y cuando cambian (BL-044), en grande (BL-048).
+    var now = new Date();
+    var next = psnaNextChange(state.daily.psnaData, now);
+    var day = state.daily.psnaDay;
+    var dayTxt = psnaDayText(day, next, now);
+    if (!dayTxt) { status.innerHTML = pill; return; }
+    var p = day.date.split('-');
+    var dia = PSNA_DIAS_ES[day.weekday] || day.weekday;
+    var hora = next ? next.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    status.innerHTML = '<div class="psna-day" data-psna-day role="group" aria-label="' + esc(dayTxt) + '">' +
+      '<div class="psna-day__when"><span class="psna-day__label">Lugares del día</span>' +
+      '<strong class="psna-day__name">' + esc(dia.charAt(0).toUpperCase() + dia.slice(1)) + ' ' + p[2] + '/' + p[1] + '</strong></div>' +
+      (next ? '<div class="psna-day__next"><span class="psna-day__label">Cambian en</span>' +
+        '<strong class="psna-day__count" data-psna-falta>' + esc(psnaFalta(next, now)) + '</strong>' +
+        '<span class="psna-day__hour">' + String(next.getUTCHours()).padStart(2, '0') + ':00 UTC · ' + esc(hora) + ' tu hora</span></div>' : '') +
+      pill + '</div>';
+    // La cuenta regresiva corre sola; el cambio de lugares lo hace state._psnaTimer.
+    if (state._psnaTick) clearInterval(state._psnaTick);
+    state._psnaTick = setInterval(function() {
+      var el = $('[data-psna-falta]');
+      if (!el || !state.active) return;
+      var t = new Date();
+      el.textContent = psnaFalta(psnaNextChange(state.daily.psnaData, t), t);
+    }, 30000);
   }
 
   // =======================================================================
@@ -1071,10 +1108,16 @@
             '</div>' +
             '<div class="bar"><div class="bar-fill" id="barLeivas" style="width:0%"></div></div>' +
           '</section>' +
-          '<div class="panel-head"><h3>Agente de red de suministros del Pacto</h3></div>' +
-          '<p class="muted"><button id="psnaCopyAll" class="btn btn--ghost btn--xs">Copiar todos</button></p>' +
-          '<div id="psnaStatus" class="muted"></div>' +
-          '<div id="psnaGrid" class="grid"></div>' +
+          '<section class="card psna" id="psnaPanel">' +
+            '<div class="psna__head">' +
+              '<img src="assets/icons/733330.png" width="32" height="32" alt="">' +
+              '<div class="psna__titles"><h3 class="psna__title">Agente de red de suministros del Pacto</h3>' +
+              '<p class="psna__sub">Seis agentes, uno por región. Hacé clic en un lugar para copiar su waypoint.</p></div>' +
+              '<button id="psnaCopyAll" class="btn btn--xs">Copiar todos</button>' +
+            '</div>' +
+            '<div id="psnaStatus"></div>' +
+            '<div id="psnaGrid" class="psna__grid"></div>' +
+          '</section>' +
           '<div class="panel-head"><h3>Refinamiento de Ecto</h3></div>' +
           '<div id="ectoStatus" class="muted">Cargando…</div>' +
           '<div id="ectoGrid" class="grid"></div>' +
@@ -1219,9 +1262,11 @@
     renderDailyKPI();
     console.log(LOG, '✅ activate() completado');
   }
-  
+
   function deactivate() {
     state.active = false;
+    if (state._psnaTimer) { clearTimeout(state._psnaTimer); state._psnaTimer = null; }
+    if (state._psnaTick) { clearInterval(state._psnaTick); state._psnaTick = null; }
     var panel = $('#activitiesPanel');
     if (panel) panel.setAttribute('hidden', '');
     state.homeNodesRendered = false;
@@ -1316,6 +1361,7 @@
       return {
         psna: state.daily.psna,
         psnaSchedule: state.daily.psnaSchedule,
+        psnaData: state.daily.psnaData,
         token: state.token,
         active: state.active,
         weeklyKey: state.weekly.key,
@@ -1328,9 +1374,12 @@
       };
     },
     _renderPSNA: renderPSNA,
+    _psnaPickDay: psnaPickDay,
+    _psnaNextChange: psnaNextChange,
+    _psnaDayText: psnaDayText,
     _forceReload: function() { PSNA.load(true); }
   };
-  
+
   root.Activities = Activities;
 
   if (document.readyState === 'loading') {
