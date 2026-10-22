@@ -1,59 +1,31 @@
 /*!
  * js/wallet-dashboard.js — Dashboard de Cartera Multi-Cuenta
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 2.9.0 (2026-09-30) — ETA medida en el contador de carga (Idea 48, Tramo B)
+ * Versión: 3.0.0 (2026-10-22) — Todas las cuentas renovada (BL-056, CAR-3)
  *
- * v2.9.0: el contador "Cargando cuentas... 4/27" ahora dice cuánto falta.
- *   Con el pool global el recorrido se serializa (api-gw2 v2.19.0, POOL_MAX 6)
- *   y entre cuenta y cuenta pasaban segundos: el usuario ve 4/27 -> 5/27 con
- *   pausas y no tiene forma de distinguir "va lento" de "se colgó".
- *   La ETA se MIDE sobre cuentas completadas por segundo, no se estima con una
- *   latencia promedio: sale de lo que esta corrida ya hizo. Y no se muestra
- *   hasta tener 3 cuentas y 1,5 s de elapsed, porque con 1 cuenta el promedio
- *   es ruido y una ETA que sale de una sola muestra es exactamente el modo de
- *   falla del proyecto (rotacion de fractales, /v2/events).
- *   Cierra la Idea 46 t2 con datos de la maquina del usuario.
- *   Lo que NO se hizo, y por que: el texto "limitado por la API (600/min)" que
- *   la 46 t2 imaginaba. Con POOL_MAX=6 y hasta 3 cuentas en vuelo la cola esta
- *   no vacia practicamente todo el recorrido, asi que el texto estaria en
- *   pantalla el 100% del tiempo y no informaria nada. La ETA ya contesta la
- *   pregunta ("¿esto va normal?"). Si el PO quiere la senal explicita, el
- *   umbral honesto es "ETA > 45 s", no "hay cola".
- * v2.8.1: charP, apP, raidsP y luckP se lanzan los cuatro en un bloque
- *   sincrono y cada uno recibe su handler recien en su propio await. Con los
- *   4 propagando (api-gw2 v2.18.0), un rechazo de apP/raidsP/luckP durante
- *   el await de charP dispara "unhandledrejection" en consola. El .catch
- *   no-op marca que ya hay handler sin tocar el valor de la promesa: el await
- *   sigue viendo el rechazo y el catch de su columna corre igual.
- *   Efecto buscado: los catch de _errors.characters y _errors.raids, que
- *   estaban escritos y bien pero NUNCA corrian (el PO lo reporto en el
- *   HB#38), ahora son alcanzables. La UI de error por columna no cambia.
- * v2.8.0: + columna Suerte (MF base account-wide, /v2/account/luck)
- *                              + error por columna: "no se pudo leer" ≠ 0
+ * v3.0.0: la pantalla que se aprobó en la propuesta de la Cartera (CAR-0). Solo cambia
+ *   cómo se dibuja; la lectura de cuentas, el progreso con ETA, los errores por columna y
+ *   el orden quedan como estaban.
+ *   - Columnas como chips con «×» y «＋ Agregar divisa…» con buscador (antes, un
+ *     desplegable con todos los nombres separados por comas).
+ *   - La columna de la cuenta, la cabecera y la fila de totales quedan fijas al desplazar.
+ *   - El mejor valor de cada columna, en dorado. «Total (26 de 27)» si alguna cuenta no
+ *     se pudo leer, y sus celdas dicen «— ⚠» en vez de un 0 falso.
+ *   - En el celular, cada cuenta es una tarjeta.
+ *   - Arreglos: el HTML del estado sin divisas estaba mal armado (y tenía un «2» suelto);
+ *     el borde del KPI de suerte se escribía como CSS dentro de un string y el navegador
+ *     lo ignoraba; cada dibujo del selector sumaba un oyente nuevo en document.
+ *   - Estilos con las variables del theme (antes, colores fijos inline).
  *
- * Características:
- *  - Tabla de cuentas vs divisas seleccionadas
- *  - Ordenamiento dinámico por columna
- *  - KPIs resumen con íconos oficiales
- *  - Selector de divisas dropdown
- *  - Persistencia de selección y ordenamiento
- *  - Fix: reintento de renderizado si la tabla no existe
- *  - Columna opcional "Suerte (MF)": MF% base account-wide + barra de progreso
- *    al siguiente +1% (fuente: GW2 Wiki, curva de 300 niveles)
- *  - Una columna que falló al leerse muestra "— ⚠" con el endpoint en el tooltip,
- *    y los totales marcados como parciales. Antes un error se escribía como 0 y
- *    se mostraba como un cero real.
+ * v2.9.0: ETA medida en el contador de carga (Idea 48 Tramo B; sin «limitado por la API»).
+ * v2.8.1: .catch no-op en apP/raidsP/luckP (evita unhandledrejection; Idea 47 c2).
+ * v2.8.0: columna Suerte (MF base) y error por columna: «no se pudo leer» ≠ 0.
+ * Historia completa: CHANGELOG.md y git.
  */
 
 (function (root) {
   'use strict';
-  // v2.8.0 (2026-09-29) — Idea 45: progreso multicuenta + error por cuenta.
-  // Antes: "Cargando carteras..." sin más. Un fallo de red en la cuenta 14 de
-  // 27 se veía EXACTAMENTE igual que una cuenta vacía: la UI mentía sin
-  // delatarlo. Ahora el loop reporta "N/27 · M con error" en vivo, y al
-  // terminar cada cuenta fallida se nombra CON su endpoint.
-  // Importante para las features multicuenta que vienen (coleccionables,
-  // fractals, dungeons): sin esto, cada una hereda el mismo "no sé si falló".
+  // Idea 45: progreso multicuenta y error por cuenta, para que un fallo no se vea como una cuenta vacía.
   var LOG = '[WalletDashboard]';
 
   // ------------------------------ Utils DOM ------------------------------
@@ -91,12 +63,12 @@
     var gold = Math.floor(copper / 10000);
     var silver = Math.floor((copper % 10000) / 100);
     var copperLeft = copper % 100;
-    
-    var parts = [];
-    if (gold > 0) parts.push('<span style="color:#f4c542;">' + gold.toLocaleString('es-AR') + '</span> <span style="color:var(--muted);">g</span>');
-    if (silver > 0 || gold > 0) parts.push('<span style="color:#e0e0e0;">' + silver + '</span> <span style="color:var(--muted);">s</span>');
-    parts.push('<span style="color:#b87333;">' + copperLeft + '</span> <span style="color:var(--muted);">c</span>');
-    return parts.join(' ');
+    // Como en la Cartera: oro y plata; el cobre solo cuando no hay oro.
+    var out = '';
+    if (gold > 0) out += '<b class="wd3-g">' + gold.toLocaleString('es-AR') + '</b><small>g</small>';
+    if (silver > 0 || gold > 0) out += '<b class="wd3-s">' + (gold > 0 ? String(silver).padStart(2, '0') : silver) + '</b><small>s</small>';
+    if (gold === 0) out += '<b class="wd3-c">' + copperLeft + '</b><small>c</small>';
+    return '<span class="wd3-coin">' + out + '</span>';
   }
 
   // ------------------------------ Estado -------------------------------
@@ -117,11 +89,7 @@
   var _refreshInFlight = null;
 
   // ------------------------------ Progreso multicuenta (Idea 45) ----------
-  // Antes: "Cargando carteras..." sin más. Con muchas cuentas, "Cargando carteras..." no distingue entre:
-  //   (a) todavía está cargando, (b) se colgó, (c) la 14 de 27 falló y la UI
-  //       muestra 13 filas como si ese fuera el total.
-  // El último caso es el peor: un fallo de red silencioso se ve EXACTAMENTE
-  // igual que un resultado vacío. Este tracker hace los tres distinguibles.
+  // Distingue «cargando», «colgado» y «la 14 de 27 falló» (un fallo silencioso parecía un resultado vacío).
   var _progress = { done: 0, total: 0, current: [], errors: [] };
 
   // La URL de error de la API trae ?access_token=... — NUNCA se muestra.
@@ -151,20 +119,8 @@
   }
 
   // ---- ETA del contador (Idea 48, Tramo B) ---------------------------------
-  // El contador mide cuentas completadas, no requests. Por eso la ETA se
-  // calcula sobre cuentas/segundo observadas en ESTA corrida, y no sobre
-  // poolStats(): el pool no sabe cuantas cuentas le faltan, y multiplicar su
-  // throughput por un total de requests obligaria a hardcodear cuantos requests
-  // hace una cuenta — que es justamente el dato que cambia con la cache.
-  //
-  // Umbrales de muestra. La ETA NO se muestra hasta tener:
-  //   - ETA_MIN_DONE cuentas completadas: con 1 sola cuenta el promedio sale de
-  //     una muestra y cualquier ETA es ruido.
-  //   - ETA_MIN_MS de elapsed: los primeros requests de una sesion nueva son
-  //     los mas lentos (conexion, TLS, cache fria), asi que un promedio
-  //     temprano exagera el tiempo restante.
-  // Mostrar una ETA antes de eso seria el mismo modo de falla que la rotacion
-  // de fractales y /v2/events: un numero inventado con formato de dato real.
+  // Se mide sobre cuentas completadas en ESTA corrida (no sobre el pool). No se muestra antes de
+  // ETA_MIN_DONE cuentas y ETA_MIN_MS de elapsed: con menos muestra sería un número inventado.
   var ETA_MIN_DONE = 3;
   var ETA_MIN_MS = 1500;
 
@@ -228,10 +184,9 @@
     if (!box) return;
     if (!_progress.errors.length) { box.innerHTML = ''; return; }
 
-    var html = '<div style="margin:0 0 12px 0;padding:10px 12px;border-left:3px solid rgba(255,193,7,0.5);background:rgba(255,193,7,0.06);border-radius:6px;">' +
-      '<div style="font-size:0.85rem;color:var(--tx-1);margin-bottom:6px;">' +
-      _progress.errors.length + ' de ' + _progress.total + ' cuentas no se pudieron leer</div>' +
-      '<ul style="margin:0;padding-left:18px;font-size:0.78rem;color:var(--muted);line-height:1.5;">';
+    var html = '<div class="wd3-errs" role="status"><b>' +
+      _progress.errors.length + ' de ' + _progress.total + ' cuentas no se pudieron leer</b>' +
+      '<p>El total suma solo las que se leyeron. Las que faltan se ven con «— ⚠» en la tabla.</p><ul>';
     for (var i = 0; i < _progress.errors.length && i < 10; i++) {
       var e = _progress.errors[i];
       var ep = e.endpoint ? ' (' + esc(e.endpoint) + ')' : '';
@@ -247,25 +202,14 @@
 
   var STORAGE_KEY = (typeof Storage !== 'undefined' && Storage.STORAGE_KEYS) ? Storage.STORAGE_KEYS.WALLET_DASHBOARD_CURR : 'gn:wallet:dashboard:selected_currencies';
   var SORT_STORAGE_KEY = (typeof Storage !== 'undefined' && Storage.STORAGE_KEYS) ? Storage.STORAGE_KEYS.WALLET_DASHBOARD_SORT : 'gn:wallet:dashboard:sort';
-  
+
   var DEFAULT_CURRENCY_NAMES = ['Gema', 'Moneda', 'Laurel', 'Reconocimiento Astral', 'Karma', 'Esquirla espiritual'];
-    // Iconos por tipo de cuenta (mismos que accounts-panel.js)
+  // Iconos por tipo de cuenta (mismos que accounts-panel.js); sin tipo, las iniciales.
   var ACCOUNT_TYPE_ICONS = {
     'main':  'assets/icons/Cuentas/547827.png',
     'alter': 'assets/icons/Cuentas/157375.png',
     'f2p':   'assets/icons/Cuentas/102538.png'
   };
-  var DECORATIVE_ICONS = [
-    'assets/icons/Cuentas/1770678.png',
-    'assets/icons/Cuentas/1770679.png',
-    'assets/icons/Cuentas/1770680.png',
-    'assets/icons/Cuentas/1770681.png',
-    'assets/icons/Cuentas/1770682.png',
-    'assets/icons/Cuentas/1770683.png',
-    'assets/icons/Cuentas/1770684.png',
-    'assets/icons/Cuentas/1770685.png',
-    'assets/icons/Cuentas/1770686.png'
-  ];
 
   // La tabla ya no tiene columnas de resumen (no hay selector de campos), pero
   // el KPI "Mejor MF base" se dibuja siempre y usa este simbolo.
@@ -321,12 +265,6 @@
       '</td>';
   }
 
-  function getAccountIcon(tag) {
-    if (tag && ACCOUNT_TYPE_ICONS[tag]) return ACCOUNT_TYPE_ICONS[tag];
-    // Fallback aleatorio si no tiene tag definido
-    return DECORATIVE_ICONS[Math.floor(Math.random() * DECORATIVE_ICONS.length)];
-  }
-
   // ------------------------------ Persistencia ------------------------------
   function loadSelectedCurrencies() {
     try {
@@ -376,8 +314,8 @@
         if (!state.selectedCurrencies.length) {
           var ids = [];
           DEFAULT_CURRENCY_NAMES.forEach(function(name) {
-            var found = currencies.find(function(c) { 
-              return c.name && c.name.toLowerCase().includes(name.toLowerCase()); 
+            var found = currencies.find(function(c) {
+              return c.name && c.name.toLowerCase().includes(name.toLowerCase());
             });
             if (found) ids.push(found.id);
           });
@@ -411,22 +349,9 @@
     var raidsP = root.GW2Api.getAccountRaids(token, { nocache: nocache });
     var luckP = root.GW2Api.getAccountLuck(token, { nocache: nocache });
 
-    // Las 4 promesas se lanzan aqui, en un bloque sincrono, y cada una recibe
-    // su handler recien en su propio await, mas abajo. Entre el lanzamiento y
-    // ese await hay al menos una suspension (esperar charP), asi que si apP,
-    // raidsP o luckP rechazan durante ese tiempo el navegador dispara
-    // "unhandledrejection" en consola aunque su catch de columna corra
-    // despues y la UI quede correcta.
-    //
-    // Antes esto no se notaba porque solo apP y luckP propagaban; los otros dos
-    // resolvian 0 / [] y no podia pasar. Ahora los 4 propagan (Idea 47 c2), asi
-    // que el .catch no-op de abajo es obligatorio, no cosmetico.
-    //
-    // El no-op NO cambia el valor de la promesa: solo marca que ya hay un
-    // handler. El await posterior sigue viendo el rechazo original y el catch
-    // de su columna corre igual, que es el que escribe _errors.
-    // charP queda fuera a proposito: es el primero que se espera, asi que su
-    // handler se adjunta en la primera suspension, sin ventana muerta.
+    // Las 4 se lanzan juntas y cada handler llega recién en su await: sin el .catch no-op, un
+    // rechazo durante el await de charP dispara «unhandledrejection». El no-op no cambia el valor:
+    // el await sigue viendo el rechazo y el catch de su columna escribe _errors.
     if (apP) apP.catch(function () {});
     if (raidsP) raidsP.catch(function () {});
     if (luckP) luckP.catch(function () {});
@@ -592,10 +517,47 @@
   // ------------------------------ Renderizado ------------------------------
   function getCurrencyIconHtml(currency) {
     if (currency && currency.icon) {
-      return '<img src="' + esc(currency.icon) + '" width="20" height="20" alt="' + esc(currency.name || '') + '" loading="lazy" style="vertical-align: middle; margin-right: 6px;">';
+      return '<img class="wd3-cic" src="' + esc(currency.icon) + '" width="18" height="18" alt="" loading="lazy">';
     }
     return '';
   }
+
+  // ------------------------------ Reglas puras (v3.0.0) ------------------------------
+  // Mejor valor de cada columna entre las cuentas que SÍ se leyeron. Un 0 no es «el mejor»:
+  // si nadie tiene nada, la columna no marca a ninguna.
+  function bestByCurrency(accounts, ids) {
+    var best = {};
+    ids.forEach(function (id) {
+      var max = 0;
+      accounts.forEach(function (acc) {
+        if (acc.error) return;
+        var v = Number(acc.wallet && acc.wallet[id]) || 0;
+        if (v > max) max = v;
+      });
+      if (max > 0) best[id] = max;
+    });
+    return best;
+  }
+  // Divisas que se pueden agregar como columna: las no elegidas, filtradas por nombre
+  // (sin distinguir mayúsculas ni tildes), en orden alfabético.
+  function fold(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  function pickerOptions(currencies, selected, query) {
+    var sel = new Set(selected), q = fold(query).trim();
+    return currencies
+      .filter(function (c) { return c && !sel.has(c.id) && (!q || fold(c.name).indexOf(q) >= 0); })
+      .sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'es'); });
+  }
+  // «Total» o «Total (26 de 27)» si alguna cuenta no se pudo leer.
+  function totalLabel(accounts) {
+    var bad = accounts.filter(function (a) { return a.error; }).length;
+    return bad ? 'Total (' + (accounts.length - bad) + ' de ' + accounts.length + ')' : 'Total';
+  }
+  function initialsOf(label) {
+    var w = String(label || '?').replace(/\.\d+$/, '').split(/[\s._-]+/).filter(Boolean);
+    return ((w[0] || '?').charAt(0) + (w[1] ? w[1].charAt(0) : '')).toUpperCase();
+  }
+
+  var _picker = { open: false, query: '' };
 
   function renderCurrencySelector() {
     var container = $('#wdCurrencySelector');
@@ -605,99 +567,74 @@
     }
 
     if (!state.currencies.length) {
-      container.innerHTML = '<span class="muted">Cargando divisas...</span>';
+      container.innerHTML = '<span class="wd3-muted">Cargando divisas…</span>';
       return;
     }
 
-    var selectedSet = new Set(state.selectedCurrencies);
-    var selectedNames = state.currencies
-      .filter(function(c) { return selectedSet.has(c.id); })
-      .map(function(c) { return c.name; })
-      .join(', ');
-    
-    var html = '<div style="position:relative; display:inline-block;">' +
-      '<button id="wdCurrencyDropdownBtn" class="btn btn--ghost" style="display:inline-flex; align-items:center; gap:6px; min-width:200px; justify-content:space-between;">' +
-      '<span>' + (selectedNames || 'Seleccionar divisas') + '</span>' +
-      '<span>▼</span>' +
-      '</button>' +
-      '<div id="wdCurrencyDropdown" class="wd-dropdown" style="top:100%; left:0; z-index:100; min-width:220px; max-height:300px; overflow-y:auto; display:none;">' +
-      '<div style="display:flex; flex-direction:column; gap:6px;">' +
-      '<button id="wdSelectAllBtn" class="btn btn--xs" style="margin-bottom:4px;">✓ Seleccionar todas</button>' +
-      '<button id="wdSelectNoneBtn" class="btn btn--xs" style="margin-bottom:8px;">✗ Deseleccionar todas</button>';
-    
-    state.currencies.forEach(function(cur) {
-      var isSelected = selectedSet.has(cur.id);
-      var iconHtml = getCurrencyIconHtml(cur);
-      html += '<label style="display:flex; align-items:center; gap:8px; cursor:pointer; padding:4px 8px; border-radius:6px;">' +
-        '<input type="checkbox" value="' + cur.id + '" ' + (isSelected ? 'checked' : '') + ' style="cursor:pointer;">' +
-        iconHtml +
-        '<span>' + esc(cur.name || 'Divisa #' + cur.id) + '</span>' +
-        '</label>';
-    });
-    
-    html += '</div></div></div>';
+    var byId = {};
+    state.currencies.forEach(function (c) { byId[c.id] = c; });
+    var chips = state.selectedCurrencies.filter(function (id) { return byId[id]; }).map(function (id) {
+      var c = byId[id], name = esc(c.name || 'Divisa #' + id);
+      return '<span class="wd3-pk">' + getCurrencyIconHtml(c) + name +
+        '<button type="button" data-wd-remove="' + id + '" aria-label="Quitar ' + name + '" title="Quitar ' + name + '">×</button></span>';
+    }).join('');
+
+    var html = '<div class="wd3-picker" role="group" aria-label="Columnas de la tabla"><span class="wd3-lbl">Columnas:</span>' + chips +
+      '<button type="button" class="wd3-pk wd3-add" data-wd-add="1" aria-expanded="' + _picker.open + '" aria-controls="wdPickerPop">＋ Agregar divisa…</button></div>';
+    if (_picker.open) {
+      var opts = pickerOptions(state.currencies, state.selectedCurrencies, _picker.query);
+      html += '<div class="wd3-pop" id="wdPickerPop">' +
+        '<input type="search" id="wdPickerSearch" placeholder="Buscar divisa…" aria-label="Buscar divisa" autocomplete="off" value="' + esc(_picker.query) + '">' +
+        '<div class="wd3-opts" role="listbox" aria-label="Divisas para agregar">' +
+        (opts.length ? opts.map(function (c) {
+          return '<button type="button" role="option" data-wd-pick="' + c.id + '">' + getCurrencyIconHtml(c) + esc(c.name || 'Divisa #' + c.id) + '</button>';
+        }).join('') : '<p class="wd3-muted">No hay divisas con ese nombre.</p>') +
+        '</div></div>';
+    }
     container.innerHTML = html;
 
-    var dropdownBtn = document.getElementById('wdCurrencyDropdownBtn');
-    var dropdown = document.getElementById('wdCurrencyDropdown');
-    var selectAllBtn = document.getElementById('wdSelectAllBtn');
-    var selectNoneBtn = document.getElementById('wdSelectNoneBtn');
-    
-    if (dropdownBtn && dropdown) {
-      dropdownBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-      });
-      
-      document.addEventListener('click', function(e) {
-        if (dropdownBtn && dropdown && !dropdownBtn.contains(e.target) && !dropdown.contains(e.target)) {
-          dropdown.style.display = 'none';
+    if (!container.__wd3) {
+      container.__wd3 = true;
+      container.addEventListener('click', function (e) {
+        var t = e.target, b;
+        if (!t || !t.closest) return;
+        if ((b = t.closest('[data-wd-remove]'))) {
+          var rid = parseInt(b.getAttribute('data-wd-remove'), 10);
+          state.selectedCurrencies = state.selectedCurrencies.filter(function (cid) { return cid !== rid; });
+          saveSelectedCurrencies(); renderCurrencySelector(); renderTable();
+          return;
+        }
+        if ((b = t.closest('[data-wd-pick]'))) {
+          var pid = parseInt(b.getAttribute('data-wd-pick'), 10);
+          if (state.selectedCurrencies.indexOf(pid) < 0) state.selectedCurrencies.push(pid);
+          _picker.open = false; _picker.query = '';
+          saveSelectedCurrencies(); renderCurrencySelector(); renderTable();
+          return;
+        }
+        if (t.closest('[data-wd-add]')) {
+          _picker.open = !_picker.open; _picker.query = '';
+          renderCurrencySelector();
+          var s = document.getElementById('wdPickerSearch'); if (s && s.focus) s.focus();
         }
       });
-      
-      if (selectAllBtn) {
-        selectAllBtn.addEventListener('click', function() {
-          state.selectedCurrencies = state.currencies.map(function(c) { return c.id; });
-          saveSelectedCurrencies();
-          var checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
-          checkboxes.forEach(function(cb) { cb.checked = true; });
-          dropdownBtn.querySelector('span:first-child').textContent = state.currencies.map(function(c) { return c.name; }).join(', ');
-          renderTable();
-        });
-      }
-      
-      if (selectNoneBtn) {
-        selectNoneBtn.addEventListener('click', function() {
-          state.selectedCurrencies = [];
-          saveSelectedCurrencies();
-          var checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
-          checkboxes.forEach(function(cb) { cb.checked = false; });
-          dropdownBtn.querySelector('span:first-child').textContent = 'Seleccionar divisas';
-          renderTable();
-        });
-      }
-      
-      var checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
-      checkboxes.forEach(function(cb) {
-        cb.addEventListener('change', function() {
-          var id = parseInt(this.value, 10);
-          if (this.checked) {
-            if (!state.selectedCurrencies.includes(id)) {
-              state.selectedCurrencies.push(id);
-            }
-          } else {
-            state.selectedCurrencies = state.selectedCurrencies.filter(function(cid) { return cid !== id; });
-          }
-          saveSelectedCurrencies();
-          var newSelectedNames = state.currencies
-            .filter(function(c) { return state.selectedCurrencies.includes(c.id); })
-            .map(function(c) { return c.name; })
-            .join(', ');
-          if (dropdownBtn.querySelector('span:first-child')) {
-            dropdownBtn.querySelector('span:first-child').textContent = newSelectedNames || 'Seleccionar divisas';
-          }
-          renderTable();
-        });
+      container.addEventListener('input', function (e) {
+        if (!e.target || e.target.id !== 'wdPickerSearch') return;
+        _picker.query = e.target.value || '';
+        var list = container.querySelector('.wd3-opts');
+        var opts = pickerOptions(state.currencies, state.selectedCurrencies, _picker.query);
+        if (list) list.innerHTML = opts.length ? opts.map(function (c) {
+          return '<button type="button" role="option" data-wd-pick="' + c.id + '">' + getCurrencyIconHtml(c) + esc(c.name || 'Divisa #' + c.id) + '</button>';
+        }).join('') : '<p class="wd3-muted">No hay divisas con ese nombre.</p>';
+      });
+      container.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && _picker.open) {
+          _picker.open = false; _picker.query = ''; renderCurrencySelector();
+          var a = container.querySelector('[data-wd-add]'); if (a && a.focus) a.focus();
+        }
+      });
+      // Un solo oyente para cerrar al tocar afuera (antes se sumaba uno por cada dibujo).
+      document.addEventListener('click', function (e) {
+        if (_picker.open && e.target && !container.contains(e.target)) { _picker.open = false; _picker.query = ''; renderCurrencySelector(); }
       });
     }
   }
@@ -707,41 +644,31 @@
     if (!container) return;
 
     var kpis = [];
-    
-    var goldIcon = 'https://render.guildwars2.com/file/98457F504BA2FAC8457F532C4B30EDC23929ACF9/619316.png';
     var karmaIcon = 'https://render.guildwars2.com/file/94953FA23D3E0D23559624015DFEA4CFAA07F0E5/155026.png';
-    var laurelIcon = 'https://render.guildwars2.com/file/A1BD345AD9192C3A585BE2F6CB0617C5A797A1E2/619317.png';
     var aaIcon = 'https://render.guildwars2.com/file/1856A01E331452E4C14E4C9CF4F818E3FAEF9B79/3124964.png';
-    
-    var goldId = state.currencies.find(function(c) { return c.name === 'Moneda' || c.id === 1; })?.id;
-    var karmaId = state.currencies.find(function(c) { return c.name === 'Karma' || c.id === 2; })?.id;
-    var laurelId = state.currencies.find(function(c) { return c.name === 'Laurel' || c.id === 3; })?.id;
-    var aaId = state.currencies.find(function(c) { return c.name?.includes('Reconocimiento astral') || c.id === 63; })?.id;
+    var goldId = (state.currencies.find(function(c) { return c.name === 'Moneda' || c.id === 1; }) || {}).id;
+    var karmaId = (state.currencies.find(function(c) { return c.name === 'Karma' || c.id === 2; }) || {}).id;
+    var laurelId = (state.currencies.find(function(c) { return c.name === 'Laurel' || c.id === 3; }) || {}).id;
+    var aaId = (state.currencies.find(function(c) { return (c.name && c.name.toLowerCase().indexOf('reconocimiento astral') >= 0) || c.id === 63; }) || {}).id;
+    var read = (accounts || []).filter(function (a) { return !a.error; });
+    var n = (accounts || []).length;
 
+    function kpi(cls, icon, label, value, sub) {
+      return '<div class="wd3-kpi ' + cls + '"><div class="wd3-kl">' + (icon ? '<img src="' + icon + '" width="20" height="20" alt="">' : '') + label + '</div>' +
+        '<div class="wd3-kv">' + value + '</div>' + (sub ? '<div class="wd3-ks">' + sub + '</div>' : '') + '</div>';
+    }
     if (goldId && totals[goldId] !== undefined) {
-      kpis.push('<div class="wd-kpi-card wd-kpi-gold">' +
-        '<div class="wd-kpi-label"><img src="' + goldIcon + '" width="20" height="20" style="vertical-align:middle;margin-right:6px;"> Total Oro</div>' +
-        '<div class="wd-kpi-value gold-glow">' + formatCoinValue(totals[goldId]) + '</div></div>');
+      var richest = read.reduce(function (m, a) { return (a.wallet[goldId] || 0) > (m ? (m.wallet[goldId] || 0) : 0) ? a : m; }, null);
+      kpis.push(kpi('wd3-kpi--gold', 'assets/icons/619316.png', 'Oro de ' + (n === 1 ? 'la cuenta' : 'las ' + n + ' cuentas'),
+        formatCoinValue(totals[goldId]), richest ? 'La que más tiene: ' + esc(richest.label) : ''));
     }
-    if (karmaId && totals[karmaId] !== undefined) {
-      kpis.push('<div class="wd-kpi-card wd-kpi-karma">' +
-        '<div class="wd-kpi-label"><img src="' + karmaIcon + '" width="20" height="20" style="vertical-align:middle;margin-right:6px;"> Total Karma</div>' +
-        '<div class="wd-kpi-value">' + fmtInt(totals[karmaId]) + '</div></div>');
-    }
-    if (laurelId && totals[laurelId] !== undefined) {
-      kpis.push('<div class="wd-kpi-card wd-kpi-laurel">' +
-        '<div class="wd-kpi-label"><img src="' + laurelIcon + '" width="20" height="20" style="vertical-align:middle;margin-right:6px;"> Total Laurel</div>' +
-        '<div class="wd-kpi-value">' + fmtInt(totals[laurelId]) + '</div></div>');
-    }
-    if (aaId && totals[aaId] !== undefined) {
-      kpis.push('<div class="wd-kpi-card wd-kpi-aa">' +
-        '<div class="wd-kpi-label"><img src="' + aaIcon + '" width="20" height="20" style="vertical-align:middle;margin-right:6px;"> Reconocimiento Astral</div>' +
-        '<div class="wd-kpi-value">' + fmtInt(totals[aaId]) + '</div></div>');
-    }
+    if (karmaId && totals[karmaId] !== undefined) kpis.push(kpi('', karmaIcon, 'Karma', fmtInt(totals[karmaId])));
+    if (laurelId && totals[laurelId] !== undefined) kpis.push(kpi('', 'assets/icons/619317.png', 'Laureles', fmtInt(totals[laurelId])));
+    if (aaId && totals[aaId] !== undefined) kpis.push(kpi('', aaIcon, 'Reconocimiento astral', fmtInt(totals[aaId])));
 
-    // KPI de MF base: se dibuja SIEMPRE, sin mirar ningun selector.
-    // El MF% es por cuenta (curva independiente), asi que no se suma:
-    // mostramos la mejor cuenta y cuantas llegaron al tope.
+    // KPI de MF base: se dibuja SIEMPRE. El MF% es por cuenta (curva independiente), asi que
+    // no se suma: la mejor cuenta y cuantas llegaron al tope. (v3: sin el borderLeft escrito
+    // dentro de un string de CSS, que el navegador ignoraba.)
     if (accounts && accounts.length) {
       var luckBest = 0, luckCapped = 0;
       accounts.forEach(function(acc) {
@@ -751,10 +678,8 @@
           if (s.luckCapped) luckCapped++;
         }
       });
-      kpis.push('<div class="wd-kpi-card wd-kpi-summary" style="borderLeft:3px solid rgba(255,193,7,0.5);">' +
-        '<div class="wd-kpi-label" style="display:flex;align-items:center;gap:6px;">' +
-          '<span style="font-size:20px;line-height:1;">' + SUMMARY_FIELD_SYMBOLS.luck + '</span> Mejor MF base (' + luckCapped + '/' + accounts.length + ' al tope)</div>' +
-        '<div class="wd-kpi-value">' + luckBest + '%</div></div>');
+      kpis.push(kpi('wd3-kpi--luck', '', '<span aria-hidden="true">' + SUMMARY_FIELD_SYMBOLS.luck + '</span> Suerte (MF base)', luckBest + ' %',
+        'La mejor cuenta · ' + luckCapped + ' de ' + accounts.length + ' al tope'));
     }
 
     container.innerHTML = kpis.join('');
@@ -762,12 +687,12 @@
 
   function formatValueForDisplay(currencyId, value) {
     if (value < 0) {
-      return '<span style="color:var(--color-red);">' + (currencyId === 1 ? formatCoinValue(Math.abs(value)) : fmtInt(Math.abs(value))) + '</span>';
+      return '<span class="wd3-neg">' + (currencyId === 1 ? formatCoinValue(Math.abs(value)) : fmtInt(Math.abs(value))) + '</span>';
     }
     if (currencyId === 1) {
-      return '<span class="gold-value">' + formatCoinValue(value) + '</span>';
+      return formatCoinValue(value);
     }
-    return fmtInt(value);
+    return '<span class="wd3-num">' + fmtInt(value) + '</span>';
   }
 
   function renderTable() {
@@ -783,6 +708,7 @@
 
     var thead = table.querySelector('thead');
     var tbody = table.querySelector('tbody');
+    var cardsBox = document.getElementById('wdCards');
     if (!thead || !tbody) {
       console.error(LOG, 'thead o tbody no encontrados');
       return;
@@ -794,38 +720,32 @@
       return;
     }
 
-    if (!state.selectedCurrencies.length) {
-      console.log(LOG, 'No hay divisas seleccionadas');
-      thead.innerHTML = '<td><th>Cuenta</th><th colspan="1">No hay divisas seleccionadas</th></tr>';
-      tbody.innerHTML = '<td><td colspan="2">Selecciona al menos una divisa en el panel de filtros.2</td></tr>';
-      return;
-    }
+    var selectedCurrencies = state.selectedCurrencies.map(function (id) {
+      return state.currencies.find(function (c) { return c.id === id; });
+    }).filter(Boolean);
 
-    var selectedCurrencies = state.currencies.filter(function(c) { 
-      return state.selectedCurrencies.includes(c.id); 
-    });
-    
     if (!selectedCurrencies.length) {
-      thead.innerHTML = '<td><th>Cuenta</th><th colspan="1">No hay divisas seleccionadas</th></tr>';
-      tbody.innerHTML = '<td><td colspan="2">Selecciona al menos una divisa.2</td></tr>';
+      // v3: antes este HTML estaba mal armado (<td> abriendo la fila y un «2» suelto).
+      thead.innerHTML = '<tr><th class="wd3-acc">Cuenta</th></tr>';
+      tbody.innerHTML = '<tr><td class="wd3-empty">No elegiste ninguna divisa. Usá «＋ Agregar divisa…» para sumar columnas.</td></tr>';
+      if (cardsBox) cardsBox.innerHTML = '';
       return;
     }
 
     console.log(LOG, 'Renderizando tabla con', selectedCurrencies.length, 'divisas y', state.accounts.length, 'cuentas');
 
     // Cabecera con ordenamiento
-    var hcells = ['<th class="wd-account-header">Cuenta</th>'];
-    hcells.push('<th class="right">Suerte (MF)</th>');
+    var hcells = ['<th class="wd-account-header wd3-acc" scope="col">Cuenta</th>'];
+    hcells.push('<th class="right" scope="col">Suerte (MF)</th>');
     selectedCurrencies.forEach(function(cur) {
       var iconHtml = getCurrencyIconHtml(cur);
-      var sortIndicator = '';
-      if (state.sortColumn === cur.id) {
-        sortIndicator = state.sortDirection === 'desc' ? ' ↓' : ' ↑';
-      }
-      hcells.push('<th class="right sortable" data-currency-id="' + cur.id + '" title="Ordenar por ' + esc(cur.name) + '" style="cursor:pointer;">' + 
-        iconHtml + '<span style="display:inline-block; margin-left:4px;">' + esc(cur.name || 'Divisa #' + cur.id) + sortIndicator + '</span></th>');
+      var on = state.sortColumn === cur.id;
+      var sortIndicator = on ? (state.sortDirection === 'desc' ? ' ▾' : ' ▴') : '';
+      hcells.push('<th class="right sortable" scope="col" tabindex="0" data-currency-id="' + cur.id + '" title="Ordenar por ' + esc(cur.name) + '"' +
+        (on ? ' aria-sort="' + (state.sortDirection === 'desc' ? 'descending' : 'ascending') + '"' : '') + '>' +
+        iconHtml + '<span>' + esc(cur.name || 'Divisa #' + cur.id) + sortIndicator + '</span></th>');
     });
-    thead.innerHTML = '                <tr>' + hcells.join('') + ' <\/tr>';
+    thead.innerHTML = '<tr>' + hcells.join('') + '</tr>';
 
     // Aplicar ordenamiento
     var rowsAcc = state.accounts.slice();
@@ -833,7 +753,7 @@
       rowsAcc = sortAccounts(rowsAcc, state.sortColumn, state.sortDirection);
     }
 
-    // Calcular totales
+    // Calcular totales (las cuentas que no se pudieron leer no suman: su cartera es {})
     var totals = {};
     selectedCurrencies.forEach(function(cur) { totals[cur.id] = 0; });
     rowsAcc.forEach(function(acc) {
@@ -841,69 +761,75 @@
         totals[cur.id] += acc.wallet[cur.id] || 0;
       });
     });
+    var ids = selectedCurrencies.map(function (c) { return c.id; });
+    var best = bestByCurrency(rowsAcc, ids);
 
     // Renderizar KPIs
     renderKPIs(totals, state.accounts);
 
-        var bodyRows = rowsAcc.map(function(acc) {
-          var cells = [];
-          // Buscar el tag de esta cuenta en las keys guardadas
-          var keyItem = state.keys.find(function(k) { return k.value === acc.token; });
-          var tag = keyItem ? keyItem.tag : null;
-          var icon = getAccountIcon(tag);
+    function accountCell(acc) {
+      var keyItem = state.keys.find(function(k) { return k.value === acc.token; });
+      var tag = keyItem ? keyItem.tag : null;
+      var icon = tag && ACCOUNT_TYPE_ICONS[tag] ? ACCOUNT_TYPE_ICONS[tag] : '';
+      var av = icon ? '<img class="wd3-av" src="' + icon + '" width="28" height="28" alt="" loading="lazy">'
+        : '<span class="wd3-av" aria-hidden="true">' + esc(initialsOf(acc.label)) + '</span>';
+      var errorIndicator = acc.error ? ' <span class="wd3-warn" title="' + esc(acc.error) + '">⚠<span class="wd3-sr"> No se pudo leer</span></span>' : '';
+      return '<div class="wd3-acct">' + av + '<span>' + esc(acc.label) + '</span>' + errorIndicator + '</div>';
+    }
+    function walletReason(acc) { return 'No se pudo leer /v2/account/wallet — ' + (acc.error || 'error desconocido'); }
 
-          // Indicador de error si la cuenta tiene un problema (ej: sin acceso al juego)
-          var errorIndicator = '';
-          if (acc.error) {
-            errorIndicator = '<span title="' + esc(acc.error) + '" style="display:inline-flex;align-items:center;cursor:help;margin-left:6px;">' +
-              '<img src="assets/icons/Welcome/156107.png" width="16" height="16" alt="⚠" style="filter:brightness(0.8);">' +
-              '</span>';
-          }
-
-          cells.push(
-            '<td style="display:flex;align-items:center;gap:10px;min-width:160px;">' +
-              '<img src="' + icon + '" width="28" height="28" alt="" style="border-radius:8px;filter:brightness(0.9);flex-shrink:0;" loading="lazy">' +
-              '<strong>' + esc(acc.label) + '</strong>' +
-              errorIndicator +
-            '</td>'
-          );
+    var bodyRows = rowsAcc.map(function(acc) {
+      var cells = ['<th scope="row" class="wd3-acc">' + accountCell(acc) + '</th>'];
       var s = acc.summary || {};
       var fieldErr = (s._errors && s._errors.luck) || null;
       cells.push(fieldErr ? unreadableCell(fieldErr) : renderLuckCell(s));
       selectedCurrencies.forEach(function(cur) {
+        // v3: una cuenta que no se pudo leer no muestra 0 (sería un dato falso): «— ⚠».
+        if (acc.error) { cells.push(unreadableCell(walletReason(acc))); return; }
         var value = acc.wallet[cur.id] || 0;
-        var displayValue = formatValueForDisplay(cur.id, value);
-        cells.push('<td class="right" title="' + esc(cur.name) + ': ' + (cur.id === 1 ? value + ' cobre' : fmtInt(value)) + '">' + displayValue + '</td>');
+        var isBest = best[cur.id] !== undefined && value === best[cur.id];
+        cells.push('<td class="right' + (isBest ? ' wd3-best' : '') + '" title="' + esc(cur.name) + ': ' + (cur.id === 1 ? value + ' cobre' : fmtInt(value)) +
+          (isBest ? ' · la que más tiene' : '') + '">' + formatValueForDisplay(cur.id, value) + '</td>');
       });
-      return '                <tr>' + cells.join('') + '<\/tr>';
+      return '<tr' + (acc.error ? ' class="wd3-row-err"' : '') + '>' + cells.join('') + '</tr>';
     }).join('');
 
-    // Fila de totales
-    var totalCells = ['<td class="total-label"><strong><img src="assets/icons/578844.png" width="14" height="14" alt="" style="vertical-align: middle; margin-right: 6px;">TOTAL</strong></td>'];
+    // Fila de totales (fija abajo al desplazar)
+    var walletUnreadable = rowsAcc.filter(function (acc) { return acc.error; }).length;
+    var curTitle = walletUnreadable > 0
+      ? 'Parcial: ' + walletUnreadable + ' de ' + rowsAcc.length + ' cuentas no se pudieron leer.'
+      : '';
+    var totalCells = ['<th scope="row" class="total-label wd3-acc"' + (curTitle ? ' title="' + esc(curTitle) + '"' : '') + '>' + totalLabel(rowsAcc) + '</th>'];
     totalCells.push('<td class="right total-cell"></td>');
     selectedCurrencies.forEach(function(cur) {
-      var totalValue = totals[cur.id];
-      var displayTotal = formatValueForDisplay(cur.id, totalValue);
-      var walletUnreadable = rowsAcc.filter(function(acc) { return acc.error; }).length;
-      var curTitle = walletUnreadable > 0
-        ? 'Parcial: ' + walletUnreadable + ' de ' + rowsAcc.length + ' cuentas no se pudieron leer.'
-        : '';
-      totalCells.push('<td class="right total-cell"' + (curTitle ? ' title="' + esc(curTitle) + '"' : '') + '>' +
-        '<strong>' + displayTotal + (walletUnreadable > 0 ? ' ⚠' : '') + '</strong></td>');
+      totalCells.push('<td class="right total-cell"' + (curTitle ? ' title="' + esc(curTitle) + '"' : '') + '>' + formatValueForDisplay(cur.id, totals[cur.id]) + '</td>');
     });
-    var totalRow = '<tr class="total-row">' + totalCells.join('') + '<\/tr>';
+    var totalRow = '<tr class="total-row wd3-tot">' + totalCells.join('') + '</tr>';
 
     tbody.innerHTML = bodyRows + totalRow;
+
+    // En el celular, cada cuenta es una tarjeta (mismos datos, mismo orden).
+    if (cardsBox) {
+      cardsBox.innerHTML = rowsAcc.map(function (acc) {
+        var rows = selectedCurrencies.map(function (cur) {
+          var v = acc.error ? '— ⚠' : formatValueForDisplay(cur.id, acc.wallet[cur.id] || 0);
+          var isBest = !acc.error && best[cur.id] !== undefined && (acc.wallet[cur.id] || 0) === best[cur.id];
+          return '<div class="wd3-crow"><span>' + esc(cur.name) + '</span><b' + (isBest ? ' class="wd3-best"' : '') + '>' + v + '</b></div>';
+        }).join('');
+        return '<div class="wd3-card' + (acc.error ? ' wd3-row-err' : '') + '">' + accountCell(acc) + rows + '</div>';
+      }).join('') +
+      '<div class="wd3-card wd3-tot"><div class="wd3-acct"><span>' + totalLabel(rowsAcc) + '</span></div>' +
+        selectedCurrencies.map(function (cur) { return '<div class="wd3-crow"><span>' + esc(cur.name) + '</span><b>' + formatValueForDisplay(cur.id, totals[cur.id]) + '</b></div>'; }).join('') +
+      '</div>';
+    }
     console.log(LOG, 'Tabla renderizada con', rowsAcc.length, 'filas');
 
-    // Agregar eventos de ordenamiento (divisas)
+    // Agregar eventos de ordenamiento (divisas): clic o Enter.
     var sortableHeaders = thead.querySelectorAll('th.sortable');
     sortableHeaders.forEach(function(th) {
-      th.removeEventListener('click', th.__clickHandler);
       var currencyId = parseInt(th.getAttribute('data-currency-id'), 10);
-      var handler = function() { setSortColumn(currencyId); };
-      th.__clickHandler = handler;
-      th.addEventListener('click', handler);
+      th.addEventListener('click', function() { setSortColumn(currencyId); });
+      th.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSortColumn(currencyId); } });
     });
 
   }
@@ -930,19 +856,19 @@
     if (kpisContainer && !kpisContainer.__originalContent) {
       kpisContainer.__originalContent = kpisContainer.innerHTML;
     }
-    
+
     if (kpisContainer) {
       kpisContainer.innerHTML = '<div class="wd-skeleton" style="height:80px; width:100%; border-radius:12px;"></div>';
     }
-    
+
     var tableWrap = document.querySelector('#walletDashboardPanel .wd-tablewrap');
     if (!tableWrap) return;
-    
+
     var originalTable = tableWrap.querySelector('#wdTable');
     if (originalTable && !tableWrap.__originalTable) {
       tableWrap.__originalTable = originalTable.cloneNode(true);
     }
-    
+
     tableWrap.innerHTML = '<div class="wd-skeleton-table wd-skeleton"></div>';
   }
 
@@ -952,10 +878,10 @@
       kpisContainer.innerHTML = kpisContainer.__originalContent;
       delete kpisContainer.__originalContent;
     }
-    
+
     var tableWrap = document.querySelector('#walletDashboardPanel .wd-tablewrap');
     if (!tableWrap) return;
-    
+
     if (tableWrap.__originalTable) {
       tableWrap.innerHTML = '';
       tableWrap.appendChild(tableWrap.__originalTable);
@@ -971,10 +897,10 @@
         renderProgressErrors();
         setStatus('Cargando divisas...');
         await loadCurrencies();
-        
+
         setStatus('Cargando carteras...');
         await loadAllWallets(!!forceNoCache);
-        
+
         setStatus('Renderizando...');
         renderCurrencySelector();
         renderTable();
@@ -985,7 +911,7 @@
         } else {
           setStatus('Listo.');
         }
-        
+
         hideSkeletonAndRestoreTable();
       })();
       await _refreshInFlight;
@@ -1000,6 +926,59 @@
     window.dispatchEvent(new HashChangeEvent('hashchange'));
   }
 
+  var CSS3 = [
+    '#walletDashboardPanel .wd3-body{padding:18px 20px 22px}',
+    '.wd3-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:16px}',
+    '.wd3-kpi{background:var(--bg-0);border:1px solid var(--bd-1);border-radius:14px;padding:12px 14px;min-width:0}',
+    '.wd3-kpi--gold{box-shadow:inset 0 0 0 1px rgba(242,185,75,.35)}',
+    '.wd3-kl{display:flex;align-items:center;gap:8px;font-size:.78rem;color:var(--tx-3)}',
+    '.wd3-kv{font-size:1.35rem;font-weight:800;color:var(--tx-1);margin-top:4px;white-space:nowrap}.wd3-ks{font-size:.75rem;color:var(--tx-3);margin-top:2px}',
+    '.wd3-coin{font-variant-numeric:tabular-nums;white-space:nowrap}.wd3-coin small{color:var(--tx-3);font-weight:500;margin:0 3px 0 1px;font-size:.78em}',
+    '.wd3-g{color:var(--gn-gold,#F2B94B)}.wd3-s{color:var(--tx-1)}.wd3-c{color:#c98a5a}.wd3-num{font-variant-numeric:tabular-nums}.wd3-neg{color:var(--color-red)}',
+    '.wd3-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-start;margin-bottom:10px}',
+    '.wd3-picker{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.wd3-lbl{color:var(--tx-3);font-size:.8rem;margin-right:2px}',
+    '.wd3-pk{display:inline-flex;align-items:center;gap:6px;background:var(--bg-0);border:1px solid var(--bd-2);border-radius:999px;padding:4px 6px 4px 9px;font:inherit;font-size:.8rem;color:var(--tx-1)}',
+    '.wd3-pk button{background:none;border:0;color:var(--tx-3);cursor:pointer;font-size:1rem;line-height:1;padding:0 4px;border-radius:999px}.wd3-pk button:hover{color:var(--tx-1);background:var(--bg-2)}',
+    '.wd3-add{border-style:dashed;color:var(--tx-3);padding:4px 11px;cursor:pointer}.wd3-add:hover{color:var(--tx-1);border-color:var(--acc-1)}',
+    '.wd3-cic{width:18px;height:18px;object-fit:contain;flex-shrink:0;vertical-align:middle}',
+    '#wdCurrencySelector{position:relative;flex:1 1 320px}',
+    '.wd3-pop{position:absolute;z-index:20;top:calc(100% + 6px);left:0;width:min(340px,92vw);background:var(--bg-1);border:1px solid var(--bd-2);border-radius:12px;padding:8px;box-shadow:0 12px 30px rgba(0,0,0,.35)}',
+    '.wd3-pop input{width:100%;box-sizing:border-box;background:var(--bg-0);border:1px solid var(--bd-1);border-radius:8px;color:var(--tx-1);font:inherit;padding:7px 10px;margin-bottom:6px}',
+    '.wd3-opts{max-height:260px;overflow:auto;display:grid;gap:2px}.wd3-opts button{display:flex;align-items:center;gap:8px;background:none;border:0;border-radius:8px;color:var(--tx-1);font:inherit;font-size:.85rem;text-align:left;padding:6px 8px;cursor:pointer}.wd3-opts button:hover{background:var(--bg-2)}',
+    '.wd3-tools{display:flex;gap:8px;margin-left:auto}',
+    '.wd3-btn{display:inline-flex;align-items:center;gap:6px;background:var(--bg-0);border:1px solid var(--bd-1);color:var(--tx-2);border-radius:10px;padding:6px 12px;font:inherit;font-size:.82rem;cursor:pointer}.wd3-btn:hover{border-color:var(--acc-1);color:var(--tx-1)}',
+    '.wd3-status{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;font-size:.8rem;color:var(--tx-3);margin-bottom:8px}.wd3-status .error{color:var(--color-red)}',
+    '.wd3-errs{border:1px solid var(--bd-2);border-left:3px solid var(--gn-gold,#F2B94B);background:var(--bg-0);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:.82rem}',
+    '.wd3-errs p{margin:4px 0;color:var(--tx-3)}.wd3-errs ul{margin:4px 0 0;padding-left:18px;color:var(--tx-3)}',
+    '#walletDashboardPanel .wd-tablewrap{overflow:auto;max-height:70vh;border:1px solid var(--bd-1);border-radius:12px;margin-top:0}',
+    '#wdTable{width:100%;border-collapse:separate;border-spacing:0;font-size:.88rem}',
+    '#wdTable th,#wdTable td{padding:9px 12px;border-bottom:1px solid var(--bd-1);white-space:nowrap;text-align:left;background:var(--bg-1)}',
+    '#wdTable .right{text-align:right}',
+    '#wdTable thead th{position:sticky;top:0;z-index:2;background:var(--bg-2,var(--bg-1));color:var(--tx-3);font-size:.74rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em}',
+    '#wdTable thead th.sortable{cursor:pointer}#wdTable thead th.sortable:hover,#wdTable thead th[aria-sort]{color:var(--tx-1)}',
+    '#wdTable .wd3-acc{position:sticky;left:0;z-index:1;font-weight:600;color:var(--tx-1)}#wdTable thead .wd3-acc{z-index:3}',
+    '#wdTable tr.wd3-tot>*{position:sticky;bottom:0;z-index:1;background:var(--bg-2,var(--bg-1));font-weight:800;border-top:1px solid var(--bd-2)}#wdTable tr.wd3-tot>.wd3-acc{z-index:3}',
+    '#wdTable tbody tr:hover>*{background:var(--bg-0)}',
+    '.wd3-best{color:var(--gn-gold,#F2B94B)}.wd3-best .wd3-s,.wd3-best .wd3-num{color:inherit}.wd3-best::after{content:" ▲";font-size:.65rem}',
+    '.wd3-acct{display:flex;align-items:center;gap:10px}',
+    '.wd3-av{width:28px;height:28px;border-radius:8px;flex-shrink:0;display:inline-grid;place-items:center;background:var(--bg-2,var(--bg-0));color:var(--tx-2);font-size:.72rem;font-weight:700;object-fit:cover}',
+    '.wd3-warn{color:var(--color-red);cursor:help}.wd3-row-err td{color:var(--color-red)}',
+    '#wdTable td.wd3-empty{text-align:center;color:var(--tx-3);padding:24px;white-space:normal}.wd3-muted{color:var(--tx-3);font-size:.82rem}',
+    '.wd3-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}',
+    '.wd3-cards{display:none}',
+    '.wd3-card{background:var(--bg-0);border:1px solid var(--bd-1);border-radius:12px;padding:10px 12px}.wd3-card .wd3-acct{font-weight:700;margin-bottom:6px}',
+    '.wd3-crow{display:flex;justify-content:space-between;gap:10px;font-size:.85rem;padding:2px 0}.wd3-crow span{color:var(--tx-3)}',
+    '.wd3-card.wd3-tot{background:var(--bg-2,var(--bg-1));border-color:var(--bd-2)}',
+    '#walletDashboardPanel button:focus-visible,#walletDashboardPanel input:focus-visible,#wdTable th[tabindex]:focus-visible{outline:2px solid var(--acc-1);outline-offset:2px}',
+    '@media (max-width:720px){#walletDashboardPanel .wd3-body{padding:14px 12px}#walletDashboardPanel .wd-tablewrap{display:none}.wd3-cards{display:grid;gap:8px}.wd3-tools{margin-left:0}}'
+  ].join('\n');
+
+  function injectCSS3() {
+    if (document.getElementById('wd3-style')) return;
+    var s = document.createElement('style'); s.id = 'wd3-style'; s.textContent = CSS3;
+    (document.head || document.documentElement).appendChild(s);
+  }
+
   // ------------------------------ UI del Panel (creación síncrona) ------------------------------
   function ensurePanelContent() {
     var panel = document.getElementById('walletDashboardPanel');
@@ -1007,64 +986,43 @@
       console.error(LOG, 'Panel walletDashboardPanel no encontrado en el DOM');
       return null;
     }
+    injectCSS3();
 
     // Si ya tiene contenido, no lo recreamos
     if (panel.querySelector('.wd-content')) {
-      console.log(LOG, 'Panel ya tiene contenido');
       return panel;
     }
 
-    console.log(LOG, 'Creando contenido del panel...');
-    
-    // Limpiar el panel
     panel.innerHTML = '';
-    
-    // Crear el contenido
     var contentDiv = document.createElement('div');
     contentDiv.className = 'wd-content';
-    contentDiv.innerHTML = `
-      <div class="panel__head">
-        <h2 class="panel__title">
-          <img src="assets/icons/733322.png" alt="" width="32" height="32" style="vertical-align: middle; margin-right: 8px;">
-          Dashboard de Cartera Multi-Cuenta
-        </h2>
-      </div>
-      <div class="panel__body">
-        <div id="wdLoadErrors"></div>
-        <div id="wdKPIs" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:12px; margin-bottom:20px;"></div>
-        
-        <div class="wd-filters" style="display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin-bottom:16px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <strong>Divisas:</strong>
-            <div id="wdCurrencySelector"></div>
-          </div>
-          <div style="display:flex; gap:8px; margin-left:auto;">
-            <button id="wdRefreshBtn" class="btn btn--ghost" style="display:inline-flex; align-items:center; gap:6px;">
-              <img src="assets/icons/Welcome/834002.png" width="14" height="14" alt="Refrescar"> Refrescar
-            </button>
-            <button id="wdBackBtn" class="btn btn--ghost" style="display:inline-flex; align-items:center; gap:6px;">
-              <img src="assets/icons/733322.png" width="14" height="14" alt="Volver"> Volver a Cartera
-            </button>
-          </div>
-        </div>
-        
-        <div class="wd-status-bar" style="display:flex; justify-content:space-between; margin-bottom:10px;">
-          <span id="wdStatusMsg" class="wd-status-msg">—</span>
-          <span id="wdTimestamp" class="wd-timestamp"></span>
-        </div>
-        
-        <div class="wd-tablewrap">
-          <table id="wdTable" class="wd-table wvpd" style="width:100%; border-collapse:collapse;">
-            <thead></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    `;
-    
+    contentDiv.innerHTML =
+      '<div class="panel__head"><h2 class="panel__title">Todas las cuentas</h2></div>' +
+      '<div class="panel__body wd3-body">' +
+        '<div id="wdLoadErrors"></div>' +
+        '<div id="wdKPIs" class="wd3-kpis"></div>' +
+        '<div class="wd-filters wd3-bar">' +
+          '<div id="wdCurrencySelector"></div>' +
+          '<div class="wd3-tools">' +
+            '<button type="button" id="wdRefreshBtn" class="wd3-btn"><img src="assets/icons/Welcome/834002.png" width="14" height="14" alt="">Actualizar</button>' +
+            '<button type="button" id="wdBackBtn" class="wd3-btn"><img src="assets/icons/733322.png" width="14" height="14" alt="">Volver a Cartera</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="wd-status-bar wd3-status">' +
+          '<span id="wdStatusMsg" class="wd-status-msg" aria-live="polite">—</span>' +
+          '<span id="wdTimestamp" class="wd-timestamp"></span>' +
+        '</div>' +
+        '<div class="wd-tablewrap">' +
+          '<table id="wdTable" class="wd-table">' +
+            '<caption class="wd3-sr">Divisas por cuenta</caption>' +
+            '<thead></thead>' +
+            '<tbody></tbody>' +
+          '</table>' +
+        '</div>' +
+        '<div id="wdCards" class="wd3-cards" aria-label="Divisas por cuenta"></div>' +
+      '</div>';
+
     panel.appendChild(contentDiv);
-    
-    console.log(LOG, 'Contenido del panel creado');
     return panel;
   }
 
@@ -1072,16 +1030,16 @@
   var WalletDashboard = {
     async initOnce() {
       if (state.inited) return;
-      
+
       console.log(LOG, 'initOnce() llamado');
-      
+
       // Crear contenido del panel de forma síncrona
       ensurePanelContent();
-      
+
       // Cargar preferencias
       loadSortPreference();
       loadSelectedCurrencies();
-      
+
       // Conectar eventos de botones (los botones ya existen después de ensurePanelContent)
       var refreshBtn = document.getElementById('wdRefreshBtn');
       if (refreshBtn && !refreshBtn.__wired) {
@@ -1089,44 +1047,44 @@
         refreshBtn.addEventListener('click', function() { refreshData(true); });
         console.log(LOG, 'Evento de refresh conectado');
       }
-      
+
       var backBtn = document.getElementById('wdBackBtn');
       if (backBtn && !backBtn.__wired) {
         backBtn.__wired = true;
         backBtn.addEventListener('click', function() { goBackToWallet(); });
         console.log(LOG, 'Evento de back conectado');
       }
-      
+
       state.inited = true;
       console.log(LOG, 'initOnce() completado');
     },
 
     async activate() {
       console.log(LOG, 'activate() llamado');
-      
+
       var walletPanel = document.getElementById('walletPanel');
       if (walletPanel) {
         walletPanel.setAttribute('hidden', 'hidden');
       }
-      
+
       await this.initOnce();
       state.active = true;
-      
+
       var panel = document.getElementById('walletDashboardPanel');
       if (panel) panel.removeAttribute('hidden');
-      
+
       await refreshData(false);
     },
 
     deactivate() {
       console.log(LOG, 'deactivate() llamado');
       state.active = false;
-      
+
       var walletPanel = document.getElementById('walletPanel');
       if (walletPanel) {
         walletPanel.removeAttribute('hidden');
       }
-      
+
       var panel = document.getElementById('walletDashboardPanel');
       if (panel) panel.setAttribute('hidden', '');
     },
@@ -1162,10 +1120,13 @@
         }),
         statusText: (document.getElementById('wdStatusMsg') || {}).textContent || null
       };
-    }
+    },
+
+    version: '3.0.0',
+    _pure: { bestByCurrency: bestByCurrency, pickerOptions: pickerOptions, totalLabel: totalLabel, initialsOf: initialsOf, formatCoinValue: formatCoinValue }
   };
 
   root.WalletDashboard = WalletDashboard;
 
-  console.info(LOG, 'ready v2.9.0 — el contador de carga mide y muestra la ETA (Idea 48 Tramo B)');
+  console.info(LOG, 'ready v3.0.0 — Todas las cuentas renovada (BL-056)');
 })(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));
