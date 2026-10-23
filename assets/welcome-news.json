@@ -1,0 +1,9 @@
+{
+  "about": "Novedades de La Bóveda que muestra la Bienvenida (js/welcome-panel.js). Más nuevas primero; se ven las 3 últimas. «module» es el id de la tarjeta del módulo (cards, meta, armory, achievements, wv, activities, raids, characters, accounts). Solo presentan el módulo: nada de horarios ni datos del juego (DEC-032).",
+  "items": [
+    { "date": "2026-10-23", "module": "meta", "title": "Metas y Eventos renovado", "text": "pantalla nueva con fijadas y vistas previas de las infusiones" },
+    { "date": "2026-10-22", "module": "cards", "title": "La Cartera, renovada", "text": "tres pestañas: tu cartera, cambio de divisas y todas las cuentas" },
+    { "date": "2026-10-22", "module": "armory", "title": "Cada legendaria con pantalla propia", "text": "receta completa y materiales totales lado a lado" },
+    { "date": "2026-10-21", "module": "activities", "title": "PSNA renovado", "text": "el día correcto y los waypoints a un clic" }
+  ]
+}
