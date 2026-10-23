@@ -1,12 +1,13 @@
 /*!
  * js/shiruvana-places.js — Dónde le hablo al jugador (DEC-025)
- * Versión: 1.2.0
+ * Versión: 1.3.0
  *
- * Pongo mi voz (js/shiruvana.js) en tres lugares, sin tocar el código de cada módulo:
+ * Pongo mi voz (js/shiruvana.js) en estos lugares, sin tocar el código de cada módulo:
  *  - la Bienvenida: sin API Key me presento y te llevo a los tres pasos; con API Key soy
  *    «Shiruvana te guía»: un mensaje por vez, lo más importante primero (BL-058, WEL-3);
  *  - el modal de API Keys: qué necesito y dónde quedan tus datos;
- *  - el modal de guías: por cuál empezar.
+ *  - el modal de guías: por cuál empezar;
+ *  - mi rincón (DEC-034): al pie de la Sidebar en desktop y de la hoja «Más» en el celular.
  *
  * «Shiruvana te guía» lee Welcome.orientation() (js/welcome-panel.js 2.1.0: Keys, permisos, copia,
  * configuración y por dónde seguir) y la Key activa. Prioridades:
@@ -20,10 +21,15 @@
  *   deja de prometer la sincronización deprecada (DEC-030) y el saludo deja de nombrar la barra lateral.
  * 1.2.0 (WEL-4): con «Siguiente» o «Preguntame» el mensaje nuevo se anuncia en una región «polite»
  *   (#shvGuideLive, fuera de .panel__body) para quien usa lector de pantalla; el foco no se mueve.
+ * 1.3.0 (SBR-4, BL-061): mi rincón global (DEC-034). Avatar de 48 px, «Shiruvana», una sola línea con el
+ *   estado de la Bóveda y como mucho un enlace a Inicio: «Empezá por tu API Key», «Todo en orden en tu
+ *   Bóveda» o cuántas cosas hay para revisar y cuál va primero, con las prioridades de «Shiruvana te guía».
+ *   Uno solo a la vista: el de la Sidebar en desktop y el de la hoja «Más» en el celular. No interrumpo:
+ *   no se abre nada solo y no hablo de horarios, eventos, metas ni del contenido de ningún módulo.
  */
 (function (root) {
   'use strict';
-  var VERSION = '1.2.0';
+  var VERSION = '1.3.0';
 
   var TEXTS = {
     welcomeNew: [
@@ -310,6 +316,104 @@
     return guideVoice(items);
   }
 
+  // ---------------------------------------------------------------- mi rincón (SBR-4, DEC-034)
+  // Lo que va primero, en pocas palabras. Solo estado de la Bóveda (N1–N2 de DEC-033).
+  var CORNER_SHORT = {
+    blocked: 'tu Key activa no tiene el permiso «cuenta»',
+    keys: 'faltan permisos en tus Keys',
+    backup: 'tu copia de seguridad',
+    verify: 'Keys sin sus permisos anotados'
+  };
+  var CORNER_HOSTS = ['appSidebar', 'sbrSheet']; // pie de la Sidebar (desktop) y de la hoja «Más» (celular)
+  var CORNER_CSS = [
+    '.shv-corner.shv-voice{display:flex;align-items:center;gap:10px;margin:12px 0 0;padding:10px 12px;' +
+      'border:1px solid var(--bd-1,var(--panel-border));border-radius:12px;background:var(--bg-1,transparent)}',
+    '.shv-corner .shv-voice__avatar{width:48px;height:48px;flex-shrink:0;border-radius:50%}',
+    '.shv-corner .shv-voice__main{min-width:0}',
+    '.shv-corner .shv-voice__label{margin:0;font-size:.75rem;font-weight:700;color:var(--tx-1,var(--text))}',
+    '.shv-corner .shv-voice__body p{margin:2px 0 0;font-size:.82rem;line-height:1.35;color:var(--tx-2,var(--text))}',
+    '.shv-corner[data-level="warn"]{border-color:var(--gn-gold,var(--color-amber))}',
+    '.shv-corner__link{display:inline-flex;align-items:center;min-height:32px;font-size:.8rem;font-weight:600;color:var(--acc-1);text-decoration:underline}',
+    '.shv-corner__link:focus-visible{outline:2px solid var(--acc-1);outline-offset:2px}',
+    '@media (max-width:900px){#appSidebar>.shv-corner{display:none}#sbrSheet .shv-corner__link{min-height:44px}}',
+    '@media (min-width:901px){#sbrSheet>.shv-corner{display:none}}'
+  ].join('\n');
+
+  /**
+   * Qué digo en el rincón: una línea y como mucho un enlace.
+   * @param {boolean} keysLoaded  si hay alguna API Key cargada
+   * @param {Array|null} orient   Welcome.orientation()
+   * @param {object|null} active  la Key activa
+   */
+  function cornerMessage(keysLoaded, orient, active) {
+    if (!keysLoaded) return { level: 'warn', text: 'Empezá por tu API Key: te llevo paso a paso en Inicio.', link: { label: 'Ir a Inicio', href: '#/welcome' } };
+    var todo = (guideItems(Array.isArray(orient) ? orient : [], active) || []).filter(function (x) { return CORNER_SHORT[x.id]; });
+    if (!todo.length) return { level: 'ok', text: 'Todo en orden en tu Bóveda.', link: null };
+    var first = CORNER_SHORT[todo[0].id];
+    return { level: 'warn', text: todo.length === 1 ? 'Tengo 1 cosa para revisar: ' + first + '.'
+      : 'Tengo ' + todo.length + ' cosas para revisar; la primera: ' + first + '.', link: { label: 'Ver en Inicio', href: '#/welcome' } };
+  }
+
+  function ensureCornerCSS(d) {
+    if (d.getElementById('shv-corner-css')) return;
+    var st = d.createElement('style');
+    st.id = 'shv-corner-css';
+    st.textContent = CORNER_CSS;
+    (d.head || d.documentElement).appendChild(st);
+  }
+
+  function cornerEl(msg, sig) {
+    var d = doc();
+    var el = root.Shiruvana.voice({ kind: msg.level === 'warn' ? 'advierte' : 'saluda', text: msg.text });
+    el.className += ' shv-corner';
+    el.setAttribute('data-shv-place', 'corner');
+    el.setAttribute('data-level', msg.level);
+    el.setAttribute('data-sig', sig);
+    el.setAttribute('aria-label', 'Shiruvana');
+    var label = el.querySelector('.shv-voice__label');
+    if (label) label.textContent = 'Shiruvana';
+    if (msg.link) {
+      var a = d.createElement('a');
+      a.className = 'shv-corner__link';
+      a.setAttribute('href', msg.link.href);
+      a.textContent = msg.link.label;
+      // En la hoja «Más», ir a Inicio la cierra (la abre y la cierra js/sidebar-nav.js).
+      a.addEventListener('click', function () {
+        var S = root.SidebarNav;
+        if (S && typeof S.closeSheet === 'function') S.closeSheet();
+      });
+      (el.querySelector('.shv-voice__main') || el).appendChild(a);
+    }
+    return el;
+  }
+
+  // Pone o actualiza mi rincón en cada lugar que exista. Solo lo rearma si cambió lo que digo.
+  function corner() {
+    var d = doc();
+    if (!root.Shiruvana || typeof d.getElementById !== 'function') return [];
+    var keysLoaded = hasKeys(), orient = null;
+    if (keysLoaded) {
+      var W = root.Welcome;
+      if (!W || typeof W.orientation !== 'function') return []; // sin la Bienvenida no sé qué falta: no invento
+      try { orient = W.orientation(); } catch (_) { return []; }
+    }
+    var msg = cornerMessage(keysLoaded, orient, activeKey());
+    var sig = msg.level + '|' + msg.text;
+    var out = [];
+    CORNER_HOSTS.forEach(function (id) {
+      var host = d.getElementById(id);
+      if (!host) return;
+      ensureCornerCSS(d);
+      var prev = host.querySelectorAll('[data-shv-place="corner"]');
+      if (prev.length === 1 && prev[0].getAttribute('data-sig') === sig) { out.push(prev[0]); return; }
+      prev.forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
+      var el = cornerEl(msg, sig);
+      host.appendChild(el);
+      out.push(el);
+    });
+    return out;
+  }
+
   // ---------------------------------------------------------------- lugares
   function placeEl(container, el, marker) {
     if (!container || !el) return null;
@@ -356,13 +460,25 @@
     var panel = doc().getElementById('welcomePanel');
     if (panel && typeof root.MutationObserver === 'function') {
       // La Bienvenida se vuelve a dibujar cada vez que cambia algo: reaparezco (una vez) con lo de ahora.
-      new root.MutationObserver(function () { welcome(); }).observe(panel, { childList: true, subtree: true });
+      new root.MutationObserver(function () { welcome(); corner(); }).observe(panel, { childList: true, subtree: true });
+    }
+    // Mi rincón: la Sidebar y la hoja «Más» se arman en DOMContentLoaded (js/sidebar-nav.js, que se carga antes).
+    corner();
+    var d = doc();
+    if (d.readyState !== 'complete') d.addEventListener('DOMContentLoaded', function () { corner(); });
+    d.addEventListener('gn:tokenchange', function () { corner(); });
+    // Guardar una copia o cambiar una Key se hace con un clic: después del clic miro si cambió algo.
+    d.addEventListener('click', function () { if (typeof setTimeout === 'function') setTimeout(corner, 0); }, true);
+    if (typeof root.addEventListener === 'function') {
+      root.addEventListener('storage', function () { corner(); });
+      root.addEventListener('hashchange', function () { corner(); });
     }
   }
 
   root.ShiruvanaPlaces = {
     init: init, TEXTS: TEXTS, TIPS: TIPS, ASK: ASK, welcome: welcome, keys: keys, guide: guideModal,
-    guideItems: guideItems, askMessage: askMessage, refresh: refreshGuide, version: VERSION
+    guideItems: guideItems, askMessage: askMessage, refresh: refreshGuide, version: VERSION,
+    corner: corner, cornerMessage: cornerMessage, CORNER_SHORT: CORNER_SHORT, CORNER_CSS: CORNER_CSS
   };
 
   if (doc().readyState === 'loading') doc().addEventListener('DOMContentLoaded', init);
