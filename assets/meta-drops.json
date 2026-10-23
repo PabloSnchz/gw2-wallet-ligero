@@ -5,7 +5,7 @@
       {
         "itemName": "Liquid Aurillium Infusion",
         "wiki": "https://wiki.guildwars2.com/wiki/Liquid_Aurillium_Infusion",
-        "preview": "https://wiki.guildwars2.com/images/2/22/Vial_of_Liquid_Aurillium.jpg"
+        "preview": "assets/previews/octovine.webp"
       }
     ],
     "highlightItemId": 81715
@@ -16,7 +16,8 @@
       {
         "itemName": "Chak Infusion",
         "wiki": "https://wiki.guildwars2.com/wiki/Chak_Infusion",
-        "preview": "https://wiki.guildwars2.com/images/a/ae/Chak_Animation_8.gif"
+        "preview": "",
+        "previewMissing": true
       }
     ],
     "highlightItemId": 81825
@@ -38,7 +39,8 @@
       {
         "itemName": "Glob of Dragonvoid Aether (Echo of the Dragonvoid)",
         "wiki": "https://wiki.guildwars2.com/wiki/Glob_of_Dragonvoid_Aether",
-        "preview": "https://wiki.guildwars2.com/images/2/29/Echo_of_the_Dragonvoid_infusion.jpg"
+        "preview": "",
+        "previewMissing": true
       }
     ],
     "highlightItemId": 97993
@@ -60,7 +62,7 @@
       {
         "itemName": "Winter's Heart Infusion",
         "wiki": "https://wiki.guildwars2.com/wiki/Winter%27s_Heart_Infusion",
-        "preview": "https://wiki.guildwars2.com/images/1/1b/Winter%27s_Heart_Infusion_Eyes.jpg"
+        "preview": "assets/previews/drakkar.webp"
       }
     ],
     "highlightItemId": 79959
@@ -71,7 +73,7 @@
       {
         "itemName": "Frost Legion Infusion",
         "wiki": "https://wiki.guildwars2.com/wiki/Frost_Legion_Infusion",
-        "preview": "https://wiki.guildwars2.com/images/3/38/Frost_Legion_Infusion.jpg"
+        "preview": "assets/previews/drizzlewood_north.webp"
       }
     ],
     "highlightItemId": 93775
@@ -82,7 +84,7 @@
       {
         "itemName": "Queen Bee Infusion",
         "wiki": "https://wiki.guildwars2.com/wiki/Queen_Bee_Infusion",
-        "preview": "https://wiki.guildwars2.com/images/e/e6/QB_Animation_7.gif"
+        "preview": "assets/previews/vinewrath.webp"
       }
     ],
     "highlightItemId": 81663
@@ -104,7 +106,7 @@
       {
         "itemName": "Crystal Infusion",
         "wiki": "https://wiki.guildwars2.com/wiki/Crystal_Infusion",
-        "preview": "https://wiki.guildwars2.com/images/4/46/Crystal_Infusion.jpg"
+        "preview": "assets/previews/death_branded_shatterer.webp"
       }
     ],
     "highlightItemId": 88771
@@ -115,7 +117,7 @@
       {
         "itemName": "Pristine Dragon's Eye (cosmetic infusion family)",
         "wiki": "https://wiki.guildwars2.com/images/1/1a/Pristine_Dragon%27s_Left_Eye.png",
-        "preview": "https://wiki.guildwars2.com/images/0/01/Primordus_Left_Eye_Infusion.jpg"
+        "preview": "assets/previews/dragonstorm.webp"
       }
     ],
     "highlightItemId": 94955
