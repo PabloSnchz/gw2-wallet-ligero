@@ -1,7 +1,9 @@
 /*!
  * js/wv-view.js — Cámara del Brujo: cabecera y navegación (BL-064, CAM-1)
  * Proyecto: Bóveda del Gato Negro
- * Versión: 1.1.0 (2026-10-24)
+ * Versión: 1.2.0 (2026-10-24)
+ *  - 1.2.0 (CAM-POLISH-001): si js/gn-surface.js está cargado, la guarda de contraste se calcula
+ *    sobre la bandeja y la tarjeta reales (GNSurface.surfaceTokens), no sobre el fondo del theme.
  *
  * 1.1.0 (CAM-6):
  *  - Mi voz en la cabecera: una sola línea y solo si hay algo para hacer (listos para
@@ -26,7 +28,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.1.0';
+  var VERSION = '1.2.0';
   var LOG = '[WVView]';
   var DAY = 86400000;
   var WEEK_BTN = { daily: 'wvTabBtnDaily', weekly: 'wvTabBtnWeekly', special: 'wvTabBtnSpecial', shop: 'wvTabBtnShop' };
@@ -487,7 +489,9 @@
   function applyGuard(tokens) {
     var panel = byId('wvPanel'), W = root.Welcome;
     if (!panel || !panel.style || typeof panel.style.setProperty !== 'function' || !W || !W._pure) return {};
-    var fixes = guardFixes(tokens || readTokens(), W._pure.contrastFixes);
+    var tk = tokens || readTokens(), GS = root.GNSurface;
+    if (GS && typeof GS.surfaceTokens === 'function') tk = GS.surfaceTokens(tk);
+    var fixes = guardFixes(tk, W._pure.contrastFixes);
     (st.guarded || []).forEach(function (k) { if (!(k in fixes)) panel.style.removeProperty(k); });
     Object.keys(fixes).forEach(function (k) { panel.style.setProperty(k, fixes[k]); });
     st.guarded = Object.keys(fixes);
