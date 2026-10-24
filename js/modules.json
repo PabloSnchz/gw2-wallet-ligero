@@ -2,6 +2,7 @@
   "version": 1,
   "modules": [
     { "src": "js/gn-surface.js", "v": "1.0.0" },
+    { "src": "js/gn-frame.js", "v": "1.0.0" },
     { "src": "js/wv-tabs-skin.js", "v": "1.0.0" },
     { "src": "js/wv-view.js", "v": "1.2.0" },
     { "src": "js/wv-shop-manage.js", "v": "1.0.0" },
