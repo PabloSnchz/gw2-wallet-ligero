@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <meta name="color-scheme" content="dark light"/>
   <meta name="theme-color" content="#0F1117"/>
   <title>Bóveda del Gato Negro — v6.6.2</title>
@@ -106,59 +106,9 @@
     }
     .panel__title:hover img, .panel-head__title:hover img { filter: brightness(1.1); }
 
-    /* ============ WV TOOLTIP + HEADER ============ */
-    .wv-sync-tip {
-      display: inline-flex; align-items: center; margin-left: 4px;
-      cursor: help; opacity: 0.7; transition: opacity 0.2s ease;
-    }
-    .wv-sync-tip:hover { opacity: 1; }
-    .wv-sync-tip img { display: block; }
-    #wvPanel .panel-head {
-      display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; gap: 8px; width: 100%; overflow-x: hidden;
-    }
+    /* ============ CÁMARA DEL BRUJO ============ */
+    /* La cabecera, las pestañas y sus estilos los pone la vista de la Cámara (wv-view, por el manifiesto; BL-064). */
     #wvPanel { overflow-x: hidden; width: 100%; padding: 0 12px; }
-    #wvPanel .panel-head__title {
-      display: inline-flex; align-items: center; gap: 8px; margin: 0;
-    }
-    #wvPanel .panel-head,
-    #wvPanel .wv-season,
-    #wvPanel .tabs { padding-left: 12px; padding-right: 12px; }
-
-    /* ============ BOTONES DE NAV WV ============ */
-    #wvTabBtnObjDashboard, #wvTabBtnPurchaseDetail,
-    #wvTabBtnRefreshDashboard, #wvTabBtnBackToWV, #wvTabBtnSyncObjectives {
-      display: inline-flex !important;
-    }
-    #wvTabBtnObjDashboard[hidden], #wvTabBtnPurchaseDetail[hidden],
-    #wvTabBtnRefreshDashboard[hidden], #wvTabBtnBackToWV[hidden], #wvTabBtnSyncObjectives[hidden] {
-      display: none !important;
-    }
-
-    /* ============ WVPD TOOLBAR ============ */
-    .wvpd-iconbtn {
-      background: none !important; border: none !important; padding: 0 !important;
-      margin: 0 0 0 auto !important; width: auto !important; height: auto !important;
-      display: inline-flex !important; align-items: center; justify-content: center; cursor: pointer;
-    }
-    .wvpd-iconbtn img {
-      width: 40px !important; height: 40px !important; display: block !important;
-      border-radius: 8px !important; box-shadow: none !important;
-      background: transparent !important; pointer-events: none;
-    }
-    .wvpd-iconbtn:hover img { filter: brightness(1.08); }
-    .wvpd-number--amber { color:#ffd36b !important; font-weight:700; }
-    .wvpd-number--red { color:#ff9d9d !important; font-weight:700; }
-    .wvpd-green { color:#a0ffc8 !important; font-weight:700; }
-    .wvpd-label--red { color:#ff9d9d !important; }
-    #wvpdUsefulContent .wvpd-li > :last-child { color:#ffd36b !important; font-weight:700; }
-    #wvpdTopAccounts .wvpd-li .wvpd-li__delta { color:#ff9d9d !important; font-weight:700; }
-    #wvpdTopItems .wvpd-li .wvpd-li__rest { color:#ffd36b !important; font-weight:700; }
-    #wvPDPanel .wvpd-banner__icon img { width: 50px !important; height: 50px !important; }
-    #wvPDPanel .wvpd-banner__icon {
-      width: 56px !important; height: 56px !important;
-      display: inline-flex !important; align-items: center; justify-content: center;
-    }
 
     /* ============ ACTIVITIES ============ */
     #activitiesPanel .card {
@@ -573,48 +523,6 @@
                 role="tab" aria-selected="false" aria-controls="wvTabSpecial">Especiales</button>
         <button id="wvTabBtnShop"    data-tab="shop"    type="button"
                 role="tab" aria-selected="false" aria-controls="wvTabShop">Tienda</button>
-        <span style="margin-left:auto;display:inline-flex;gap:6px;align-items:center;">
-          <button id="wvTabBtnObjDashboard" type="button"
-                  class="btn btn--ghost"
-                  style="align-items:center;gap:6px;"
-                  title="Dashboard de Objetivos — Todas las cuentas"
-                  aria-label="Dashboard de Objetivos">
-            <img src="assets/icons/733322.png" width="14" height="14" alt="">
-            Dashboard
-          </button>
-          <button id="wvTabBtnPurchaseDetail" type="button"
-                  class="btn btn--ghost"
-                  style="align-items:center;gap:6px;"
-                  title="Detalle de compras (todas las cuentas)"
-                  aria-label="Detalle de compras">
-            <img src="assets/icons/3594051.png" width="14" height="14" alt="">
-            Compras
-          </button>
-          <button id="wvTabBtnRefreshDashboard" type="button"
-                  class="btn btn--ghost"
-                  style="align-items:center;gap:6px;"
-                  title="Refrescar dashboard"
-                  aria-label="Refrescar dashboard" hidden>
-            <img src="assets/icons/Welcome/834002.png" width="14" height="14" alt="">
-            Refrescar
-          </button>
-          <button id="wvTabBtnBackToWV" type="button"
-                  class="btn btn--ghost"
-                  style="align-items:center;gap:6px;"
-                  title="Volver a Cámara del Brujo"
-                  aria-label="Volver a Cámara del Brujo" hidden>
-            <img src="assets/icons/3172791.png" width="14" height="14" alt="">
-            Volver
-          </button>
-          <button id="wvTabBtnSyncObjectives" type="button"
-                  class="btn btn--ghost"
-                  style="align-items:center;gap:6px;"
-                  title="Forzar sincronización con la API"
-                  aria-label="Sincronizar objetivos" hidden>
-            <img src="assets/icons/2015716.png" width="14" height="14" alt="Sincronizar">
-            Sincronizar
-          </button>
-        </span>
       </nav>
 
       <div class="tabs-content">
@@ -625,7 +533,7 @@
           <div id="wvShopToolbarHost"></div>
         </div>
         <!-- Dashboard de Objetivos Multi-Cuenta (overlay, mismo patrón que Purchase Detail) -->
-        <div id="wvObjectivesDashboardPanel" class="tab-panel" role="tabpanel" aria-labelledby="wvTabBtnObjDashboard" hidden>
+        <div id="wvObjectivesDashboardPanel" class="tab-panel" role="tabpanel" aria-labelledby="wvxTab-accounts" hidden>
           <div class="panel__body"></div>
         </div>
       </div>
@@ -960,16 +868,16 @@
 
   <!-- Vistas independientes del router -->
   <script defer src="js/achievements.js?v=3.2.1"></script>
-  <script defer src="js/meta.js?v=3.4.1"></script>
-  <script defer src="js/sidebar-nav.js?v=1.2"></script>
+  <script defer src="js/meta.js?v=4.0.1"></script>
+  <script defer src="js/sidebar-nav.js?v=2.2.2"></script>
 
   <!-- Actividades -->
-  <script defer src="js/activities.js?v=3.20.4"></script>
+  <script defer src="js/activities.js?v=3.23.0"></script>
   <script defer src="js/activities-theme.js?v=2.6.1"></script>
   <script defer src="js/fractal-tracker-theme.js?v=1.0.1"></script>
 
   <!-- Conversor (modal) -->
-  <script defer src="js/converter-modal.js?v=1.2.0"></script>
+  <script defer src="js/converter-modal.js?v=2.0.0"></script>
   <script defer src="js/commerce-delivery-theme.js?v=1.0.0"></script>
 
   <!-- Inventario y Personajes -->
@@ -988,10 +896,10 @@
   <script defer src="js/gist-sync.js?v=1.1.0"></script>
 
   <!-- Bienvenida -->
-  <script defer src="js/welcome-panel.js?v=1.4.0"></script>
+  <script defer src="js/welcome-panel.js?v=2.2.0"></script>
 
   <!-- Raid Tracker -->
-  <script defer src="js/raid-tracker.js?v=1.9.0"></script>
+  <script defer src="js/raid-tracker.js?v=1.10.1"></script>
 
   <!-- Strike Tracker (NUEVO) -->
   <script defer src="js/strike-tracker.js?v=1.0.0"></script>
@@ -1010,12 +918,12 @@
        es lo que rompe si se invierte. Lo que NO puede pasar es que falte: sin
        el, la cola no distingue "se hace en la forja" de "esta pieza no tiene
        receta publicada". -->
-  <script defer src="js/legendary-tracker.js?v=1.1.0"></script>
+  <script defer src="js/legendary-tracker.js?v=1.3.0"></script>
   <script defer src="js/legendary-data.js?v=1.0.0"></script>
   <script defer src="js/legendary-recipes.js?v=1.0.0"></script>
 <script defer src="js/legendary-tree.js?v=1.0.0"></script>
-<script defer src="js/legendary-tree-ui.js?v=1.0.0"></script>
-  <script defer src="js/render-catologo.js?v=1.0.0"></script>
+<script defer src="js/legendary-tree-ui.js?v=2.2.0"></script>
+  <script defer src="js/render-catologo.js?v=1.6.1"></script>
 
   <!-- Icono y color de rareza de los items del arbol. Va ACa, y no junto a los
        otros de la Armeria, por una razon de mantenimiento concreta:
@@ -1027,21 +935,21 @@
   <script defer src="js/item-icons.js?v=1.0.0"></script>
 
   <!-- Wizard's Vault — UI desacoplada (Fases 1-3) -->
-  <script defer src="js/wv-shop-ui.js?v=1.0.2"></script>
-  <script defer src="js/wv-objectives-ui.js?v=1.0.0"></script>
-  <script defer src="js/wv-objectives-dashboard.js?v=1.0.0"></script>
+  <script defer src="js/wv-shop-ui.js?v=2.0.0"></script>
+  <script defer src="js/wv-objectives-ui.js?v=2.0.0"></script>
+  <script defer src="js/wv-objectives-dashboard.js?v=2.0.0"></script>
   <script src="js/progress-eta.js?v=1.0.0"></script>
-  <script defer src="js/wv-purchase-detail.js?v=1.14.0"></script>
-  <script defer src="js/wv-tabs-skin.js?v=1.0.0"></script>
+  <script defer src="js/wv-purchase-detail.js?v=2.0.0"></script>
+  <!-- wv-tabs-skin.js se carga desde js/modules.json (boot.js, DEC-035 FP-5). -->
 
   <!-- Dashboard de Cartera Multi-Cuenta -->
-  <script defer src="js/wallet-dashboard.js?v=2.9.0"></script>
+  <script defer src="js/wallet-dashboard.js?v=3.0.0"></script>
 
   <!-- Mi voz (Shiruvana, DEC-025): el componente y los lugares donde le hablo al jugador.
        Van después de la bienvenida para encontrar su panel ya creado, y al final de los
        módulos para no correr de lugar ninguna línea anterior de este archivo. -->
   <script defer src="js/shiruvana.js?v=1.0.0"></script>
-  <script defer src="js/shiruvana-places.js?v=1.0.0"></script>
+  <script defer src="js/shiruvana-places.js?v=1.3.0"></script>
 
   <!-- ROUTER — orquestador principal -->
   <script defer src="js/router.js?v=2.17.0"></script>
@@ -1050,14 +958,15 @@
        APP — Bootstrap de keys + toasts + conversor
        ====================================================================== -->
   <script defer src="js/app.js?v=2.8.0"></script>
+  <!-- Cargador de módulos nuevos (DEC-035): los módulos nuevos van en js/modules.json, no acá. Último defer. -->
+  <script defer src="js/boot.js?v=1.0.0"></script>
 
   <!-- ======================================================================
        TEMAS / UI HELPERS — sin defer, se aplican al DOM existente
        ====================================================================== -->
-  <script src="js/wallet-theme.js?v=1.3.1"></script>
-  <script src="js/meta-theme.js?v=1.4.2"></script>
+  <script src="js/wallet-theme.js?v=2.1.0"></script>
+  <script src="js/meta-theme.js?v=2.1.0"></script>
   <script src="js/achievements-theme.js?v=1.1.1"></script>
-  <script src="js/characters-theme.js?v=1.0.1"></script>
   <script src="js/wv-theme.js?v=1.0.1"></script>
   
 
@@ -1475,17 +1384,6 @@
       });
       document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && !modal.hidden) modal.hidden = true;
-      });
-    }
-  })();
-</script>
-<script>
-  (function() {
-    var btn = document.getElementById('wvTabBtnObjDashboard');
-    if (btn) {
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        location.hash = '#/account/wizards-vault/objectives-dashboard';
       });
     }
   })();
