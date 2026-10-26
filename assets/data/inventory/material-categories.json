@@ -1,0 +1,16 @@
+{
+  "source": "https://api.guildwars2.com/v2/materials?ids=all&lang=es",
+  "checked": "2026-10-25",
+  "note": "Las 9 categorías del depósito de materiales, con su nombre en español y el orden del juego. La categoría de cada material la trae /v2/account/materials; una categoría nueva que no esté acá se muestra como «Otros materiales» hasta sumarla.",
+  "categories": [
+    { "id": 6, "name": "Materiales de artesanía básicos", "order": 1 },
+    { "id": 29, "name": "Materiales de artesanía intermedios", "order": 2 },
+    { "id": 37, "name": "Materiales de artesanía avanzados", "order": 3 },
+    { "id": 46, "name": "Materiales ascendidos", "order": 4 },
+    { "id": 30, "name": "Gemas y joyas", "order": 5 },
+    { "id": 5, "name": "Materiales de cocina", "order": 6 },
+    { "id": 49, "name": "Ingredientes de cocina", "order": 7 },
+    { "id": 50, "name": "Materiales de escribanía", "order": 9 },
+    { "id": 38, "name": "Materiales festivos", "order": 10 }
+  ]
+}

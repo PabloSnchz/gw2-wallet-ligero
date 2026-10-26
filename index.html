@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <meta name="color-scheme" content="dark light"/>
   <meta name="theme-color" content="#0F1117"/>
-  <title>Bóveda del Gato Negro — v6.6.2</title>
+  <title>Bóveda del Gato Negro · sitio de la comunidad de Guild Wars 2 (no oficial)</title>
 
   <!-- Fuente hero: Cinzel Decorative -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,13 +21,25 @@
   <link rel="stylesheet" href="css/themes/gato.css?v=1.0.0" id="themeStylesheet">
   
 
-    <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-LB782QT9TR"></script>
-  <script>
+    <!-- Google tag (gtag.js): solo en producción (DEC-006).
+       En cualquier otro host (DEV, previews, localhost) no se carga GA:
+       gtag() solo encola en dataLayer y nada sale del navegador. -->
+  <script id="ga-loader">
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-LB782QT9TR');
+    (function () {
+      var GA_ID = 'G-LB782QT9TR';
+      var isProd = location.hostname === 'pablosnchz.github.io' &&
+        /^\/gw2-wallet-ligero(\/|$)/.test(location.pathname);
+      window.__gaEnabled = isProd;
+      if (!isProd) return;
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+      document.head.appendChild(s);
+      gtag('js', new Date());
+      gtag('config', GA_ID);
+    })();
   </script>
 
   <!-- Eventos personalizados -->
@@ -38,29 +50,54 @@
 
   <!-- ======================================================================
        ESTILOS INLINE CONSOLIDADOS v6.6.2
-       (Header + Sidebar + WV + Purchase Detail + Activities + Home Nodes)
+       (Header + Sidebar + WV + Purchase Detail)
        ====================================================================== -->
   <style>
-    /* ============ HEADER COMPACTO ============ */
-    .an-header--compact {
-      position: sticky; top: 0; z-index: 100;
-      background: var(--bg); border-bottom: 1px solid var(--bd-1);
-    }
-    .an-header--compact .an-utilbar {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 16px; background: var(--bg-0); flex-wrap: wrap; gap: 8px;
-    }
-    .brand-compact { display: inline-flex; align-items: center; gap: 8px; }
-    .brand-logo-compact { width: 32px; height: 32px; object-fit: contain; border-radius: 6px; }
+    /* ============ BARRA DE ARRIBA (BL-070 TOP-5) — conducta en js/gn-topbar.js ============ */
+    header.gn-tb { position: relative; z-index: 960; background: var(--bg-0); border-bottom: 1px solid var(--bd-1); }
+    .gn-tb__row { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 6px 16px; }
+    .gn-tb__id { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .gn-tb__brand { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; min-width: 0; border-radius: 10px; color: inherit; text-decoration: none; }
+    .brand-logo-compact { width: 32px; height: 32px; object-fit: contain; border-radius: 6px; flex-shrink: 0; }
+    .gn-tb__names { display: grid; line-height: 1.2; min-width: 0; }
     .brand-name {
       font-family: "Cinzel Decorative", serif; font-weight: 700; font-size: 1rem;
       color: var(--gn-gold); text-shadow: 0 0 4px rgba(255,230,180,0.4); white-space: nowrap;
     }
+    .gn-tb__fan { font-size: .72rem; color: var(--tx-2); white-space: nowrap; }
+    .gn-tb__dev { display: none; align-items: center; min-height: 22px; padding: 0 8px; border-radius: 999px; background: #F2B94B; color: #0F1117; font-size: .7rem; font-weight: 800; letter-spacing: .08em; }
+    html.gn-env-dev .gn-tb__dev { display: inline-flex; }
+    .gn-tb__acct { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0 auto; }
+    .gn-tb #keySelectGlobal { min-height: 38px; max-width: 260px; padding: 0 12px; border: 1px solid var(--bd-1); border-radius: 999px; background-color: var(--bg-1); color: var(--tx-1); font: inherit; font-size: .88rem; cursor: pointer; }
+    .gn-tb__tools { display: flex; align-items: center; gap: 4px; }
+    .gn-tb__btn { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 10px; border: 1px solid transparent; border-radius: 10px; background: transparent; color: var(--tx-2); font: inherit; font-size: .88rem; text-decoration: none; white-space: nowrap; cursor: pointer; }
+    .gn-tb__btn:hover, .gn-tb__btn[aria-expanded="true"] { background: var(--bg-1); border-color: var(--bd-1); color: var(--tx-1); }
+    .gn-tb__btn img, .gn-tb__btn svg { width: 18px; height: 18px; object-fit: contain; flex-shrink: 0; }
+    .gn-tb a:focus-visible, .gn-tb button:focus-visible, .gn-tb select:focus-visible { outline: 2px solid var(--acc-1); outline-offset: 2px; }
+    .gn-tb__dd { position: relative; }
+    .gn-tb__menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 950; min-width: 260px; margin: 0; padding: 6px; list-style: none; background: var(--bg-1); border: 1px solid var(--bd-1); border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.4); }
+    .gn-tb__menu[hidden] { display: none; }
+    .gn-tb__menu li { margin: 0; }
+    .gn-tb__menu [role="menuitem"] { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: var(--tx-1); opacity: 1; font: inherit; font-size: .9rem; text-align: left; text-decoration: none; cursor: pointer; }
+    .gn-tb__menu [role="menuitem"]:hover, .gn-tb__menu [role="menuitem"]:focus { background: var(--bg-2); }
+    .gn-tb__menu [role="menuitem"]:focus-visible { outline: 2px solid var(--acc-1); outline-offset: -2px; }
+    .gn-tb__menu img { width: 20px; height: 20px; object-fit: contain; }
+    .gn-tb__ext { margin-left: auto; color: var(--tx-2); }
+    .gn-tb__more { display: none; }
     @media (max-width: 900px) {
-      .an-header--compact .an-utilbar { flex-direction: column; align-items: stretch; }
-      .an-header--compact .an-util-left,
-      .an-header--compact .an-util-right { flex-wrap: wrap; justify-content: center; }
-      .brand-name { font-size: 0.9rem; }
+      .gn-tb__row { gap: 8px; padding: 6px 10px; }
+      .gn-tb__acct { flex: 1; margin: 0; }
+      .gn-tb #keySelectGlobal { flex: 1; width: 100%; max-width: none; min-height: 44px; }
+      .gn-tb__btn { min-height: 44px; }
+      .gn-tb__acct .gn-tb__btn, .gn-tb__more { justify-content: center; width: 44px; padding: 0; }
+      .gn-tb__more { display: inline-flex; }
+      .gn-tb__tools { display: none; position: absolute; left: 8px; right: 8px; top: calc(100% + 4px); z-index: 950; flex-direction: column; align-items: stretch; gap: 4px; max-height: calc(100vh - 80px); overflow: auto; padding: 8px; background: var(--bg-1); border: 1px solid var(--bd-1); border-radius: 14px; box-shadow: 0 14px 34px rgba(0,0,0,.45); }
+      .gn-tb.is-open .gn-tb__tools { display: flex; }
+      .gn-tb__tools .gn-tb__btn { width: 100%; justify-content: flex-start; }
+      .gn-tb__menu { position: static; min-width: 0; padding: 0 0 0 14px; border: 0; background: transparent; box-shadow: none; }
+    }
+    @media (max-width: 600px) {
+      .gn-tb__names, .gn-tb__lbl { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     }
 
     /* ============ SIDEBAR ============ */
@@ -110,47 +147,6 @@
     /* La cabecera, las pestañas y sus estilos los pone la vista de la Cámara (wv-view, por el manifiesto; BL-064). */
     #wvPanel { overflow-x: hidden; width: 100%; padding: 0 12px; }
 
-    /* ============ ACTIVITIES ============ */
-    #activitiesPanel .card {
-      background:var(--gw-card-bg); border-radius:10px; padding:10px;
-      box-shadow:inset 0 0 0 1px var(--bd-1);
-    }
-    #activitiesPanel .muted { color:var(--gw-muted); }
-    #activitiesPanel .btn[disabled] { opacity:.5; cursor:not-allowed; }
-    #activitiesPanel .panel-head__title img { margin-right:6px; border-radius:4px; }
-    #activitiesPanel .node-icon { background:var(--bg-2); }
-
-    /* ============ HOME NODES ============ */
-    #homeNodesGrid .gw-node-ico {
-      width:22px; height:22px; border-radius:4px;
-      display:inline-flex; align-items:center; justify-content:center;
-      background:linear-gradient(180deg,var(--bg-2),var(--bg-0));
-      box-shadow:0 0 0 1px rgba(46,68,97,.55) inset,0 0 10px rgba(30,55,88,.38);
-      overflow:hidden;
-    }
-    :root {
-      --gw-mining-bg:linear-gradient(180deg,#1c2432,#0d1622);
-      --gw-logging-bg:linear-gradient(180deg,#1e2a21,#0f1a13);
-      --gw-harvest-bg:linear-gradient(180deg,#1c2230,#111827);
-    }
-    #homeNodesGrid .gw-node--mining .gw-node-ico {
-      background:var(--gw-mining-bg);
-      box-shadow:0 0 0 1px rgba(70,120,180,.6) inset, 0 0 10px rgba(70,120,180,.35);
-    }
-    #homeNodesGrid .gw-node--logging .gw-node-ico {
-      background:var(--gw-logging-bg);
-      box-shadow:0 0 0 1px rgba(84,124,90,.6) inset, 0 0 10px rgba(72,112,86,.35);
-    }
-    #homeNodesGrid .gw-node--harvest .gw-node-ico {
-      background:var(--gw-harvest-bg);
-      box-shadow:0 0 0 1px rgba(90,84,160,.6) inset, 0 0 10px rgba(90,84,160,.35);
-    }
-    #homeNodesGrid .gw-node-ico > img { width:22px; height:22px; display:block; }
-    #homeNodesGrid .gw-node-ico[data-fallback] {
-      font-size:13px; font-weight:700; color:var(--acc-2); line-height:1;
-    }
-    #homeNodesGrid .gw-node--logging .gw-node-ico[data-fallback] { color:var(--color-green); }
-    #homeNodesGrid .gw-node--harvest .gw-node-ico[data-fallback] { color:var(--acc-2); }
   </style>
 </head>
 <body class="dense">
@@ -161,102 +157,57 @@
     </div>
   </noscript>
 
-  <!-- ======= HEADER COMPACTO ======= -->
-  <header class="an-header an-header--compact" role="banner">
-    <div class="an-utilbar">
-      <div class="an-util-left">
-        <!-- Logo + nombre -->
-        <div class="brand-compact">
-          <img class="brand-logo-compact" src="assets/brand/gato-negro.svg" alt="Bóveda del Gato Negro" width="32" height="32">
-          <span class="brand-name">Bóveda del Gato Negro</span>
-        </div>
-        
-        <span class="an-sep">|</span>
-        
-        <!-- Botón Home -->
-        <a class="an-util-link an-home-link" href="#/welcome" title="Inicio">
-          <img src="assets/icons/Welcome/3380755.png" width="16" height="16" alt="Inicio" style="vertical-align: middle;">
+  <!-- ======= BARRA DE ARRIBA (BL-070 TOP-5): quién sos, con qué cuenta mirás y las herramientas.
+       Los menús, la hoja del celular y la marca DEV los maneja js/gn-topbar.js (por el manifiesto). ======= -->
+  <header class="gn-tb" id="gnTopbar" role="banner">
+    <div class="gn-tb__row">
+      <div class="gn-tb__id">
+        <a class="gn-tb__brand" href="#/welcome" title="Ir a Inicio">
+          <img class="brand-logo-compact" src="assets/brand/gato-negro.svg" alt="" width="32" height="32">
+          <span class="gn-tb__names"><span class="brand-name">Bóveda del Gato Negro</span><span class="gn-tb__fan">Sitio de la comunidad · no oficial</span></span>
         </a>
-
-        <span class="an-sep">|</span>
-        
-        <!-- Guía de usuario (modal) -->
-        <a class="an-util-link" href="#" id="guideLink" title="Guías de usuario" style="display: inline-flex; align-items: center; gap: 4px;">
-          <img src="assets/icons/Welcome/102353.png" width="16" height="16" alt="Guía" style="vertical-align: middle;">
-          Guía
-        </a>
-        
-        <span class="an-sep">|</span>
-        
-        <a class="an-util-link" href="https://wiki-es.guildwars2.com/wiki/P%C3%A1gina_principal" target="_blank" rel="noopener">Wiki GW2</a>
-        <a class="an-util-link" href="https://en-forum.guildwars2.com/" target="_blank" rel="noopener">Foros</a>
-        <a class="an-util-link" href="https://help.guildwars2.com/hc" target="_blank" rel="noopener">Ayuda</a>
-        <a class="an-util-link" href="https://www.guildwars2.com/" target="_blank" rel="noopener">Sitio oficial</a>
-        
-        <span class="an-sep">|</span>
-        
-        <a class="an-util-link an-link--keys" href="https://account.arena.net/applications" target="_blank" rel="noopener">ANet Keys</a>
-
-        <!-- Gestión + selector global -->
-        <button id="keysMenuBtn"
-                class="an-util-link an-util-link--btn"
-                type="button"
-                title="Gestión de API Keys"
-                aria-haspopup="dialog"
-                aria-controls="keysModal">
-          Gestión de API Keys ▾
-        </button>
-
-        <label for="keySelectGlobal" class="visually-hidden">Seleccionar API Key</label>
-        <select id="keySelectGlobal" title="Seleccionar API Key (global)" aria-label="Seleccionar API Key (global)"></select>
+        <span class="gn-tb__dev" title="Estás en el entorno de desarrollo, no en la Bóveda publicada">DEV</span>
       </div>
 
-      <div class="an-util-right" aria-label="Configuración y redes">
-  <!-- Botón Exportar Backup -->
-  <button id="exportSettingsBtn" class="an-util-link" title="Exportar configuración (API Keys, pins, etc.)" style="background: none; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 0;">
-    <img src="assets/icons/155034.png" width="16" height="16" alt="Exportar">
-    Backup
-  </button>
-  
-  <!-- Botón Importar Restaurar -->
-  <button id="importSettingsBtn" class="an-util-link" title="Importar configuración desde archivo" style="background: none; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 0;">
-    <img src="assets/icons/155033.png" width="16" height="16" alt="Importar">
-    Restaurar
-  </button>
-  
-  <!-- Botón Sincronizar GitHub Gist -->
-  <button id="syncGistBtn" class="an-util-link" title="Sincronizar con GitHub Gist" style="background: none; border: none; cursor: pointer; display: none; align-items: center; gap: 4px; padding: 0;">
-    <img src="assets/icons/2015716.png" width="16" height="16" alt="Sincronizar">
-    Sincronizar
-  </button>
+      <div class="gn-tb__acct">
+        <label for="keySelectGlobal" class="visually-hidden">Cuenta activa</label>
+        <select id="keySelectGlobal" title="Cuenta activa: con qué API Key mirás la Bóveda" aria-label="Cuenta activa"></select>
+        <button id="keysMenuBtn" class="gn-tb__btn" type="button" title="Gestión de API Keys" aria-haspopup="dialog" aria-controls="keysModal">
+          <img src="assets/icons/Cuentas/155048.png" width="18" height="18" alt=""><span class="gn-tb__lbl">Keys</span>
+        </button>
+      </div>
 
-  <!-- Botón Limpiar caché de la API (Idea 50, Tramo siguiente a F y P3).
-       `an-util-link--btn` es el reset de boton que YA existe en main.css:517 y
-       que los 3 botones de arriba repiten con style inline. No se agrega CSS
-       nuevo, y este boton no es una copia mas de ese style inline. -->
-  <button id="clearCacheBtn" class="an-util-link an-util-link--btn"
-          type="button"
-          title="Liberar la caché de la API y del WV (no toca cuentas, pines ni ajustes; el botón dice cuántos bytes libera y cuántos quedan)"
-          aria-label="Liberar la caché de la API y del WV">
-    <span aria-hidden="true">⛁</span> Limpiar caché
-  </button>
-  
-  <span class="an-sep">|</span>
-  
-  <!-- BADGE: Link in Bio / Pablin Schez (Compacto para util-right).
-       Colores oficiales de Gato Negro (DEC-025), fijos a propósito: no siguen el theme. -->
-  <a href="https://pablosnchz.github.io/bio/" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; text-decoration: none; border-radius: 4px; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; height: 26px;">
-    <!-- Lado obsidiana: Foto + Link in Bio -->
-    <span style="background-color: #232A3A; color: #F4F6FA; padding: 0 10px; font-size: 10px; font-weight: 600; display: flex; align-items: center; gap: 6px; letter-spacing: 0.3px; white-space: nowrap; height: 100%;">
-      <img src="https://raw.githubusercontent.com/PabloSnchz/bio/main/assets/profile.png" alt="Foto perfil" style="width:18px; height:18px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.3);">
-      Link in Bio
-    </span>
-    <!-- Lado arcano: Tu nombre -->
-    <span style="background-color: #5A3DDB; color: #FFFFFF; padding: 0 12px; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; white-space: nowrap; height: 100%;">
-      Pablin Schez
-    </span>
-  </a>
-</div>
+      <button class="gn-tb__btn gn-tb__more" id="gnTbMore" type="button" aria-expanded="false" aria-controls="gnTbTools">
+        <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M3 5h8M16 5h1M3 10h2M10 10h7M3 15h6M14 15h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="13.5" cy="5" r="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="7.5" cy="10" r="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="11.5" cy="15" r="2" fill="none" stroke="currentColor" stroke-width="2"/></svg><span class="gn-tb__lbl">Opciones</span>
+      </button>
+
+      <nav class="gn-tb__tools" id="gnTbTools" aria-label="Herramientas">
+        <a class="gn-tb__btn" href="#" id="guideLink" title="Guías de usuario"><img src="assets/icons/Welcome/102353.png" width="18" height="18" alt=""><span>Guías</span></a>
+
+        <div class="gn-tb__dd">
+          <button class="gn-tb__btn" type="button" id="gnTbLinksBtn" aria-haspopup="true" aria-expanded="false" aria-controls="gnTbLinks">Enlaces <span aria-hidden="true">▾</span></button>
+          <ul class="gn-tb__menu" id="gnTbLinks" role="menu" aria-labelledby="gnTbLinksBtn" hidden>
+            <li role="none"><a role="menuitem" href="https://wiki-es.guildwars2.com/wiki/P%C3%A1gina_principal" target="_blank" rel="noopener">Wiki de GW2 en español<span class="gn-tb__ext" aria-hidden="true">↗</span><span class="visually-hidden"> (se abre en otra pestaña)</span></a></li>
+            <li role="none"><a role="menuitem" href="https://en-forum.guildwars2.com/" target="_blank" rel="noopener">Foros oficiales<span class="gn-tb__ext" aria-hidden="true">↗</span><span class="visually-hidden"> (se abre en otra pestaña)</span></a></li>
+            <li role="none"><a role="menuitem" href="https://help.guildwars2.com/hc" target="_blank" rel="noopener">Ayuda de ArenaNet<span class="gn-tb__ext" aria-hidden="true">↗</span><span class="visually-hidden"> (se abre en otra pestaña)</span></a></li>
+            <li role="none"><a role="menuitem" href="https://www.guildwars2.com/" target="_blank" rel="noopener">Sitio oficial<span class="gn-tb__ext" aria-hidden="true">↗</span><span class="visually-hidden"> (se abre en otra pestaña)</span></a></li>
+            <li role="none"><a role="menuitem" href="https://account.arena.net/applications" target="_blank" rel="noopener">Crear una API Key<span class="gn-tb__ext" aria-hidden="true">↗</span><span class="visually-hidden"> (se abre en otra pestaña)</span></a></li>
+          </ul>
+        </div>
+
+        <div class="gn-tb__dd">
+          <button class="gn-tb__btn" type="button" id="gnTbSetBtn" aria-haspopup="true" aria-expanded="false" aria-controls="gnTbSet">Ajustes <span aria-hidden="true">▾</span></button>
+          <ul class="gn-tb__menu" id="gnTbSet" role="menu" aria-labelledby="gnTbSetBtn" hidden>
+            <li role="none"><button id="themeToggleBtn" type="button" role="menuitem"><img src="assets/icons/101663.png" width="20" height="20" alt="">Cambiar el tema</button></li>
+            <li role="none"><button id="exportSettingsBtn" type="button" role="menuitem" title="Exportar configuración (API Keys, pins, etc.)"><img src="assets/icons/155034.png" width="20" height="20" alt="">Guardar copia de ajustes</button></li>
+            <li role="none"><button id="importSettingsBtn" type="button" role="menuitem" title="Importar configuración desde archivo"><img src="assets/icons/155033.png" width="20" height="20" alt="">Restaurar una copia</button></li>
+            <!-- Idea 50: el botón conserva las clases an-util-link an-util-link--btn de main.css; el menú le pone su forma. -->
+            <li role="none"><button id="clearCacheBtn" class="an-util-link an-util-link--btn" type="button" role="menuitem"
+                    title="Liberar la caché de la API y del WV (no toca cuentas, pines ni ajustes; el botón dice cuántos bytes libera y cuántos quedan)"
+                    aria-label="Liberar la caché de la API y del WV"><img src="assets/icons/Welcome/156107.png" width="20" height="20" alt="">Liberar la caché de la API</button></li>
+          </ul>
+        </div>
+      </nav>
     </div>
   </header>
 
@@ -368,10 +319,13 @@
       </div>
     </section>
 
-    <!-- ======= Dashboard de Cartera (nuevo - en posición correcta dentro de col-main) ======= -->
+    <!-- ======= Dashboard de Cartera ======= -->
     <section id="walletDashboardPanel" class="panel col-main" hidden>
       <!-- El contenido lo llena wallet-dashboard.js dinámicamente -->
     </section>
+
+    <section id="activitiesPanel" class="panel col-main" aria-labelledby="avTitle" hidden></section>
+    <section id="homesteadPanel" class="panel col-main" aria-labelledby="hsTitle" hidden></section>
 
     <!-- ======= Panel Raid Tracker ======= -->
     <section id="raidTrackerPanel" class="panel col-main" aria-labelledby="raidTrackerTitle" hidden>
@@ -389,21 +343,6 @@
       <div class="panel__body"></div>
     </section>
 
-    <!-- ======= Panel Strike Tracker (NUEVO) ======= -->
-    <section id="strikeTrackerPanel" class="panel col-main" aria-labelledby="strikeTrackerTitle" hidden>
-      <h2 class="panel__title" id="strikeTrackerTitle" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-        <span style="display: flex; align-items: center; gap: 8px;">
-          <img src="assets/icons/raids/raid-icon.png" alt="" width="32" height="32">
-          Seguimiento de Strikes
-        </span>
-        <span id="strikeLiBadgeContainer" style="display: flex; align-items: center; gap: 6px; background: var(--bg-1); padding: 4px 12px; border-radius: 32px;">
-          <img src="https://render.guildwars2.com/file/6D33B7387BAF2E2CC9B5D37D1D1B01246AB6FA22/1302744.png" width="16" height="16" alt="LI" style="filter: brightness(0.9);">
-          <span style="font-size: 0.75rem;">LI Disponible:</span>
-          <strong id="strikeLiAvailable" style="font-weight: 700; color: #ffd36b; font-size: 0.9rem;">0</strong>
-        </span>
-      </h2>
-      <div class="panel__body"></div>
-    </section>
 
     <!-- ======= Panel MetaEventos ======= -->
     <section id="metaPanel" class="panel col-main" aria-labelledby="metaTitle" hidden>
@@ -548,11 +487,6 @@
       <div class="panel__body"></div>
     </section>
 
-    <!-- ======= Panel de Dashboard de Inventario (NUEVO) ======= -->
-    <section id="inventoryDashboardPanel" class="panel col-main" aria-labelledby="inventoryDashboardTitle" hidden>
-      <div class="panel__body"></div>
-    </section>
-
     <!-- ======= Panel de Cuentas ======= -->
     <section id="accountsPanel" class="panel col-main" aria-labelledby="accountsTitle" hidden>
       <h2 class="panel__title" id="accountsTitle">
@@ -645,16 +579,23 @@
               </a>
             </li>
 
-            <!-- ====== NUEVO: Raids ====== -->
+            <li>
+              <a id="navHS" class="side-nav__link" href="#/account/homestead">
+                <span class="side-nav__icon">
+                  <img class="icon-img" src="assets/icons/Welcome/3380755.png" alt="Heredad" width="28" height="28" loading="lazy" referrerpolicy="no-referrer">
+                </span>
+                <span>Heredad</span>
+              </a>
+            </li>
+
             <li>
               <a id="navRaids" class="side-nav__link" href="#/account/raids">
                 <span class="side-nav__icon">
                   <img class="icon-img" src="assets/icons/raids/raid-icon.png" alt="Raids" width="28" height="28" loading="lazy" referrerpolicy="no-referrer">
                 </span>
-                <span>Raids y Strikes</span>
+                <span>Raids</span>
               </a>
             </li>
-            <!-- ====== FIN NUEVO ====== -->
 
             <li>
               <a id="navChars" class="side-nav__link" href="#/account/characters">
@@ -665,7 +606,6 @@
               </a>
             </li>
 
-            <!-- ====== NUEVO: Armería Legendaria ====== -->
             <li>
               <a id="navLegendaryArmory" class="side-nav__link" href="#/account/legendary-armory" data-view="legendaryArmory">
                 <span class="side-nav__icon">
@@ -674,7 +614,6 @@
                 <span>Armería Legendaria</span>
               </a>
             </li>
-            <!-- ====== FIN NUEVO ====== -->
 
             <li>
               <a id="navAccounts" class="side-nav__link" href="#/account/accounts">
@@ -688,21 +627,12 @@
         </nav>
       </section>
     
-      <!-- Conversor movido a modal (converter-modal.js) -->
 
-      <!-- Próximas funciones -->
       <section class="panel" id="asideNextFeatures">
         <h3 class="panel__title">Próximas funciones</h3>
-        <div class="panel__body">
-          <ul class="muted">
-            <li>Panel de Actividades</li>
-            <li>Historial y variación</li>
-            <li>Deep‑links</li>
-          </ul>
-        </div>
+        <div class="panel__body"></div>
       </section>
 
-      <!-- Sidebar MetaEventos: Top 3 próximos (visible sólo en Meta) -->
       <section class="panel" id="metaAsideNext" hidden>
         <h3 class="panel__title">Próximos (Top 3)</h3>
         <div class="panel__body">
@@ -713,11 +643,29 @@
     </aside>
   </main>
 
-  <!-- ======= FOOTER ======= -->
-  <footer class="site-footer" role="contentinfo">
-    <div class="footer-inner">
-      <img class="footer-mark" src="assets/brand/gato-negro.svg" alt="" width="18" height="18"/>
-      <span class="footer-copy">© Comunidad Gato Negro — Herramientas para GW2</span>
+  <!-- ======= PIE (BL-070 TOP-6): estilos y atajos en js/gn-topbar.js ======= -->
+  <footer class="site-footer gn-ft" id="gnFooter" role="contentinfo">
+    <div class="gn-ft__grid">
+      <div class="gn-ft__id">
+        <div class="gn-ft__brand"><img class="footer-mark" src="assets/brand/gato-negro.svg" alt="" width="28" height="28"/><p><b>Bóveda del Gato Negro</b><br>Herramientas de la comunidad Gato Negro para Guild Wars 2.</p></div>
+        <!-- Link in Bio: colores fijos de Gato Negro (DEC-025), foto local (D7) -->
+        <a class="gn-bio" href="https://pablosnchz.github.io/bio/" target="_blank" rel="noopener"><span class="gn-bio__a"><img src="assets/brand/pablo-bio.svg" alt="" width="18" height="18">Link in Bio</span><span class="gn-bio__b">Pablin Schez</span><span class="visually-hidden"> (se abre en otra pestaña)</span></a>
+      </div>
+      <nav class="gn-ft__col" aria-labelledby="gnFtA"><p class="gn-ft__h" id="gnFtA">La Bóveda</p>
+        <a href="#/welcome">Inicio</a>
+        <button type="button" data-gn-open="guideLink">Guías de uso</button>
+        <button type="button" data-gn-open="keysMenuBtn" aria-haspopup="dialog">Gestión de Keys</button>
+        <a href="privacy.html">Privacidad</a>
+      </nav>
+      <nav class="gn-ft__col" aria-labelledby="gnFtB"><p class="gn-ft__h" id="gnFtB">Guild Wars 2</p>
+        <a href="https://wiki-es.guildwars2.com/wiki/P%C3%A1gina_principal" target="_blank" rel="noopener">Wiki en español<span aria-hidden="true"> ↗</span><span class="visually-hidden"> (se abre en otra pestaña)</span></a>
+        <a href="https://www.guildwars2.com/" target="_blank" rel="noopener">Sitio oficial<span aria-hidden="true"> ↗</span><span class="visually-hidden"> (se abre en otra pestaña)</span></a>
+        <a href="https://account.arena.net/applications" target="_blank" rel="noopener">Crear una API Key<span aria-hidden="true"> ↗</span><span class="visually-hidden"> (se abre en otra pestaña)</span></a>
+      </nav>
+    </div>
+    <div class="gn-ft__legal">
+      <p>Sitio de la comunidad, no oficial: no está afiliado a ArenaNet ni a NCSOFT. Las imágenes y los datos del juego son de sus dueños y se leen de la API pública.</p>
+      <p lang="en">© 2014 ArenaNet, LLC. All rights reserved. NCSOFT, the interlocking NC logo, ArenaNet, Guild Wars, Guild Wars Factions, Guild Wars Nightfall, Guild Wars: Eye of the North, Guild Wars 2, and all associated logos and designs are trademarks or registered trademarks of NCSOFT Corporation. All other trademarks are the property of their respective owners.</p>
     </div>
   </footer>
 
@@ -729,7 +677,7 @@
     <div class="modal__backdrop" data-close="1"></div>
     <div class="modal__dialog" role="document" aria-describedby="keysModalDesc" tabindex="-1">
       <header class="modal__header">
-        <h3 id="keysModalTitle">Gestión de API Keys</h3>
+        <h3 id="keysModalTitle"><img src="assets/icons/Cuentas/155048.png" width="24" height="24" alt="">Gestión de API Keys</h3>
         <button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button>
       </header>
 
@@ -757,86 +705,9 @@
             Limpiar
           </button>
           </div>
-          <p class="muted" style="margin:8px 0 0">
-            Requiere los 7 permisos que usa la app: <code>account</code>, <code>wallet</code>, <code>progression</code>, <code>unlocks</code>, <code>inventories</code>, <code>tradingpost</code> y <code>characters</code>. Marcá los 7 al crearla en <code>account.arena.net/applications</code>; con menos, la API responde 403 y la app muestra ceros en vez de un error. Se usa <code>?access_token=</code> para evitar preflight CORS.
-          </p>
+          <p class="gn-keys-note">La Key necesita estos 7 permisos. Marcalos al crearla en <a href="https://account.arena.net/applications" target="_blank" rel="noopener">account.arena.net/applications</a>; si falta alguno, la Bóveda no la guarda y te dice cuál.</p>
+          <ul class="gn-perms" aria-label="Permisos que necesita la Key"><li><code>account</code></li><li><code>wallet</code></li><li><code>progression</code></li><li><code>unlocks</code></li><li><code>inventories</code></li><li><code>tradingpost</code></li><li><code>characters</code></li></ul>
         </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal: Sincronización con GitHub Gist -->
-  <div id="gistSyncModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="gistSyncTitle" hidden>
-    <div class="modal__backdrop" data-close="1"></div>
-    <div class="modal__dialog" role="document" style="max-width: 550px;">
-      <header class="modal__header">
-        <h3 id="gistSyncTitle" style="display: flex; align-items: center; gap: 8px;">
-          <img src="assets/icons/2015716.png" width="24" height="24" alt="">
-          Sincronización con GitHub Gist
-        </h3>
-        <button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button>
-      </header>
-
-      <div class="modal__body">
-        <div id="gistSyncStatus" class="muted" style="margin-bottom: 16px; padding: 8px; background: var(--bg-1); border-radius: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <img src="assets/icons/Welcome/544515.png" width="16" height="16" alt="">
-            <span id="gistStatusText">Verificando estado...</span>
-          </div>
-        </div>
-
-        <div class="field" style="margin-bottom: 16px;">
-          <label for="ghTokenInput">Token de GitHub (permisos <code>gist</code>)</label>
-          <input type="password" id="ghTokenInput" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
-          <p class="muted" style="font-size: 11px; margin-top: 4px;">
-            <a href="https://github.com/settings/tokens" target="_blank">Generar token en GitHub</a> → Seleccionar "gist"
-          </p>
-        </div>
-
-        <!-- Campo de password para cifrado local (AES-GCM + PBKDF2) -->
-        <div class="field" style="margin-bottom: 16px;">
-          <label for="ghPasswordInput">Contraseña maestra (para cifrar token)</label>
-          <input type="password" id="ghPasswordInput" placeholder="Mínimo 8 caracteres" autocomplete="off">
-          <p class="muted" style="font-size: 11px; margin-top: 4px;">
-            Se usa para derivar la clave de cifrado (PBKDF2 200k iter). <strong>No se almacena ni envía.</strong>
-          </p>
-        </div>
-
-        <!-- Sección de desbloqueo (se muestra cuando el token está cifrado pero no descifrado) -->
-        <div id="gistUnlockSection" class="field" style="margin-bottom: 16px; display: none;">
-          <label for="ghUnlockPassword">Desbloquear token guardado</label>
-          <input type="password" id="ghUnlockPassword" placeholder="Ingresá tu contraseña maestra" autocomplete="off" style="margin-bottom: 8px;">
-          <button id="gistUnlockBtn" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px; width: 100%;">
-            <img src="assets/icons/Welcome/156108.png" width="16" height="16" alt="">
-            Desbloquear y sincronizar
-          </button>
-        </div>
-
-        <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
-          <button id="gistSaveTokenBtn" class="btn btn--accent" style="display: inline-flex; align-items: center; gap: 6px;">
-            <img src="assets/icons/Welcome/156108.png" width="16" height="16" alt="">
-            Guardar token
-          </button>
-          <button id="gistClearTokenBtn" class="btn btn--ghost" style="display: inline-flex; align-items: center; gap: 6px;">
-            <img src="assets/icons/Welcome/156107.png" width="16" height="16" alt="">
-            Eliminar token
-          </button>
-        </div>
-
-        <hr style="border-color: var(--bd-1); margin: 16px 0;">
-
-        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button id="gistUploadBtn" class="btn" style="display: inline-flex; align-items: center; gap: 6px;">
-            <img src="assets/icons/155033.png" width="16" height="16" alt="">
-            Subir configuración a la nube
-          </button>
-          <button id="gistDownloadBtn" class="btn" style="display: inline-flex; align-items: center; gap: 6px;">
-            <img src="assets/icons/2015716.png" width="16" height="16" alt="">
-            Sincronizar desde la nube
-          </button>
-        </div>
-
-        <div id="gistActionStatus" class="muted" style="margin-top: 12px;"></div>
       </div>
     </div>
   </div>
@@ -866,40 +737,25 @@
   <!-- Vistas independientes del router -->
   <script defer src="js/achievements.js?v=3.6.0"></script>
   <script defer src="js/meta.js?v=4.0.1"></script>
-  <script defer src="js/sidebar-nav.js?v=2.2.2"></script>
+  <script defer src="js/sidebar-nav.js?v=2.2.6"></script>
 
-  <!-- Actividades -->
-  <script defer src="js/activities.js?v=3.23.0"></script>
-  <script defer src="js/activities-theme.js?v=2.6.1"></script>
-  <script defer src="js/fractal-tracker-theme.js?v=1.0.1"></script>
+  <!-- Actividades: js/act-*.js por js/modules.json (BL-070 ACT-7) -->
 
   <!-- Conversor (modal) -->
   <script defer src="js/converter-modal.js?v=2.0.0"></script>
   <script defer src="js/commerce-delivery-theme.js?v=1.0.0"></script>
 
-  <!-- Inventario y Personajes -->
-  <script defer src="js/inventory-hub.js?v=1.4.0"></script>
+  <!-- Inventario y Personajes: js/inv-*.js por js/modules.json (BL-070 INV-7) -->
 
-  <!-- Dashboard de Inventario Multi-Cuenta -->
-  <script defer src="js/inventory-dashboard.js?v=1.2.0"></script>
-
-  <!-- Personajes -->
-  <script defer src="js/characters.js?v=2.4.1"></script>
-  <script defer src="js/characters-theme.js?v=1.0.1"></script>
-
-  <!-- Cuentas + Utilidades -->
-  <script defer src="js/accounts-panel.js?v=2.0.2"></script>
-  <script defer src="js/settings-manager.js?v=1.0.4"></script>
-  <script defer src="js/gist-sync.js?v=1.1.0"></script>
+  <!-- Utilidades (Cuentas: js/acc-*.js por js/modules.json, BL-070 CTA-5) -->
+  <script defer src="js/settings-manager.js?v=1.0.5"></script>
 
   <!-- Bienvenida -->
-  <script defer src="js/welcome-panel.js?v=2.2.0"></script>
+  <script defer src="js/welcome-panel.js?v=2.4.0"></script>
 
   <!-- Raid Tracker -->
   <script defer src="js/raid-tracker.js?v=1.10.1"></script>
 
-  <!-- Strike Tracker (NUEVO) -->
-  <script defer src="js/strike-tracker.js?v=1.0.0"></script>
 
   <!-- Armería Legendaria (ALERT-84 T3+T4) -->
   <!-- El orden del documento es el orden de ejecucion con `defer`, y es el que
@@ -946,22 +802,22 @@
        Van después de la bienvenida para encontrar su panel ya creado, y al final de los
        módulos para no correr de lugar ninguna línea anterior de este archivo. -->
   <script defer src="js/shiruvana.js?v=1.0.0"></script>
-  <script defer src="js/shiruvana-places.js?v=1.3.0"></script>
+  <script defer src="js/shiruvana-places.js?v=1.3.1"></script>
 
   <!-- ROUTER — orquestador principal -->
-  <script defer src="js/router.js?v=2.17.0"></script>
+  <script defer src="js/router.js?v=2.21.0"></script>
 
   <!-- ======================================================================
        APP — Bootstrap de keys + toasts + conversor
        ====================================================================== -->
-  <script defer src="js/app.js?v=2.8.0"></script>
+  <script defer src="js/app.js?v=2.9.0"></script>
   <!-- Cargador de módulos nuevos (DEC-035): los módulos nuevos van en js/modules.json, no acá. Último defer. -->
-  <script defer src="js/boot.js?v=1.0.0"></script>
+  <script defer src="js/boot.js?v=1.1.0"></script>
 
   <!-- ======================================================================
        TEMAS / UI HELPERS — sin defer, se aplican al DOM existente
        ====================================================================== -->
-  <script src="js/wallet-theme.js?v=2.1.0"></script>
+  <script src="js/wallet-theme.js?v=2.1.1"></script>
   <script src="js/meta-theme.js?v=2.1.0"></script>
   <script src="js/wv-theme.js?v=1.0.1"></script>
   
@@ -986,376 +842,25 @@
 
 
 
-<script>
-(function(){
-  function detectNodeType(nodeId){
-    nodeId = String(nodeId||'').toLowerCase();
-    if (/_ore_node$/.test(nodeId) || /_(crystal|obsidian|prismaticite|mursaat|brandstone|mistonium|difluorite)/.test(nodeId)) return 'mining';
-    if (/_wood_node$/.test(nodeId) || /petrified_stump|lowland_pine/.test(nodeId)) return 'logging';
-    return 'harvest';
-  }
-
-  const HOME_NODE_ITEM_MAP = {
-    'orichalcum_ore_node': 19701,
-    'mithril_ore_node':    19700,
-    'ancient_wood_node':   19725,
-    'quartz_node':         43773,
-    'flaxseed_node':       74090,
-    'omnomberry_node':     12128
-  };
-
-  async function fetchItemIcons(ids=[]){
-    if (!ids.length) return {};
-    const url = `https://api.guildwars2.com/v2/items?ids=${ids.join(',')}`;
-    const res = await fetch(url, { mode:'cors' });
-    if (!res.ok) return {};
-    const arr = await res.json();
-    const out = {};
-    arr.forEach(it => { if (it && it.id && it.icon) out[it.id] = { name: it.name, icon: it.icon }; });
-    return out;
-  }
-
-  async function applyHomeNodePresets(container){
-    const cards = Array.from(container.querySelectorAll('label.card[data-node-id]'));
-    if (!cards.length) return;
-
-    cards.forEach(card => {
-      const nodeId = (card.getAttribute('data-node-id') || '').toLowerCase();
-      const t = detectNodeType(nodeId);
-      card.classList.add('gw-node', `gw-node--${t}`);
-
-      let ico = card.querySelector('.gw-node-ico');
-      if (!ico) {
-        ico = document.createElement('span');
-        ico.className = 'gw-node-ico';
-        (card.querySelector('.card__head') || card).prepend(ico);
-      }
-    });
-
-    const ids = [];
-    cards.forEach(card => {
-      const nodeId = (card.getAttribute('data-node-id') || '').toLowerCase();
-      const itemId = HOME_NODE_ITEM_MAP[nodeId];
-      if (itemId) ids.push(itemId);
-    });
-
-    let iconsById = {};
-    try { iconsById = await fetchItemIcons(ids); } catch(e){}
-
-    cards.forEach(card => {
-      const nodeId = (card.getAttribute('data-node-id') || '').toLowerCase();
-      const ico = card.querySelector('.gw-node-ico');
-      if (!ico) return;
-      ico.innerHTML = '';
-
-      const itemId = HOME_NODE_ITEM_MAP[nodeId];
-      const meta = itemId ? iconsById[itemId] : null;
-
-      if (meta && meta.icon){
-        const img = document.createElement('img');
-        img.loading = 'lazy';
-        img.decoding = 'async';
-        img.referrerPolicy = 'no-referrer';
-        img.src = meta.icon;
-        img.alt = meta.name || '';
-        ico.removeAttribute('data-fallback');
-        ico.appendChild(img);
-      } else {
-        const t = detectNodeType(nodeId);
-        ico.setAttribute('data-fallback','1');
-        ico.textContent = (t==='mining' ? '⛏' : (t==='logging' ? '🪓' : '✂'));
-      }
-    });
-  }
-
-  function ensureHomeNodesSection(){
-    const panel = document.getElementById('activitiesPanel');
-    if (!panel || panel.hasAttribute('hidden')) return;
-
-    let grid = panel.querySelector('#homeNodesGrid');
-    if (!grid) {
-      const body = panel.querySelector('.panel__body') || panel;
-      const title = document.createElement('h3');
-      title.className = 'panel-head__title';
-      title.style.margin = '6px 0 10px';
-      title.textContent = 'Home nodes';
-
-      grid = document.createElement('div');
-      grid.id = 'homeNodesGrid';
-      grid.className = 'grid';
-      grid.innerHTML = `
-        <label class="card" data-node-id="orichalcum_ore_node">
-          <div class="card__head"><h4 class="card__title">Orichalcum Mining Node</h4></div>
-          <p class="card__desc">Recolectable diario • 3 strikes</p>
-          <div class="card__meta"><span class="cats">Home Instance</span></div>
-        </label>
-        <label class="card" data-node-id="mithril_ore_node">
-          <div class="card__head"><h4 class="card__title">Mithril Mining Node</h4></div>
-          <p class="card__desc">Recolectable diario</p>
-          <div class="card__meta"><span class="cats">Home Instance</span></div>
-        </label>
-        <label class="card" data-node-id="ancient_wood_node">
-          <div class="card__head"><h4 class="card__title">Ancient Wood Logging Node</h4></div>
-          <p class="card__desc">Recolectable diario</p>
-          <div class="card__meta"><span class="cats">Home Instance</span></div>
-        </label>
-        <label class="card" data-node-id="quartz_node">
-          <div class="card__head"><h4 class="card__title">Quartz Crystal Formation</h4></div>
-          <p class="card__desc">Recolectable diario</p>
-          <div class="card__meta"><span class="cats">Home Instance</span></div>
-        </label>
-        <label class="card" data-node-id="flaxseed_node">
-          <div class="card__head"><h4 class="card__title">Flaxseed Harvesting Node</h4></div>
-          <p class="card__desc">Recolectable diario</p>
-          <div class="card__meta"><span class="cats">Home Instance</span></div>
-        </label>
-        <label class="card" data-node-id="omnomberry_node">
-          <div class="card__head"><h4 class="card__title">Omnomberry Harvesting Node</h4></div>
-          <p class="card__desc">Recolectable diario</p>
-          <div class="card__meta"><span class="cats">Home Instance</span></div>
-        </label>
-      `;
-      body.appendChild(document.createElement('hr')).className = 'hr-hairline';
-      body.appendChild(title);
-      body.appendChild(grid);
-    }
-
-    applyHomeNodePresets(grid);
-  }
-
-  document.addEventListener('DOMContentLoaded', ensureHomeNodesSection);
-
-  const panel = document.getElementById('activitiesPanel');
-  if (panel && 'MutationObserver' in window){
-    const mo = new MutationObserver(() => {
-      if (!panel.hasAttribute('hidden')) ensureHomeNodesSection();
-    });
-    mo.observe(panel, { childList:true, subtree:true, attributes:true, attributeFilter:['hidden'] });
-  }
-})();
-</script>
-
-<!-- Script para manejar el modal de sincronización -->
-<script>
-  (function() {
-    var modal = document.getElementById('gistSyncModal');
-    var syncBtn = document.getElementById('syncGistBtn');
-    
-    function openModal() {
-      if (modal) modal.hidden = false;
-      updateGistStatus();
-    }
-    
-    function closeModal() {
-      if (modal) modal.hidden = true;
-    }
-    
-    async function updateGistStatus() {
-      var statusSpan = document.getElementById('gistStatusText');
-      if (!statusSpan) return;
-      
-      if (!window.GistSync) {
-        statusSpan.innerHTML = '⚠️ Módulo de sincronización no disponible';
-        return;
-      }
-      
-      try {
-        var status = await window.GistSync.getStatus();
-        var unlockSection = document.getElementById('gistUnlockSection');
-        if (unlockSection) {
-          unlockSection.style.display = status.needsUnlock ? 'block' : 'none';
-        }
-        if (status.hasToken && status.hasGist && status.gistInfo && !status.gistInfo.error) {
-          var date = new Date(status.gistInfo.updatedAt);
-          statusSpan.innerHTML = '✅ Conectado con GitHub · Última sincronización: ' + date.toLocaleString();
-        } else if (status.hasToken) {
-          statusSpan.innerHTML = '⚠️ Token configurado, pero sin Gist. Subí tu configuración primero.';
-        } else if (status.needsUnlock) {
-          statusSpan.innerHTML = '🔓 Token cifrado. Ingresá tu contraseña maestra para desbloquear.';
-        } else {
-          statusSpan.innerHTML = '🔴 No configurado. Ingresá tu token de GitHub para comenzar.';
-        }
-      } catch (e) {
-        statusSpan.innerHTML = '❌ Error al verificar estado: ' + e.message;
-      }
-    }
-    
-    if (syncBtn) {
-      syncBtn.addEventListener('click', openModal);
-    }
-    
-    if (modal) {
-      modal.addEventListener('click', function(e) {
-        if (e.target.getAttribute('data-close') === '1') {
-          closeModal();
-        }
-      });
-    }
-    
-    // Guardar token (con password para cifrado PBKDF2)
-    var saveTokenBtn = document.getElementById('gistSaveTokenBtn');
-    if (saveTokenBtn) {
-      saveTokenBtn.addEventListener('click', async function() {
-        var tokenInput = document.getElementById('ghTokenInput');
-        var passwordInput = document.getElementById('ghPasswordInput');
-        var statusDiv = document.getElementById('gistActionStatus');
-        var token = tokenInput.value.trim();
-        var password = passwordInput.value.trim();
-        
-        if (!token) {
-          statusDiv.textContent = '⚠️ Ingresá un token de GitHub';
-          statusDiv.style.color = '#ffd966';
-          return;
-        }
-        if (!password || password.length < 8) {
-          statusDiv.textContent = '⚠️ La contraseña maestra debe tener al menos 8 caracteres';
-          statusDiv.style.color = '#ffd966';
-          return;
-        }
-        
-        statusDiv.textContent = '🔐 Verificando token y cifrando...';
-        statusDiv.style.color = '#ffd966';
-        
-        try {
-          var result = await window.GistSync.setupToken(token, password, true);
-          statusDiv.textContent = '✅ Token configurado y cifrado correctamente.';
-          statusDiv.style.color = '#a7f3d0';
-          tokenInput.value = '';
-          passwordInput.value = '';
-          updateGistStatus();
-        } catch (err) {
-          statusDiv.textContent = '❌ Error: ' + err.message;
-          statusDiv.style.color = '#f28b82';
-        }
-      });
-    }
-    
-    // Desbloquear token guardado (con password)
-    var unlockBtn = document.getElementById('gistUnlockBtn');
-    if (unlockBtn) {
-      unlockBtn.addEventListener('click', async function() {
-        var unlockInput = document.getElementById('ghUnlockPassword');
-        var statusDiv = document.getElementById('gistActionStatus');
-        var password = unlockInput.value.trim();
-        
-        if (!password) {
-          statusDiv.textContent = '⚠️ Ingresá tu contraseña maestra';
-          statusDiv.style.color = '#ffd966';
-          return;
-        }
-        
-        statusDiv.textContent = '🔓 Desbloqueando token...';
-        statusDiv.style.color = '#ffd966';
-        
-        try {
-          await window.GistSync.unlockToken(password);
-          statusDiv.textContent = '✅ Token desbloqueado. Ya podés sincronizar.';
-          statusDiv.style.color = '#a7f3d0';
-          unlockInput.value = '';
-          updateGistStatus();
-        } catch (err) {
-          statusDiv.textContent = '❌ Error: ' + err.message;
-          statusDiv.style.color = '#f28b82';
-        }
-      });
-    }
-    
-    // Eliminar token
-    var clearTokenBtn = document.getElementById('gistClearTokenBtn');
-    if (clearTokenBtn) {
-      clearTokenBtn.addEventListener('click', function() {
-        if (confirm('¿Eliminar token de GitHub? Perderás la sincronización.')) {
-          window.GistSync.clearSync();
-          document.getElementById('ghTokenInput').value = '';
-          updateGistStatus();
-          var statusDiv = document.getElementById('gistActionStatus');
-          if (statusDiv) {
-            statusDiv.textContent = '✅ Token eliminado';
-            statusDiv.style.color = '#a7f3d0';
-          }
-        }
-      });
-    }
-    
-    // Subir configuración
-    var uploadBtn = document.getElementById('gistUploadBtn');
-    if (uploadBtn) {
-      uploadBtn.addEventListener('click', async function() {
-        var statusDiv = document.getElementById('gistActionStatus');
-        statusDiv.textContent = '📤 Subiendo configuración...';
-        statusDiv.style.color = '#ffd966';
-        
-        try {
-          var result = await window.GistSync.uploadConfig();
-          statusDiv.textContent = '✅ Configuración subida correctamente.';
-          statusDiv.style.color = '#a7f3d0';
-          updateGistStatus();
-        } catch (err) {
-          statusDiv.textContent = '❌ Error: ' + err.message;
-          statusDiv.style.color = '#f28b82';
-        }
-      });
-    }
-    
-    // Sincronizar (descargar)
-    var downloadBtn = document.getElementById('gistDownloadBtn');
-    if (downloadBtn) {
-      downloadBtn.addEventListener('click', async function() {
-        var statusDiv = document.getElementById('gistActionStatus');
-        statusDiv.textContent = '📥 Sincronizando desde la nube...';
-        statusDiv.style.color = '#ffd966';
-        
-        try {
-          var result = await window.GistSync.downloadAndSync();
-          // HB#121: downloadAndSync devuelve {cancelled:true} si Pablo dijo
-          // que no (HB#120 T20-c). Antes el return era {success:true} en los dos
-          // casos, asi que el cartel no mentia y el reload era solo al confirmar.
-          // Cancelar y que la pantalla diga "sincronizada" es peor que no
-          // decir nada, y el reload tira el estado del cartel sin motivo.
-          if (result && result.cancelled) {
-            statusDiv.textContent = '← Cancelado. No se toco tu configuración.';
-            statusDiv.style.color = '#ffd966';
-            return;
-          }
-          statusDiv.textContent = '✅ Configuración sincronizada. Recargando...';
-          statusDiv.style.color = '#a7f3d0';
-          setTimeout(function() {
-            location.reload();
-          }, 1000);
-        } catch (err) {
-          statusDiv.textContent = '❌ Error: ' + err.message;
-          statusDiv.style.color = '#f28b82';
-        }
-      });
-    }
-  })();
-</script>
-
 <!-- Modal: Guías de usuario -->
 <div id="guideModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="guideModalTitle" hidden>
   <div class="modal__backdrop" data-close="1"></div>
   <div class="modal__dialog" style="max-width:500px;">
     <header class="modal__header">
-      <h3 id="guideModalTitle" style="display:flex;align-items:center;gap:8px;">
+      <h3 id="guideModalTitle">
         <img src="assets/icons/Welcome/102353.png" width="24" height="24" alt="">Guías de usuario
       </h3>
       <button type="button" class="modal__close" aria-label="Cerrar" data-close="1">✕</button>
     </header>
-    <div class="modal__body" style="display:flex;flex-direction:column;gap:16px;">
-      <p class="muted" style="margin:0;">Elegí la guía que mejor se adapte a lo que necesitás:</p>
-      <a href="docs/user-guide.html" target="_blank" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg-1);border:1px solid var(--bd-1);border-radius:12px;text-decoration:none;transition:all 0.15s ease;" onmouseover="this.style.borderColor='#5276ff';this.style.boxShadow='0 0 12px rgba(82,118,255,0.15)'" onmouseout="this.style.borderColor='var(--bd-1)';this.style.boxShadow='none'">
-        <img src="assets/icons/Welcome/102367.png" width="32" height="32" alt="" style="flex-shrink:0;">
-        <div>
-          <div style="font-weight:600;color:var(--tx-1);font-size:0.95rem;">Guía básica</div>
-          <div class="muted" style="font-size:0.75rem;">Primeros pasos, cómo empezar, funcionalidades principales</div>
-        </div>
+    <div class="modal__body" style="display:flex;flex-direction:column;gap:12px;">
+      <p style="margin:0;color:var(--tx-2);">Elegí la guía que mejor se adapte a lo que necesitás:</p>
+      <a class="gn-guide" href="docs/user-guide.html" target="_blank" rel="noopener">
+        <img src="assets/icons/Welcome/102367.png" width="32" height="32" alt="">
+        <div><b>Primeros pasos</b><span>Qué es la Bóveda, tu API Key y cómo moverte, en 5 minutos</span></div>
       </a>
-      <a href="docs/user-guide-avanzado.html" target="_blank" style="display:flex;align-items:center;gap:14px;padding:16px;background:var(--bg-1);border:1px solid var(--bd-1);border-radius:12px;text-decoration:none;transition:all 0.15s ease;" onmouseover="this.style.borderColor='#5276ff';this.style.boxShadow='0 0 12px rgba(82,118,255,0.15)'" onmouseout="this.style.borderColor='var(--bd-1)';this.style.boxShadow='none'">
-        <img src="assets/icons/Welcome/102361.png" width="32" height="32" alt="" style="flex-shrink:0;">
-        <div>
-          <div style="font-weight:600;color:var(--tx-1);font-size:0.95rem;">Guía avanzada</div>
-          <div class="muted" style="font-size:0.75rem;">Qué es, cómo se usa y para qué sirve cada módulo en detalle</div>
-        </div>
+      <a class="gn-guide" href="docs/user-guide-avanzado.html" target="_blank" rel="noopener">
+        <img src="assets/icons/Welcome/102361.png" width="32" height="32" alt="">
+        <div><b>Guía por módulo</b><span>Para qué sirve, cómo se usa, qué permisos pide y qué guarda cada módulo</span></div>
       </a>
     </div>
   </div>

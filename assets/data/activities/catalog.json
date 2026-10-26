@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "verified": "2026-10-25",
+  "note": "Actividades (BL-070, paso 3). Datos verificados en la API oficial desde CI (RUN-054 y RUN-055) y en la wiki oficial. No inventa nada: lo que la API no informa queda dicho.",
+  "resets": {
+    "dailyUtc": "00:00",
+    "psnaUtc": "08:00",
+    "weekly": { "day": "monday", "utc": "07:30" },
+    "source": "Wiki oficial, «Key farming»: la llave del capítulo de nivel 10 se reinicia el lunes a las 07:30 UTC (2026-10-25)."
+  },
+  "dailyCrafting": {
+    "endpoint": "/v2/account/dailycrafting",
+    "items": [
+      { "key": "glob_of_elder_spirit_residue", "item": 46744, "name": "Pegote de residuo de espíritus ancestrales", "rarity": "Ascended" },
+      { "key": "lump_of_mithrilium", "item": 46742, "name": "Trozo de mithrilio", "rarity": "Ascended" },
+      { "key": "spool_of_silk_weaving_thread", "item": 46740, "name": "Carrete de hilo de seda para tejer", "rarity": "Ascended" },
+      { "key": "spool_of_thick_elonian_cord", "item": 46745, "name": "Carrete de hilo grueso eloniano", "rarity": "Ascended" },
+      { "key": "charged_quartz_crystal", "item": 43772, "name": "Cristal de cuarzo cargado", "rarity": "Rare" }
+    ],
+    "source": "/v2/dailycrafting (5) y /v2/items en español (RUN-055)."
+  },
+  "fractals": {
+    "category": 88,
+    "categoryName": "Fractales del día",
+    "tierMinScale": { "1": 1, "2": 26, "3": 51, "4": 76 },
+    "patterns": {
+      "es": { "tier": "^(.+) de rango ([1-4]) del día$", "recommended": "escala (\\d+)$" },
+      "en": { "tier": "^Daily Tier ([1-4]) (.+)$", "recommended": "Scale (\\d+)$" }
+    },
+    "source": "/v2/achievements/categories/88?v=latest trae achievements (hoy) y tomorrow (mañana): 15 cada uno, 3 fractales en rango 1 a 4 y 3 recomendados. Rango 3 = escala 51 o más (requirement del logro 4210; RUN-055)."
+  },
+  "weeklyKey": {
+    "item": 19980,
+    "name": "Llave de cofre del León Negro",
+    "storyLevel": 10,
+    "perAccountPerWeek": 1,
+    "anyProfession": true,
+    "apiReportsCompletion": false,
+    "source": "Wiki oficial, «Key farming» (2026-10-25): capítulo de nivel 10 de la historia personal, una llave por cuenta por semana, con cualquier profesión. La API no informa capítulos terminados: la señal es un personaje de nivel 10 o más creado desde el último reset."
+  },
+  "leivas": {
+    "item": 96978,
+    "name": "Piedra de invocación vetusta",
+    "perWeek": 5,
+    "mastery": "Globalization",
+    "map": { "id": 1428, "nameEn": "Arborstone", "waypoint": "[&BGMNAAA=]" },
+    "offers": [
+      { "currency": 1, "cost": 10000, "label": "Oro", "unit": "1 de oro" },
+      { "currency": 2, "cost": 7000, "label": "Karma" },
+      { "currency": 68, "cost": 100, "label": "Favor imperial" },
+      { "currency": 66, "cost": 10, "label": "Moneda antigua" },
+      { "currency": 28, "cost": 10, "label": "Esquirla de magnetita" }
+    ],
+    "source": "Wiki oficial, «Leivas» y «Antique Summoning Stone» (copia del 2026-10-25): 5 ofertas de 1 por semana con costos 1 de oro, 7.000, 100, 10 y 10; la de esquirlas de magnetita usaba esquirlas de profecía azules antes de la unificación de raids; la moneda inusual de End of Dragons pasó a llamarse moneda antigua. Ids y nombres en español de /v2/currencies (RUN-055). Waypoint de Arborstone: wiki oficial, «Arborstone»."
+  },
+  "removed": [
+    { "what": "Seguimiento «Solitary Throne CM» (logros 9423, 9412, 9373 y 9388)", "why": "Son los logros diarios de rango 1 a 4 del fractal Solitary Throne, no del modo desafío, y no están en ninguna categoría: solo aparecen cuando ese fractal entra en la rotación. Los cubre «Fractales del día» (RUN-055)." }
+  ]
+}

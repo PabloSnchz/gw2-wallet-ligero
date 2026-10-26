@@ -2,7 +2,10 @@
   "version": 1,
   "modules": [
     { "src": "js/gn-surface.js", "v": "1.0.0" },
-    { "src": "js/gn-frame.js", "v": "1.0.0" },
+    { "src": "js/gn-frame.js", "v": "1.0.2" },
+    { "src": "js/gn-shell.js", "v": "1.3.0" },
+    { "src": "js/gn-ui.js", "v": "1.1.0" },
+    { "src": "js/gn-topbar.js", "v": "1.1.0" },
     { "src": "js/wv-tabs-skin.js", "v": "1.0.0" },
     { "src": "js/wv-view.js", "v": "1.2.0" },
     { "src": "js/wv-shop-manage.js", "v": "1.0.0" },
@@ -10,6 +13,25 @@
     { "src": "js/ach-view.js", "v": "1.3.0" },
     { "src": "js/ach-armory.js", "v": "1.0.0" },
     { "src": "js/ach-cards.js", "v": "1.2.0" },
-    { "src": "js/ach-categories.js", "v": "1.0.0" }
+    { "src": "js/ach-categories.js", "v": "1.0.0" },
+    { "src": "js/raids-view.js", "v": "1.2.0" },
+    { "src": "js/raids-sheet.js", "v": "1.2.0" },
+    { "src": "js/inv-model.js", "v": "1.0.0" },
+    { "src": "js/inv-view.js", "v": "1.5.0" },
+    { "src": "js/inv-multi.js", "v": "1.1.1" },
+    { "src": "js/inv-search.js", "v": "1.0.1" },
+    { "src": "js/inv-chars.js", "v": "1.0.1" },
+    { "src": "js/inv-sheet.js", "v": "1.0.0" },
+    { "src": "js/act-model.js", "v": "1.0.0" },
+    { "src": "js/act-psna.js", "v": "1.0.0" },
+    { "src": "js/act-view.js", "v": "1.4.0" },
+    { "src": "js/act-week.js", "v": "1.1.0" },
+    { "src": "js/home-view.js", "v": "1.1.0" },
+    { "src": "js/home-extra.js", "v": "1.0.0" },
+    { "src": "js/acc-model.js", "v": "1.0.0" },
+    { "src": "js/acc-vault.js", "v": "1.0.0" },
+    { "src": "js/acc-vault-view.js", "v": "1.2.1" },
+    { "src": "js/acc-vault-edit.js", "v": "1.1.0" },
+    { "src": "js/acc-view.js", "v": "1.1.0" }
   ]
 }

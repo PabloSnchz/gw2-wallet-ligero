@@ -1,6 +1,6 @@
 /*!
  * js/settings-manager.js — Gestión de Exportación/Importación de configuración
- * v1.0.2 (2026-03-28)
+ * v1.0.4 (cabecera al día 2026-10-23, RSK-020: el archivo ya era 1.0.4, ver el historial)
  * 
  * Permite exportar e importar toda la configuración de la app:
  * - API Keys (nombres + keys, key seleccionada)
@@ -12,6 +12,9 @@
  * - Global (welcomeSeen)
  * 
  * v1.0.2: Agregados métodos exportData() e importFromData() para sincronización con GitHub Gist
+ * Versión: 1.0.5
+ * v1.0.5: TOP-2 (BL-070 paso 5): las 3 preguntas y el aviso de error van por la ventana de la Bóveda
+ *   (window.GNUI, js/gn-ui.js) con el MISMO texto; sin ella, las del navegador (ask()).
  * v1.0.4: El `confirm()` del botón deja de ENUMERAR qué conserva y pasa a
  *   decir los BYTES que quedan (`keptBytes` de `__cacheClear`). Motivo medido:
  *   el `kept` incluye 8 familias de clave de cache de otros módulos que no
@@ -269,6 +272,19 @@
    * posible: el clic que devuelve las cosas a como estaban sería el que las
    * rompe.
    */
+  // TOP-2 (BL-070): pregunta con la ventana de la Bóveda. El primer párrafo del texto de siempre es el
+  // título y cada renglón, un párrafo. Sin GNUI (no cargó, o un arnés de test) queda confirm() con el
+  // MISMO texto y la respuesta llega sin esperar, como antes.
+  function ask(msg, o) {
+    var G = window.GNUI;
+    if (G && G.confirm) {
+      var parts = String(msg).split('\n\n');
+      return G.confirm({ title: parts[0], text: parts.slice(1).join('\n').split(/\n+/), okLabel: o && o.okLabel, danger: !!(o && o.danger), icon: o && o.icon });
+    }
+    var yes = confirm(msg);
+    return { then: function (f) { return f(yes); } };
+  }
+
   async function restoreSafetySnapshot() {
     var snap = getSafetySnapshot();
     if (!snap || !snap.data) {
@@ -283,7 +299,7 @@
       '• El resto de la configuración\n\n' +
       'Esto también sobrescribe tu configuración actual.\n\n' +
       '¿Continuar?';
-    if (!confirm(msg)) return { ok: false, cancelled: true };
+    if (!(await ask(msg, { okLabel: 'Restaurar', danger: true, icon: 'assets/icons/155033.png' }))) return { ok: false, cancelled: true };
     applyImportData(snap.data);
     return { ok: true, takenAt: snap.takenAt };
   }
@@ -668,7 +684,7 @@
             '• Configuración global\n\n' +
             'La página se recargará automáticamente.';
           
-          if (confirm(confirmMsg)) {
+          if (await ask(confirmMsg, { okLabel: 'Restaurar', danger: true, icon: 'assets/icons/155033.png' })) {
             // Las escrituras van aca y no antes: es el unico punto del flujo
             // donde ya se sabe que Pablo quiere el restore. Sin esta linea el
             // confirm seria decorativo.
@@ -764,13 +780,16 @@
       // commit. El tamano es el dato que Pablo puede comparar con la cuota.
       '• Se conservan ' + dry.kept + ' claves (' + fmtBytes(dry.keptBytes) + ')\n\n' +
       'La API volverá a descargar los datos, y el WV también. Se libera también lo que esos dos tienen en memoria; lo que otros módulos ya tienen cargado se conserva hasta que recargues la página.';
-    if (!confirm(msg)) return;   // 2. Cancelar NO borra nada: el dryRun no habia borrado nada
+    // 2. Cancelar NO borra nada: el dryRun no habia borrado nada. TOP-2: la pregunta va por la ventana de la Bóveda.
+    return ask(msg, { okLabel: 'Liberar' }).then(function (yes) {
+    if (!yes) return;
     // 3. Ahora si.
     var res = api.__cacheClear();
     if (window.toast) {
       window.toast('success', 'Caché liberada: ' + (res ? res.removed : 0) + ' claves (' +
         fmtBytes(res ? res.bytes : 0) + ')', { ttl: 3500 });
     }
+    });
   }
 
   // =======================================================================
@@ -778,7 +797,7 @@
   // =======================================================================
   
   function init() {
-    console.info(LOG, 'Settings Manager v1.0.4 inicializado');
+    console.info(LOG, 'Settings Manager v1.0.5 inicializado');
     
     // Buscar botones en el DOM (se ejecuta después de que index.html cargue)
     function bindButtons() {
@@ -803,7 +822,7 @@
             if (window.toast) {
               window.toast('error', err.message || 'Error al importar', { ttl: 3000 });
             } else {
-              alert('Error: ' + err.message);
+              if (window.GNUI) window.GNUI.alert({ title: 'No se pudo restaurar', text: err.message || 'Error al importar', danger: true });
             }
           });
         });

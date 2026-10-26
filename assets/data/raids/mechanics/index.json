@@ -1,0 +1,12 @@
+{
+ "version": 1,
+ "files": {
+  "jw": "jw.json",
+  "hot": "hot.json",
+  "pof": "pof.json",
+  "ibs": "ibs.json",
+  "core": "core.json",
+  "eod": "eod.json",
+  "soto": "soto.json"
+ }
+}

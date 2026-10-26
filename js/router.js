@@ -1,29 +1,31 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.17.0 (2026-06-03) — Soporte Strike Tracker + F5 fix + skeleton ampliado
+ * v2.21.0 (2026-10-25) — BL-070 ACT-7b: Actividades ya no usa js/activities.js
  *
- * Cambios v2.16.0:
- *  - Eliminada referencia a asideConvSection en updateSidebarFor
- *  - Sidebar liberada (~80 líneas menos en index.html)
- *  - Soporte para InventoryHub como pantalla principal de #/account/characters
+ * Cambios de BL-070 (el detalle de cada paso está en ai-memory/status.md):
+ *  - 2.21.0 (ACT-7b): js/activities.js se retiró: el módulo viejo no se precarga, activa ni desactiva;
+ *    #activitiesPanel vive en index.html y lo dibuja js/act-view.js (escucha gn:tokenchange solo).
+ *  - 2.20.0 (ACT-5): ruta #/account/homestead y #homesteadPanel (js/home-view.js, BL-055).
+ *  - 2.19.1 (INV-7b): MODULOS_CON_LATCH y showPanel ya no nombran a InventoryHub ni a sus 2 paneles.
+ *  - 2.19.0 (INV-7a): #/account/characters es la vista nueva (js/inv-*.js); #/inventory/dashboard
+ *    abre la pestaña Multicuenta; cambiar de cuenta ya no refresca los módulos viejos.
+ *  - 2.18.2 (RAI-6) y 2.18.1 (RAI-5b): sin StrikeTracker; #/account/strikes muestra Raids.
  *
- * Cambios v2.15.0:
- *  - FASE 2: __getShopState expone estado de tienda a wv-shop-ui.js
- *  - FASE 2: ensureLoadTab('shop') y onTokenChanged delegan a WVShopUI con fallback
- *  - FASE 3: __getObjState/__setObjState exponen estado de objetivos
- *  - FASE 3: renderObjectivesTab y renderObjectivesZero delegan a WVObjectivesUI con fallback
+ * Antes, v2.18.0 — Sin la copia vieja de la Tienda (BL-064 CAM-6)
  *
- * Cambios v2.14.0:
- *  - Agregada ruta '#/account/raids' para el seguimiento semanal de raids
+ * Cambios v2.18.0:
+ *  - Se fue la Tienda de respaldo (barra, tarjetas, tabla, campo numérico y sus marcas):
+ *    la pinta js/wv-shop-ui.js desde la 2.0.0 (CAM-3) y siempre está cargada.
+ *    ensureShopToolbar, syncShopToggleLabel y renderShopArea quedan como pasamanos.
  *
- * Cambios v2.13.0:
- *  - Agregada ruta '#/wallet/dashboard' para el dashboard multi-cuenta de wallet
+ * Cambios v2.17.0: Soporte Strike Tracker + F5 fix + skeleton ampliado
+ * Antes: v2.13.0 a v2.16.0 (historia en git).
  */
 
 (function () {
   'use strict';
 
-  console.info('[WV] router-wv.js v2.17.0 — Fases 1-3 completas + Strike Tracker + fixes');
+  console.info('[WV] router-wv.js v2.19.0 — Fases 1-3 completas + fixes');
 
   var $  = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
@@ -115,6 +117,7 @@
           '#/account/achievements':'achievements',
           '#/account/wizards-vault':'wv',
           '#/activities':'activities',
+          '#/account/homestead':'homestead',
           '#/account/characters':'inventory',
           '#/account/accounts':'accounts',
           '#/welcome':'welcome',
@@ -142,7 +145,6 @@
       else if (view==='welcome'){ /* no sidebar específico para bienvenida */ }
       else if (view==='walletDashboard'){ /* no sidebar específico */ }
       else if (view==='raids'){ /* no sidebar específico para raids */ }
-      else if (view==='strikes'){ /* no sidebar específico para strikes */ }
       else if (view==='legendaryArmory'){ /* no sidebar específico para arm. legendaria */ }
       else if (view==='inventory'){ /* no sidebar específico para inventario */ }
       else if (view==='inventoryDashboard'){ /* no sidebar específico */ }
@@ -150,7 +152,7 @@
   }
 
   function showPanel(idToShow) {
-    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','inventoryPanel','charactersPanel','accountsPanel','welcomePanel','walletDashboardPanel','inventoryDashboardPanel','wvObjectivesDashboardPanel','raidTrackerPanel','strikeTrackerPanel','legendaryArmoryPanel'].forEach(function(id){
+    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','homesteadPanel','inventoryPanel','accountsPanel','welcomePanel','walletDashboardPanel','wvObjectivesDashboardPanel','raidTrackerPanel','legendaryArmoryPanel'].forEach(function(id){
       var node=el(id); if (!node) return;
       if (id===idToShow) node.removeAttribute('hidden'); else node.setAttribute('hidden','hidden');
     });
@@ -254,11 +256,9 @@
       __marksTimers.set(fp, t);
     }
 
-    function saveView(v){ try{ Storage.set(LS_WV_SHOP_VIEW,v); }catch(_){ } }
     function loadView(){ try{ return Storage.get(LS_WV_SHOP_VIEW)||'cards'; }catch(_){ return 'cards'; } }
     function saveLastTab(t){ try{ Storage.set(LS_WV_LAST_TAB,t); }catch(_){ } }
     function loadLastTab(){ try{ return Storage.get(LS_WV_LAST_TAB)||'daily'; }catch(_){ return 'daily'; } }
-    function saveLegacyFilter(v){ try{ Storage.set(LS_WV_LEGACY_VIS,v); }catch(_){ } }
     function loadLegacyFilter(){ try{ return Storage.get(LS_WV_LEGACY_VIS)||'show'; }catch(_){ return 'show'; } }
 
     function setWVSeasonHeader(season){
@@ -475,491 +475,11 @@
       return els.shopToolbarHost;
     }
 
-    function shopSyncLine(){
-      var ts=state.shop.lastSyncTs;
-      if (!ts) return '<div class="wv-syncline"><span class="wv-sync-badge">Sincronizado: —</span></div>';
-      var secs=Math.max(0,Math.floor((now()-ts)/1000));
-      return '<div class="wv-syncline"><span class="wv-sync-badge">Sincronizado hace '+secs+'s</span></div>';
-    }
-    function syncShopToggleLabel(){ var v=el('wvShopToggleView'); if (v) v.textContent='Vista: '+(state.shop.view==='cards'?'Tarjetas':'Tabla'); }
-
-    function ensureShopToolbar(){
-      var host=ensureShopHost();
-      if (host.__wired && host.querySelector('.wv-shop-toolbar')) return;
-      host.__wired=true;
-
-      var legacyVis=state.shop.legacyFilter||'show';
-      host.innerHTML=[
-        '<div class="wv-shop-toolbar">',
-          '<div class="group" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">',
-            '<strong style="margin-right:6px">Tienda:</strong>',
-            '<input id="wvShopSearch" type="text" placeholder="Buscar (nombre o ID)…" />',
-
-            '<button id="wvShopToggleView" class="btn btn--ghost">Vista: '+(state.shop.view==='cards'?'Tarjetas':'Tabla')+'</button>',
-            '<button id="wvShopRefresh" class="btn btn--ghost">Refrescar</button>',
-            '<label for="wvLegacyFilter" class="muted" style="margin-left:8px;">Recompensas Legado:</label>',
-            '<select id="wvLegacyFilter">',
-              '<option value="show"'+(legacyVis==='show'?' selected':'')+'>Mostrar</option>',
-              '<option value="hide"'+(legacyVis==='hide'?' selected':'')+'>Ocultar</option>',
-            '</select>',
-            '<button id="wvClearSynced" class="btn btn--ghost" title="Borrar o recortar marcas ya cubiertas por el API">Limpiar sincronizados</button>',
-            '<button id="wvClearPinsAll" class="btn btn--ghost" title="Borrar TODOS los fijados de TODAS las API keys para esta temporada" style="display:inline-flex;align-items:center;gap:4px;color:var(--color-red);">' +
-              '<img src="assets/icons/Welcome/156107.png" width="14" height="14" alt="">Limpiar fijados' +
-            '</button>',
-            '<button id="wvReplicatePins" class="btn btn--ghost" title="Copiar los fijados de esta API key a todas las demás" style="display:inline-flex;align-items:center;gap:4px;">' +
-              '<img src="assets/icons/Welcome/155911.png" width="14" height="14" alt="">Replicar fijados' +
-            '</button>',
-          '</div>',
-          shopSyncLine(),
-          '<div id="wvShopHeader" class="muted" style="margin-top:4px">—</div>',
-        '</div>'
-      ].join('');
-
-      var q=host.querySelector('#wvShopSearch'),
-          v=host.querySelector('#wvShopToggleView'), r=host.querySelector('#wvShopRefresh'),
-          lf=host.querySelector('#wvLegacyFilter'), cls=host.querySelector('#wvClearSynced');
-
-      if (q) q.addEventListener('input', function(){ state.shop.q=(q.value||'').trim().toLowerCase(); renderShopArea(); });
-      if (v) v.addEventListener('click', function(){ state.shop.view=(state.shop.view==='cards')?'table':'cards'; saveView(state.shop.view); syncShopToggleLabel(); renderShopArea(); });
-      if (r) r.addEventListener('click', function(){ refreshShopData(true); });
-      if (lf) lf.addEventListener('change', function(){ state.shop.legacyFilter=lf.value||'show'; saveLegacyFilter(state.shop.legacyFilter); renderShopArea(); });
-
-      if (cls) cls.addEventListener('click', async function(){
-        var st=state.shop, marks=st.marks||{}, changed=false;
-        (st.merged||[]).forEach(function(row){
-          var id=String(row.id), limit=(typeof row.purchase_limit==='number')?row.purchase_limit:null, purchasedApi=(typeof row.purchased==='number')?row.purchased:0;
-          var m=+marks[id]||0; if (limit==null) return;
-          if (purchasedApi>=limit && m){ delete marks[id]; changed=true; }
-          else if (m>0 && purchasedApi+m>limit){ marks[id]=Math.max(0,limit-purchasedApi); changed=true; }
-        });
-        if (changed){
-          st.marks=marks;
-          var ns=marksNamespace(), fp=parseNs(ns);
-          try {
-            await saveMarks(ns, marks);
-            renderShopArea();
-            window.toast?.('success','Marcas sincronizadas con el API',{ttl:1800});
-          } catch(e){
-            window.toast?.('error','No se pudo limpiar marcas (espacio de almacenamiento)',{ttl:1800});
-            refreshShopData(false);
-          }
-        } else window.toast?.('info','No hay marcas para limpiar',{ttl:1500});
-      });
-
-      // Botón: Limpiar fijados de TODAS las cuentas
-      var clearPinsBtn = host.querySelector('#wvClearPinsAll');
-      if (clearPinsBtn) {
-        clearPinsBtn.addEventListener('click', async function() {
-          if (!confirm('¿Borrar TODOS los fijados de TODAS las API keys para esta temporada?\n\nEsta acción no se puede deshacer.')) return;
-          if (!window.WVSeasonStore || !state.shop.season) {
-            window.toast?.('error', 'No se pudo acceder al almacén de temporada', { ttl: 2000 });
-            return;
-          }
-          try {
-            var keys = Storage.get('gn:account:keys') || [];
-            var year = state.shop.season.year;
-            var seq = state.shop.season.seq;
-            var count = 0;
-            for (var k = 0; k < keys.length; k++) {
-              var fp = keys[k].value ? keys[k].value.slice(0, 4) + '…' + keys[k].value.slice(-4) : 'anon';
-              var currentPins = window.WVSeasonStore.getPinned(year, seq, fp) || {};
-              var pinIds = Object.keys(currentPins);
-              if (pinIds.length > 0) {
-                await window.WVSeasonStore.delPinned(year, seq, fp, pinIds);
-                count++;
-              }
-            }
-            window.toast?.('success', 'Fijados limpiados en ' + count + ' cuenta(s)', { ttl: 2000 });
-            refreshShopData(false);
-          } catch (e) {
-            window.toast?.('error', 'Error al limpiar fijados: ' + (e.message || 'desconocido'), { ttl: 2500 });
-          }
-        });
-      }
-
-      // Botón: Replicar fijados a todas las cuentas
-      var replicateBtn = host.querySelector('#wvReplicatePins');
-      if (replicateBtn) {
-        replicateBtn.addEventListener('click', async function() {
-          if (!confirm('¿Copiar los fijados de esta API key a TODAS las demás?\n\nSolo se agregarán, no se borrarán los existentes.')) return;
-          if (!window.WVSeasonStore || !state.shop.season) {
-            window.toast?.('error', 'No se pudo acceder al almacén de temporada', { ttl: 2000 });
-            return;
-          }
-          try {
-            var token = getSelectedToken();
-            if (!token) {
-              window.toast?.('error', 'No hay API key seleccionada', { ttl: 2000 });
-              return;
-            }
-            var sourceFp = token.slice(0, 4) + '…' + token.slice(-4);
-            var year = state.shop.season.year;
-            var seq = state.shop.season.seq;
-            var sourcePins = window.WVSeasonStore.getPinned(year, seq, sourceFp) || {};
-
-            var keys = Storage.get('gn:account:keys') || [];
-            var count = 0;
-            for (var k = 0; k < keys.length; k++) {
-              var destFp = keys[k].value ? keys[k].value.slice(0, 4) + '…' + keys[k].value.slice(-4) : 'anon';
-              if (destFp === sourceFp) continue;
-              await window.WVSeasonStore.setPinned(year, seq, destFp, sourcePins);
-              count++;
-            }
-            window.toast?.('success', 'Fijados replicados a ' + count + ' cuenta(s)', { ttl: 2000 });
-            refreshShopData(false);
-          } catch (e) {
-            window.toast?.('error', 'Error al replicar fijados: ' + (e.message || 'desconocido'), { ttl: 2500 });
-          }
-        });
-      }
-
-      syncShopToggleLabel();
-    }
-
-    function setShopHeader(aa, spentApi, reservedMarks, iconUrl){
-      var host=el('wvShopHeader'); if (!host) return;
-      var icon=iconUrl?('<img src="'+escapeHtml(iconUrl)+'" alt="" width="16" height="16" style="vertical-align:middle;margin-right:6px;" loading="lazy"/>'):'';
-      var aaLeft=Math.max(0, Number(aa||0)-Number(reservedMarks||0));
-      host.innerHTML=icon+'<strong>Aclamación Astral</strong> — Disponible: <strong>'+fmtNumber(aa||0)+'</strong> • Gastado (API): <strong>'+fmtNumber(spentApi||0)+'</strong> • Reservado (marcas): <strong>'+fmtNumber(reservedMarks||0)+'</strong> • Restante: <strong>'+fmtNumber(aaLeft)+'</strong>';
-    }
-    function computeShopNumbers(rows){
-      var spentApi=0; (rows||[]).forEach(function(x){ var cost=+x.cost||0, pc=+x.purchased||0; if(cost>0&&pc>0) spentApi+=cost*pc; });
-      var marks=state.shop.marks||{}, reserved=0;
-      Object.keys(marks).forEach(function(id){ var m=+marks[id]||0; var row=(rows||[]).find(function(x){ return String(x.id)===String(id); }); if(row&&m>0) reserved += (row.cost||0)*m; });
-      return { spentApi:spentApi, reservedMarks:reserved };
-    }
-
-    function passSearchAndSort(list){
-      var q=(state.shop.q||'').toLowerCase(), sort=state.shop.sort||'name', legacy=state.shop.legacyFilter||'show', itemsById=state.shop.itemsById||new Map();
-      var filtered=(list||[]).filter(function(x){
-        if (legacy==='hide' && String(x.type||'').toLowerCase()==='legacy') return false;
-        if (!q) return true;
-        var it=(x.item_id!=null)?itemsById.get(x.item_id):null; var name=it&&it.name?String(it.name):'';
-        return name.toLowerCase().includes(q) || String(x.id||'').includes(q);
-      });
-      var sorted=filtered.slice();
-      switch(sort){
-        case 'cost': sorted.sort(function(a,b){return (a.cost||0)-(b.cost||0);}); break;
-        case 'costDesc': sorted.sort(function(a,b){return (b.cost||0)-(a.cost||0);}); break;
-        case 'id': sorted.sort(function(a,b){return (a.id||0)-(b.id||0);}); break;
-        default:
-          sorted.sort(function(a,b){ var ia=itemsById.get(a.item_id)||{}, ib=itemsById.get(b.item_id)||{}; return String(ia.name||'').localeCompare(String(ib.name||''),'es'); });
-      }
-      var pinned=state.shop.pinned||{};
-      sorted.sort(function(a,b){ var pa=!!pinned[a.id], pb=!!pinned[b.id]; return pa&& !pb ? -1 : (!pa && pb ? 1 : 0); });
-      return sorted;
-    }
-
-    function saveManualMark(listingId, value) {
-      var token = getSelectedToken();
-      if (!token || !window.WVSeasonStore || !state.shop.season) return Promise.resolve();
-      
-      var fp = token.slice(0,4) + '…' + token.slice(-4);
-      var season = state.shop.season;
-      
-      return (async function() {
-        try {
-          var currentMarks = await WVSeasonStore.getMarks(season.year, season.seq, fp) || {};
-          currentMarks[listingId] = value;
-          await WVSeasonStore.setMarks(season.year, season.seq, fp, currentMarks);
-          
-          state.shop.marks = currentMarks;
-          
-          var sums = computeShopNumbers(state.shop.merged);
-          setShopHeader(state.shop.aa, sums.spentApi, sums.reservedMarks, state.shop.aaIconUrl);
-        } catch(e) {
-          console.warn('[WV] Error saving manual mark:', e);
-        }
-      })();
-    }
-
-    function updateCardUI(card, listingId, newMarked) {
-      if (!card) return;
-      
-      var row = state.shop.merged.find(function(r) { return String(r.id) === String(listingId); });
-      if (!row) return;
-      
-      var limit = row.purchase_limit;
-      var purchasedApi = row.purchased || 0;
-      var purchasedEff = purchasedApi + newMarked;
-      var leftVal = limit !== null ? Math.max(0, limit - purchasedEff) : null;
-      var leftDisplay = leftVal === null ? '∞' : leftVal;
-      var totalRemainingAA = leftVal !== null ? leftVal * (row.cost || 0) : 0;
-      var progressPercent = limit !== null ? (purchasedEff / limit) * 100 : 0;
-      var isCompleted = leftVal !== null && leftVal === 0;
-      var statusIcon = isCompleted ? '✅' : (limit === null ? '∞' : '⚠️');
-      var statusText = isCompleted ? 'Completado' : (limit === null ? 'Ilimitado' : 'Pendiente');
-      var statusColor = isCompleted ? 'var(--color-green)' : (limit === null ? 'var(--color-blue)' : 'var(--color-amber)');
-      
-      var rows = card.querySelectorAll('.wv-card__row');
-      if (rows.length >= 2) {
-        var purchasedPill = rows[0].querySelector('.pill');
-        if (purchasedPill) purchasedPill.textContent = purchasedEff + ' / ' + (limit === null ? '∞' : limit);
-        var restantePill = rows[1].querySelector('.pill');
-        if (restantePill) restantePill.textContent = leftDisplay;
-      }
-      
-      var progressDiv = card.querySelector('.wvpd-item-progress');
-      if (progressDiv) {
-        var statusDiv = progressDiv.querySelector('.wvpd-item-progress__status');
-        if (statusDiv) {
-          statusDiv.style.color = statusColor;
-          statusDiv.setAttribute('title', isCompleted ? 'Completado' : (limit === null ? 'Sin límite' : 'Faltan ' + leftVal + ' unidades (' + totalRemainingAA + ' AA)'));
-          statusDiv.innerHTML = statusIcon + ' ' + statusText + ': ' + (leftDisplay === '∞' ? '∞' : leftDisplay + ' (' + totalRemainingAA + ' AA)');
-        }
-        var fillDiv = progressDiv.querySelector('.wvpd-item-progress__fill');
-        if (fillDiv) {
-          fillDiv.style.width = Math.min(100, progressPercent) + '%';
-        }
-      }
-      
-      var manualInput = card.querySelector('.wvpd-manual-input-field');
-      if (manualInput && manualInput.value != newMarked) {
-        manualInput.value = newMarked;
-      }
-    }
-
-    function setupManualInputEvents(container) {
-      var inputs = container.querySelectorAll('.wvpd-manual-input-field');
-      inputs.forEach(function(input) {
-        if (input.__wired) return;
-        input.__wired = true;
-        
-        var listingId = input.getAttribute('data-id');
-        var maxVal = parseInt(input.getAttribute('max'), 10);
-        var card = input.closest('.wv-card');
-        
-        input.addEventListener('change', function(e) {
-          var newValue = parseInt(e.target.value, 10);
-          if (isNaN(newValue)) newValue = 0;
-          if (!isNaN(maxVal) && newValue > maxVal) newValue = maxVal;
-          if (newValue < 0) newValue = 0;
-          if (input.value != newValue) input.value = newValue;
-          
-          state.shop.marks[listingId] = newValue;
-          
-          saveManualMark(listingId, newValue).then(function() {
-            if (card) updateCardUI(card, listingId, newValue);
-          });
-        });
-      });
-      
-      var maxBtns = container.querySelectorAll('.btn-max');
-      maxBtns.forEach(function(btn) {
-        if (btn.__wired) return;
-        btn.__wired = true;
-        
-        var listingId = btn.getAttribute('data-id');
-        var maxLimit = parseInt(btn.getAttribute('data-limit'), 10);
-        var card = btn.closest('.wv-card');
-        
-        btn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          if (!isNaN(maxLimit) && maxLimit > 0) {
-            var input = card.querySelector('.wvpd-manual-input-field');
-            if (input) {
-              input.value = maxLimit;
-              state.shop.marks[listingId] = maxLimit;
-              saveManualMark(listingId, maxLimit).then(function() {
-                if (card) updateCardUI(card, listingId, maxLimit);
-              });
-            }
-          }
-        });
-      });
-    }
-
-    // ====== RENDERIZADO DE LA TIENDA (FALLBACK - se usa si WVShopUI no está disponible) ======
-    function renderShopArea() {
-      // FIX: Si WVShopUI está disponible, delegar
-      if (window.WVShopUI) {
-        WVShopUI.render();
-        return;
-      }
-      
-      // Fallback: código original
-      var host = els.tabShop;
-      if (!host) return;
-
-      ensureShopToolbar();
-      syncShopToggleLabel();
-
-      var toolbarHost = ensureShopHost();
-      var toolbar = toolbarHost.querySelector('.wv-shop-toolbar');
-      if (toolbar) {
-        var line = toolbar.querySelector('.wv-syncline');
-        if (line) line.outerHTML = shopSyncLine();
-      }
-
-      var st = state.shop;
-      var sums = computeShopNumbers(st.merged);
-      setShopHeader(st.aa, sums.spentApi, sums.reservedMarks, st.aaIconUrl);
-
-      var areaId = 'wvShopList';
-      var area = host.querySelector('#' + areaId);
-      if (!area) {
-        area = document.createElement('div');
-        area.id = areaId;
-        host.appendChild(area);
-      }
-
-      var itemsById = st.itemsById || new Map();
-      var rows = passSearchAndSort(st.merged).slice(0, 1200);
-
-      setShopLoading(false);
-
-      if (st.view === 'table') {
-        var trs = rows.map(function(x) {
-          var it = (x.item_id != null) ? itemsById.get(x.item_id) : null;
-          var icon = it && it.icon ? ('<img class="wv-item-icon" src="' + escapeHtml(it.icon) + '" alt="" loading="lazy"/> ') : '';
-          var name = it && it.name ? it.name : (x.item_id != null ? ('Item #' + x.item_id) : (x.type || '—'));
-          var rarity = it && it.rarity ? String(it.rarity) : null;
-          var color = rarityColor(rarity);
-          var qty = (x.item_count && x.item_count > 1) ? (' <span class="muted">×' + x.item_count + '</span>') : '';
-          var limit = (typeof x.purchase_limit === 'number') ? x.purchase_limit : null;
-          var purchasedApi = (typeof x.purchased === 'number') ? x.purchased : 0;
-          var marks = st.marks || {};
-          var marked = Number(marks[x.id] || 0);
-          var purchasedEff = purchasedApi + marked;
-          var leftVal = (limit == null) ? '∞' : GW2Api.wvComputeRemaining(limit, purchasedApi, marked);
-
-          var nameHtml = '<span' + (color ? ' style="color:' + color + '"' : '') + '>' + escapeHtml(name) + '</span>';
-          var pinActive = !!(st.pinned && st.pinned[x.id]);
-          var pinCls = 'wv-pin' + (pinActive ? ' wv-pin--active' : '');
-          var pinBtn = '<button class="' + pinCls + '" data-pin="' + x.id + '" title="' + (pinActive ? 'Desfijar' : 'Fijar') + '">📌</button>';
-
-          return '<tr data-id="' + x.id + '">' +
-            '<td class="nowrap">' + icon + nameHtml + qty + '</td>' +
-            '<td>' + escapeHtml(x.type || '') + '</td>' +
-            '<td class="right">' + (x.cost || 0) + '</td>' +
-            '<td class="right">' + purchasedEff + ' / ' + (limit == null ? '∞' : limit) + '</td>' +
-            '<td class="right">' + leftVal + '</td>' +
-            '<td class="right"><div class="wvpd-manual-input" style="display:flex;gap:4px;"><input type="number" class="wvpd-manual-input-field" data-id="' + x.id + '" value="' + marked + '" min="0" max="' + (limit || 999) + '" step="1" style="width:60px;"><button class="btn-max" data-id="' + x.id + '" data-limit="' + (limit || 0) + '" style="padding:2px 6px;">MAX</button></div></td>' +
-            '<td class="right">' + pinBtn + '</td>' +
-            '</tr>';
-        }).join('');
-
-        area.innerHTML = '<div class="table-wrap"><table class="simple"><thead>' +
-          '<tr><th>Ítem</th><th>Tipo</th><th class="right">Costo (AA)</th><th class="right">Comprado</th><th class="right">Restante</th><th class="right">Marcar</th><th class="right">Fijar</th></tr>' +
-          '</thead><tbody>' + trs + '</tbody></table></div>';
-        
-        setupManualInputEvents(area);
-        
-      } else {
-        var cards = rows.map(function(x) {
-          var it = (x.item_id != null) ? itemsById.get(x.item_id) : null;
-          var icon = it && it.icon ? it.icon : '';
-          var name = it && it.name ? it.name : (x.item_id != null ? ('Item #' + x.item_id) : (x.type || '—'));
-          var rarity = it && it.rarity ? String(it.rarity) : null;
-          var color = rarityColor(rarity);
-
-          var cost = (x.cost || 0);
-          var limit = (typeof x.purchase_limit === 'number') ? x.purchase_limit : null;
-          var purchasedApi = (typeof x.purchased === 'number') ? x.purchased : 0;
-          var marks = st.marks || {};
-          var marked = Number(marks[x.id] || 0);
-          var purchasedEff = purchasedApi + marked;
-          var leftVal = (limit == null) ? null : Math.max(0, limit - purchasedEff);
-          var leftDisplay = (limit == null) ? '∞' : leftVal;
-          var totalRemainingAA = leftVal !== null ? leftVal * cost : 0;
-          var progressPercent = limit ? (purchasedEff / limit) * 100 : 0;
-          var isCompleted = leftVal !== null && leftVal === 0;
-          var statusIcon = isCompleted ? '✅' : (limit === null ? '∞' : '⚠️');
-          var statusText = isCompleted ? 'Completado' : (limit === null ? 'Ilimitado' : 'Pendiente');
-          var statusColor = isCompleted ? 'var(--color-green)' : (limit === null ? 'var(--color-blue)' : 'var(--color-amber)');
-
-          var b1 = color ? hexToRGBA(color, 0.32) : null;
-          var g1 = color ? hexToRGBA(color, 0.36) : null;
-          var cardDeco = (b1 && g1) ? ' style="border:1px solid ' + b1 + '; box-shadow: 0 0 0 1px ' + b1 + ' inset, 0 0 14px ' + g1 + ';"' : '';
-          var iconDeco = (b1 && g1) ? ' style="box-shadow: 0 0 0 2px ' + b1 + ', 0 0 10px ' + g1 + '; border-radius:6px;"' : '';
-
-          var pinActive = !!(st.pinned && st.pinned[x.id]);
-          var pinCls = 'wv-pin' + (pinActive ? ' wv-pin--active' : '');
-          var pinBtn = '<button class="' + pinCls + '" data-pin="' + x.id + '" title="' + (pinActive ? 'Desfijar' : 'Fijar') + '">📌</button>';
-
-          var rowStyle = 'display:flex;justify-content:space-between;align-items:center;gap:8px;';
-
-          var progressHtml = '<div class="wvpd-item-progress wvpd-item-progress--compact">' +
-            '<div class="wvpd-item-progress__status" style="color: ' + statusColor + '" title="' + (isCompleted ? 'Completado' : (limit === null ? 'Sin límite' : 'Faltan ' + leftVal + ' unidades (' + totalRemainingAA + ' AA)')) + '">' +
-            statusIcon + ' ' + statusText + ': ' + (leftDisplay === '∞' ? '∞' : leftDisplay + ' (' + totalRemainingAA + ' AA)') +
-            '</div>' +
-            '<div class="wvpd-item-progress__bar">' +
-            '<div class="wvpd-item-progress__fill" style="width:' + Math.min(100, progressPercent) + '%"></div>' +
-            '</div>' +
-            '</div>';
-
-          var manualInputHtml = '<div class="wvpd-manual-input" data-id="' + x.id + '">' +
-            '<label>Compras manuales:</label>' +
-            '<input type="number" class="wvpd-manual-input-field" data-id="' + x.id + '" value="' + marked + '" min="0" max="' + (limit || 999) + '" step="1">' +
-            '<button class="btn-max" data-id="' + x.id + '" data-limit="' + (limit || 0) + '">MAX</button>' +
-            '</div>';
-
-          return '<div class="wv-card" data-id="' + x.id + '"' + cardDeco + '>' +
-            '<div class="wv-card__top">' +
-              '<div class="wv-card__iconWrap"' + iconDeco + '>' + (icon ? ('<img class="wv-card__icon" src="' + escapeHtml(icon) + '" alt="" loading="lazy"/>') : '') + '</div>' +
-              '<div class="wv-card__name" title="' + escapeHtml(name) + '"' + (color ? ' style="color:' + color + '"' : '') + '>' + escapeHtml(name) + '</div>' +
-              pinBtn +
-            '</div>' +
-            '<div class="wv-card__meta">' +
-              '<span class="wv-badge">Costo: <strong>' + cost + '</strong> AA</span>' +
-              '<span class="wv-type">' + escapeHtml(x.type || '—') + '</span>' +
-            '</div>' +
-            '<div class="wv-card__body">' +
-              '<div class="sep"></div>' +
-              '<div class="wv-card__row" style="' + rowStyle + '"><span class="muted">Comprado (API):</span><span class="pill">' + purchasedApi + ' / ' + (limit == null ? '∞' : limit) + '</span></div>' +
-              '<div class="wv-card__row" style="' + rowStyle + '"><span class="muted">Restante:</span><span class="pill">' + leftDisplay + '</span></div>' +
-              progressHtml +
-              manualInputHtml +
-            '</div>' +
-            '<div class="wv-card__bottom" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
-              '<span class="wv-id">ID ' + x.id + '</span>' +
-            '</div>' +
-            '</div>';
-        }).join('');
-
-        area.innerHTML = '<div class="wv-card-grid">' + cards + '</div>';
-        
-        setupManualInputEvents(area);
-      }
-
-      $$('[data-pin]', area).forEach(function(btn) {
-        if (btn.__wired) return;
-        btn.__wired = true;
-        btn.addEventListener('click', async function() {
-          var id = btn.getAttribute('data-pin');
-          var pinned = state.shop.pinned || {};
-          var ns = marksNamespace();
-          var fp = parseNs(ns);
-          if (pinned[id]) {
-            delete pinned[id];
-            try {
-              await delPinnedIds(fp, [id]);
-              state.shop.pinned = pinned;
-              renderShopArea();
-            } catch (e) {
-              pinned[id] = true;
-              state.shop.pinned = pinned;
-              renderShopArea();
-              window.toast?.('error', 'No se pudo desfijar (espacio de almacenamiento)', { ttl: 1800 });
-            }
-          } else {
-            pinned[id] = true;
-            try {
-              await setPinnedPatch(fp, ({ [id]: true }));
-              state.shop.pinned = pinned;
-              renderShopArea();
-            } catch (e) {
-              delete pinned[id];
-              state.shop.pinned = pinned;
-              renderShopArea();
-              window.toast?.('error', 'No se pudo fijar (espacio de almacenamiento)', { ttl: 1800 });
-            }
-          }
-        });
-      });
-      
-      // Purchase Detail ahora en nav de tabs (index.html)
-    }
+    // La Tienda la pinta js/wv-shop-ui.js (BL-064 CAM-3). La copia de respaldo que vivía acá
+    // (barra, tarjetas, tabla y campo numérico) se fue en CAM-6: quedan los pasamanos.
+    function syncShopToggleLabel(){ if (window.WVShopUI && WVShopUI.syncShopToggleLabel) WVShopUI.syncShopToggleLabel(); }
+    function ensureShopToolbar(){ if (window.WVShopUI && WVShopUI.ensureShopToolbar) WVShopUI.ensureShopToolbar(); }
+    function renderShopArea(){ if (window.WVShopUI) WVShopUI.render(); }
 
     function ensureShopAutoRefresh(on){
       var st=state.shop;
@@ -1459,22 +979,6 @@
   // ----------------------------- ROUTER ------------------------------------
   var _routeT = null;
 
-  var _actInflight = null;
-  var _actAbort = null;
-  function prefetchActivitiesOnce(token) {
-    if (_actInflight) return _actInflight;
-    try { if (_actAbort) _actAbort.abort(); } catch(_) {}
-    _actAbort = new AbortController();
-    _actInflight = Promise.resolve().then(function(){
-      return window.Activities?.prefetch?.({ token: token || getSelectedToken(), signal: _actAbort.signal });
-    }).catch(function(e){
-      console.debug('[router] activities prefetch skipped/failed', e?.message || e);
-    }).finally(function(){
-      _actInflight = null;
-    });
-    return _actInflight;
-  }
-
   function hideBothNavButtons(){
     var dashBtn = document.getElementById('wvTabBtnObjDashboard');
     var pdBtn = document.getElementById('wvTabBtnPurchaseDetail');
@@ -1497,8 +1001,7 @@
   // deactivate() keyed en la pref apagaría el módulo que Pablo está mirando.
   //
   // Por eso la condición es "mi panel NO quedó visible", y no "desactivo todo".
-  // Es lo que protege a InventoryHub, cuyo deactivate() además resetea la
-  // subvista (inventory-hub.js:1455): si su panel quedó visible, no se toca.
+  // Si el panel de un módulo quedó visible, ese módulo es el dueño de la pantalla y no se toca.
   //
   // HomesteadTracker NO entra, y es una decisión explícita, no una omisión:
   // su deactivate() (homestead-tracker.js:403) solo hace abortLastFetch() y no
@@ -1508,9 +1011,7 @@
   // latch es inerte por partida doble, y sin panel no hay predicado posible.
   var MODULOS_CON_LATCH = [
     { mod: 'RaidTracker',     panel: 'raidTrackerPanel' },
-    { mod: 'StrikeTracker',   panel: 'strikeTrackerPanel' },
-    { mod: 'LegendaryTracker', panel: 'legendaryArmoryPanel' },
-    { mod: 'InventoryHub',    panel: 'inventoryPanel' }
+    { mod: 'LegendaryTracker', panel: 'legendaryArmoryPanel' }
   ];
 
   function barridoLatch(){
@@ -1544,10 +1045,6 @@
         if (h !== '#/account/wizards-vault' && WV && typeof WV.deactivate === 'function') {
           try { WV.deactivate(); } catch (_) {}
         }
-        try { if (h !== '#/activities' && _actAbort) { _actAbort.abort(); } } catch(_) {}
-        if (h !== '#/activities' && window.Activities && typeof window.Activities.deactivate === 'function') {
-          try { window.Activities.deactivate(); } catch (_) {}
-        }
 
         if (h === '#/wallet/dashboard') {
           try {
@@ -1566,18 +1063,12 @@
         }
 
         if (h === '#/inventory/dashboard') {
+          // BL-070 INV-7: el Dashboard multicuenta es la pestaña Multicuenta de Inventario y Personajes.
           try {
-            showPanel('inventoryDashboardPanel');
-            if (typeof Analytics !== 'undefined') Analytics.viewModule('inventory_dashboard');
-            if (window.InventoryDashboard && typeof window.InventoryDashboard.activate === 'function') {
-              window.InventoryDashboard.activate();
-            }
-          } catch (e) {
-            console.warn('[router] show inventory dashboard error', e);
-          } finally {
-            updateSidebarFor('inventoryDashboard');
-            setActiveNav(h);
-          }
+            if (window.InvView && typeof window.InvView.go === 'function') window.InvView.go('multi');
+            else if (window.Storage && typeof window.Storage.set === 'function') window.Storage.set('gn:inventory:tab', 'multi');
+          } catch (_) {}
+          location.replace('#/account/characters');
           return;
         }
 
@@ -1597,19 +1088,12 @@
           return;
         }
 
+        // BL-070 RAI-5b: desde el 2026-02-03 los strikes son encuentros de raid. La ruta vieja muestra
+        // Raids y raids-view.js la lleva a la pestaña Encuentros. strike-tracker.js ya no se carga.
         if (h === '#/account/strikes') {
-          try {
-            showPanel('strikeTrackerPanel');
-            if (typeof Analytics !== 'undefined') Analytics.viewModule('strikes');
-            if (window.StrikeTracker && typeof window.StrikeTracker.activate === 'function') {
-              window.StrikeTracker.activate();
-            }
-          } catch (e) {
-            console.warn('[router] show strikes error', e);
-          } finally {
-            updateSidebarFor('strikes');
-            setActiveNav(h);
-          }
+          showPanel('raidTrackerPanel');
+          updateSidebarFor('raids');
+          setActiveNav(h);
           return;
         }
 
@@ -1709,14 +1193,25 @@
 
         if (h === '#/activities') {
           try {
-            prefetchActivitiesOnce(getSelectedToken());
-            showPanel('activitiesPanel');
+            showPanel('activitiesPanel'); // la vista nueva (js/act-view.js) se dibuja sola al verse
             if (typeof Analytics !== 'undefined') Analytics.viewModule('activities');
-            window.Activities?.activate?.();
           } catch (e) {
-            console.warn('[router] Activities.activate error', e);
+            console.warn('[router] activities', e);
           } finally {
             updateSidebarFor('activities');
+            setActiveNav(h);
+          }
+          return;
+        }
+
+        if (h === '#/account/homestead') {
+          try {
+            showPanel('homesteadPanel');
+            if (typeof Analytics !== 'undefined') Analytics.viewModule('homestead');
+          } catch (e) {
+            console.warn('[router] show homestead error', e);
+          } finally {
+            updateSidebarFor('homestead');
             setActiveNav(h);
           }
           return;
@@ -1726,11 +1221,8 @@
           try {
             showPanel('inventoryPanel');
             if (typeof Analytics !== 'undefined') Analytics.viewModule('inventory');
-            if (window.InventoryHub && typeof window.InventoryHub.activate === 'function') {
-              window.InventoryHub.activate();
-            }
           } catch (e) {
-            console.warn('[router] InventoryHub.activate error', e);
+            console.warn('[router] show inventory error', e);
           } finally {
             updateSidebarFor('inventory');
             setActiveNav(h);
@@ -1742,9 +1234,9 @@
           try {
             showPanel('accountsPanel');
             if (typeof Analytics !== 'undefined') Analytics.viewModule('accounts');
-            window.Accounts?.activate?.();
+            // BL-070 CTA-5: Cuentas es js/acc-view.js (por js/modules.json) y se dibuja sola al ver su ruta.
           } catch (e) {
-            console.warn('[router] Accounts.activate error', e);
+            console.warn('[router] accounts show error', e);
           } finally {
             updateSidebarFor('accounts');
             setActiveNav(h);
@@ -1811,38 +1303,12 @@
         hydrateWVModePills(el('wvPanel'));
 
       } else if (h === '#/activities') {
-        var p = document.getElementById('activitiesPanel');
-        if (p && !p.hasAttribute('hidden')) {
-          try {
-            window.Activities?.activate?.();
-          } catch (e) {
-            console.warn('[router] Activities.activate error', e);
-          }
-        }
+        // BL-070 ACT-7: js/act-view.js y js/act-week.js escuchan gn:tokenchange y releen solas.
 
       } else if (h === '#/account/characters') {
-        // Activar el InventoryHub
-        if (window.InventoryHub && typeof window.InventoryHub.refresh === 'function') {
-          window.InventoryHub.refresh(true);
-        }
-        // Si Characters está visible como subvista, también actualizarlo
-        var pChar = document.getElementById('charactersPanel');
-        if (pChar && !pChar.hasAttribute('hidden')) {
-          try {
-            window.Characters?.activate?.();
-          } catch (e) {
-            console.warn('[router] Characters.activate error', e);
-          }
-        }
+        // BL-070 INV-7: la vista nueva escucha gn:tokenchange y relee sola.
       } else if (h === '#/account/accounts') {
-        var pAccounts = document.getElementById('accountsPanel');
-        if (pAccounts && !pAccounts.hasAttribute('hidden')) {
-          try {
-            window.Accounts?.activate?.();
-          } catch (e) {
-            console.warn('[router] Accounts.activate error', e);
-          }
-        }
+        // BL-070 CTA-5: js/acc-view.js escucha gn:tokenchange y relee sola.
       } else if (h === '#/welcome') {
         var pWelcome = document.getElementById('welcomePanel');
         if (pWelcome && !pWelcome.hasAttribute('hidden')) {
@@ -1856,21 +1322,11 @@
         if (window.WalletDashboard && typeof window.WalletDashboard.activate === 'function') {
           window.WalletDashboard.activate();
         }
-      } else if (h === '#/inventory/dashboard') {
-        if (window.InventoryDashboard && typeof window.InventoryDashboard.activate === 'function') {
-          window.InventoryDashboard.activate();
-        }
       } else if (h === '#/account/raids') {
         if (window.RaidTracker && typeof window.RaidTracker.refresh === 'function') {
           window.RaidTracker.refresh(true);
         } else if (window.RaidTracker && typeof window.RaidTracker.activate === 'function') {
           window.RaidTracker.activate();
-        }
-      } else if (h === '#/account/strikes') {
-        if (window.StrikeTracker && typeof window.StrikeTracker.refresh === 'function') {
-          window.StrikeTracker.refresh(true);
-        } else if (window.StrikeTracker && typeof window.StrikeTracker.activate === 'function') {
-          window.StrikeTracker.activate();
         }
       } else if (h === '#/account/legendary-armory') {
         if (window.LegendaryTracker && typeof window.LegendaryTracker.refresh === 'function') {

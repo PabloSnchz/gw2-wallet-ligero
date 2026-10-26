@@ -1,6 +1,6 @@
 /*!
  * js/boot.js — Cargador de módulos nuevos de la Bóveda (DEC-035, BL-065 FP-4)
- * Versión: 1.0.0
+ * Versión: 1.1.0
  *
  * Para qué: sumar un archivo JS nuevo sin tocar index.html. index.html carga este archivo
  * una sola vez; los módulos nuevos se declaran en js/modules.json con su versión:
@@ -22,9 +22,9 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.0.0';
+  var VERSION = '1.1.0';
   var MANIFEST = 'js/modules.json';
-  var MAX = 30;
+  var MAX = 40; // 1.1.0: de 30 a 40 (BL-070 paso 5, TOP-1, D5). Juntar módulos para entrar en 30 iría contra DEC-035.
   var SRC_RE = /^js\/[a-z0-9][a-z0-9-]*\.js$/;
   var VER_RE = /^\d+\.\d+\.\d+$/;
   var state = { status: 'idle', loaded: [], errors: [] };

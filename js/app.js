@@ -5,7 +5,7 @@
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
-  console.info('%cGW2 Wallet app.js v2.8.0 — Bootstrap keys + toasts + router sync + selected-key persistence + WV Targets refresh (conversor extraído)', 'color:#0bf; font-weight:700');
+  console.info('%cGW2 Wallet app.js v2.9.0 — Bootstrap keys + toasts + router sync + selected-key persistence + WV Targets refresh (conversor extraído)', 'color:#0bf; font-weight:700');
  
   /* ========================= Estado ========================= */
   const state = {
@@ -1109,18 +1109,19 @@
       await KeyManager.copy(val);
       setStatus('API Key copiada.', 'ok'); window.toast?.('success','API Key copiada', { ttl: 1500 });
     }));
-    el.keysList.querySelectorAll('.k-rename').forEach(b => b.addEventListener('click', ev => {
+    // TOP-2 (BL-070): renombrar y eliminar preguntan con la ventana de la Bóveda (js/gn-ui.js); sin ella, la del navegador.
+    el.keysList.querySelectorAll('.k-rename').forEach(b => b.addEventListener('click', async ev => {
       const row = ev.target.closest('.keys-row'); const val = row?.dataset?.val; if (!val) return;
       const curr = KeyManager.list.find(x => x.value === val)?.label || '';
-      const name = prompt('Nuevo nombre para la key:', curr);
+      const name = window.GNUI ? await GNUI.prompt({ title: 'Renombrar la Key', label: 'Nombre (vacío = sin nombre)', value: curr, maxLength: 60, required: false }) : prompt('Nuevo nombre para la key:', curr);
       if (name === null) return;
       KeyManager.rename(val, name);
       renderKeysList();
       setStatus('Nombre actualizado.', 'ok');
     }));
-    el.keysList.querySelectorAll('.k-del').forEach(b => b.addEventListener('click', ev => {
+    el.keysList.querySelectorAll('.k-del').forEach(b => b.addEventListener('click', async ev => {
       const row = ev.target.closest('.keys-row'); const val = row?.dataset?.val; if (!val) return;
-      if (!confirm('¿Eliminar esta API Key de tu navegador?')) return;
+      if (!(window.GNUI ? await GNUI.confirm({ title: '¿Eliminar esta API Key?', text: 'Se borra solo de este navegador; en tu cuenta de ArenaNet sigue existiendo.', okLabel: 'Eliminar', danger: true }) : confirm('¿Eliminar esta API Key de tu navegador?'))) return;
 
       // Evento Analytics
       if (typeof Analytics !== 'undefined') Analytics.deleteApiKey();
@@ -1148,15 +1149,8 @@
     return { msg: m || 'Error desconocido' };
   }
 
-  // === Propuesta 3: Validación local de formato (antes de enviar a la API) ===
-  // El formato de una API key de GW2 son uno o dos bloques GUID en hex separadas
-  // por guiones (8-4-4-4-12). Derivado de la documentación, NO de memoria: la
-  // wiki de /v2/tokeninfo dice que su campo `id` es "the first HALF of the API
-  // key" y su ejemplo oficial son 36 chars, o sea 36 + 1 + 36 = 73. Por eso el
-  // bloque 2 es opcional y el 1 obligatorio: /v2/tokeninfo devuelve la mitad.
-  // El regex laxo anterior (20+ alfanumericos) aceptaba desde basura alfanumerica
-  // hasta una key sin guiones; la API responde 401 a todo por igual, o sea que
-  // la guarda local es la unica que puede avisar antes de gastar la llamada.
+  // === Propuesta 3: formato de API key antes de llamar a la API ===
+  // 1 o 2 bloques GUID (8-4-4-4-12): el `id` de /v2/tokeninfo es la mitad (36 + 1 + 36 = 73).
   function isValidKeyFormat(v) {
     return /^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}(?:-[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})*$/.test(v);
   }

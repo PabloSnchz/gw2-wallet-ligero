@@ -41,7 +41,7 @@
             { "id": 24288, "name": "Escama grande" },
             { "id": 24350, "name": "Garra grande" },
             { "id": 24341, "name": "Hueso grande" },
-            { "id": 24294, "name": "Vial de sangre espesa" },
+            { "id": 24294, "name": "Vial de sangre potente" },
             { "id": 24282, "name": "Vesícula de veneno potente" },
             { "id": 24299, "name": "Tótem intrincado" },
             { "id": 24276, "name": "Montón de polvo incandescente" }
@@ -54,9 +54,9 @@
             { "id": 24287, "name": "Escama suave" },
             { "id": 24349, "name": "Garra afilada" },
             { "id": 24345, "name": "Hueso pesado" },
-            { "id": 24293, "name": "Vial de sangre potente" },
+            { "id": 24293, "name": "Vial de sangre espesa" },
             { "id": 24281, "name": "Vesícula de veneno llena" },
-            { "id": 24298, "name": "Tótem grabado" },
+            { "id": 24363, "name": "Tótem grabado" },
             { "id": 24275, "name": "Montón de polvo luminoso" }
           ]
         },
@@ -69,7 +69,7 @@
             { "id": 24344, "name": "Hueso" },
             { "id": 24292, "name": "Vial de sangre" },
             { "id": 24280, "name": "Vesícula de veneno" },
-            { "id": 24297, "name": "Tótem" },
+            { "id": 24298, "name": "Tótem" },
             { "id": 24274, "name": "Montón de polvo radiante" }
           ]
         }

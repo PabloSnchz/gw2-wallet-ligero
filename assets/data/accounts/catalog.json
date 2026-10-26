@@ -1,0 +1,206 @@
+{
+  "version": 1,
+  "source": "API oficial leída desde CI (RUN-073 y RUN-074, 2026-10-25) y wiki oficial (API:2/account, API:2/achievements, Commander's Compendium); gw2-api issue #118 (Visions of Eternity no aparece en access).",
+  "render": "https://render.guildwars2.com/file/",
+  "expansions": [
+    {
+      "id": "hot",
+      "access": "HeartOfThorns",
+      "impliedBy": [
+        "PathOfFire"
+      ],
+      "name": "Heart of Thorns",
+      "icon": "assets/icons/Cuentas/HoT.png",
+      "mastery": "Maguuma"
+    },
+    {
+      "id": "pof",
+      "access": "PathOfFire",
+      "name": "Path of Fire",
+      "icon": "assets/icons/Cuentas/PoF.png",
+      "mastery": "Desert"
+    },
+    {
+      "id": "eod",
+      "access": "EndOfDragons",
+      "name": "End of Dragons",
+      "icon": "assets/icons/Cuentas/EoD.png",
+      "mastery": "Jade"
+    },
+    {
+      "id": "soto",
+      "access": "SecretsOfTheObscure",
+      "name": "Secrets of the Obscure",
+      "icon": "assets/icons/Cuentas/SoTO.png",
+      "mastery": "Sky"
+    },
+    {
+      "id": "jw",
+      "access": "JanthirWilds",
+      "name": "Janthir Wilds",
+      "icon": "assets/icons/Cuentas/JW.png",
+      "mastery": "Wild"
+    },
+    {
+      "id": "voe",
+      "access": "VisionsOfEternity",
+      "name": "Visions of Eternity",
+      "icon": "assets/icons/Cuentas/VoE.png",
+      "mastery": "Magic",
+      "apiMissing": true
+    }
+  ],
+  "stats": {
+    "achievements": {
+      "name": "Puntos de logro",
+      "icon": "assets/icons/155059.png",
+      "perm": [
+        "progression"
+      ]
+    },
+    "legendaries": {
+      "name": "Legendarias",
+      "icon": "assets/icons/Cuentas/157085.png",
+      "perm": [
+        "inventories",
+        "unlocks"
+      ],
+      "total": 206
+    },
+    "fractals": {
+      "name": "Nivel de fractales",
+      "icon": "9A6791950A5F3EBD15C91C2942F1E3C8D5221B28/602779.png",
+      "perm": [
+        "progression"
+      ]
+    },
+    "wvw": {
+      "name": "Rango de McM",
+      "icon": "2BBA251A24A2C1A0A305D561580449AF5B55F54F/338457.png",
+      "perm": [
+        "progression"
+      ]
+    },
+    "pvp": {
+      "name": "Rango de JcJ",
+      "icon": "7F4E2835316DE912B1493CCF500A9D5CF4A83B4A/42676.png",
+      "perm": [
+        "pvp"
+      ]
+    },
+    "commander": {
+      "name": "Comandante",
+      "icon": "600F7957154DD173F5F6EF25807835CAFCEF239C/64964.png",
+      "perm": []
+    },
+    "guild": {
+      "name": "Clan",
+      "icon": "98EECF5621BB3DFC98BA9CB3D938C939CA0B227B/102498.png",
+      "perm": []
+    }
+  },
+  "pvpRanks": [
+    {
+      "id": 1,
+      "min": 1,
+      "max": 9,
+      "icon": "592A4144FE1B6904CD0C69230840B8C21A0C36F7/347222.png"
+    },
+    {
+      "id": 2,
+      "min": 10,
+      "max": 19,
+      "icon": "DECD0D647C9433CC2128BF2F6FE5A5185513EE59/347223.png"
+    },
+    {
+      "id": 3,
+      "min": 20,
+      "max": 29,
+      "icon": "69F7561A34530F9A6366A0C3ECC0E508EF7451E6/347224.png"
+    },
+    {
+      "id": 4,
+      "min": 30,
+      "max": 39,
+      "icon": "B0920D9F3A07276854FDC4CD364AD3DDF6387061/347225.png"
+    },
+    {
+      "id": 6,
+      "min": 40,
+      "max": 49,
+      "icon": "F6CB4002B278077FA5BA434D49776D69CA042EA0/347226.png"
+    },
+    {
+      "id": 5,
+      "min": 50,
+      "max": 59,
+      "icon": "5169E9ED4A0DADF06835F87737540A02C39AB534/347227.png"
+    },
+    {
+      "id": 7,
+      "min": 60,
+      "max": 69,
+      "icon": "65001A2EAE08A564126CCD73AA14FB9A250B2C66/347228.png"
+    },
+    {
+      "id": 8,
+      "min": 70,
+      "max": 79,
+      "icon": "3DD50A531B472791C07AE9A57840A118F1B8F3E9/347229.png"
+    },
+    {
+      "id": 9,
+      "min": 80,
+      "max": 81,
+      "icon": "A2ACA72B379FCC4C4D7CE3D59DED073196485B5B/347230.png"
+    }
+  ],
+  "tags": [
+    {
+      "id": "main",
+      "name": "Principal",
+      "color": "#F2B94B",
+      "icon": "assets/icons/Cuentas/547827.png",
+      "type": true
+    },
+    {
+      "id": "alter",
+      "name": "Alternativa",
+      "color": "#B19CD9",
+      "icon": "assets/icons/Cuentas/157375.png",
+      "type": true
+    },
+    {
+      "id": "f2p",
+      "name": "Gratuita",
+      "color": "#7BC2FF",
+      "icon": "assets/icons/Cuentas/102538.png",
+      "type": true
+    },
+    {
+      "id": "farming",
+      "name": "Farming",
+      "color": "#3CC48A",
+      "icon": "assets/icons/Cuentas/157332.png"
+    },
+    {
+      "id": "keys",
+      "name": "Llaves",
+      "color": "#FF8A5B",
+      "icon": "assets/icons/Cuentas/1716669.png"
+    },
+    {
+      "id": "weekly",
+      "name": "Semanal",
+      "color": "#6EA3FF",
+      "icon": "assets/icons/Cuentas/240679.png"
+    },
+    {
+      "id": "taxi",
+      "name": "Taxi",
+      "color": "#F47C7C",
+      "icon": "assets/icons/Cuentas/102438.png"
+    }
+  ],
+  "otherTagColor": "#8E96A3"
+}

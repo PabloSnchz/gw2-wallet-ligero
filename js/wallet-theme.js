@@ -1,7 +1,10 @@
 /*!
  * js/wallet-theme.js — La Cartera renovada (BL-056, propuesta aprobada por Pablo el 2026-10-22)
- * v2.1.0 (2026-10-22)
+ * v2.1.1 (2026-10-23)
  *
+ * v2.1.1 (BL-066): la cantidad de Keys de la pestaña «Todas las cuentas» se lee solo por Storage.
+ *   El respaldo leía la clave espejo del navegador sin pasar por Storage y se salteaba el espejo
+ *   (lo detectó tests/idea61-claves-congeladas.test.js). Sin Storage, la pestaña no muestra número.
  * v2.1.0 (CAR-2B): la pestaña «Cambio de divisas» ya no abre un modal: muestra la vista de
  *   converter-modal.js 2.0.0 dentro de la Cartera, en lugar de Mi cartera, con su API pública
  *   (ConverterModal.mount). WalletTheme.showTab('cards'|'cambio') es lo que usa
@@ -25,7 +28,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '2.1.0';
+  var VERSION = '2.1.1';
   var LS_HIDEZERO = 'gn:wallet:hidezero';
   var LS_CURR = 'gw2_currencies_cache_v1';
   var ICON = 'assets/icons/';
@@ -219,7 +222,10 @@
   function isTable() { var w = $('#walletTableWrap'); return !!(w && !w.hidden); }
   function keyCount() {
     try {
-      var St = root.Storage, list = St && St.STORAGE_KEYS ? St.get(St.STORAGE_KEYS.ACCOUNT_KEYS) : JSON.parse(root.localStorage.getItem('gn:account:keys') || '[]');
+      // Solo por Storage: lee la legacy primero y respeta el espejo (idea61). Sin Storage, 0.
+      var St = root.Storage;
+      if (!St || !St.STORAGE_KEYS || typeof St.get !== 'function') return 0;
+      var list = St.get(St.STORAGE_KEYS.ACCOUNT_KEYS);
       return Array.isArray(list) ? list.length : 0;
     } catch (_) { return 0; }
   }

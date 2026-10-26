@@ -1,6 +1,6 @@
 /*!
  * js/shiruvana-places.js — Dónde le hablo al jugador (DEC-025)
- * Versión: 1.3.0
+ * Versión: 1.3.1
  *
  * Pongo mi voz (js/shiruvana.js) en estos lugares, sin tocar el código de cada módulo:
  *  - la Bienvenida: sin API Key me presento y te llevo a los tres pasos; con API Key soy
@@ -26,10 +26,12 @@
  *   Bóveda» o cuántas cosas hay para revisar y cuál va primero, con las prioridades de «Shiruvana te guía».
  *   Uno solo a la vista: el de la Sidebar en desktop y el de la hoja «Más» en el celular. No interrumpo:
  *   no se abre nada solo y no hablo de horarios, eventos, metas ni del contenido de ningún módulo.
+ * 1.3.1 (BL-071 GUI-5): las guías se llaman «Primeros pasos» y «Guía por módulo»; la copia se guarda desde Ajustes
+ *   (el botón «Backup» ya no existe) y el selector de cuenta está al lado de «Keys».
  */
 (function (root) {
   'use strict';
-  var VERSION = '1.3.0';
+  var VERSION = '1.3.1';
 
   var TEXTS = {
     welcomeNew: [
@@ -42,11 +44,11 @@
     ],
     keys: [
       'Para mostrarte tus datos necesito una API Key de tu cuenta de Guild Wars 2. La creás en account.arena.net/applications marcando los 7 permisos que te detallo abajo.',
-      'Tu clave queda guardada solo en este navegador y viaja únicamente a la API oficial de ArenaNet. Para no perderla, guardá una copia con «Backup».'
+      'Tu clave queda guardada solo en este navegador y viaja únicamente a la API oficial de ArenaNet. Para no perderla, guardá una copia desde Ajustes.'
     ],
     guide: [
-      'Si recién llegás, empezá por la guía básica: en pocos minutos tenés todo andando.',
-      'La avanzada te cuenta cada módulo en detalle, para cuando quieras sacarle todo el jugo.'
+      'Si recién llegás, empezá por «Primeros pasos»: en pocos minutos tenés todo andando.',
+      'La «Guía por módulo» te cuenta cada uno en detalle, para cuando quieras sacarle todo el jugo.'
     ]
   };
 
@@ -58,7 +60,7 @@
     'Con «Cambiar», en «Tu Bóveda», elegís entre 19 themes. El oficial es Gato Negro.',
     'La copia de seguridad guarda tus Keys, cuentas y ajustes en un archivo: con «Restaurar» los recuperás en otro navegador.',
     'Metas y Eventos funciona aunque no tengas ninguna API Key cargada.',
-    'La guía avanzada explica cómo trabajar con varias cuentas a la vez.',
+    'La «Guía por módulo» cuenta qué hace cada módulo y qué guarda en tu navegador.',
     'Cada vez que la Bóveda suma algo nuevo, lo anoto en «Novedades», acá abajo.'
   ];
 
@@ -74,7 +76,7 @@
       'Si falta uno, el módulo que lo necesita muestra menos de lo que tenés. Se arregla creando una Key nueva con todos tildados.'
     ], actions: [{ label: 'Revisar Keys', act: 'manage-keys' }, { label: 'account.arena.net ↗', href: ANET, ext: true }] },
     { id: 'switch', q: '¿Cómo cambio de cuenta?', kind: 'explica', text: [
-      'Arriba, al lado de «Gestión de API Keys», está el selector de cuenta. Elegís otra y todos los módulos se actualizan con esa cuenta.',
+      'Arriba, al lado de «Keys», está el selector de cuenta. Elegís otra y todos los módulos se actualizan con esa cuenta.',
       'Para sumar una cuenta nueva, agregá su API Key.'
     ], actions: [{ label: 'Gestionar Keys', act: 'manage-keys' }] },
     { id: 'tip', q: 'Un truco de la Bóveda', kind: 'explica' }

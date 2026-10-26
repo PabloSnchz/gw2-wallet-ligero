@@ -1,6 +1,6 @@
 /*!
  * js/welcome-panel.js — Pantalla de Bienvenida: la puerta de entrada a La Bóveda
- * Versión: 2.2.0 (2026-10-23) · BL-058, propuesta WEL-0b aprobada por Pablo
+ * Versión: 2.4.0 (2026-10-25) · BL-058, propuesta WEL-0b aprobada por Pablo
  *
  * Contesta: qué puedo hacer en la Bóveda, qué módulos tengo, qué configuré, qué me falta
  * y dónde me conviene seguir. Dos estados: sin API Key (tres pasos) y con API Key.
@@ -22,15 +22,13 @@
  *   con la acción que resuelve cada pendiente, botón de Copia en la cabecera, aviso de permiso en los
  *   módulos que la Key activa no alcanza y Welcome.orientation(): la lista ordenada de lo que hay que
  *   mirar, que va a usar mi voz (WEL-3).
- * 2.2.0 (WEL-4): guarda de contraste. Los 19 themes no garantizan 4.5:1 en los colores que uso como
- *   texto (en macOS y Notion el verde de «listo» queda en 1.1:1 sobre blanco). Cada vez que cambia el
- *   theme leo sus tokens y, solo dentro de #welcomePanel, corrijo los que no llegan: los acerco al
- *   color de texto principal del mismo theme lo justo para pasar AA. Los themes no se tocan.
- *   Accesibilidad: grupos con role, nombre de la barra de progreso y foco visible en «Ver cuáles».
+ * 2.2.0 (WEL-4): guarda de contraste AA en los 19 themes, solo dentro de #welcomePanel, y accesibilidad.
+ * 2.3.0 (BL-070, ACT-5): la Heredad (#/account/homestead) es un módulo propio: 10 módulos.
+ * 2.4.0 (PUL-3): nuevo orden de los módulos.
  */
 (function (root) {
   'use strict';
-  var VERSION = '2.2.0';
+  var VERSION = '2.4.0';
   var LOG = '[Welcome]';
 
   var LINKS = {
@@ -50,25 +48,26 @@
     privacy: 'privacy.html'
   };
 
-  // Los 9 módulos, en el orden de la barra lateral. «free»: anda sin API Key.
+  // Los 10 módulos, en el orden de la barra lateral. «free»: anda sin API Key.
   var MODULES = [
     { id: 'cards', name: 'Cartera', desc: 'Divisas, conversor y todas tus cuentas', href: '#/cards', icon: 'assets/icons/733322.png', color: '#F2B94B', tag: 'Renovada' },
     { id: 'meta', name: 'Metas y Eventos', desc: 'Horarios de metas y world bosses', href: '#/meta', icon: 'assets/icons/102420.png', color: '#A896FF', tag: 'Renovada', free: true },
-    { id: 'armory', name: 'Armería Legendaria', desc: 'Las 206 legendarias, recetas y lo que te falta', href: '#/account/legendary-armory', icon: 'assets/icons/Cuentas/157085.png', color: '#E545CA' },
-    { id: 'achievements', name: 'Logros', desc: 'Los que tenés cerca de completar', href: '#/account/achievements', icon: 'assets/icons/155059.png', color: '#6EA3FF' },
     { id: 'wv', name: 'Cámara del Brujo', desc: 'Objetivos diarios, semanales y tienda', href: '#/account/wizards-vault', icon: 'assets/icons/3172791.png', color: '#15C3B7' },
-    { id: 'activities', name: 'Actividades', desc: 'PSNA del día, Home Nodes y semanales', href: '#/activities', icon: 'assets/icons/1302773.png', color: '#3CC48A' },
-    { id: 'raids', name: 'Raids y Strikes', desc: 'Alas y encuentros de la semana', href: '#/account/raids', icon: 'assets/icons/raids/raid-icon.png', color: '#F47C7C' },
+    { id: 'activities', name: 'Actividades', desc: 'Lo de hoy y la semana: fractales, llave y PSNA', href: '#/activities', icon: 'assets/icons/1302773.png', color: '#3CC48A' },
+    { id: 'homestead', name: 'Heredad', desc: 'Nodos de casa, gatos y tu heredad', href: '#/account/homestead', icon: 'assets/icons/Welcome/3380755.png', color: '#D9A55B' },
+    { id: 'raids', name: 'Raids', desc: 'Alas y encuentros de la semana', href: '#/account/raids', icon: 'assets/icons/raids/raid-icon.png', color: '#F47C7C' },
+    { id: 'achievements', name: 'Logros', desc: 'Los que tenés cerca de completar', href: '#/account/achievements', icon: 'assets/icons/155059.png', color: '#6EA3FF' },
     { id: 'characters', name: 'Inventario y Personajes', desc: 'Buscá un objeto en toda la cuenta', href: '#/account/characters', icon: 'assets/icons/Welcome/358409.png', color: '#7EC3FF' },
+    { id: 'armory', name: 'Armería Legendaria', desc: 'Las 206 legendarias, recetas y lo que te falta', href: '#/account/legendary-armory', icon: 'assets/icons/Cuentas/157085.png', color: '#E545CA' },
     { id: 'accounts', name: 'Cuentas', desc: 'Tus cuentas y Keys, cifradas en tu PC', href: '#/account/accounts', icon: 'assets/icons/3601748.png', color: '#8E96A3', local: true }
   ];
   // Los 7 permisos que pide la puerta de app.js (KeyManager.REQUIRED_PERMISSIONS, que no está en
   // window) y qué módulos dejan sin datos si faltan. Lo vigila tests/welcome-vault.test.cjs.
   var SCOPES = [
-    { scope: 'account', label: 'cuenta', mods: ['cards', 'armory', 'achievements', 'wv', 'activities', 'raids', 'characters'] },
+    { scope: 'account', label: 'cuenta', mods: ['cards', 'armory', 'achievements', 'wv', 'activities', 'homestead', 'raids', 'characters'] },
     { scope: 'wallet', label: 'cartera', mods: ['cards'] },
-    { scope: 'progression', label: 'progreso', mods: ['achievements', 'activities', 'raids'] },
-    { scope: 'unlocks', label: 'desbloqueos', mods: ['armory', 'activities'] },
+    { scope: 'progression', label: 'progreso', mods: ['achievements', 'activities', 'homestead', 'raids'] },
+    { scope: 'unlocks', label: 'desbloqueos', mods: ['armory', 'activities', 'homestead'] },
     { scope: 'inventories', label: 'inventarios', mods: ['armory', 'characters'] },
     { scope: 'tradingpost', label: 'bazar', mods: ['cards'] },
     { scope: 'characters', label: 'personajes', mods: ['characters'] }
@@ -383,7 +382,7 @@
     }).join('');
     return '<section aria-label="¿Qué puedo hacer aquí?">' +
       '<div class="wl-h"><h3>¿Qué puedo hacer aquí?</h3><span>' +
-        (m.state === 'back' ? 'Tus 9 módulos, a un clic' : 'Los 9 módulos de la Bóveda') + '</span></div>' +
+        (m.state === 'back' ? 'Tus 10 módulos, a un clic' : 'Los 10 módulos de la Bóveda') + '</span></div>' +
       '<ul class="wl-mods">' + items + '</ul></section>';
   }
 
@@ -405,8 +404,8 @@
   function guidesHTML() {
     return '<section class="wl-card" aria-label="Guías y ayuda">' +
       '<div class="wl-h"><h3>Guías y ayuda</h3></div><div class="wl-guides">' +
-        '<a class="wl-guide" href="' + LINKS.guide + '" target="_blank" rel="noopener"><img src="assets/icons/Welcome/102367.png" alt="" width="30" height="30"><div><b>Guía de usuario</b><small>Lo básico, módulo por módulo</small></div><em aria-hidden="true">↗</em></a>' +
-        '<a class="wl-guide" href="' + LINKS.guideAdv + '" target="_blank" rel="noopener"><img src="assets/icons/Welcome/102361.png" alt="" width="30" height="30"><div><b>Guía avanzada</b><small>Cada módulo en detalle, varias cuentas y copias</small></div><em aria-hidden="true">↗</em></a>' +
+        '<a class="wl-guide" href="' + LINKS.guide + '" target="_blank" rel="noopener"><img src="assets/icons/Welcome/102367.png" alt="" width="30" height="30"><div><b>Primeros pasos</b><small>Tu API Key y la Bóveda en 5 minutos</small></div><em aria-hidden="true">↗</em></a>' +
+        '<a class="wl-guide" href="' + LINKS.guideAdv + '" target="_blank" rel="noopener"><img src="assets/icons/Welcome/102361.png" alt="" width="30" height="30"><div><b>Guía por módulo</b><small>Qué hace y qué guarda cada módulo</small></div><em aria-hidden="true">↗</em></a>' +
         '<a class="wl-guide" href="' + LINKS.discord + '" target="_blank" rel="noopener"><img src="assets/icons/Welcome/discord.png" alt="" width="30" height="30"><div><b>¿Algo no anda?</b><small>Contalo en el Discord de la comunidad</small></div><em aria-hidden="true">↗</em></a>' +
       '</div></section>';
   }

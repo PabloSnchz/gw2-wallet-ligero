@@ -1,111 +1,125 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Política de Privacidad — Bóveda del Gato Negro</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{background:var(--bg-0,#0a0c14);color:var(--tx-1,#c8d0e6);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6}
-  :root{
-    --bg-0:#0a0c14;--bg-1:#121620;--bd-1:rgba(255,255,255,.08);--tx-1:#c8d0e6;--tx-2:#9aa8c0;
-    --color-accent:#56a8d8;--color-blue:#56a8d8;--color-green:#6ad992;
-  }
-  .container{max-width:880px;margin:0 auto;padding:32px 20px}
-  h1{font-size:2em;margin-bottom:8px;background:linear-gradient(135deg,var(--color-blue),#7aa9d8);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .meta{color:var(--tx-2);font-size:.85rem;margin-bottom:20px}
-  h2{color:var(--color-blue);font-size:1.3em;margin:24px 0 12px}
-  h3{color:var(--tx-1);font-size:1.05em;margin:16px 0 8px}
-  p,li{margin-bottom:12px;color:var(--tx-1);font-size:.95rem}
-  li{margin-bottom:6px}
-  table{width:100%;border-collapse:collapse;margin:12px 0;border:1px solid var(--bd-1);border-radius:6px;overflow:hidden}
-  th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--bd-1);font-size:.9rem}
-  th{background:var(--bg-1);color:var(--tx-1)}
-  tr:last-child td{border-bottom:none}
-  .protegido{color:var(--color-green);font-weight:600}
-  .no-protegido{color:#e85d5d;font-weight:600}
-  code{background:#1a1f2d;border:1px solid var(--bd-1);border-radius:3px;padding:2px 6px;font-size:.85em;color:var(--color-blue)}
-  .footer{text-align:center;color:var(--tx-2);font-size:.8rem;margin-top:32px;padding-top:16px;border-top:1px solid var(--bd-1)}
-  a{color:var(--color-blue);text-decoration:none}
-  a:hover{text-decoration:underline}
-  .key{display:inline-block;background:var(--bg-1);border:1px solid var(--bd-1);border-radius:3px;padding:2px 8px;font-size:.8em;color:var(--tx-1)}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacidad · Bóveda del Gato Negro · sitio de la comunidad de Guild Wars 2 (no oficial)</title>
+  <!-- BL-071 GUI-1 y GUI-5: lo que la Bóveda hace de verdad con tus datos. Las claves que nombra esta página las vigila tests/privacy.test.cjs. -->
+  <link rel="icon" type="image/svg+xml" href="assets/brand/gato-negro.svg"/>
+  <link rel="stylesheet" href="css/themes/gato.css?v=1.0.0" id="themeStylesheet">
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('gn:theme') || localStorage.getItem('gn_theme');
+        if (t && t.charAt(0) === '"') t = JSON.parse(t);
+        if (!t || !/^[a-z0-9-]+$/.test(t)) t = 'gato';
+        document.getElementById('themeStylesheet').href = 'css/themes/' + t + '.css?v=1.0.0';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (_) {}
+    })();
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg-0, #0F1117); color: var(--tx-2, #C9D0DA); font: 16px/1.6 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; padding: 32px 16px 48px; }
+    .wrap { max-width: 880px; margin: 0 auto; }
+    header { display: flex; gap: 14px; align-items: center; margin-bottom: 8px; }
+    header img { width: 48px; height: 48px; flex-shrink: 0; }
+    h1 { color: var(--tx-1, #F4F6FA); font-size: 1.8rem; line-height: 1.2; }
+    .meta { color: var(--tx-2, #C9D0DA); font-size: .9rem; margin-bottom: 24px; }
+    .back { display: inline-flex; align-items: center; min-height: 44px; color: var(--tx-1, #F4F6FA); text-decoration: underline; }
+    h2 { color: var(--tx-1, #F4F6FA); font-size: 1.3rem; margin: 32px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--bd-1, #2A3142); }
+    h3 { color: var(--tx-1, #F4F6FA); font-size: 1.05rem; margin: 18px 0 6px; }
+    p, li { margin: 6px 0; }
+    ul { padding-left: 22px; }
+    strong { color: var(--tx-1, #F4F6FA); }
+    a { color: var(--tx-1, #F4F6FA); }
+    a:focus-visible { outline: 2px solid var(--acc-1, #A896FF); outline-offset: 2px; border-radius: 4px; }
+    code { background: var(--bg-2, #232A3A); color: var(--tx-1, #F4F6FA); border-radius: 5px; padding: 1px 6px; font-size: .88em; }
+    .box { background: var(--bg-1, #171B26); border: 1px solid var(--bd-1, #2A3142); border-radius: 14px; padding: 14px 18px; margin: 14px 0; }
+    .table { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    th, td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--bd-1, #2A3142); }
+    th { color: var(--tx-1, #F4F6FA); font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--bd-1, #2A3142); font-size: .8rem; }
+    footer p { margin: 6px 0; }
+    @media (max-width: 600px) { body { padding: 20px 12px 40px; } h1 { font-size: 1.5rem; } th, td { padding: 8px 6px; } }
+  </style>
 </head>
 <body>
-<div class="container">
+<main class="wrap">
 
-  <h1>Política de Privacidad</h1>
-  <p class="meta">Bóveda del Gato Negro (gw2-wallet-ligero) · Última actualización: 27 de septiembre de 2026</p>
+  <header>
+    <img src="assets/brand/gato-negro.svg" alt="">
+    <h1>Privacidad</h1>
+  </header>
+  <p class="meta">Bóveda del Gato Negro · sitio de la comunidad, no oficial · Actualizada el 26 de octubre de 2026</p>
+  <a class="back" href="index.html#/welcome">Volver a la Bóveda</a>
 
-  <h2>¿Qué es esta app?</h2>
-  <p><strong>gw2-wallet-ligero</strong> es una aplicación web <strong>100% cliente</strong> (sin backend).
-  Tu navegador es el servidor. No existe un servidor central que reciba tus datos.
-  No hay registro de usuarios. No hay base de datos.</p>
-  <p>Todo corre en tu máquina: las peticiones a la API de GW2 se hacen con tu key
-  desde tu navegador, y los resultados se procesan localmente.</p>
-
-  <h2>¿Qué datos se recopilan?</h2>
-  <p><strong>Ningún dato personal, ni de tu cuenta de GW2, ni de tu identidad, sale de tu navegador.</strong></p>
-  <p>La única información que circula fuera de tu máquina es:</p>
-  <ul>
-    <li>Peticiones a la <strong>API de Guild Wars 2</strong> (<code>api.guildwars2.com/v2/</code>) usando tu API key.</li>
-    <li>Peticiones a la <strong>API de GitHub</strong> (<code>api.github.com</code>) si usás Gist Sync (opcional).</li>
-    <li>Eventos anónimos de uso a <strong>Google Analytics</strong> — opcional y configurable.</li>
-  </ul>
-
-  <h3>Google Analytics</h3>
-  <p>La app carga <code>gtag.js</code> para métricas básicas de uso. Podés deshabilitarlo
-  en <strong>⚙️ Configuración → Analytics</strong>. No se envían datos de tu wallet, items, ni API key.
-  Solo eventos como <code>view_module</code>.</p>
-
-  <h2>¿Qué datos se almacenan localmente?</h2>
-  <p>Todo en tu navegador, con el prefijo <code>gn:</code> (storage.js v1.0.1):</p>
-
-  <table>
-    <tr><th>Clave</th><th>Tipo</th><th>Protegido</th></tr>
-    <tr><td><code>gn:apiKeys</code></td><td>JSON (API keys)</td><td class="no-protegido">❌ No — necesario para funcionar</td></tr>
-    <tr><td><code>gn:selectedKey</code></td><td>string (key activa)</td><td class="no-protegido">❌ No</td></tr>
-    <tr><td><code>gn:settings</code></td><td>JSON (preferencias)</td><td class="no-protegido">❌ No</td></tr>
-    <tr><td><code>gn:accountsData</code></td><td>JSON <strong>encriptado</strong></td><td class="protegido">✅ Sí (AES-GCM)</td></tr>
-    <tr><td><code>gn:accountsMeta</code></td><td>JSON (nombre archivo)</td><td class="no-protegido">❌ No</td></tr>
-    <tr><td><code>gn:wvSeason_v&lt;year&gt;</code></td><td>JSON (WV season data)</td><td class="no-protegido">❌ No</td></tr>
-    <tr><td><code>gn:github:token</code></td><td>string (GitHub token)</td><td class="no-protegido">❌ No</td></tr>
-    <tr><td><code>gn:github:gist_id</code></td><td>string (Gist ID)</td><td class="no-protegido">❌ No</td></tr>
-  </table>
-
-  <h3>API Keys de GW2</h3>
-  <p>Se guardan en <code>localStorage</code> sin encriptar, pero <strong>nunca se envían a nuestro servidor</strong>.
-  Solo se usan para las peticiones a la API de GW2 directamente desde tu navegador.</p>
-
-  <h3>Sincronización con Gist (opcional)</h3>
-  <ol>
-    <li>La app <strong>encripta</strong> tus datos usando <strong>Web Crypto API</strong> (PBKDF2 + AES-GCM).</li>
-    <li>La clave de encriptación se deriva de una <strong>contraseña que vos elegís</strong> (nunca se guarda).</li>
-    <li>El Gist resultante es un JSON opaco — GitHub no puede leerlo.</li>
-    <li>Para restaurar, necesitás el Gist ID + tu contraseña.</li>
-  </ol>
-  <p><strong>Importante:</strong> Perder la contraseña = perder el acceso a tus datos encriptados.</p>
-
-  <h2>Tus derechos</h2>
-  <ul>
-    <li><strong>Exportar</strong> toda tu data local: ⚙️ Configuración → Exportar JSON.</li>
-    <li><strong>Importar</strong> datos previamente exportados.</li>
-    <li><strong>Borrar</strong> todo en cualquier momento: abrí Dev Tools → <code>localStorage.clear()</code>.</li>
-  </ul>
-
-  <h2>Terceros</h2>
-  <table>
-    <tr><th>Servicio</th><th>Motivo</th><th>Datos enviados</th></tr>
-    <tr><td>Guild Wars 2 API</td><td>Wallet, logros, inventario, etc.</td><td>API key (scope limitado)</td></tr>
-    <tr><td>GitHub API</td><td>Opcional: sync con Gist</td><td>Token de GitHub (scope: gist)</td></tr>
-    <tr><td>Google Analytics</td><td>Métricas anónimas</td><td>Event names (view_module, export, etc.)</td></tr>
-  </table>
-
-  <div class="footer">
-    ¿Preguntas? Abrí un <a href="https://github.com/PabloSnchz/gw2-wallet-ligero/issues">issue</a>
-    o contactanos en <a href="https://discord.gg/ZGNsfsqyKe">Discord</a>.
+  <h2>En pocas palabras</h2>
+  <div class="box">
+    <ul>
+      <li><strong>No hay servidor de la Bóveda.</strong> No hay registro, ni base de datos, ni cuentas nuestras. Todo corre en tu navegador.</li>
+      <li><strong>Tu API Key solo viaja a ArenaNet.</strong> La Bóveda la usa para pedirle tus datos a la API oficial de Guild Wars 2 (<code>api.guildwars2.com</code>), directo desde tu navegador.</li>
+      <li><strong>Lo que la Bóveda recuerda vive en tu navegador</strong> (el almacenamiento local del sitio). No se manda a ningún lado.</li>
+      <li><strong>El Llavero se guarda cifrado</strong> y su contraseña no se guarda nunca.</li>
+    </ul>
   </div>
 
-</div>
+  <h2>Adónde se conecta tu navegador</h2>
+  <div class="table"><table>
+    <thead><tr><th>Sitio</th><th>Para qué</th><th>Qué recibe</th></tr></thead>
+    <tbody>
+      <tr><td><code>api.guildwars2.com</code> (ArenaNet)</td><td>Tus divisas, logros, inventario, personajes y lo demás que muestra cada módulo.</td><td>Tu API Key, en cada pedido. Es la única forma de leer tus datos.</td></tr>
+      <tr><td><code>render.guildwars2.com</code> y <code>wiki.guildwars2.com</code></td><td>Los íconos e imágenes oficiales del juego.</td><td>Lo mismo que cualquier página que ves: tu dirección IP. Nada de tu cuenta.</td></tr>
+      <tr><td><code>fonts.googleapis.com</code> y <code>fonts.gstatic.com</code></td><td>La letra del nombre de la Bóveda.</td><td>Tu dirección IP.</td></tr>
+      <tr><td><code>cdn.jsdelivr.net</code> y <code>cdn.sheetjs.com</code></td><td>Las bibliotecas para abrir el Llavero viejo y leer archivos de Excel.</td><td>Tu dirección IP.</td></tr>
+      <tr><td><code>www.googletagmanager.com</code> (Google Analytics)</td><td>Saber qué módulos se usan, para decidir qué mejorar. <strong>Solo en la Bóveda pública</strong> (<code>pablosnchz.github.io/gw2-wallet-ligero</code>); en cualquier otra dirección no se carga.</td><td>Nombres de eventos, como qué módulo abriste o que guardaste una copia. Nunca tu API Key, tus divisas, tus objetos ni el Llavero.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Los enlaces a otros sitios (la wiki, los foros, Discord, YouTube…) solo se abren si los tocás.</p>
+
+  <h2>Qué guarda la Bóveda en tu navegador</h2>
+  <p>Casi todo empieza con <code>gn:</code>. El Llavero usa <code>accounts:</code>, la Cámara del Brujo <code>wv:season:</code> y el Multicuenta <code>inv_dashboard_</code>; tus Keys tienen además una copia con el nombre viejo. Nada de esto sale de tu navegador. Aparte, lo que la Bóveda lee de la API queda un rato guardado para no volver a pedirlo (la caché): se borra con <strong>Ajustes → Liberar la caché de la API</strong>.</p>
+  <div class="table"><table>
+    <thead><tr><th>Dónde lo usás</th><th>Qué guarda</th><th>Claves</th></tr></thead>
+    <tbody>
+      <tr><td>Keys</td><td>Tus API Keys, con su nombre y sus permisos, y cuál está activa. <strong>Sin cifrar</strong>: la Bóveda las necesita para funcionar. Por compatibilidad también existe una copia con el nombre viejo.</td><td><code>gn:account:keys</code>, <code>gn:account:selected</code>, <code>gw2_keys</code></td></tr>
+      <tr><td>Cuentas: Llavero</td><td>Las contraseñas y los datos de tus cuentas, <strong>cifrados</strong> con tu contraseña (PBKDF2 con 600.000 iteraciones y AES-GCM). La contraseña no se guarda: si la perdés, no hay forma de abrirlo. También puede quedar la copia del formato viejo, igual de cifrada.</td><td><code>accounts:vault2</code>, <code>accounts:lastFile</code></td></tr>
+      <tr><td>Cuentas: Mis cuentas</td><td>Lo leído de cada cuenta durante 6 horas y los datos de los logros durante 7 días. Nunca la Key.</td><td><code>gn:accounts:cards</code>, <code>gn:accounts:achmeta</code></td></tr>
+      <tr><td>Inicio</td><td>El último módulo que abriste, cuántas veces abriste cada uno, la fecha de tu última copia y si ya viste la bienvenida. Solo nombres de módulo y fechas.</td><td><code>gn:global:welcome</code>, <code>gn:global:welcome_seen</code></td></tr>
+      <tr><td>Cartera</td><td>Las divisas que fijaste, si ocultás las que están en 0 y las columnas y el orden de «Todas las cuentas».</td><td><code>gn:wallet:pins</code>, <code>gn:wallet:hidezero</code>, <code>gn:wallet:dashboard:selected_currencies</code>, <code>gn:wallet:dashboard:sort</code></td></tr>
+      <tr><td>Metas y Eventos</td><td>Las metas que fijaste.</td><td><code>gn:meta:favs</code></td></tr>
+      <tr><td>Cámara del Brujo</td><td>Lo que fijaste y marcaste en la Tienda, solo de la temporada actual, por cuenta: cada cuenta se reconoce por los 4 primeros y los 4 últimos caracteres de su Key, que no alcanzan para usarla. También la vista de la Tienda y la última pestaña.</td><td><code>wv:season:current</code>, <code>wv:season:index</code>, <code>gn:wv:shop:view</code>, <code>gn:wv:last_tab</code></td></tr>
+      <tr><td>Actividades</td><td>La llave y las piedras de Leivas que marcaste esta semana, por cuenta, con una huella que no es la Key.</td><td><code>gn:activities:week</code></td></tr>
+      <tr><td>Heredad</td><td>Los nodos que recolectaste hoy y los nodos de Janthir y contratos que marcaste con «Lo tengo».</td><td><code>gn:activities:home:nodes</code>, <code>gn:homestead:owned</code></td></tr>
+      <tr><td>Raids</td><td>Los encuentros que marcaste a mano esta semana y la última pestaña.</td><td><code>gn:raids:marks</code>, <code>gn:raids:strike:view</code></td></tr>
+      <tr><td>Inventario y Personajes</td><td>La última pestaña y lo que elegiste en Multicuenta: set, ítems, tiers, orden y qué ocultás.</td><td><code>gn:inventory:tab</code>, <code>inv_dashboard_active_set</code>, <code>inv_dashboard_selected_items</code>, <code>inv_dashboard_active_tiers</code>, <code>inv_dashboard_sort</code>, <code>inv_dashboard_hide_zero</code></td></tr>
+      <tr><td>Armería Legendaria</td><td>Tu cola de crafteo.</td><td><code>gn:legendary:</code></td></tr>
+      <tr><td>Toda la Bóveda</td><td>El tema que elegiste.</td><td><code>gn:theme</code>, <code>gn:theme:official</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>Logros no guarda nada propio: lo que lee de la API va a la caché.</p>
+  <p>Si usaste la sincronización con GitHub Gist antes de que se retirara, puede quedar su rastro (<code>gn:github:token</code> y las demás <code>gn:github:</code>). La Bóveda ya no las usa ni las manda a ningún lado; se borran con el último paso de abajo.</p>
+
+  <h2>Tus datos, en tus manos</h2>
+  <h3>Guardar una copia</h3>
+  <p>En la barra de arriba, <strong>Ajustes → Guardar copia de ajustes</strong> baja un archivo con tus ajustes. <strong>Incluye tus API Keys sin cifrar</strong>: guardalo como guardarías una contraseña y no lo compartas. El Llavero no va en esa copia: tiene su propio archivo cifrado.</p>
+  <h3>Restaurar una copia</h3>
+  <p><strong>Ajustes → Restaurar una copia</strong>. Antes de escribir nada te pregunta.</p>
+  <h3>Liberar la caché</h3>
+  <p><strong>Ajustes → Liberar la caché de la API</strong> borra lo que la Bóveda guardó de la API para no pedirlo de nuevo. Tus Keys, marcas y ajustes quedan.</p>
+  <h3>Borrar todo</h3>
+  <p>En tu navegador, abrí la configuración del sitio (el candado o el ícono que aparece al lado de la dirección) y elegí <strong>borrar los datos del sitio</strong>. Se borra todo lo de la tabla, incluido el Llavero que quedó en el navegador. Tus archivos del Llavero en tu computadora no se tocan.</p>
+
+  <h2>¿Dudas o un error?</h2>
+  <p>Escribinos en <a href="https://discord.gg/ZGNsfsqyKe" target="_blank" rel="noopener">Discord<span class="visually-hidden"> (se abre en otra pestaña)</span></a>, que es donde respondemos primero. También podés abrir un reporte en <a href="https://github.com/PabloSnchz/gw2-wallet-ligero/issues" target="_blank" rel="noopener">GitHub<span class="visually-hidden"> (se abre en otra pestaña)</span></a>, o escribir a <a href="mailto:pablinnn@gmail.com">pablinnn@gmail.com</a>.</p>
+
+  <footer>
+    <p>Sitio de la comunidad, no oficial: no está afiliado a ArenaNet ni a NCSOFT. Las imágenes y los datos del juego son de sus dueños y se leen de la API pública.</p>
+    <p lang="en">© 2014 ArenaNet, LLC. All rights reserved. NCSOFT, the interlocking NC logo, ArenaNet, Guild Wars, Guild Wars Factions, Guild Wars Nightfall, Guild Wars: Eye of the North, Guild Wars 2, and all associated logos and designs are trademarks or registered trademarks of NCSOFT Corporation. All other trademarks are the property of their respective owners.</p>
+  </footer>
+
+</main>
 </body>
 </html>

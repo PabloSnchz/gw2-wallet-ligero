@@ -1,0 +1,256 @@
+{
+ "source": "API oficial: /v2/professions?ids=all&lang=es, /v2/specializations?ids=all&lang=es (elite) y /v2/races?ids=all&lang=es, leídas desde CI (RUN-047, 2026-10-25). Oficios: wiki oficial en español, «Artesanía» (wiki-es.guildwars2.com), consultada el 2026-10-25.",
+ "professions": {
+  "Guardian": {
+   "name": "Guardián",
+   "icon": "https://render.guildwars2.com/file/6E0D0AC6E0CE5C0C29B3D736ABEA070F4A58540E/156633.png"
+  },
+  "Warrior": {
+   "name": "Guerrero",
+   "icon": "https://render.guildwars2.com/file/0A76324239946B79C061762095FAB2BDF7A1D8D7/156642.png"
+  },
+  "Engineer": {
+   "name": "Ingeniero",
+   "icon": "https://render.guildwars2.com/file/A94D00911BD47CDE39A104F90C7D07DE623554ED/156631.png"
+  },
+  "Ranger": {
+   "name": "Guardabosques",
+   "icon": "https://render.guildwars2.com/file/FEF2479DC197D40758A8D6E95201F4A7996EB357/156639.png"
+  },
+  "Thief": {
+   "name": "Ladrón",
+   "icon": "https://render.guildwars2.com/file/13A2C0EF23F23FF2084875629465279DDA807E3D/103581.png"
+  },
+  "Elementalist": {
+   "name": "Elementalista",
+   "icon": "https://render.guildwars2.com/file/BBED46EB20C80D0DDE0F99402493C7E6FFAE1530/156629.png"
+  },
+  "Mesmer": {
+   "name": "Hipnotizador",
+   "icon": "https://render.guildwars2.com/file/AF61567E16A83F145D6FB35D63BF01074A3A5AB9/156635.png"
+  },
+  "Necromancer": {
+   "name": "Nigromante",
+   "icon": "https://render.guildwars2.com/file/CA5A4E96080FCF057C9DA0ED35C693477580421C/156637.png"
+  },
+  "Revenant": {
+   "name": "Retornado",
+   "icon": "https://render.guildwars2.com/file/696A48DD61EE01FD1F4FBBBDB82D74611E04EA39/965717.png"
+  }
+ },
+ "elites": {
+  "5": {
+   "name": "Druida",
+   "profession": "Ranger",
+   "icon": "https://render.guildwars2.com/file/033CFD3270277F38215AE60574BCC2000873BDFF/1128575.png"
+  },
+  "7": {
+   "name": "Temerario",
+   "profession": "Thief",
+   "icon": "https://render.guildwars2.com/file/CEA6755F350FAAE9A7D8796CF8CC10FA1E33081D/1128571.png"
+  },
+  "18": {
+   "name": "Berserker",
+   "profession": "Warrior",
+   "icon": "https://render.guildwars2.com/file/3111C4ACA223F8B654B3453A42F7539D64EE953A/1128567.png"
+  },
+  "27": {
+   "name": "Cazadragones",
+   "profession": "Guardian",
+   "icon": "https://render.guildwars2.com/file/4161C630AA50667FDCBF01042D07021CE44451C9/1128573.png"
+  },
+  "34": {
+   "name": "Segador",
+   "profession": "Necromancer",
+   "icon": "https://render.guildwars2.com/file/6E9C230241E83DFCAA0B0C11ED32ED0CB605C0EC/1128579.png"
+  },
+  "40": {
+   "name": "Cronomante",
+   "profession": "Mesmer",
+   "icon": "https://render.guildwars2.com/file/B0A3C5B4097705AE21E9CB78E53045E327F1C7C9/1128569.png"
+  },
+  "43": {
+   "name": "Chatarrero",
+   "profession": "Engineer",
+   "icon": "https://render.guildwars2.com/file/5749382E61E622D8E9E00FA60D4CEAADA3E12715/1128581.png"
+  },
+  "48": {
+   "name": "Tempestad",
+   "profession": "Elementalist",
+   "icon": "https://render.guildwars2.com/file/BC1D0645C1304238F6154C9F366DEBD014FD7AD4/1128583.png"
+  },
+  "52": {
+   "name": "Heraldo",
+   "profession": "Revenant",
+   "icon": "https://render.guildwars2.com/file/0D29C2DC29FFD156082572B41310D00914029E6C/1128577.png"
+  },
+  "55": {
+   "name": "Bestialma",
+   "profession": "Ranger",
+   "icon": "https://render.guildwars2.com/file/F80AC2AFAAF55C0F7F012C7EBECC90FD01F27FE9/1770215.png"
+  },
+  "56": {
+   "name": "Tejedor",
+   "profession": "Elementalist",
+   "icon": "https://render.guildwars2.com/file/C4B549D62A43E1BF490197E212B21879C4214008/1670506.png"
+  },
+  "57": {
+   "name": "Holoartesano",
+   "profession": "Engineer",
+   "icon": "https://render.guildwars2.com/file/5DCFFC66A63466DFEBD29ACFA605CF00C708CBF3/1770225.png"
+  },
+  "58": {
+   "name": "Certero",
+   "profession": "Thief",
+   "icon": "https://render.guildwars2.com/file/E4CDA974AF47D2336E02211E4667FE5C9579774F/1770213.png"
+  },
+  "59": {
+   "name": "Quimérico",
+   "profession": "Mesmer",
+   "icon": "https://render.guildwars2.com/file/52285431289AE4FE39E8A21D4333E137A5EF0921/1770217.png"
+  },
+  "60": {
+   "name": "Azotador",
+   "profession": "Necromancer",
+   "icon": "https://render.guildwars2.com/file/B10D1AB5AA0B0CFE7D26A142E99414C26244359C/1770221.png"
+  },
+  "61": {
+   "name": "Rompehechizos",
+   "profession": "Warrior",
+   "icon": "https://render.guildwars2.com/file/C105F67C30BBD0FE0A26CB97E90B481419927D50/1770223.png"
+  },
+  "62": {
+   "name": "Abrasador",
+   "profession": "Guardian",
+   "icon": "https://render.guildwars2.com/file/A1287D0FD1159CAC3A58C212C94A4BD0AB32A8D3/1770211.png"
+  },
+  "63": {
+   "name": "Renegado",
+   "profession": "Revenant",
+   "icon": "https://render.guildwars2.com/file/A347E09ED9C6537C7D13EC212229468078C0F0E9/1770219.png"
+  },
+  "64": {
+   "name": "Augurador",
+   "profession": "Necromancer",
+   "icon": "https://render.guildwars2.com/file/14D0900962F99600047D73242F0AD0D3AC986EB7/2479361.png"
+  },
+  "65": {
+   "name": "Subyugador",
+   "profession": "Guardian",
+   "icon": "https://render.guildwars2.com/file/0AF79DC205A1E14422720079BBAC05E35BCDB07E/2479353.png"
+  },
+  "66": {
+   "name": "Virtuoso",
+   "profession": "Mesmer",
+   "icon": "https://render.guildwars2.com/file/C6480FD498E66EE5AEFBAF01EDF944631947DBA5/2479357.png"
+  },
+  "67": {
+   "name": "Catalizador",
+   "profession": "Elementalist",
+   "icon": "https://render.guildwars2.com/file/220F40016450052CAEB4E5BC7A5A9A6078F0F124/2491557.png"
+  },
+  "68": {
+   "name": "Jurafilos",
+   "profession": "Warrior",
+   "icon": "https://render.guildwars2.com/file/F73D52559DEA5FC92CD4FAF2557E050BC1516A7C/2491565.png"
+  },
+  "69": {
+   "name": "Justiciero",
+   "profession": "Revenant",
+   "icon": "https://render.guildwars2.com/file/D9549F115AF045C846E9EFC4D51BF527B1F7F2F7/2491561.png"
+  },
+  "70": {
+   "name": "Mechanista",
+   "profession": "Engineer",
+   "icon": "https://render.guildwars2.com/file/CA303ADC0BBE9F9591C5C4A2C4740FD59E6EEE55/2503658.png"
+  },
+  "71": {
+   "name": "Espectro",
+   "profession": "Thief",
+   "icon": "https://render.guildwars2.com/file/DD5E09D55662BEBFE1CF4FA32C28E4023A2D09EB/2503666.png"
+  },
+  "72": {
+   "name": "Indómito",
+   "profession": "Ranger",
+   "icon": "https://render.guildwars2.com/file/E208D91FD7A1D1035364D252F24D75F9FCC706C6/2503662.png"
+  },
+  "73": {
+   "name": "Trovador",
+   "profession": "Mesmer",
+   "icon": "https://render.guildwars2.com/file/1ACAEDF680C0FAF9081780D8F925B5E854DFA9F4/3680073.png"
+  },
+  "74": {
+   "name": "Paragón",
+   "profession": "Warrior",
+   "icon": "https://render.guildwars2.com/file/C9CB4FD2DA9B7B3DA3A706C4B991E15E9D6B0CB8/3680093.png"
+  },
+  "75": {
+   "name": "Amalgama",
+   "profession": "Engineer",
+   "icon": "https://render.guildwars2.com/file/0AF363EC11D1A4B6E507F8D92FA116619B1B3B0E/3680065.png"
+  },
+  "76": {
+   "name": "Ritualista",
+   "profession": "Necromancer",
+   "icon": "https://render.guildwars2.com/file/0B54AE3EC9D45BA3010803A308F5B67F30BC34FF/3680077.png"
+  },
+  "77": {
+   "name": "Anticuario",
+   "profession": "Thief",
+   "icon": "https://render.guildwars2.com/file/411B80D69C4324E84D9C050955B0040F66D7DFA1/3680089.png"
+  },
+  "78": {
+   "name": "Vendaval",
+   "profession": "Ranger",
+   "icon": "https://render.guildwars2.com/file/229C6E937EEDFF36AACF360F37059FC1D401D7F6/3680081.png"
+  },
+  "79": {
+   "name": "Conductor",
+   "profession": "Revenant",
+   "icon": "https://render.guildwars2.com/file/A0449B6C2253DB48E0B60E3AA9D55AF130ED2528/3680085.png"
+  },
+  "80": {
+   "name": "Evocador",
+   "profession": "Elementalist",
+   "icon": "https://render.guildwars2.com/file/B4132092D803E7BC12A6E0DC756CED4F945197D2/3680061.png"
+  },
+  "81": {
+   "name": "Luminaria",
+   "profession": "Guardian",
+   "icon": "https://render.guildwars2.com/file/F6BDFD499FD0DAE1A436AAC36E5A970A3A782509/3680069.png"
+  }
+ },
+ "races": {
+  "Human": [
+   "Humano",
+   "Humana"
+  ],
+  "Asura": [
+   "Asura",
+   "Asura"
+  ],
+  "Sylvari": [
+   "Sylvari",
+   "Sylvari"
+  ],
+  "Charr": [
+   "Charr",
+   "Charr"
+  ],
+  "Norn": [
+   "Norn",
+   "Norn"
+  ]
+ },
+ "crafting": {
+  "Armorsmith": "Forjador de armaduras",
+  "Artificer": "Artificiero",
+  "Chef": "Cocinero",
+  "Huntsman": "Cazador",
+  "Jeweler": "Joyero",
+  "Leatherworker": "Peletero",
+  "Scribe": "Escriba",
+  "Tailor": "Sastre",
+  "Weaponsmith": "Armero"
+ }
+}

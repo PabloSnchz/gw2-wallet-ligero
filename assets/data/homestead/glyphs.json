@@ -1,0 +1,125 @@
+{
+ "version": 1,
+ "updated": "2026-10-25",
+ "source": {
+  "api": "https://api.guildwars2.com/v2/homestead/glyphs?ids=all (36: 12 glifos por 3 cajas de recolección) y /v2/items?lang=es",
+  "effects": "https://wiki.guildwars2.com/wiki/Glyph_(upgrade)"
+ },
+ "slots": [
+  {
+   "id": "harvesting",
+   "es": "Cosecha"
+  },
+  {
+   "id": "logging",
+   "es": "Tala"
+  },
+  {
+   "id": "mining",
+   "es": "Minería"
+  }
+ ],
+ "kinds": {
+  "bonus": "Más materiales",
+  "convert": "Cambia el material",
+  "currency": "Moneda o karma"
+ },
+ "glyphs": [
+  {
+   "id": "alchemy",
+   "item": 90805,
+   "name": "Glifo de alquimia",
+   "icon": "https://render.guildwars2.com/file/E2047B083C4AC30C296203CF01FFB347479C1402/2155917.png",
+   "kind": "convert",
+   "effect": "Convierte al instante lo que recolectás en el material del nivel de arriba."
+  },
+  {
+   "id": "crucible",
+   "item": 90488,
+   "name": "Glifo del crisol",
+   "icon": "https://render.guildwars2.com/file/C10B35809710FF4D5DC700D623E247CB12E739D0/2175019.png",
+   "kind": "convert",
+   "effect": "Cambia lo que recolectás por materiales de recetas de nivel más bajo."
+  },
+  {
+   "id": "forester",
+   "item": 87550,
+   "name": "Glifo del forestal",
+   "icon": "https://render.guildwars2.com/file/D6C5915A046A95693A0B5202B06A68F6D90546EA/1986193.png",
+   "kind": "bonus",
+   "effect": "33 % de probabilidad de madera extra."
+  },
+  {
+   "id": "herbalist",
+   "item": 88241,
+   "name": "Glifo del herborista",
+   "icon": "https://render.guildwars2.com/file/28F04FBF79AB1509162FAB5E5003E94C1F69E871/2022142.png",
+   "kind": "bonus",
+   "effect": "33 % de probabilidad de bolsas de ingredientes extra."
+  },
+  {
+   "id": "leatherworker",
+   "item": 87473,
+   "name": "Glifo del peletero",
+   "icon": "https://render.guildwars2.com/file/5CFD36CC160D1DF045C2579CB5392695112324A6/1972348.png",
+   "kind": "bonus",
+   "effect": "33 % de probabilidad de cuero extra."
+  },
+  {
+   "id": "prospector",
+   "item": 87534,
+   "name": "Glifo del buscador",
+   "icon": "https://render.guildwars2.com/file/CFBB58E041A823F4AE6CA1B9F71A46C6523956F2/1983551.png",
+   "kind": "bonus",
+   "effect": "33 % de probabilidad de mineral extra."
+  },
+  {
+   "id": "scavenger",
+   "item": 87442,
+   "name": "Glifo del carroñero",
+   "icon": "https://render.guildwars2.com/file/DEC4F5BACE107A53B61035C217B74FB30525A46D/1972349.png",
+   "kind": "bonus",
+   "effect": "33 % de probabilidad de un material fino extra."
+  },
+  {
+   "id": "tailor",
+   "item": 87407,
+   "name": "Glifo del sastre",
+   "icon": "https://render.guildwars2.com/file/4EDD0117B4F558139C079FD2B14E9534E7AB28D2/1972350.png",
+   "kind": "bonus",
+   "effect": "33 % de probabilidad de tela extra."
+  },
+  {
+   "id": "watchknight",
+   "item": 87438,
+   "name": "Glifo de la caballera mecánica",
+   "icon": "https://render.guildwars2.com/file/32B6336166CF1CA43C75984367CD201B786BA359/1972352.png",
+   "kind": "bonus",
+   "effect": "33 % de probabilidad de un engranaje de relojería extra."
+  },
+  {
+   "id": "unbound",
+   "item": 87428,
+   "name": "Glifo del liberado",
+   "icon": "https://render.guildwars2.com/file/C42DD7E193022157F04F1D61700FFBBDD5C55CBA/1972351.png",
+   "kind": "currency",
+   "effect": "Te da magia desatada mientras recolectás."
+  },
+  {
+   "id": "volatility",
+   "item": 87698,
+   "name": "Glifo de volatilidad",
+   "icon": "https://render.guildwars2.com/file/1A97067CB6B41D3E777CA805D271DF74F2F57943/1998930.png",
+   "kind": "currency",
+   "effect": "Te da magia volátil mientras recolectás."
+  },
+  {
+   "id": "virtue",
+   "item": 92820,
+   "name": "Glifo de virtud",
+   "icon": "https://render.guildwars2.com/file/D3FF64617F0C430C12985253F57355D2C7445D5B/2256420.png",
+   "kind": "currency",
+   "effect": "Te da karma extra mientras recolectás, además de lo recolectado."
+  }
+ ]
+}
