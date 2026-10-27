@@ -24,7 +24,7 @@
 
   var VERSION = '1.1.0';
   var V2_KEY = 'accounts:vault2';      // copia cifrada nueva (D3)
-  var OLD_KEY = 'accounts:lastFile';   // copia del formato viejo: queda hasta promover (la usa producción)
+  var OLD_KEY = 'accounts:lastFile';   // copia del formato viejo: js/gn-idb.js la borra al cargar si ya está V2_KEY (BL-074)
   var MIN_PASS = 8;
 
   function esc(s) {
@@ -201,8 +201,8 @@
       if (JSON.stringify(r.data) !== JSON.stringify(d)) throw new Error('el archivo cifrado no dio lo mismo al abrirlo');
       download(text, name);
       var S = root.Storage;
-      // La copia vieja (OLD_KEY) NO se borra todavía: DEV y producción comparten el almacenamiento del navegador
-      // (mismo origen, DEC-026) y producción la sigue usando. Se borra al promover (CTA-5).
+      // La copia vieja (OLD_KEY) no se borra acá: la borra js/gn-idb.js en la próxima carga, cuando ya existe V2_KEY
+      // (BL-074, D3). Así un error al guardar nunca deja sin ninguna de las dos.
       if (S && typeof S.set === 'function') S.set(V2_KEY, { name: name, data: text, t: Date.now() });
       st.busy = false; reset();
       VV().saved(d, name);

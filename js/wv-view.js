@@ -1,7 +1,7 @@
 /*!
  * js/wv-view.js — Cámara del Brujo: cabecera y navegación (BL-064, CAM-1)
  * Proyecto: Bóveda del Gato Negro
- * Versión: 1.2.0 (2026-10-24)
+ * Versión: 1.3.0 (2026-10-27) — BL-076 SHV-5d: sin mi globo, mi línea también dice «Lo sé por» · antes 1.2.0 (2026-10-24)
  *  - 1.2.0 (CAM-POLISH-001): si js/gn-surface.js está cargado, la guarda de contraste se calcula
  *    sobre la bandeja y la tarjeta reales (GNSurface.surfaceTokens), no sobre el fondo del theme.
  *
@@ -28,7 +28,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.2.0';
+  var VERSION = '1.3.0';
   var LOG = '[WVView]';
   var DAY = 86400000;
   var WEEK_BTN = { daily: 'wvTabBtnDaily', weekly: 'wvTabBtnWeekly', special: 'wvTabBtnSpecial', shop: 'wvTabBtnShop' };
@@ -466,7 +466,7 @@
     if (key === st.voiceKey) return;
     st.voiceKey = key;
     while (box.firstChild) box.removeChild(box.firstChild);
-    if (msg && root.Shiruvana && typeof root.Shiruvana.voice === 'function') box.appendChild(root.Shiruvana.voice({ kind: msg.kind, text: msg.text }));
+    if (msg && root.ShvBubble && root.ShvBubble.speak) root.ShvBubble.speak(box, msg, { module: 'camara', source: 'tu Cámara del Brujo (API oficial)', key: key }); else if (msg && root.Shiruvana && typeof root.Shiruvana.voice === 'function') box.appendChild(root.Shiruvana.voice({ kind: msg.kind, text: msg.text, basis: 'tu Cámara del Brujo (API oficial) · en este navegador' })); // SHE-3 (DEC-038): mi globo
   }
 
   // Cada panel visible dice qué pestaña nueva lo controla (lector de pantalla).

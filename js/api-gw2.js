@@ -1,6 +1,7 @@
 /* =======================================================================
  * js/api-gw2.js  —  Capa API con fallbacks + caché persistente (mejorada)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
+ * Versión: 2.34.0 (2026-10-26) — BL-074: los cachés grandes van a IndexedDB (js/gn-idb.js).
  * Versión: 2.33.0 (2026-10-03) — `getSkinsBatch(ids, opts)`: resuelve los ids
  *   de skin de una cuenta a su FICHA (nombre, icono, rareza), que es lo que
  *   faltaba para que la fila "Coberturable account-scoped multicuenta"
@@ -570,21 +571,13 @@
     }
   }
 
+  function idb(k) { var G = root.GNIdb; return G && G.handles(k) ? G : null; }
   function lsGet(key) {
+    var G = idb(key); if (G) return G.get(key);
     try { var j = localStorage.getItem(key); return j ? JSON.parse(j) : null; } catch (_) { return null; }
   }
-  // Idea 49 Tramo A: antes esto era `catch (_) {}`, o sea tragaba CUALQUIER
-  // error sin dejar rastro. El que importa es el de cuota: la cuota de
-  // localStorage (~4.98 MB medidos en navegador real) es COMPARTIDA por todas
-  // las claves cacheadas de la pagina, no por modulo. Cuando se llena, cada
-  // escritura posterior falla y la app vuelve a arrancar en frio en cada
-  // recarga, sin que nada lo diga: se presenta como "la Boveda anda lenta".
-  //
-  // Esto estaba enmascarado porque activities.js borraba la familia 'ach_*' en
-  // cada navegacion a #/activities (wipe accidental = alivio de cuota). Al
-  // quitar ese wipe (mismo heartbeat), la cuota se llena de verdad, asi que el
-  // fallo deja de seripotetico y hay que poder nombrarlo.
-  //
+  // Idea 49 Tramo A: el error de cuota de localStorage (~4.98 MB, COMPARTIDA por toda la pagina)
+  // ya no se traga: se cuenta y se avisa. Desde BL-074 los caches grandes van a IndexedDB.
   // NO se relanza el error: la copia en __mem ya sirvio para esta sesion, y
   // un throw aca seria peor que el bug que se esta corrigiendo. Se cuenta y se
   // avisa UNA vez (no una por clave: son cientos de escrituras por carga).
@@ -599,6 +592,7 @@
            e.code === 22 || e.code === 1014;   // legacy IE/Edge
   }
   function lsSet(key, val) {
+    var G = idb(key); if (G) return G.set(key, val);
     try { localStorage.setItem(key, JSON.stringify(val)); return true; }
     catch (e) {
       if (isQuotaError(e)) {
@@ -614,13 +608,13 @@
       return false;
     }
   }
-  function lsDel(key) { try { localStorage.removeItem(key); } catch (_) {} }
+  function lsDel(key) { var G = idb(key); if (G) return G.del(key); try { localStorage.removeItem(key); } catch (_) {} }
   // Idea 50 Tramo E: "esta la clave?" separado de "borrala". Hace falta
   // porque `removeItem` no devuelve nada: sin esto, contar una purga seria
   // contar una INTENCION (P4 del Tramo F, con `removed`). Ademas distingue
   // "no estaba" de "estaba y se borro", que el codigo que llama necesita para
   // no afirmar que limpio algo que no existia.
-  function lsHas(key) { try { return localStorage.getItem(key) !== null; } catch (_) { return false; } }
+  function lsHas(key) { var G = idb(key); if (G) return G.has(key); try { return localStorage.getItem(key) !== null; } catch (_) { return false; } }
   function now() { return Date.now(); }
   function isFresh(entry, ttl) { return !!entry && typeof entry.ts === 'number' && (now() - entry.ts) <= ttl; }
 
@@ -2348,6 +2342,8 @@
         removed = before - localStorage.length;
       }
     } catch (_) { /* localStorage puede no existir (modo privado): no es un error */ }
+    var G = root.GNIdb, gs = G && G.stats && G.stats(); // BL-074: los cachés que ya están en IndexedDB
+    if (gs && gs.keys) { removed += gs.keys; bytes += gs.chars; if (!dryRun) G.clear(); }
     return { removed: removed, kept: kept, bytes: bytes, keptBytes: keptBytes,
              memCleared: memCleared, dryRun: dryRun };
   }

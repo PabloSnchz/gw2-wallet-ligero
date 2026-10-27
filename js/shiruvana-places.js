@@ -1,6 +1,6 @@
 /*!
  * js/shiruvana-places.js — Dónde le hablo al jugador (DEC-025)
- * Versión: 1.3.1
+ * Versión: 1.4.0
  *
  * Pongo mi voz (js/shiruvana.js) en estos lugares, sin tocar el código de cada módulo:
  *  - la Bienvenida: sin API Key me presento y te llevo a los tres pasos; con API Key soy
@@ -28,10 +28,12 @@
  *   no se abre nada solo y no hablo de horarios, eventos, metas ni del contenido de ningún módulo.
  * 1.3.1 (BL-071 GUI-5): las guías se llaman «Primeros pasos» y «Guía por módulo»; la copia se guarda desde Ajustes
  *   (el botón «Backup» ya no existe) y el selector de cuenta está al lado de «Keys».
+ * 1.4.0 (BL-059 SHV-1): cada mensaje de «Shiruvana te guía» dice de dónde lo sé (línea «Lo sé por: …» de
+ *   js/shiruvana.js 1.1.0). Todo sale de lo que guardaste en este navegador; la forma de los mensajes no cambia.
  */
 (function (root) {
   'use strict';
-  var VERSION = '1.3.1';
+  var VERSION = '1.4.0';
 
   var TEXTS = {
     welcomeNew: [
@@ -205,12 +207,22 @@
     return b;
   }
 
+  // De dónde lo sé (BL-059 SHV-1, DEC-033): todo sale de lo que guardaste en este navegador.
+  var BASIS = {
+    blocked: 'los permisos guardados de la Key activa · en este navegador',
+    keys: 'los permisos guardados de tus Keys · en este navegador',
+    backup: 'la fecha de tu última copia · en este navegador',
+    verify: 'tus Keys guardadas · en este navegador',
+    'continue': 'tus últimas visitas a la Bóveda · en este navegador',
+    general: 'tus Keys, sus permisos y tu copia · en este navegador'
+  };
+
   function guideVoice(items, now) {
     var d = doc();
     var ask = guide.ask ? askMessage(guide.ask, now) : null;
     var idx = Math.min(guide.idx, items.length - 1);
     var msg = ask || items[idx];
-    var el = root.Shiruvana.voice({ kind: msg.kind, size: 'lg', text: msg.text });
+    var el = root.Shiruvana.voice({ kind: msg.kind, size: 'lg', text: msg.text, basis: BASIS[msg.id] || null });
     el.setAttribute('data-shv-guide', msg.id);
     if (msg.id === 'start') return el;
 

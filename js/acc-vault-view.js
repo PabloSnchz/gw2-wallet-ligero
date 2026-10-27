@@ -28,7 +28,7 @@
 
   var VERSION = '1.2.1';
   var ROUTE = '#/account/accounts';
-  var LEGACY_KEY = 'accounts:lastFile'; // la copia cifrada del formato viejo (la usa producción hasta promover)
+  var LEGACY_KEY = 'accounts:lastFile'; // la copia cifrada del formato viejo; js/gn-idb.js la borra cuando ya está V2_KEY
   var V2_KEY = 'accounts:vault2';       // la copia con el cifrado nuevo (D3), la escribe js/acc-vault-edit.js
   var IDLE = 5 * 60000, IDLE_DIRTY = 15 * 60000, REVEAL = 20000, CLIP = 30000;
   var LOCK_ICON = 'assets/icons/Cuentas/733265.png';

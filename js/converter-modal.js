@@ -1,24 +1,14 @@
 /*!
  * js/converter-modal.js — Cambio de divisas (oro ↔ gemas y tu Trading Post)
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
- * Versión: 2.0.0 (2026-10-22)
+ * Versión: 2.2.0 (2026-10-27)
  *
- * v2.0.0 (BL-056, CAR-2A): el conversor deja de ser un modal de 580 px con
- *         cuatro pestañas y pasa a ser una vista con aire, la que se aprobó
- *         en la propuesta CAR-0:
- *           - izquierda: calculadora en espejo (oro → gemas, gemas → oro), el
- *             precio de 400 gemas en grande, la conveniencia y mi recomendación;
- *           - derecha: tu Trading Post, primero lo que tenés para recoger y
- *             después tus órdenes; «Populares» queda plegado abajo.
- *         La pestaña «Historial» se va: decía «Próximamente» y no se muestra
- *         lo que no existe.
- *         API: mount(host) dibuja la vista donde se le pida (la Cartera la
- *         monta en su pestaña). open() pide esa pestaña a la Cartera y, si no
- *         está, muestra la misma vista dentro de un modal.
- *         Arreglos: el Escape se borraba después del primer cierre; el ícono
- *         155048 no existe; renderSkeletonOfertas() no estaba definida, así
- *         que «Populares» quedaba colgado en «cargando» para siempre.
- *         Estilos: clases con las variables del theme (antes, inline).
+ * v2.2.0 (BL-076, SHV-5d): mi consejo dice «Lo sé por».
+ * v2.1.0 (BL-074, BLS-3): el caché de precios (gw2_conv_cache_v3) va a IndexedDB por js/gn-idb.js
+ *         si está (si no, sigue en localStorage) y al guardar tira lo vencido: antes crecía sin tope.
+ * v2.0.0 (BL-056, CAR-2A): de modal a vista (calculadora en espejo, tu Trading Post, Populares
+ *         plegado); mount(host) y open(). Sin la pestaña que decía «Próximamente»; arreglos del
+ *         Escape, de un ícono inexistente y de una función sin definir. Estilos con el theme.
  * v1.2.0: compras y ventas distinguen "no leído" de "no tenés" (Idea 47 c4).
  * v1.1.x: caja del Trading Post "sin recoger" (getCommerceDelivery).
  * v1.0.0: extraído de app.js.
@@ -27,7 +17,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '2.0.0';
+  var VERSION = '2.2.0';
   var LOG = '[ConverterModal]';
   var ICON = 'assets/icons/';
   var I_GEM = ICON + '502065.png', I_GOLD = ICON + '619316.png', I_TP = ICON + '155033.png';
@@ -150,14 +140,18 @@
   // =======================================================================
   // CACHÉ Y API DE CONVERSIÓN
   // =======================================================================
+  // BL-074: si GNIdb (js/gn-idb.js) toma la clave, el caché vive en IndexedDB; si no, en localStorage.
+  function convIdb() { var G = root.GNIdb; return G && G.handles && G.handles(LS_CONV) ? G : null; }
   function convGet() {
+    var G = convIdb(); if (G) return G.get(LS_CONV) || {};
     try { return JSON.parse(localStorage.getItem(LS_CONV) || '{}'); } catch (_) { return {}; }
   }
   function convPut(k, v) {
     try {
-      var m = convGet();
-      m[k] = { v: v, ts: Date.now() };
-      localStorage.setItem(LS_CONV, JSON.stringify(m));
+      var m = convGet(), now = Date.now(), G = convIdb();
+      Object.keys(m).forEach(function (x) { if (!m[x] || !(now - m[x].ts <= CONV_TTL)) delete m[x]; });
+      m[k] = { v: v, ts: now };
+      if (G) G.set(LS_CONV, m); else localStorage.setItem(LS_CONV, JSON.stringify(m));
     } catch (_) {}
   }
   function convVal(k) {
@@ -272,7 +266,7 @@
       voiceHost.innerHTML = '';
       var a = adviceFor(gold);
       if (a && root.Shiruvana && typeof root.Shiruvana.voice === 'function') {
-        voiceHost.appendChild(root.Shiruvana.voice({ kind: a.kind, text: a.text }));
+        voiceHost.appendChild(root.Shiruvana.voice({ kind: a.kind, text: a.text, basis: 'el cambio de gemas (API oficial) · en este navegador' }));
       }
     }
   }

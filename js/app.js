@@ -5,7 +5,7 @@
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
-  console.info('%cGW2 Wallet app.js v2.9.0 — Bootstrap keys + toasts + router sync + selected-key persistence + WV Targets refresh (conversor extraído)', 'color:#0bf; font-weight:700');
+  console.info('%cGW2 Wallet app.js v2.9.1 — Bootstrap keys + toasts + router sync + selected-key persistence + WV Targets refresh (conversor extraído)', 'color:#0bf; font-weight:700');
  
   /* ========================= Estado ========================= */
   const state = {
@@ -148,7 +148,7 @@
         document.dispatchEvent(new CustomEvent('gn:global-refresh', { detail }));
         // (Opcional) MetaEventos (muchos módulos ya lo escuchan)
         document.dispatchEvent(new CustomEvent('gn:meta-refresh', { detail }));
-        console.info('[app] emitRefreshEvents', detail);
+        console.info('[app] emitRefreshEvents', detail.source);
       }, 80);
     } catch (e) {
       console.warn('[app] emitRefreshEvents error', e);

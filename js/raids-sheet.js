@@ -1,6 +1,6 @@
 /**
  * raids-sheet.js — Ficha de cada encuentro de Raids a pantalla completa (BL-070 RAI-3).
- * Versión: 1.2.0 (2026-10-25) — RAI-6: enlaces AA en los 19 themes y pestañas con teclado · antes 1.1.0 (2026-10-24) — RAI-4: «Cómo se pelea» (fases, mecánicas, modo desafío y fuentes)
+ * Versión: 1.3.0 (2026-10-27) — BL-076 SHV-5a: mi línea dice «Lo sé por» y usa los tipos de DEC-024 · antes 1.2.0 (2026-10-25) — RAI-6: enlaces AA en los 19 themes y pestañas con teclado · antes 1.1.0 (2026-10-24) — RAI-4: «Cómo se pelea» (fases, mecánicas, modo desafío y fuentes)
  *
  * Como la ficha de la legendaria: reemplaza la lista dentro del módulo, con
  * «← Volver a Raids» y Escape, y vuelve al mismo lugar y a la misma fila.
@@ -21,7 +21,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.2.0';
+  var VERSION = '1.3.0';
   var LOG = '[RaidsSheet]';
   var DATA = 'assets/data/raids/rewards.json';
   var MECH_DIR = 'assets/data/raids/mechanics/';
@@ -81,13 +81,13 @@
   function voiceOf(m) {
     if (!m) return null;
     var e = m.e;
-    if (m.state === 'done' || m.state === 'hand') return { kind: 'success', text: 'Ya lo cobraste esta semana. Vuelve a dar recompensas con el reset del lunes a las 07:30 UTC.' };
+    if (m.state === 'done' || m.state === 'hand') return { kind: 'saluda', basis: m.state === 'hand' ? 'lo que marcaste esta semana' : 'tus raids de esta semana (API oficial)', text: 'Ya lo cobraste esta semana. Vuelve a dar recompensas con el reset del lunes a las 07:30 UTC.' };
     if (m.state !== 'todo' && m.state !== 'na') return null;
     var parts = [];
     if (e.li) parts.push(e.li + ' de conocimiento legendario');
     if (e.amount != null) parts.push(amount(e.amount) + (m.cur === 'gaeting' ? ' cristales de Gaets' : ' fragmentos de magnetita'));
     if (!parts.length) return null;
-    return { kind: 'hint', text: 'Esta semana todavía te esperan ' + parts.join(' y ') + (e.cm ? ', y ' + m.cmBonus + ' más si lo hacés en modo desafío.' : '.') };
+    return { kind: 'explica', basis: 'tu semana de raids (API oficial) y las recompensas de la wiki', text: 'Esta semana todavía te esperan ' + parts.join(' y ') + (e.cm ? ', y ' + m.cmBonus + ' más si lo hacés en modo desafío.' : '.') };
   }
 
   function dots(n) {
@@ -385,7 +385,7 @@
     if (!box) return;
     while (box.firstChild) box.removeChild(box.firstChild);
     var msg = voiceOf(m);
-    if (msg && root.Shiruvana && typeof root.Shiruvana.voice === 'function') box.appendChild(root.Shiruvana.voice({ kind: msg.kind, text: msg.text }));
+    if (msg && root.Shiruvana && typeof root.Shiruvana.voice === 'function') box.appendChild(root.Shiruvana.voice({ kind: msg.kind, text: msg.text, basis: msg.basis + ' · en este navegador' }));
   }
 
   function draw(focus) {

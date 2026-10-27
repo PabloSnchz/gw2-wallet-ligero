@@ -1,7 +1,7 @@
 /*!
  * js/act-week.js — Actividades, pestaña Semana: la llave del León Negro y las piedras de Leivas (BL-070, ACT-4)
  * Proyecto: Bóveda del Gato Negro
- * Versión: 1.1.0 (2026-10-25) — ACT-7c: sin el paso del −/+ de la pantalla vieja (retirada en ACT-7b)
+ * Versión: 1.2.0 (2026-10-27) — BL-076 SHV-5c: sin mi globo, mi línea también dice «Lo sé por» · antes 1.1.0 (2026-10-25) — ACT-7c: sin el paso del −/+ de la pantalla vieja (retirada en ACT-7b)
  *
  * La pestaña Semana de js/act-view.js la dibuja este archivo:
  *  - Llave semanal: «Probable» con un personaje de nivel 10 o más creado desde el reset (cualquier profesión).
@@ -18,7 +18,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.1.0';
+  var VERSION = '1.2.0';
   var LOG = '[ActWeek]';
   var DATA_URL = 'assets/data/activities/key-farm.json';
   var STORE = 'gn:activities:week';
@@ -266,7 +266,7 @@
     var box = doc && doc.getElementById ? doc.getElementById('awKeyVoice') : null, s = snapshot(m), msg = keyVoice(s.key, s.data, m.lastWeekly);
     if (!box) return;
     while (box.firstChild) box.removeChild(box.firstChild);
-    if (msg && root.Shiruvana && typeof root.Shiruvana.voice === 'function') box.appendChild(root.Shiruvana.voice({ kind: msg.kind, text: msg.text }));
+    if (msg && root.ShvBubble && root.ShvBubble.speak) root.ShvBubble.speak(box, msg, { module: 'semana', source: 'tus personajes (API oficial) y lo que confirmaste' }); else if (msg && root.Shiruvana && typeof root.Shiruvana.voice === 'function') box.appendChild(root.Shiruvana.voice({ kind: msg.kind, text: msg.text, basis: 'tus personajes (API oficial) y lo que confirmaste · en este navegador' })); // SHE-3 (DEC-038): mi globo
   }
 
   function attr(t, name) {

@@ -1,7 +1,7 @@
 /*!
  * js/home-view.js — La Heredad: tu casa y tu heredad de Janthir, módulo propio (BL-070 ACT-5, BL-055)
  * Proyecto: Bóveda del Gato Negro
- * Versión: 1.1.0 (2026-10-25) — ACT-6: pestañas Glifos y Decoraciones (las dibuja js/home-extra.js); las
+ * Versión: 1.2.0 (2026-10-27) — BL-076 SHV-5b: sin mi globo, mi línea también dice «Lo sé por» · antes 1.1.0 (2026-10-25) — ACT-6: pestañas Glifos y Decoraciones (las dibuja js/home-extra.js); las
  *          pestañas se recorren con las flechas, Inicio y Fin
  * Versión: 1.0.0 (2026-10-25) — ACT-5: módulo, ruta, barra lateral y la pestaña Nodos y gatos
  *
@@ -26,7 +26,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.1.0';
+  var VERSION = '1.2.0';
   var LOG = '[HomeView]';
   var PANEL = 'homesteadPanel';
   var ROUTE = '#/account/homestead'; // la misma que usa js/router.js
@@ -411,7 +411,7 @@
     if (key === st.voiceKey) return;
     st.voiceKey = key;
     while (box.firstChild) box.removeChild(box.firstChild);
-    if (msg && root.Shiruvana && typeof root.Shiruvana.voice === 'function') box.appendChild(root.Shiruvana.voice({ kind: msg.kind, text: msg.text }));
+    if (msg && root.ShvBubble && root.ShvBubble.speak) root.ShvBubble.speak(box, msg, { module: 'heredad', source: 'tus nodos (API oficial) y lo que marcaste', key: key }); else if (msg && root.Shiruvana && typeof root.Shiruvana.voice === 'function') box.appendChild(root.Shiruvana.voice({ kind: msg.kind, text: msg.text, basis: 'tus nodos (API oficial) y lo que marcaste · en este navegador' })); // SHE-3 (DEC-038): mi globo
   }
 
   function attrOf(t) {

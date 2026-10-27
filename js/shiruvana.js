@@ -1,6 +1,8 @@
 /*!
  * js/shiruvana.js — Mi voz en La Bóveda (DEC-025, DEC-024)
- * Versión: 1.0.0
+ * Versión: 1.1.0
+ *
+ * 1.1.0 (BL-059 SHV-1): opción `basis` → línea «Lo sé por: …», el fundamento de lo que digo (DEC-033).
  *
  * Soy Shiruvana. Aparezco solo cuando le hablo al jugador: bienvenida, API Keys,
  * guías y ayuda, errores que puede resolver y avisos sobre sus datos.
@@ -44,6 +46,7 @@
     '.shv-voice__label{margin:0;font-weight:700;font-size:0.85rem;color:var(--text);letter-spacing:0.2px;}',
     '.shv-voice__body p{margin:0 0 6px 0;font-size:0.9rem;line-height:1.5;color:var(--tx-2,var(--text));}',
     '.shv-voice__body p:last-child{margin-bottom:0;}',
+    '.shv-voice__basis{margin:6px 0 0 0;font-size:0.78rem;line-height:1.4;color:var(--tx-2,var(--text));}',
     '.shv-voice--recomienda{border-left-color:var(--color-green,var(--acc-1));}',
     '.shv-voice--recomienda .shv-voice__avatar{box-shadow:0 0 0 2px var(--color-green,var(--acc-1));}',
     '.shv-voice--advierte{border-left-color:var(--acc-warn,var(--acc-1));}',
@@ -67,6 +70,7 @@
    * @param {string|string[]} o.text  uno o más párrafos, texto plano
    * @param {boolean} [o.avatar=true] false para el segundo mensaje y siguientes de una misma sección
    * @param {'md'|'lg'} [o.size='md'] 48 o 56 px
+   * @param {string} [o.basis] de dónde lo sé y cuándo; se muestra como «Lo sé por: …», texto plano
    * @param {Document} [o.doc]
    * @returns {HTMLElement}
    */
@@ -109,10 +113,16 @@
       body.appendChild(p);
     });
     main.appendChild(body);
+    if (o.basis) {
+      var basis = doc.createElement('p');
+      basis.className = 'shv-voice__basis';
+      basis.textContent = 'Lo sé por: ' + String(o.basis);
+      main.appendChild(basis);
+    }
     box.appendChild(main);
     return box;
   }
 
-  root.Shiruvana = { voice: voice, KINDS: KINDS, AVATAR: AVATAR, CSS: CSS, version: '1.0.0' };
+  root.Shiruvana = { voice: voice, KINDS: KINDS, AVATAR: AVATAR, CSS: CSS, version: '1.1.0' };
 
 })(typeof window !== 'undefined' ? window : globalThis);

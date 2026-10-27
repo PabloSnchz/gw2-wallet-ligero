@@ -725,7 +725,7 @@
   <script src="js/storage.js?v=1.1.0"></script>
 
   <!-- API y datos (SIN defer, otros módulos los necesitan al instante) -->
-  <script src="js/api-gw2.js?v=2.33.0"></script>
+  <script src="js/api-gw2.js?v=2.34.0"></script>
   <script src="js/luck-curve.js?v=1.0.0"></script>
   <script src="js/wizards-vault.js?v=1.3.1"></script>
   <script src="js/wv-season-storage.js?v=1.1.1"></script>
@@ -742,7 +742,7 @@
   <!-- Actividades: js/act-*.js por js/modules.json (BL-070 ACT-7) -->
 
   <!-- Conversor (modal) -->
-  <script defer src="js/converter-modal.js?v=2.0.0"></script>
+  <script defer src="js/converter-modal.js?v=2.2.0"></script>
   <script defer src="js/commerce-delivery-theme.js?v=1.0.0"></script>
 
   <!-- Inventario y Personajes: js/inv-*.js por js/modules.json (BL-070 INV-7) -->
@@ -801,8 +801,8 @@
   <!-- Mi voz (Shiruvana, DEC-025): el componente y los lugares donde le hablo al jugador.
        Van después de la bienvenida para encontrar su panel ya creado, y al final de los
        módulos para no correr de lugar ninguna línea anterior de este archivo. -->
-  <script defer src="js/shiruvana.js?v=1.0.0"></script>
-  <script defer src="js/shiruvana-places.js?v=1.3.1"></script>
+  <script defer src="js/shiruvana.js?v=1.1.0"></script>
+  <script defer src="js/shiruvana-places.js?v=1.4.0"></script>
 
   <!-- ROUTER — orquestador principal -->
   <script defer src="js/router.js?v=2.21.0"></script>
@@ -810,7 +810,7 @@
   <!-- ======================================================================
        APP — Bootstrap de keys + toasts + conversor
        ====================================================================== -->
-  <script defer src="js/app.js?v=2.9.0"></script>
+  <script defer src="js/app.js?v=2.9.1"></script>
   <!-- Cargador de módulos nuevos (DEC-035): los módulos nuevos van en js/modules.json, no acá. Último defer. -->
   <script defer src="js/boot.js?v=1.1.0"></script>
 
@@ -818,7 +818,9 @@
        TEMAS / UI HELPERS — sin defer, se aplican al DOM existente
        ====================================================================== -->
   <script src="js/wallet-theme.js?v=2.1.1"></script>
-  <script src="js/meta-theme.js?v=2.1.0"></script>
+  <!-- BL-074: cachés en IndexedDB; corre antes que los defer, que son los que piden a la API. -->
+  <script src="js/gn-idb.js?v=1.2.0"></script>
+  <script src="js/meta-theme.js?v=2.2.0"></script>
   <script src="js/wv-theme.js?v=1.0.1"></script>
   
 

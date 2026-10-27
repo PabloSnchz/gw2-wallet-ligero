@@ -129,6 +129,7 @@
     <dl class="uso">
       <dt>Mi cartera</dt><dd>Arriba, las Destacadas: las que fijás con la estrella o, si no fijaste ninguna, las principales. Debajo, el buscador, las categorías con su cantidad, el orden, «Ocultar las que están en 0» y la vista Tarjetas o Tabla.</dd>
       <dt>Todas las cuentas</dt><dd>Una fila por cuenta y una columna por divisa. Las columnas las elegís con «Agregar divisa» y las sacás con la cruz. El mejor valor de cada columna va en dorado y abajo está el total. Si una cuenta no se pudo leer, la Bóveda lo marca y no inventa un 0. También muestra la Suerte (hallazgo mágico) de cada cuenta. En el celular, cada cuenta es una tarjeta.</dd>
+      <dt>Mi memoria (Shiruvana)</dt><dd>Una vez por día guardo una foto de tus divisas principales de cada cuenta. Con eso te digo cómo se movió tu oro en la semana o qué divisa no cambia hace días: te lo cuento en un globo que sale de mi rincón, una sola vez por novedad, y «Ver la evolución» abre los últimos 30 días (también «Ver la evolución de tu Cartera», arriba de tus divisas). El primer día solo empiezo a recordar. Si me silenciaste en Ajustes, te lo digo acá, arriba de Mi cartera.</dd>
       <dt>Cambio de divisas</dt><dd>A la izquierda, la calculadora en espejo: cuánto te dan por tu oro y cuánto oro cuestan las gemas que querés, el precio de 400 gemas en grande y si hoy conviene comprar (la referencia es 120 a 130 de oro). A la derecha, tu Trading Post: primero lo que tenés para recoger y después tus órdenes de compra y venta. «Lo más comerciado hoy» queda plegado abajo.</dd>
     </dl>
     <h3>Qué permisos pide</h3>
@@ -140,6 +141,7 @@
       <li><code>gn:wallet:hidezero</code> Si ocultás las que están en 0.</li>
       <li><code>gn:wallet:dashboard:selected_currencies</code> Las columnas que elegiste en Todas las cuentas.</li>
       <li><code>gn:wallet:dashboard:sort</code> El orden de esa tabla.</li>
+      <li><code>gn:shv:wallet</code> Mi memoria: una foto por día y por cuenta de tu oro, karma, gemas, Monedas de Laurel, Aclamación astral y las que fijaste, durante 90 días y hasta 64 KB. Cada cuenta va con una huella que no es la Key.</li>
     </ul>
   </section>
 
@@ -303,7 +305,7 @@
     <dl class="uso">
       <dt>Catálogo y Mi progreso</dt><dd>El catálogo completo de armas, armaduras y accesorios legendarios, y lo que ya tenés desbloqueado.</dd>
       <dt>La ficha de la legendaria</dt><dd>Se abre a pantalla completa, con «Volver» y Escape. Arriba, su ícono, tipo, expansión y generación, y un resumen: piezas, materiales, completos y unidades que faltan. Abajo, lado a lado, la Receta como árbol (cada pieza dice si es material, se compra o lleva su propia receta) y los Materiales totales con Tengo, Necesito y Falta, leídos de tu banco y tu depósito de materiales.</dd>
-      <dt>Cola de crafteo</dt><dd>Sumá hasta 5 legendarias para juntar lo que te falta de todas.</dd>
+      <dt>Cola de crafteo</dt><dd>Sumá hasta 5 legendarias para juntar lo que te falta de todas. Cuando entrás a «Mi cola», te cuento en mi globo cuánto te falta para la primera que todavía no tenés: cuántos materiales, cuánto oro al precio del Bazar de ese momento (solo por lo que se vende) y cuántos no se venden. Si ya abriste algún árbol de fabricación, cuento los materiales base; si no, la receta directa, y te lo aclaro. «Ver qué me falta» abre su ficha. Si ese oro ya está en tu Cartera, te lo digo; y cuando tengo 7 días o más de fotos de tu Cartera, te digo en cuántos días lo juntás al ritmo de los últimos 7 a 14 días (si tu oro no subió, no invento plazo). Te lo vuelvo a decir cuando cambia algo. Si me silenciaste, lo leés dentro de «Mi cola».</dd>
     </dl>
     <h3>Qué permisos pide</h3>
     <ul class="chips"><li><code>account</code></li><li><code>unlocks</code></li><li><code>inventories</code></li></ul>
@@ -333,7 +335,7 @@
       <li><code>gn:accounts:cards</code> Lo leído de cada cuenta, durante 6 horas. Nunca la Key.</li>
       <li><code>gn:accounts:achmeta</code> Los datos de los logros que hacen falta para sumar los puntos, durante 7 días.</li>
       <li><code>accounts:vault2</code> La copia del Llavero, cifrada igual que tu archivo. Tu contraseña no se guarda nunca: si la perdés, no hay forma de abrirlo.</li>
-      <li><code>accounts:lastFile</code> La copia del formato viejo, también cifrada. Queda por compatibilidad.</li>
+      <li><code>accounts:lastFile</code> La copia del formato viejo, también cifrada. Se borra sola cuando ya guardaste la nueva.</li>
     </ul>
   </section>
 
@@ -371,6 +373,8 @@
       <dt>Guardar copia de ajustes</dt><dd>Descarga un archivo <code>gw2-backup-</code> con la fecha, con tus Keys, lo que fijaste y marcaste en la Cámara, la Cartera, Actividades y Metas, y tus preferencias. <strong>Lleva tus API Keys sin cifrar:</strong> guardalo como una contraseña. Inicio te recuerda hacer una copia cada 14 días.</dd>
       <dt>Restaurar una copia</dt><dd>Elegís el archivo, la Bóveda te pregunta antes de escribir nada y después recarga la página.</dd>
       <dt>Liberar la caché de la API</dt><dd>Si algo se ve viejo. Te dice cuántas claves borra y cuánto ocupan antes de hacerlo. Tus Keys, marcas y preferencias quedan.</dd>
+      <dt>Silenciar a Shiruvana</dt><dd>Cuando tengo algo nuevo para decirte, aparezco en un globo al lado de mi rincón (abajo de la barra lateral; en el celular, sobre la barra de abajo): una vez por novedad, nunca con una ventana abierta ni mientras escribís, y me voy sola a los 12 segundos. Lo que no leíste queda como un punto en mi rincón y «Te dejé un mensaje» lo vuelve a abrir. Si preferís que no aparezca, Ajustes → «Silenciar a Shiruvana»: te sigo hablando dentro de cada módulo. «Que Shiruvana vuelva a aparecer» lo deshace.</dd>
+      <dt>Lo que recuerdo de vos</dt><dd>Ajustes → «Lo que recuerdo de vos» te muestra qué guardo: las fotos de tu Cartera (de cuántas cuentas, desde cuándo y cuánto ocupan de mis 64 KB) y cuántos mensajes míos ya viste. También cuánto ocupa todo lo que la Bóveda guarda en este navegador (lo comparten la Bóveda pública y la de prueba), y si pasa del 85 % la barra se pone roja y te aviso también en Inicio, debajo de «Shiruvana te guía» (con «Ver lo que ocupa»). «Descargar mi memoria» baja un archivo JSON con mis fotos: cada cuenta va por una huella, nunca la Key. «Dejar de recordar» hace que no saque más fotos (lo que ya sé lo sigo usando hasta que lo borres); «Volver a recordar» lo deshace. «Borrar todo» borra las fotos y los mensajes vistos, te pregunta antes y te ofrece descargarlos primero; no toca «Silenciar» ni la pausa.</dd>
     </dl>
     <h3>Qué permisos pide</h3>
     <p class="none">Ninguno: no le pide nada a la API.</p>
@@ -378,6 +382,9 @@
     <ul class="keys">
       <li><code>gn:theme</code> El tema que elegiste.</li>
       <li><code>gn:theme:official</code> Una marca de que ya se aplicó el tema Gato Negro por defecto.</li>
+      <li><code>gn:shv:seen</code> Qué mensajes míos ya viste: una huella de 8 caracteres por mensaje, nunca el texto (como mucho 200, durante 60 días).</li>
+      <li><code>gn:shv:quiet</code> Si me silenciaste.</li>
+      <li><code>gn:shv:paused</code> Si me pediste que deje de recordar.</li>
     </ul>
   </section>
 

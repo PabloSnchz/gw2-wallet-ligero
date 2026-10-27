@@ -1,6 +1,9 @@
 /*!
  * js/meta-theme.js — Cabecera de Metas y Eventos y mi voz (BL-057, MET-2)
- * v2.1.0 (2026-10-23)
+ * v2.2.0 (2026-10-27)
+ *
+ * v2.2.0 (BL-076 SHV-5d): mi voz dice «Lo sé por»: el horario de metas y, solo si la API respondió, lo que
+ *   hiciste hoy. El botón del waypoint va antes de esa línea, así «Lo sé por» queda al final.
  *
  * v2.1.0 (MET-2b): la cabecera vuelve al diseño de la propuesta MET-0, como pidió Pablo.
  *   - Una fila: ícono, «Metas y Eventos», «Horarios en tu hora local · N metas» y, a la derecha,
@@ -19,7 +22,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '2.1.0';
+  var VERSION = '2.2.0';
   var ICON = 'assets/icons/';
   var SOON_RESET_MIN = 60;
   var SOON_WEEK_MIN = 24 * 60;
@@ -235,9 +238,13 @@
     var ok = function () { btn.textContent = '✓ Copiado'; setTimeout(function () { btn.textContent = 'Copiar waypoint ' + wp; }, 1500); };
     try { if (root.navigator && root.navigator.clipboard) root.navigator.clipboard.writeText(wp).then(ok, function () {}); } catch (_) {}
   }
+  // SHV-5d: de dónde lo sé. Lo de tu día solo si la API respondió; los horarios son los del juego.
+  function basisOf() {
+    return (todayStats(S.snap).state === 'ok' ? 'el horario de metas y lo que hiciste hoy (API oficial)' : 'el horario de metas del juego') + ' · en este navegador';
+  }
   // Mi mensaje: el componente oficial (Shiruvana.voice) con el nombre en negrita y el waypoint a un clic.
   function voiceEl(m) {
-    var el = root.Shiruvana.voice({ kind: m.kind, text: '' });
+    var el = root.Shiruvana.voice({ kind: m.kind, text: '', basis: basisOf() });
     var label = el.querySelector && el.querySelector('.shv-voice__label'); if (label) label.textContent = m.label;
     if (el.setAttribute) el.setAttribute('aria-label', m.label);
     var p = el.querySelector && el.querySelector('.shv-voice__body p');
@@ -252,7 +259,8 @@
       var btn = doc.createElement('button');
       btn.type = 'button'; btn.className = 'mh-vbtn'; btn.textContent = 'Copiar waypoint ' + m.wp;
       btn.addEventListener('click', function () { copyWp(btn, m.wp); });
-      var main = el.querySelector && el.querySelector('.shv-voice__main'); (main || el).appendChild(btn);
+      var main = el.querySelector && el.querySelector('.shv-voice__main'), bs = el.querySelector && el.querySelector('.shv-voice__basis');
+      if (bs && bs.parentNode && bs.parentNode.insertBefore) bs.parentNode.insertBefore(btn, bs); else (main || el).appendChild(btn);
     }
     return el;
   }
