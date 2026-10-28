@@ -1,7 +1,7 @@
 /*!
  * js/ach-view.js — Logros: cabecera, pestañas y mi línea (BL-067, LOG-1)
  * Proyecto: Bóveda del Gato Negro
- * Versión: 1.4.0 (2026-10-27) — BL-076 SHV-5b: sin mi globo, mi línea también dice «Lo sé por» · antes 1.3.0 (2026-10-24)
+ * Versión: 1.5.0 (2026-10-28) — BL-078 UNI-4b: íconos del juego en las pestañas y en los puntos de logro; el ícono AP ya no viene de la wiki · antes 1.4.0 (2026-10-27) — BL-076 SHV-5b: sin mi globo, mi línea también dice «Lo sé por» · antes 1.3.0 (2026-10-24)
  *  - 1.3.0 (CAM-POLISH-001): si js/gn-surface.js está cargado, la guarda de contraste se calcula
  *    sobre la bandeja y la tarjeta reales (GNSurface.surfaceTokens), no sobre el fondo del theme.
  *  - 1.2.0 (LOG-4): en «Colecciones legendarias», mi línea dice cuál es la colección más
@@ -24,10 +24,10 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.4.0';
+  var VERSION = '1.5.0';
   var LOG = '[AchView]';
   var ICON = 'assets/icons/155059.png';
-  var ICON_AP = 'https://wiki.guildwars2.com/images/thumb/c/cd/AP.png/30px-AP.png';
+  var ICON_AP = 'assets/icons/155059.png'; // UNI-4b (stat.ach.ap): el de la wiki dejó de cargar
   var NEAR = 0.8, STEP = 0.95, REWARD_NEAR = 0.9;
   var TABS = [['near', 'Casi listos'], ['cats', 'Por categoría'], ['legendary', 'Colecciones legendarias']];
   var REWARD_WORD = { Item: ['ítem', 'ítems'], Title: ['título', 'títulos'], Mastery: ['maestría', 'maestrías'] };
@@ -38,6 +38,11 @@
     var s = String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     return (n < 0 ? '−' : '') + s;
   }
+
+  // BL-078 UNI-4b: los íconos del juego vienen de GNKit (js/gn-kit.js, elegidos por Pablo); sin GNKit, sin ícono.
+  function kitIcon(k, size) { var K = root.GNKit; return k && K && typeof K.icon === 'function' ? K.icon(k, size || 18) : ''; }
+  var ACH_TAB = { near: 'tab.ach.cerca', cats: 'tab.ach.categorias', legendary: 'tab.ach.legendarias' };
+  var ACH_STAT = { 'Puntos de logro': 'stat.ach.ap', 'Al alcance': 'stat.ach.ap' };
 
   function plural(n, uno, varios) { return fmtInt(n) + ' ' + (n === 1 ? uno : varios); }
 
@@ -154,6 +159,7 @@
   }
 
   function stat(label, value, note) {
+    label = kitIcon(ACH_STAT[label], 16) + label;
     return '<div class="achx-st"><small>' + label + '</small><b>' + value + '</b><em>' + note + '</em></div>';
   }
 
@@ -188,7 +194,7 @@
     TABS.forEach(function (t) {
       var on = m.tab === t[0];
       h.push('<button type="button" role="tab" id="achxTab-' + t[0] + '" data-achx-tab="' + t[0] + '" aria-selected="' + on + '" aria-controls="' +
-        (t[0] === 'cats' ? 'achxCats' : 'achievementsMain') + '" tabindex="' + (on ? '0' : '-1') + '">' + t[1] +
+        (t[0] === 'cats' ? 'achxCats' : 'achievementsMain') + '" tabindex="' + (on ? '0' : '-1') + '">' + kitIcon(ACH_TAB[t[0]]) + t[1] +
         (m.loaded && badge[t[0]] ? '<span class="achx-badge">' + fmtInt(badge[t[0]]) + '</span>' : '') + '</button>');
     });
     h.push('</div>');
@@ -284,6 +290,7 @@
       s.textContent = CSS;
       doc.head.appendChild(s);
     }
+    if (root.GNKit && typeof root.GNKit.ensureCSS === 'function') root.GNKit.ensureCSS();
     var host = byId('achxHead');
     if (!host) {
       host = doc.createElement('div');

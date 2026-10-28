@@ -1,7 +1,7 @@
 /*!
  * js/inv-view.js — Inventario y Personajes renovado: cabecera, pestañas Materiales, Banco y Armería legendaria (BL-070, INV-2)
  * Proyecto: Bóveda del Gato Negro
- * Versión: 1.6.0 (2026-10-27) — BL-076 SHV-5b: sin mi globo, mi línea también dice «Lo sé por» · antes 1.5.0 (2026-10-25) — INV-7b: sin los caminos a las pantallas viejas (se retiraron)
+ * Versión: 1.7.0 (2026-10-28) — BL-078 UNI-4b: íconos del juego en las 6 pestañas y en los 4 indicadores · antes 1.6.0 (2026-10-27) — BL-076 SHV-5b: sin mi globo, mi línea también dice «Lo sé por» · antes 1.5.0 (2026-10-25) — INV-7b: sin los caminos a las pantallas viejas (se retiraron)
  *          1.4.0 (2026-10-25) — INV-6: cada ítem es un botón (data-inv-item) que abre su ficha (js/inv-sheet.js)
  *          1.3.0 (2026-10-25) — INV-5: las pestañas sumadas con order de 100 o más van después de las propias (Personajes)
  *          1.2.0 (2026-10-25) — INV-4: una pestaña sumada puede traer su propio campo (tools) y recibe lo que se escribe; la segunda, Buscar
@@ -23,7 +23,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.6.0';
+  var VERSION = '1.7.0';
   var LOG = '[InvView]';
   var PANEL = 'inventoryPanel';
   var ICON = 'assets/icons/Welcome/358409.png';
@@ -60,6 +60,10 @@
     return (n < 0 ? '−' : '') + s;
   }
   function M() { return root.InvModel && root.InvModel._pure; }
+  // BL-078 UNI-4b: los íconos del juego vienen de GNKit (js/gn-kit.js, elegidos por Pablo); sin GNKit, sin ícono.
+  function kitIcon(k, size) { var K = root.GNKit; return k && K && typeof K.icon === 'function' ? K.icon(k, size || 18) : ''; }
+  var IV_ICON = { 'Multicuenta': 'tab.inv.multi', 'Buscar': 'tab.inv.buscar', 'Materiales': 'tab.inv.materiales', 'Banco': 'tab.inv.banco',
+    'Armería legendaria': 'tab.inv.armeria', 'Personajes': 'tab.inv.personajes' }; // por nombre: las pestañas sumadas traen el suyo
   function fold(s) { var P = M(); return P ? P.fold(s) : String(s || '').toLowerCase(); }
   function rarityOf(meta) { return RARITY[(meta && meta.rarity) || 'Basic'] || RARITY.Basic; }
   function nameOf(meta, id) { return meta && meta.name ? meta.name : 'Ítem ' + id; }
@@ -111,6 +115,7 @@
   }
 
   function stat(label, value, note, bar) {
+    label = kitIcon(IV_ICON[label], 16) + label;
     return '<div class="iv-st"><small>' + label + '</small><b>' + value + '</b>' +
       (bar != null ? '<div class="iv-bar" aria-hidden="true"><i style="width:' + bar + '%"></i></div>' : '') + '<em>' + note + '</em></div>';
   }
@@ -228,7 +233,7 @@
     h.push('<div class="iv-tabs" role="tablist" aria-label="Secciones del inventario">');
     tabsAll().forEach(function (t) {
       var on = m.tab === t[0];
-      h.push('<button type="button" role="tab" id="ivTab-' + t[0] + '" data-iv-tab="' + t[0] + '" aria-selected="' + on + '" aria-controls="ivPanel" tabindex="' + (on ? '0' : '-1') + '">' + t[1] + '</button>');
+      h.push('<button type="button" role="tab" id="ivTab-' + t[0] + '" data-iv-tab="' + t[0] + '" aria-selected="' + on + '" aria-controls="ivPanel" tabindex="' + (on ? '0' : '-1') + '">' + kitIcon(IV_ICON[t[1]]) + t[1] + '</button>');
     });
     h.push('</div><div id="ivPanel" role="tabpanel" aria-labelledby="ivTab-' + m.tab + '">' + toolsHTML(m));
     h.push('<div id="ivList">' + listHTML(m) + '</div>');
@@ -367,6 +372,7 @@
       s.textContent = CSS;
       doc.head.appendChild(s);
     }
+    if (root.GNKit && typeof root.GNKit.ensureCSS === 'function') root.GNKit.ensureCSS();
     var host = byId('ivRoot');
     if (!host) {
       host = doc.createElement('div');

@@ -1,7 +1,7 @@
 /*!
  * js/act-view.js — Actividades renovado: cabecera con los 3 relojes, 4 indicadores y pestañas Hoy y Semana (BL-070, ACT-2)
  * Proyecto: Bóveda del Gato Negro
- * Versión: 1.5.0 (2026-10-27) — BL-076 SHV-5c: sin mi globo, mi línea también dice «Lo sé por» · antes 1.4.0 (2026-10-25) — ACT-7: el PSNA lo dibuja js/act-psna.js; ya no reubico nada de js/activities.js
+ * Versión: 1.7.0 (2026-10-28) — BL-078 UNI-4b: íconos del juego en las pestañas y en los 4 indicadores · antes 1.6.0 (2026-10-27) — BL-078 UNI-3: los 3 relojes son el reloj común de la Bóveda (GNKit) · antes 1.5.0 (2026-10-27) — BL-076 SHV-5c: sin mi globo, mi línea también dice «Lo sé por» · antes 1.4.0 (2026-10-25) — ACT-7: el PSNA lo dibuja js/act-psna.js; ya no reubico nada de js/activities.js
  *          1.3.0 (2026-10-25) — ACT-5: los nodos de casa se mudaron a la Heredad (js/home-view.js, #/account/homestead)
  *          1.2.0 (2026-10-25) — ACT-4: la pestaña Semana la dibuja js/act-week.js (llave como señal, guía y piedras por moneda)
  * Versión: 1.1.0 (2026-10-25) — ACT-3: los fractales del día en Hoy, por rango y escala, con tu progreso y los de mañana (D4)
@@ -26,7 +26,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.5.0';
+  var VERSION = '1.7.0';
   var LOG = '[ActView]';
   var PANEL = 'activitiesPanel';
   var ROUTE = '#/activities'; // la misma que usa js/router.js
@@ -51,6 +51,9 @@
   }
   function A() { return root.ActModel && root.ActModel._pure; }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
+  // BL-078 UNI-4b: los íconos del juego vienen de GNKit (js/gn-kit.js, elegidos por Pablo); sin GNKit, sin ícono.
+  function kitIcon(k, size) { var K = root.GNKit; return k && K && typeof K.icon === 'function' ? K.icon(k, size || 18) : ''; }
+  var STAT_ICON = { 'Fabricación diaria': 'stat.act.fabricacion', 'Fractales del día': 'stat.act.fractales', 'Llave semanal': 'stat.act.llave', 'Piedras vetustas': 'stat.act.piedras' };
   function hhmm(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
   function and(parts) { return parts.length < 2 ? parts.join('') : parts.slice(0, -1).join(', ') + ' y ' + parts[parts.length - 1]; }
   function rarityOf(r) { return RARITY[r] || RARITY.Basic; }
@@ -72,7 +75,7 @@
     ui = ui || {};
     var P = A(), d = data || {}, c = cat || {}, ok = !!d.loaded && !!d.hasToken;
     var m = { tab: ui.tab === 'semana' ? 'semana' : 'hoy', loaded: !!d.loaded, hasToken: !!d.hasToken, unread: d.unread || [],
-      items: d.items || {}, clocks: clocks(now), crafting: null, fr: null, frProg: null,
+      items: d.items || {}, clocks: clocks(now), now: Number(now), crafting: null, fr: null, frProg: null,
       key: { state: 'unknown', chars: [] }, stones: null, stonesTotal: (c.leivas && c.leivas.perWeek) || 5, voice: null };
     if (!P) return m;
     if (c.dailyCrafting) m.crafting = P.dailyCrafting(c.dailyCrafting.items, ok ? d.crafting : null);
@@ -112,6 +115,7 @@
   }
 
   function stat(label, value, note, bar) {
+    label = kitIcon(STAT_ICON[label], 16) + label;
     return '<div class="av-st"><small>' + label + '</small><b>' + value + '</b>' +
       (bar != null ? '<div class="av-bar" aria-hidden="true"><i style="width:' + bar + '%"></i></div>' : '') + '<em>' + note + '</em></div>';
   }
@@ -227,7 +231,9 @@
     h.push('<div class="av-hero"><div class="av-row"><img class="av-ico" src="' + ICON + '" alt="" width="56" height="56">');
     h.push('<div class="av-title"><h2 id="avTitle">Actividades</h2><p>' + esc(subtitle(m)) + '</p></div>');
     h.push('<div class="av-acts">');
-    if (clk) {
+    var K = root.GNKit; // UNI-3: el reloj común; sin GNKit, las píldoras de antes
+    if (clk && K && typeof K.clocks === 'function') h.push(K.clocks(['daily', 'psna', 'weekly'], m.now));
+    else if (clk) {
       h.push('<span class="av-pill" title="00:00 UTC">Reset diario <b id="avClkD">en ' + esc(clk.daily) + '</b></span>' +
         '<span class="av-pill" title="08:00 UTC">PSNA cambia <b id="avClkP">en ' + esc(clk.psna) + '</b></span>' +
         '<span class="av-pill" title="lunes 07:30 UTC">Semanal <b id="avClkW">' + esc(clk.weekly) + '</b></span>');
@@ -239,7 +245,7 @@
     h.push('<div class="av-tabs" role="tablist" aria-label="Secciones de Actividades">');
     TABS.forEach(function (t) {
       var on = m.tab === t[0];
-      h.push('<button type="button" role="tab" id="avTab-' + t[0] + '" data-av-tab="' + t[0] + '" aria-selected="' + on + '" aria-controls="avPanel-' + t[0] + '" tabindex="' + (on ? '0' : '-1') + '">' + t[1] + '</button>');
+      h.push('<button type="button" role="tab" id="avTab-' + t[0] + '" data-av-tab="' + t[0] + '" aria-selected="' + on + '" aria-controls="avPanel-' + t[0] + '" tabindex="' + (on ? '0' : '-1') + '">' + kitIcon('tab.act.' + t[0]) + t[1] + '</button>');
     });
     h.push('</div>');
     TABS.forEach(function (t) {
@@ -423,6 +429,7 @@
       s.textContent = CSS;
       doc.head.appendChild(s);
     }
+    if (root.GNKit && typeof root.GNKit.ensureCSS === 'function') root.GNKit.ensureCSS();
     var host = byId('avRoot');
     if (!host) {
       host = doc.createElement('div');
@@ -484,6 +491,7 @@
     if (!c) return;
     var set = function (id, txt) { var n = byId(id); if (n) n.textContent = txt; };
     set('avClkD', 'en ' + c.daily); set('avClkP', 'en ' + c.psna); set('avClkW', c.weekly);
+    if (root.GNKit && typeof root.GNKit.tick === 'function') root.GNKit.tick(now());
     if (root.ActPsna && typeof root.ActPsna.tick === 'function' && root.ActPsna.tick(now())) render(); // 08:00 UTC: lugares nuevos
     if (st.day && st.day !== c.day) { st.day = c.day; load(true); }
     st.day = c.day;

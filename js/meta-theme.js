@@ -1,6 +1,10 @@
 /*!
  * js/meta-theme.js — Cabecera de Metas y Eventos y mi voz (BL-057, MET-2)
- * v2.2.0 (2026-10-27)
+ * v2.3.0 (2026-10-27)
+ *
+ * v2.3.0 (BL-078 UNI-2): los cuatro relojes son el reloj común de la Bóveda (GNKit.clocks, versión grande): ícono,
+ *   nombre arriba y valor abajo, dorado cuando está cerca. meta-theme.js carga antes que los módulos: si GNKit
+ *   todavía no llegó, dibuja los botones de siempre y los cambia una sola vez apenas llega. Sin GNKit, igual que 2.2.0.
  *
  * v2.2.0 (BL-076 SHV-5d): mi voz dice «Lo sé por»: el horario de metas y, solo si la API respondió, lo que
  *   hiciste hoy. El botón del waypoint va antes de esa línea, así «Lo sé por» queda al final.
@@ -22,7 +26,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '2.2.0';
+  var VERSION = '2.3.0';
   var ICON = 'assets/icons/';
   var SOON_RESET_MIN = 60;
   var SOON_WEEK_MIN = 24 * 60;
@@ -208,7 +212,20 @@
     return panel;
   }
 
+  // UNI-2: el reloj común. Si GNKit ya está, cambia los cuatro botones una sola vez y desde ahí GNKit los pone al día.
+  var KIT_KINDS = ['local', 'server', 'daily', 'weekly'];
+  function useKit(head) {
+    var K = root.GNKit;
+    if (!head || !head.querySelector || !K || typeof K.clocks !== 'function') return false;
+    if (head.querySelector('[data-gk]')) return true;
+    var box = head.querySelector('.mh-pills');
+    if (!box) return false;
+    if (typeof K.ensureCSS === 'function') K.ensureCSS();
+    box.innerHTML = K.clocks(KIT_KINDS, Date.now(), { big: true });
+    return true;
+  }
   function tickClocks() {
+    if (useKit(S.head)) { root.GNKit.tick(); return; }
     var d = headerData(new Date());
     setText('mh-local', d.local);
     setText('mh-server', d.server);
@@ -300,6 +317,7 @@
     '.mh-top .panel__title img{display:none}',
     '.mh-sub{color:var(--tx-3);font-size:.9rem;margin-top:2px}.mh-sub .mh-status{display:inline;margin:0 0 0 8px;font-size:.85rem}',
     '.mh-pills{margin-left:auto;display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}',
+    '.mh-pills .gk-row{gap:10px;justify-content:flex-end}',
     '.mh-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--bd-1);border-radius:10px;background:rgba(255,255,255,.02);color:var(--tx-3);font-size:.9rem;white-space:nowrap}',
     '.mh-pill img{width:22px;height:22px;opacity:.9}',
     '.mh-pill b{color:var(--tx-1);font-weight:700;font-variant-numeric:tabular-nums}',
@@ -322,7 +340,7 @@
     '#metaPanel.mh-ready .mt-voice .shv-voice--advierte .shv-voice__avatar{box-shadow:0 0 0 2px var(--gn-gold)}',
     '.mh-vbtn{justify-self:start;margin-top:4px;background:var(--bg-0);border:1px solid var(--bd-1);color:var(--tx-2);border-radius:999px;padding:4px 12px;font:inherit;font-size:.8rem;cursor:pointer}',
     '.mh-vbtn:hover{border-color:var(--acc-1);color:var(--tx-1)}',
-    '@media (max-width:980px){.mh-pills{margin-left:0;justify-content:flex-start;width:100%}}',
+    '@media (max-width:980px){.mh-pills{margin-left:0;justify-content:flex-start;width:100%}.mh-pills .gk-row{justify-content:flex-start}}',
     '@media (max-width:720px){.mh-top,.mh-today{padding-left:12px;padding-right:12px}.mh-whytx{padding:0 12px 12px}#metaPanel.mh-ready>.panel__body{padding:14px 12px}.mh-pill{padding:7px 10px;font-size:.84rem}.mh-btn,.mh-vbtn{min-height:40px}.mh-bar{max-width:none}}',
     '@media (prefers-reduced-motion:reduce){.mh-bar i{transition:none}}'
   ].join('\n');
@@ -345,7 +363,7 @@
     version: VERSION,
     refresh: onRendered,
     _pure: { countdown: countdown, minsText: minsText, nextDailyReset: nextDailyReset, nextWeeklyReset: nextWeeklyReset, headerData: headerData,
-      todayStats: todayStats, todayView: todayView, whyText: whyText, pickVoice: pickVoice, headHTML: headHTML }
+      todayStats: todayStats, todayView: todayView, whyText: whyText, pickVoice: pickVoice, headHTML: headHTML, useKit: useKit }
   };
 
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', init); else init();

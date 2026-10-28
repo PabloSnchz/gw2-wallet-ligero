@@ -1,7 +1,7 @@
 /*!
  * js/wv-view.js — Cámara del Brujo: cabecera y navegación (BL-064, CAM-1)
  * Proyecto: Bóveda del Gato Negro
- * Versión: 1.3.0 (2026-10-27) — BL-076 SHV-5d: sin mi globo, mi línea también dice «Lo sé por» · antes 1.2.0 (2026-10-24)
+ * Versión: 1.5.0 (2026-10-28) — BL-078 UNI-4b: íconos del juego en las pestañas y en los 4 indicadores · antes 1.4.0 (2026-10-27) — BL-078 UNI-3: reset diario y semanal con el reloj común de la Bóveda (GNKit) · antes 1.3.0 (2026-10-27) — BL-076 SHV-5d: sin mi globo, mi línea también dice «Lo sé por» · antes 1.2.0 (2026-10-24)
  *  - 1.2.0 (CAM-POLISH-001): si js/gn-surface.js está cargado, la guarda de contraste se calcula
  *    sobre la bandeja y la tarjeta reales (GNSurface.surfaceTokens), no sobre el fondo del theme.
  *
@@ -28,7 +28,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.3.0';
+  var VERSION = '1.5.0';
   var LOG = '[WVView]';
   var DAY = 86400000;
   var WEEK_BTN = { daily: 'wvTabBtnDaily', weekly: 'wvTabBtnWeekly', special: 'wvTabBtnSpecial', shop: 'wvTabBtnShop' };
@@ -37,6 +37,9 @@
 
   // ------------------------------------------------------------------ puro
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  // BL-078 UNI-4b: los íconos del juego vienen de GNKit (js/gn-kit.js, elegidos por Pablo); sin GNKit, sin ícono.
+  function kitIcon(k, size) { var K = root.GNKit; return k && K && typeof K.icon === 'function' ? K.icon(k, size || 18) : ''; }
+  var WV_TAB = { objectives: 'tab.wv.objetivos', shop: 'tab.wv.tienda', accounts: 'tab.wv.cuentas' };
 
   // Próximo 00:00 UTC.
   function nextDailyReset(now) {
@@ -243,15 +246,19 @@
     h.push('<div class="wvx-row"><img src="assets/icons/3172791.png" alt="" width="56" height="56">');
     h.push('<div class="wvx-title"><h2 id="wvxTitle">Cámara del Brujo</h2><p>' + esc(m.season) + '</p></div>');
     h.push('<div class="wvx-pills">');
-    h.push('<span class="wvx-pill' + (m.dailyHot ? ' wvx-pill--hot' : '') + '">Reset diario <b data-wvx-clock="daily">en ' + esc(m.dailyLeft) + '</b></span>');
-    h.push('<span class="wvx-pill">Semanal <b data-wvx-clock="weekly">lun 07:30 UTC · en ' + esc(m.weeklyLeft) + '</b></span>');
+    var K = root.GNKit; // UNI-3: el reloj común; sin GNKit, las píldoras de antes
+    if (K && typeof K.clocks === 'function' && m.now != null) h.push(K.clocks(['daily', 'weekly'], m.now));
+    else {
+      h.push('<span class="wvx-pill' + (m.dailyHot ? ' wvx-pill--hot' : '') + '">Reset diario <b data-wvx-clock="daily">en ' + esc(m.dailyLeft) + '</b></span>');
+      h.push('<span class="wvx-pill">Semanal <b data-wvx-clock="weekly">lun 07:30 UTC · en ' + esc(m.weeklyLeft) + '</b></span>');
+    }
     h.push('<button type="button" class="wvx-btn" data-wvx="refresh">↻ Actualizar</button>');
     h.push('</div></div>');
     h.push('<div class="wvx-stats">');
-    h.push('<div class="wvx-st"><small>AA disponible</small><b>' + (m.aa == null ? '—' : fmtInt(m.aa)) + '</b><em>' + esc(m.aaNote) + '</em></div>');
+    h.push('<div class="wvx-st"><small>' + kitIcon('stat.wv.aa', 16) + 'AA disponible</small><b>' + (m.aa == null ? '—' : fmtInt(m.aa)) + '</b><em>' + esc(m.aaNote) + '</em></div>');
     h.push(statCount('Hoy', m.daily));
     h.push(statCount('Esta semana', m.weekly));
-    h.push('<div class="wvx-st"><small>Gastada en la temporada</small><b>' + (m.spent == null ? '—' : fmtInt(m.spent)) + '</b><em>según lo que la API ya vio</em></div>');
+    h.push('<div class="wvx-st"><small>' + kitIcon('stat.wv.gastada', 16) + 'Gastada en la temporada</small><b>' + (m.spent == null ? '—' : fmtInt(m.spent)) + '</b><em>según lo que la API ya vio</em></div>');
     h.push('</div>');
     h.push('<div id="wvxVoice" class="wvx-voice" aria-live="polite"></div>');
     h.push('<div class="wvx-why"><button type="button" class="wvx-link" data-wvx="why" aria-expanded="' + (m.whyOpen ? 'true' : 'false') + '" aria-controls="wvxWhy">ⓘ ¿Por qué tarda en actualizarse?</button>');
@@ -262,6 +269,7 @@
   }
 
   function statCount(label, c) {
+    label = kitIcon(label === 'Hoy' ? 'clock.daily' : 'clock.weekly', 16) + label;
     if (!c || !c.total) return '<div class="wvx-st"><small>' + label + '</small><b>—</b><em>sin datos todavía</em></div>';
     return '<div class="wvx-st"><small>' + label + '</small><b>' + c.done + ' <span>de ' + c.total + '</span></b>' + bar(c.done * 100 / c.total) + '</div>';
   }
@@ -285,7 +293,7 @@
     tabs.forEach(function (t) {
       var on = v.tab === t[0];
       h.push('<button type="button" role="tab" id="wvxTab-' + t[0] + '" data-wvx-tab="' + t[0] + '" aria-selected="' + on + '" aria-controls="' +
-        panelFor(t[0], v, m.accountsSub) + '" tabindex="' + (on ? '0' : '-1') + '">' + t[1] + t[2] + '</button>');
+        panelFor(t[0], v, m.accountsSub) + '" tabindex="' + (on ? '0' : '-1') + '">' + kitIcon(WV_TAB[t[0]]) + t[1] + t[2] + '</button>');
     });
     h.push('</div>');
     var segs = null;
@@ -418,7 +426,7 @@
       income: weekIncome(c), seasonEnd: isFinite(end) ? end : NaN, pinnedLeft: pinnedLeft(rows, pm.pinned, pm.marks)
     });
     return {
-      voice: voice, accountsSub: st.accountsSub,
+      voice: voice, accountsSub: st.accountsSub, now: now,
       view: view, season: seasonLine(d.season, now),
       dailyLeft: fmtLeft(dl), dailyHot: dl <= 3 * 3600000, weeklyLeft: fmtLeft(nextWeeklyReset(now) - now),
       aa: aa, aaNote: reserved ? 'reservada para fijados: ' + fmtInt(reserved) : 'para gastar en la Tienda',
@@ -436,6 +444,7 @@
       s.textContent = CSS;
       doc.head.appendChild(s);
     }
+    if (root.GNKit && typeof root.GNKit.ensureCSS === 'function') root.GNKit.ensureCSS();
     var host = byId('wvxHead');
     if (!host) {
       host = doc.createElement('div');
@@ -517,6 +526,7 @@
       b.textContent = k === 'daily' ? 'en ' + fmtLeft(nextDailyReset(now) - now)
         : 'lun 07:30 UTC · en ' + fmtLeft(nextWeeklyReset(now) - now);
     });
+    if (root.GNKit && typeof root.GNKit.tick === 'function') root.GNKit.tick(now);
     renderVoice(buildModel(now).voice);
   }
   function startClock() { if (!st.timer) st.timer = setInterval(tick, 30000); }

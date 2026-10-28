@@ -1,10 +1,10 @@
 /*!
  * js/raids-view.js — Raids renovado: cabecera, pestañas Alas y Encuentros, tarjetas (BL-070, RAI-2)
  * Proyecto: Bóveda del Gato Negro
- * Versión: 1.3.0 (2026-10-27) — BL-076 SHV-5a: sin mi globo, mi línea también dice «Lo sé por» · antes 1.2.0 (2026-10-25) — RAI-6: estados y error legibles (AA) en los 19 themes · antes 1.1.0 (2026-10-24) — RAI-3: toda la fila abre la ficha (js/raids-sheet.js)
+ * Versión: 1.6.0 (2026-10-28) — BL-078 UNI-5: cabecera de las tarjetas de alas y encuentros con la franja del módulo, miniaturas más grandes, contador en píldora y barra de avance · antes 1.5.0 (2026-10-28) — BL-078 UNI-4b: íconos del juego en las pestañas Alas y Encuentros · antes 1.4.0 (2026-10-27) — BL-078 UNI-2: la cabecera muestra solo el reset semanal con el reloj común de la Bóveda (GNKit) · antes 1.3.0 (2026-10-27) — BL-076 SHV-5a: sin mi globo, mi línea también dice «Lo sé por» · antes 1.2.0 (2026-10-25) — RAI-6: estados y error legibles (AA) en los 19 themes · antes 1.1.0 (2026-10-24) — RAI-3: toda la fila abre la ficha (js/raids-sheet.js)
  *
  * Un solo módulo Raids, como el juego desde el 2026-02-03 (D1 de RAI-0):
- *  - Cabecera con el ícono del módulo, hora local, servidor y reset semanal (lunes 07:30 UTC),
+ *  - Cabecera con el ícono del módulo, el reset semanal (lunes 07:30 UTC) con el reloj común (UNI-2),
  *    4 indicadores (alas, conocimiento legendario, fragmentos por cobrar, encuentros) y mi línea.
  *  - Pestaña Alas: las 8 alas de /v2/account/raids. Pestaña Encuentros: los 16 encuentros, que se
  *    marcan con los objetivos del logro semanal 9125; Forjando acero y Nexo de la Eternidad no
@@ -20,7 +20,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.3.0';
+  var VERSION = '1.6.0';
   var LOG = '[RaidsView]';
   var CATALOG = 'assets/data/raids/catalog.json';
   var ICON = 'assets/icons/raids/raid-icon.png';
@@ -48,6 +48,8 @@
   }
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
+  // BL-078 UNI-4b: los íconos del juego vienen de GNKit (js/gn-kit.js, elegidos por Pablo); sin GNKit, sin ícono.
+  function kitIcon(k, size) { var K = root.GNKit; return k && K && typeof K.icon === 'function' ? K.icon(k, size || 18) : ''; }
 
   // Último reset semanal (lunes 07:30 UTC) que ya pasó.
   function weekStart(now) {
@@ -257,10 +259,13 @@
     var stack = G.allRows.filter(function (r) { return r.e.type !== 'event' && r.e.icon; }).slice(0, 3);
     var count = !m.hasToken || !m.loaded ? '' : G.unknown ? '—' : G.done + '/' + G.total;
     var sub = g.kind === 'wing' ? m.expNames[g.expansion] || '' : G.total + (G.total === 1 ? ' encuentro' : ' encuentros');
-    var h = '<section class="rv-wing" aria-labelledby="rvG-' + esc(g.id) + '"><div class="rv-wing-h"><span class="rv-stack" aria-hidden="true">';
-    stack.forEach(function (r) { h += '<img src="' + esc(r.e.icon.src) + '" alt="" width="30" height="30" loading="lazy" referrerpolicy="no-referrer">'; });
+    // UNI-5: la cabecera se distingue del contenido: franja del módulo (verde si el grupo está completo) y barra de avance.
+    var full = !!count && !G.unknown && G.done === G.total, pct = G.total ? Math.round(G.done * 100 / G.total) : 0;
+    var h = '<section class="rv-wing' + (full ? ' rv-wing--done' : '') + '" aria-labelledby="rvG-' + esc(g.id) + '"><div class="rv-wing-h"><span class="rv-stack" aria-hidden="true">';
+    stack.forEach(function (r) { h += '<img src="' + esc(r.e.icon.src) + '" alt="" width="36" height="36" loading="lazy" referrerpolicy="no-referrer">'; });
     h += '</span><div class="rv-wn"><h3 id="rvG-' + esc(g.id) + '">' + esc(title) + '</h3><small>' + esc(sub) + '</small></div>' +
-      (count ? '<span class="rv-cnt' + (G.done === G.total ? ' rv-cnt--ok' : '') + '">' + count + '</span>' : '') + '</div><ul class="rv-list">';
+      (count ? '<span class="rv-cnt' + (full ? ' rv-cnt--ok' : '') + '">' + (full ? '✓ ' : '') + count + '</span>' : '') +
+      (count && !G.unknown ? '<span class="rv-wbar" aria-hidden="true"><i style="width:' + pct + '%"></i></span>' : '') + '</div><ul class="rv-list">';
     G.rows.forEach(function (r) { h += rowHTML(r, m); });
     return h + '</ul></section>';
   }
@@ -273,11 +278,11 @@
     return h + '</div>';
   }
 
+  // UNI-2 (D2 de UNI-0): Raids muestra solo el reset semanal, con el reloj común (GNKit). Sin GNKit, la píldora de antes.
   function clockHTML(now) {
-    var d = new Date(now);
-    return '<span class="rv-pill">Local <b>' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + '</b></span>' +
-      '<span class="rv-pill">Servidor <b>' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ' UTC</b></span>' +
-      '<span class="rv-pill rv-pill--hot">Reset semanal <b>lun 07:30 UTC · ' + countdown(nextReset(now) - now) + '</b></span>';
+    var K = root.GNKit;
+    if (K && typeof K.clock === 'function') return K.clock('weekly', now);
+    return '<span class="rv-pill rv-pill--hot">Reset semanal <b>lun 07:30 UTC · ' + countdown(nextReset(now) - now) + '</b></span>';
   }
 
   function viewHTML(m, now) {
@@ -294,7 +299,7 @@
       var on = m.tab === t[0];
       var badge = !m.loaded || !m.hasToken ? '' : t[0] === 'wings' ? m.stats.wDone + '/' + m.stats.wTotal : (m.stats.eKnown ? m.stats.eDone + '/' : '') + m.stats.eTotal;
       h.push('<button type="button" role="tab" id="rvTab-' + t[0] + '" data-rv-tab="' + t[0] + '" aria-selected="' + on + '" aria-controls="rvPanel" tabindex="' + (on ? '0' : '-1') + '">' +
-        t[1] + (badge ? '<span class="rv-badge">' + badge + '</span>' : '') + '</button>');
+        kitIcon(t[0] === 'enc' ? 'tab.raids.encuentros' : 'tab.raids.alas') + t[1] + (badge ? '<span class="rv-badge">' + badge + '</span>' : '') + '</button>');
     });
     h.push('</div><div class="rv-filters">' + segHTML('filter', STATES, m.filter, 'Mostrar'));
     h.push(segHTML('exp', [['all', 'Todas']].concat(m.exps.map(function (x) { return [x, EXP_SHORT[x] || x]; })), m.exp, 'Expansión') + '</div>');
@@ -337,12 +342,14 @@
     '.rv-seg button:last-child{border-right:0}.rv-seg button[aria-pressed=true]{background:var(--bg-2);color:var(--tx-1);font-weight:600}',
     '.rv-note,.rv-src{margin:4px 0 10px;color:var(--tx-2);font-size:.84rem}.rv-src{font-size:.74rem;margin-top:12px}',
     '.rv-wings{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:12px;align-items:start}',
-    '.rv-wing{border:1px solid var(--bd-1);border-radius:14px;background:var(--bg-1);box-shadow:var(--gn-elev,0 6px 18px rgba(0,0,0,.28));min-width:0}',
-    '.rv-wing-h{display:flex;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--bd-1)}',
-    '.rv-stack{display:flex;flex-shrink:0}.rv-stack img{width:30px;height:30px;border-radius:8px;background:var(--bg-2);border:2px solid var(--bg-1);margin-left:-8px}.rv-stack img:first-child{margin-left:0}',
-    '.rv-wn{flex:1;min-width:0}.rv-wn h3{margin:0;font-size:.95rem;color:var(--tx-1)}.rv-wn small{font-size:.76rem;color:var(--tx-2)}',
-    '.rv-cnt{font-weight:800;font-size:.95rem;color:var(--tx-1)}.rv-cnt--ok{color:var(--color-green,#3CC48A)}',
-    '.rv-list{list-style:none;margin:0;padding:0}',
+    '.rv-wing{border:1px solid var(--bd-1);border-radius:14px;background:var(--bg-1);box-shadow:var(--gn-elev,0 6px 18px rgba(0,0,0,.28));min-width:0;overflow:hidden}',
+    '.rv-wing-h{position:relative;display:flex;gap:12px;align-items:center;padding:14px 16px 16px;background:linear-gradient(90deg,color-mix(in srgb,var(--rv-mod) 12%,var(--bg-1)),var(--bg-1) 85%);border-bottom:1px solid color-mix(in srgb,var(--rv-mod) 40%,var(--bd-1));box-shadow:inset 4px 0 0 var(--rv-mod)}',
+    '.rv-wing--done .rv-wing-h{box-shadow:inset 4px 0 0 var(--color-green,#3CC48A)}',
+    '.rv-wbar{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--bg-2)}.rv-wbar i{display:block;height:100%;background:var(--rv-mod)}.rv-wing--done .rv-wbar i{background:var(--color-green,#3CC48A)}',
+    '.rv-stack{display:flex;flex-shrink:0}.rv-stack img{width:36px;height:36px;border-radius:9px;background:var(--bg-2);border:2px solid var(--bg-1);box-shadow:0 0 0 1px var(--bd-2);margin-left:-10px}.rv-stack img:first-child{margin-left:0}',
+    '.rv-wn{flex:1;min-width:0}.rv-wn h3{margin:0;font-size:1.08rem;font-weight:800;line-height:1.25;color:var(--tx-1)}.rv-wn small{display:block;margin-top:2px;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--tx-2)}',
+    '.rv-cnt{font-weight:800;font-size:.9rem;color:var(--tx-1);border:1px solid var(--bd-2);border-radius:999px;padding:3px 10px;background:var(--bg-0);white-space:nowrap}.rv-cnt--ok{color:var(--color-green,#3CC48A);border-color:color-mix(in srgb,var(--color-green,#3CC48A) 60%,transparent)}',
+    '.rv-list{list-style:none;margin:0;padding:4px 0}',
     '.rv-enc{position:relative;display:grid;grid-template-columns:48px 1fr auto 10px;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--bd-1)}.rv-enc:first-child{border-top:0}',
     '.rv-enc:hover{background:color-mix(in srgb,var(--tx-1) 5%,transparent)}.rv-go{color:var(--tx-2);font-size:1.1rem}',
     '.rv-open{font:inherit;font-weight:650;color:inherit;background:none;border:0;padding:0;text-align:left;cursor:pointer}',
@@ -439,6 +446,7 @@
       s.textContent = CSS;
       doc.head.appendChild(s);
     }
+    if (root.GNKit && typeof root.GNKit.ensureCSS === 'function') root.GNKit.ensureCSS();
     var host = byId('rvRoot');
     if (!host) {
       host = doc.createElement('div');

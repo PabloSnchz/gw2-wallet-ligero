@@ -1,6 +1,6 @@
 /*!
  * js/gn-topbar.js — Barra de arriba y pie de la Bóveda (BL-070 paso 5, TOP-5 y TOP-6)
- * Versión: 1.1.0
+ * Versión: 1.2.0
  *
  * La barra tiene tres zonas: quién sos y dónde estás (logo, que lleva a Inicio, con la leyenda
  * «Sitio de la comunidad · no oficial» que pide ArenaNet), con qué cuenta mirás (#keySelectGlobal y Keys)
@@ -21,11 +21,14 @@
  *   y «Gestión de Keys» tocan los botones de siempre de la barra (#guideLink y #keysMenuBtn), así cada ventana
  *   abre igual que desde arriba y, al cerrarse, el foco vuelve al pie. El distintivo «Link in Bio» conserva
  *   sus colores fijos (DEC-025) y su foto se sirve desde assets/brand/ (D7).
+ *
+ * 1.2.0 (BL-078 UNI-6, 2026-10-28): íconos del juego en los 5 enlaces del menú Enlaces, desde GNKit (decorativos,
+ *   alt vacío: el nombre sigue en texto). Sin GNKit, el menú queda como antes.
  */
 (function (root) {
   'use strict';
 
-  var VERSION = '1.1.0';
+  var VERSION = '1.2.0';
   var DEV_PATH = /^\/gw2-factory-dev(\/|$)/;
   var MENUS = ['gnTbLinksBtn', 'gnTbSetBtn'];
   var st = { open: null, sheet: false, wired: false, foot: false };
@@ -79,6 +82,7 @@
     var menu = menuOf(btn);
     if (!menu) return false;
     if (st.open && st.open !== btn) closeMenu(false);
+    if (menu.id === 'gnTbLinks') linkIcons();
     menu.removeAttribute('hidden');
     btn.setAttribute('aria-expanded', 'true');
     st.open = btn;
@@ -107,6 +111,31 @@
     else if (e.key === 'End') { stop(e); focus(list[n - 1]); }
     else if (e.key === 'Escape' || e.key === 'Esc') { stop(e); closeMenu(true); }
     else if (e.key === 'Tab' && !st.sheet) closeMenu(false); // en la hoja el menú queda abierto y Tab sigue adentro
+  }
+
+  // ---------------------------------------------------------------- íconos del menú Enlaces (BL-078 UNI-6)
+  // Los íconos del juego vienen de GNKit (js/gn-kit.js, elegidos por Pablo). index.html no crece: los pongo yo,
+  // una sola vez por enlace. GNKit se carga después que yo, así que pruebo al arrancar, con gn:boot-ready y al abrir.
+  var LINK_ICONS = [[/^https:\/\/wiki-es\.guildwars2\.com\//, 'link.wiki'], [/^https:\/\/en-forum\.guildwars2\.com\//, 'link.foros'],
+    [/^https:\/\/help\.guildwars2\.com\//, 'link.ayuda'], [/^https:\/\/www\.guildwars2\.com\//, 'link.oficial'],
+    [/^https:\/\/account\.arena\.net\//, 'link.apikey']];
+  function linkKey(href) {
+    for (var i = 0; i < LINK_ICONS.length; i++) if (LINK_ICONS[i][0].test(String(href || ''))) return LINK_ICONS[i][1];
+    return null;
+  }
+  function linkIcons() {
+    var K = root.GNKit, menu = byId('gnTbLinks'), n = 0;
+    if (!menu || !K || typeof K.icon !== 'function') return 0;
+    if (typeof K.ensureCSS === 'function') K.ensureCSS();
+    items(menu).forEach(function (a) {
+      if (a.getAttribute('data-gk-icon') !== null || typeof a.insertAdjacentHTML !== 'function') return;
+      var h = K.icon(linkKey(a.getAttribute('href')), 18);
+      if (!h) return;
+      a.insertAdjacentHTML('afterbegin', h);
+      a.setAttribute('data-gk-icon', '');
+      n++;
+    });
+    return n;
   }
 
   // ---------------------------------------------------------------- hoja del celular
@@ -255,12 +284,13 @@
     markEnv();
     wire();
     footer();
+    if (!linkIcons() && doc().addEventListener) doc().addEventListener('gn:boot-ready', linkIcons);
     if (root.console && root.console.info) root.console.info('[GNTopbar] v' + VERSION);
   }
 
   root.GNTopbar = {
     version: VERSION, init: init, isDev: isDev, markEnv: markEnv,
-    openMenu: openMenu, closeMenu: closeMenu, openSheet: openSheet, closeSheet: closeSheet, footer: footer,
+    openMenu: openMenu, closeMenu: closeMenu, openSheet: openSheet, closeSheet: closeSheet, footer: footer, linkKey: linkKey, linkIcons: linkIcons,
     _state: function () { return { open: st.open ? st.open.id : null, sheet: st.sheet }; }
   };
 

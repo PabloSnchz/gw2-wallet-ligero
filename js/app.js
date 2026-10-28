@@ -5,7 +5,7 @@
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 
-  console.info('%cGW2 Wallet app.js v2.9.1 — Bootstrap keys + toasts + router sync + selected-key persistence + WV Targets refresh (conversor extraído)', 'color:#0bf; font-weight:700');
+  console.info('%cGW2 Wallet app.js v2.9.2 — Bootstrap keys + toasts + router sync + selected-key persistence + WV Targets refresh (conversor extraído)', 'color:#0bf; font-weight:700');
  
   /* ========================= Estado ========================= */
   const state = {
@@ -1150,9 +1150,9 @@
   }
 
   // === Propuesta 3: formato de API key antes de llamar a la API ===
-  // 1 o 2 bloques GUID (8-4-4-4-12): el `id` de /v2/tokeninfo es la mitad (36 + 1 + 36 = 73).
+  // BL-079: la Key real tiene 72 caracteres, 8-4-4-4-20-4-4-4-12 (dos GUID pegados SIN guion en la unión).
   function isValidKeyFormat(v) {
-    return /^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}(?:-[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12})*$/.test(v);
+    return /^[0-9A-F]{8}(-[0-9A-F]{4}){3}-[0-9A-F]{20}(-[0-9A-F]{4}){3}-[0-9A-F]{12}$/i.test(v);
   }
 
   // === Propuesta 4: mensaje hermano (creado una vez, reutilizado) ===
@@ -1173,15 +1173,15 @@
     el.keysForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const label = el.kfLabel?.value.trim() || '';
-      const value = el.kfValue?.value.trim() || '';
+      const value = (el.kfValue?.value || '').replace(/\s+/g, ''); // BL-079
       if (!value) return setStatus('Ingresá una API key.', 'error');
 
       // Propuesta 3: validación local de formato
       if (!isValidKeyFormat(value)) {
         el.kfValue?.classList.remove('field--ok', 'field--bad');
         el.kfValue?.classList.add('field--bad');
-        if (_fieldMsg) _fieldMsg.textContent = 'El formato no es válido. Se espera un GUID 8-4-4-4-12 en hexadecimal, guion por guion.';
-        setStatus('El formato de la API key no es válido. Debe ser un GUID de 8-4-4-4-12 (opcionalmente seguido de otro igual).', 'error');
+        if (_fieldMsg) _fieldMsg.textContent = 'Formato no válido: la API Key de GW2 tiene 72 caracteres. Copiala entera desde account.arena.net.';
+        setStatus('La API key no tiene el formato de GW2 (72 caracteres).', 'error');
         window.toast?.('error','Formato de API key inválido', { ttl: 2500 });
         return;
       }

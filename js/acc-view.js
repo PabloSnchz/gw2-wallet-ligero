@@ -1,7 +1,8 @@
 /*!
  * js/acc-view.js — Cuentas renovado: «Mis cuentas» en vivo y la puerta al Llavero (BL-070, paso 4, CTA-2)
  * Proyecto: Bóveda del Gato Negro
- * Versión: 1.3.0 (2026-10-27) · BL-076 SHV-5c: mi línea dice «Lo sé por», con la hora de la lectura
+ * Versión: 1.4.0 (2026-10-28) · BL-078 UNI-7b: íconos del juego en las pestañas, desde GNKit (sin GNKit, como antes)
+ *          1.3.0 (2026-10-27) · BL-076 SHV-5c: mi línea dice «Lo sé por», con la hora de la lectura
  *          1.2.0 (2026-10-26) · BL-074 BLS-3: las definiciones de logros (gn:accounts:achmeta) van a IndexedDB
  *          por js/gn-idb.js si está, y espero a que abra antes de leerlas.
  *          1.1.0 (2026-10-26) · CTA-3: la pestaña Llavero la dibuja js/acc-vault-view.js; con el Llavero abierto, las
@@ -25,7 +26,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.3.0';
+  var VERSION = '1.4.0';
   var LOG = '[AccView]';
   var PANEL = 'accountsPanel';
   var ROUTE = '#/account/accounts'; // la misma que usa js/router.js
@@ -205,9 +206,11 @@
   }
 
   function tabsHTML(cur) {
+    var K = root.GNKit;
+    if (K && K.ensureCSS) K.ensureCSS();
     return '<div class="cv-tabs" role="tablist" aria-label="Secciones de Cuentas">' + [['mine', 'Mis cuentas'], ['vault', 'Llavero']].map(function (t) {
       var on = t[0] === cur;
-      return '<button type="button" role="tab" id="cvTab-' + t[0] + '" data-cv-tab="' + t[0] + '" aria-selected="' + on + '" aria-controls="cvPanel-' + t[0] + '" tabindex="' + (on ? 0 : -1) + '">' + t[1] + '</button>';
+      return '<button type="button" role="tab" id="cvTab-' + t[0] + '" data-cv-tab="' + t[0] + '" aria-selected="' + on + '" aria-controls="cvPanel-' + t[0] + '" tabindex="' + (on ? 0 : -1) + '">' + (K ? K.icon(t[0] === 'mine' ? 'tab.acc.mias' : 'tab.acc.llavero') : '') + t[1] + '</button>';
     }).join('') + '</div>';
   }
 

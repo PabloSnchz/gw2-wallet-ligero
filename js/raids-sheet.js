@@ -1,6 +1,6 @@
 /**
  * raids-sheet.js — Ficha de cada encuentro de Raids a pantalla completa (BL-070 RAI-3).
- * Versión: 1.3.0 (2026-10-27) — BL-076 SHV-5a: mi línea dice «Lo sé por» y usa los tipos de DEC-024 · antes 1.2.0 (2026-10-25) — RAI-6: enlaces AA en los 19 themes y pestañas con teclado · antes 1.1.0 (2026-10-24) — RAI-4: «Cómo se pelea» (fases, mecánicas, modo desafío y fuentes)
+ * Versión: 1.4.0 (2026-10-28) — BL-078 UNI-7b: íconos del juego en las pestañas del celular, desde GNKit · antes 1.3.0 (2026-10-27) — BL-076 SHV-5a: mi línea dice «Lo sé por» y usa los tipos de DEC-024 · antes 1.2.0 (2026-10-25) — RAI-6: enlaces AA en los 19 themes y pestañas con teclado · antes 1.1.0 (2026-10-24) — RAI-4: «Cómo se pelea» (fases, mecánicas, modo desafío y fuentes)
  *
  * Como la ficha de la legendaria: reemplaza la lista dentro del módulo, con
  * «← Volver a Raids» y Escape, y vuelve al mismo lugar y a la misma fila.
@@ -21,7 +21,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.3.0';
+  var VERSION = '1.4.0';
   var LOG = '[RaidsSheet]';
   var DATA = 'assets/data/raids/rewards.json';
   var MECH_DIR = 'assets/data/raids/mechanics/';
@@ -186,7 +186,8 @@
     [['rew', 'Recompensas'], ['fight', 'Cómo se pelea']].forEach(function (t) {
       var on = pane === t[0];
       h += '<button type="button" role="tab" id="rsTab-' + t[0] + '" data-rs-tab="' + t[0] + '" aria-selected="' + on + '" aria-controls="' +
-        (t[0] === 'fight' ? 'rsPaneFight' : 'rsPaneRew') + '" tabindex="' + (on ? '0' : '-1') + '">' + t[1] + '</button>';
+        (t[0] === 'fight' ? 'rsPaneFight' : 'rsPaneRew') + '" tabindex="' + (on ? '0' : '-1') + '">' +
+        (root.GNKit ? root.GNKit.icon(t[0] === 'fight' ? 'tab.rs.pelea' : 'tab.rs.recompensas') : '') + t[1] + '</button>';
     });
     return h + '</div>';
   }
