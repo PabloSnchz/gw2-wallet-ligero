@@ -1,0 +1,86 @@
+# Vigía y curación semanal de builds (BL-082 BLD-10/14 y CUR-1; DEC-041: corre sola en DEV y en PRD).
+# Lunes 12:00 UTC (y a mano):
+#   1. vigía: lee el último parche de balance declarado por MetaBattle y la versión del juego (watch.json).
+#   2. curación (CUR-1): rehace el bench de Snow Crows (bench.json) y relee la página de origen de cada build del
+#      catálogo (catalog.json): código, armas, fecha de la fuente y parche. Lo que no puede resolver sola queda en
+#      catalog.review. Nunca borra builds. Ver .github/scripts/bld-curate.cjs.
+#   3. si la curación cambió algo, la vigía vuelve a mirar (avisa a Discord que la biblioteca cambió).
+# Portátil: no depende del nombre del repo ni de la rama; commitea solo esos 3 archivos en la rama por defecto del
+# repo donde corre. Publicación: si el repo publica con dev-pages.yml (DEV) lo dispara; si publica Pages desde la rama
+# (PRD), el push alcanza. Requisitos del repo: Actions con permiso de escritura (Settings → Actions → General →
+# Workflow permissions: «Read and write»). Discord: solo si existe el secreto DISCORD_WEBHOOK_URL (nunca llega al navegador).
+
+name: builds-watch
+
+on:
+  schedule:
+    - cron: '0 12 * * 1'
+  workflow_dispatch:
+  push:
+    paths:
+      - 'assets/data/builds/catalog.json'
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: builds-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    if: ${{ !github.event.repository.fork && (github.event_name != 'push' || github.ref_name == github.event.repository.default_branch) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Tests de la vigía y la curación
+        run: node --test .github/scripts/bld-watch.test.cjs .github/scripts/bld-curate.test.cjs
+
+      - name: Mirar el último parche
+        id: watch
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: node .github/scripts/bld-watch.cjs
+
+      # En un push (curación a mano) solo se actualiza la huella del catálogo: no se re-cura encima.
+      - name: Curar bench y catálogo
+        id: curate
+        if: github.event_name != 'push'
+        run: node .github/scripts/bld-curate.cjs
+
+      - name: Volver a mirar (la biblioteca cambió)
+        if: steps.curate.outputs.changed == 'true'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: node .github/scripts/bld-watch.cjs
+
+      - name: Commit de los datos de builds
+        id: commit
+        run: |
+          F="assets/data/builds/watch.json assets/data/builds/bench.json assets/data/builds/catalog.json"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add $F
+          if git diff --cached --quiet; then echo "Sin cambios."; echo "pushed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if git diff --cached --name-only | grep -v -x -E 'assets/data/builds/(watch|bench|catalog)\.json'; then echo "Cambios no esperados"; exit 1; fi
+          for f in $F; do node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))"; done
+          git commit -m "builds-watch: vigía y curación semanal de builds"
+          git push origin "HEAD:$BRANCH" || { git pull --rebase origin "$BRANCH" && git push origin "HEAD:$BRANCH"; }
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Republicar (solo si el repo publica con dev-pages.yml)
+        if: steps.commit.outputs.pushed == 'true' && hashFiles('.github/workflows/dev-pages.yml') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run dev-pages.yml --ref "$BRANCH"

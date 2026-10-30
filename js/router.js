@@ -1,6 +1,6 @@
 /*!
  * Router y Vistas (WV Objetivos + Tienda unificada)
- * v2.21.0 (2026-10-25) — BL-070 ACT-7b: Actividades ya no usa js/activities.js
+ * v2.22.0 (2026-10-28) — BL-082 BLD-1: #/builds (js/bld-view.js por ruta)
  *
  * Cambios de BL-070 (el detalle de cada paso está en ai-memory/status.md):
  *  - 2.21.0 (ACT-7b): js/activities.js se retiró: el módulo viejo no se precarga, activa ni desactiva;
@@ -152,7 +152,7 @@
   }
 
   function showPanel(idToShow) {
-    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','homesteadPanel','inventoryPanel','accountsPanel','welcomePanel','walletDashboardPanel','wvObjectivesDashboardPanel','raidTrackerPanel','legendaryArmoryPanel'].forEach(function(id){
+    ['walletPanel','metaPanel','achievementsPanel','wvPanel','activitiesPanel','homesteadPanel','inventoryPanel','accountsPanel','welcomePanel','walletDashboardPanel','buildsPanel','wvObjectivesDashboardPanel','raidTrackerPanel','legendaryArmoryPanel'].forEach(function(id){
       var node=el(id); if (!node) return;
       if (id===idToShow) node.removeAttribute('hidden'); else node.setAttribute('hidden','hidden');
     });
@@ -1004,11 +1004,7 @@
   // Si el panel de un módulo quedó visible, ese módulo es el dueño de la pantalla y no se toca.
   //
   // HomesteadTracker NO entra, y es una decisión explícita, no una omisión:
-  // su deactivate() (homestead-tracker.js:403) solo hace abortLastFetch() y no
-  // tiene panel propio -- escribe en `homesteadTrackerBody`, que no existe en
-  // index.html (medido: 0 matches). Además nadie lo activa: `HomesteadTracker
-  // .activate` no aparece en ningún call site de js/ (medido: 0 matches). Su
-  // latch es inerte por partida doble, y sin panel no hay predicado posible.
+  // no tiene panel propio ni quien lo active (medido en BL-070): su latch es inerte.
   var MODULOS_CON_LATCH = [
     { mod: 'RaidTracker',     panel: 'raidTrackerPanel' },
     { mod: 'LegendaryTracker', panel: 'legendaryArmoryPanel' }
@@ -1244,6 +1240,7 @@
           return;
         }
 
+        if(h.indexOf('#/builds')===0){showPanel('buildsPanel');updateSidebarFor('');setActiveNav(h);return}
         if (h === '#/welcome') {
           try {
             showPanel('welcomePanel');

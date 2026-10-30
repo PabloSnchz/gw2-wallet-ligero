@@ -12,7 +12,8 @@
  * - Global (welcomeSeen)
  * 
  * v1.0.2: Agregados métodos exportData() e importFromData() para sincronización con GitHub Gist
- * Versión: 1.0.5
+ * Versión: 1.1.0
+ * v1.1.0: BL-082 BLD-6: tus builds (gn:builds:mine) viajan en global.buildsMine; un respaldo sin builds no borra las tuyas.
  * v1.0.5: TOP-2 (BL-070 paso 5): las 3 preguntas y el aviso de error van por la ventana de la Bóveda
  *   (window.GNUI, js/gn-ui.js) con el MISMO texto; sin ella, las del navegador (ask()).
  * v1.0.4: El `confirm()` del botón deja de ENUMERAR qué conserva y pasa a
@@ -33,6 +34,7 @@
   
   // Versión actual del formato de exportación
   var EXPORT_VERSION = '3.0';
+  var BUILDS_KEY = 'gn:builds:mine'; // BL-082 BLD-6: Mis builds (js/bld-store.js)
   
   // =======================================================================
   // 1. RECOPILACIÓN DE DATOS (EXPORT)
@@ -158,7 +160,10 @@
   function exportGlobalData() {
     try {
       var welcomeSeen = Storage.get(Storage.STORAGE_KEYS.GLOBAL_WELCOME_SEEN) === true;
-      return { welcomeSeen: welcomeSeen };
+      var out = { welcomeSeen: welcomeSeen };
+      // BL-082 BLD-6: Mis builds viajan en el respaldo.
+      try { var mb = root.localStorage && root.localStorage.getItem(BUILDS_KEY); if (mb) out.buildsMine = JSON.parse(mb); } catch (_) {}
+      return out;
     } catch (e) {
       console.warn(LOG, 'Error exportando Global data:', e);
       return { welcomeSeen: false };
@@ -537,6 +542,13 @@
     if (globalData.welcomeSeen !== undefined) {
       Storage.set(Storage.STORAGE_KEYS.GLOBAL_WELCOME_SEEN, globalData.welcomeSeen);
     }
+    // BL-082 BLD-6: Mis builds (solo una lista válida; cada código se vuelve a validar al usarlo).
+    if (Array.isArray(globalData.buildsMine)) {
+      try {
+        var ok = globalData.buildsMine.filter(function (b) { return b && typeof b.id === 'string' && typeof b.code === 'string' && b.code.length < 700; }).slice(0, 300);
+        root.localStorage.setItem(BUILDS_KEY, JSON.stringify(ok));
+      } catch (_) {}
+    }
   }
   
   /**
@@ -797,7 +809,7 @@
   // =======================================================================
   
   function init() {
-    console.info(LOG, 'Settings Manager v1.0.5 inicializado');
+    console.info(LOG, 'Settings Manager v1.1.0 inicializado');
     
     // Buscar botones en el DOM (se ejecuta después de que index.html cargue)
     function bindButtons() {

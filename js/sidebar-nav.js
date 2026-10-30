@@ -1,6 +1,8 @@
 /*!
  * js/sidebar-nav.js — La Sidebar: la navegación de la Bóveda (BL-061)
- * Versión: 2.2.6 (2026-10-25) · propuesta SBR-0 aprobada por Pablo (Sidebar a la izquierda)
+ * Versión: 2.3.1 (2026-10-30) · BL-082 BLD-ICON: Builds con el ícono oficial de la pestaña Build del Panel del héroe (156720)
+ *          2.3.0 (2026-10-28) · BL-082 BLD-1: Builds en la lista, antes de Cuentas (EXTRA)
+ *          2.2.6 (2026-10-25) · propuesta SBR-0 aprobada por Pablo (Sidebar a la izquierda)
  *
  * La Sidebar es solo navegación (como la Bienvenida, DEC-032: no muestra contenido de ningún módulo).
  * Arma su lista desde la de la Bienvenida (Welcome._pure.MODULES): mismo orden, nombre, ícono y color.
@@ -45,7 +47,7 @@
  */
 (function (root) {
   'use strict';
-  var VERSION = '2.2.6';
+  var VERSION = '2.3.1';
   var LOG = '[SidebarNav]';
 
   // Respaldo idéntico a Welcome._pure.MODULES (lo vigila tests/sidebar-nav.test.cjs).
@@ -165,7 +167,16 @@
   function modules() {
     var W = root.Welcome;
     var list = W && W._pure && Array.isArray(W._pure.MODULES) && W._pure.MODULES.length ? W._pure.MODULES : MODULES_FALLBACK;
-    return list.map(function (m) { return { id: m.id, name: m.name, href: m.href, icon: m.icon, color: m.color }; });
+    return withExtra(list).map(function (m) { return { id: m.id, name: m.name, href: m.href, icon: m.icon, color: m.color }; });
+  }
+
+  // BL-082 BLD-1: módulos que la Bienvenida todavía no lista (welcome-panel.js no tiene lugar: 48 KB).
+  // Van antes de Cuentas y una sola vez: si algún día la Bienvenida los suma, no se repiten.
+  var EXTRA = [{ id: 'builds', name: 'Builds', href: '#/builds', icon: 'assets/icons/156720.png', color: '#C9B6FF' }];
+  function withExtra(list) {
+    var out = list.filter(function (m) { return m.id !== 'accounts'; }), tail = list.filter(function (m) { return m.id === 'accounts'; });
+    EXTRA.forEach(function (x) { if (!list.some(function (m) { return m.id === x.id; })) out.push(x); });
+    return out.concat(tail);
   }
 
   // Los grupos de la Sidebar: Inicio, los módulos y Cuentas aparte.
@@ -729,7 +740,7 @@
     openSheet: openSheet, closeSheet: closeSheet,
     _pure: { groups: groups, mobileGroups: mobileGroups, activeFor: activeFor, normHash: normHash, keyLine: keyLine, newModules: newModules,
       moreNeedsAttention: moreNeedsAttention, MODULES_FALLBACK: MODULES_FALLBACK, HOME: HOME, TABS: TABS, SHORT: SHORT,
-      LINK_ID: LINK_ID, VIEW: VIEW, ALIAS: ALIAS, CSS: CSS }
+      LINK_ID: LINK_ID, VIEW: VIEW, ALIAS: ALIAS, CSS: CSS, EXTRA: EXTRA }
   };
 
   // Welcome (welcome-panel.js) se carga después, y con `defer` el estado ya es «interactive» cuando corro:
