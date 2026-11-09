@@ -1,8 +1,8 @@
 {
- "version": 1,
- "latestPatch": "2026-09-29",
- "gameBuild": 209026,
- "catalogHash": "639f2a2452bb",
- "checkedAt": "2026-10-28T11:30:00Z",
- "source": "manual (curación inicial BL-082)"
+  "version": 1,
+  "latestPatch": "2026-09-29",
+  "gameBuild": 209026,
+  "catalogHash": "316468ce416b",
+  "checkedAt": "2026-11-09T22:15:39.707Z",
+  "source": "MetaBattle (parche declarado en sus páginas públicas) y /v2/build"
 }
