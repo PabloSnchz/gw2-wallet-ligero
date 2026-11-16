@@ -1,6 +1,8 @@
 /*!
  * js/bld-ref.js — Builds: datos del juego para leer y armar builds (BL-082 BLD-3)
- * Versión: 1.2.0 (2026-10-28) · BUI-1: identity() = las 9 profesiones y sus élites con nombre, ícono e ícono grande
+ * Versión: 1.3.0 (2026-10-30) · EQ-5: cada arma guarda sus habilidades por tecla ([id, casillero, mano secundaria,
+ *          atributo]) y la profesión su mecánica (F1–F5); se piden también esas habilidades (lo guardado antes se vuelve
+ *          a pedir una vez) · antes 1.2.0 BUI-1: identity() = las 9 profesiones y sus élites con nombre, ícono e ícono grande
  *          oficiales (un pedido, guardado por versión del juego); la ficha guarda el emblema de cada élite · antes 1.1.0:
  *          si llega una página web en vez de datos, reintento sin caché del navegador y el error
  *          dice qué pedido falló (Pablo lo vio en la Biblioteca y el Editor) · antes 1.0.0
@@ -17,7 +19,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.2.0';
+  var VERSION = '1.3.0';
   var API = 'https://api.guildwars2.com';
   var LANG = 'es';
   var KEY = 'gn:bld:ref:';
@@ -25,7 +27,7 @@
   var CHUNK = 150;
   var PROFS = ['', 'Guardian', 'Warrior', 'Engineer', 'Ranger', 'Thief', 'Elementalist', 'Mesmer', 'Necromancer', 'Revenant'];
   var SLOT_TYPE = ['Heal', 'Utility', 'Utility', 'Utility', 'Elite'];
-  var REF_V = 2; // 1.2.0: el ref guarda también el emblema de cada élite (lo de v1 se vuelve a pedir una vez)
+  var REF_V = 3; // 1.3.0: habilidades de cada arma y mecánica de la profesión (2: emblema de cada élite; lo viejo se vuelve a pedir)
   var IDKEY = 'gn:bld:id:';
   var mem = {}, inflight = {}, buildInfo = { id: null, at: 0 }, ident = null, identInflight = null;
 
@@ -108,13 +110,17 @@
     var bar = { Heal: [], Utility: [], Elite: [] };
     (p.skills || []).forEach(function (s) { if (bar[s.type]) bar[s.type].push({ id: s.id, spec: s.specialization || 0 }); });
     var weapons = {};
-    Object.keys(p.weapons || {}).forEach(function (w) { var x = p.weapons[w] || {}; weapons[w] = { spec: x.specialization || 0, flags: x.flags || [] }; });
+    Object.keys(p.weapons || {}).forEach(function (w) { var x = p.weapons[w] || {}; weapons[w] = { spec: x.specialization || 0, flags: x.flags || [],
+      skills: (x.skills || []).map(function (s) { return [s.id, s.slot || '', s.offhand || '', s.attunement || '']; }) }; });
+    // 1.3.0: mecánica de la profesión (F1–F5), en el orden de la API; la ficha elige la de la élite o la base.
+    var prof = (p.skills || []).filter(function (s) { return s.type === 'Profession' && /^Profession_\d$/.test(s.slot || ''); })
+      .map(function (s) { return [s.id, s.slot]; });
     var pets = (raw.pets || []).map(function (x) { return { id: x.id, name: x.name, icon: x.icon }; });
     var legends = (raw.legends || []).map(function (l) {
       return { id: l.id, code: l.code, swap: l.swap, heal: l.heal, elite: l.elite, utilities: l.utilities || [], name: (skills[l.swap] || {}).name || l.id, icon: (skills[l.swap] || {}).icon || '' };
     });
     return { v: REF_V, profession: profCode(p.id), name: p.name, icon: p.icon, iconBig: p.icon_big, palette: palette, bySkill: bySkill,
-      specs: specs, traits: traits, skills: skills, bar: bar, weapons: weapons, pets: pets, legends: legends };
+      specs: specs, traits: traits, skills: skills, bar: bar, weapons: weapons, prof: prof, pets: pets, legends: legends };
   }
 
   // ---------------------------------------------------------------- carga por profesión
@@ -131,6 +137,8 @@
       specs.forEach(function (s) { tids = tids.concat(s.minor_traits || [], s.major_traits || []); });
       var sids = (raw.prof.skills || []).map(function (s) { return s.id; })
         .concat((raw.prof.skills_by_palette || []).map(function (x) { return x[1]; }));
+      // 1.3.0: también las habilidades de cada arma (1–5), para la barra de la ficha.
+      Object.keys(raw.prof.weapons || {}).forEach(function (w) { ((raw.prof.weapons[w] || {}).skills || []).forEach(function (s) { sids.push(s.id); }); });
       var extra = name === 'Ranger' ? getJSON(API + '/v2/pets?ids=all&lang=' + LANG, f)
         : name === 'Revenant' ? getJSON(API + '/v2/legends?ids=all&v=latest', f) : Promise.resolve(null);
       return Promise.all([many('/v2/traits', tids, f), extra]).then(function (r) {

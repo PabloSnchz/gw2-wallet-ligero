@@ -1,6 +1,7 @@
 /*!
  * js/bld-ae2.js — Builds: código AE2 con el equipo completo (BL-082 BLD-12: B4 y C3)
- * Versión: 1.0.0 (2026-10-28)
+ * Versión: 1.1.0 (2026-11-15) · BL-084 EQ-9a: fromSheet() y fromSheetCode() arman el AE2 con el equipo real de la ficha
+ *          (GNBldItems.sheet: estadísticas, runa, reliquia, armas y sigilos; en PvP solo armas y sigilos) · antes 1.0.0 (2026-10-28)
  *
  * Formato público «Alter Ego Shared Build Template», versión 3 (PieOrCake/alter_ego, docs/shared-build-spec.md,
  * abril 2026, licencia MIT). Implementación propia a partir de la especificación, sin dependencias:
@@ -12,7 +13,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.0.0';
+  var VERSION = '1.1.0';
   var MODES = ['PvE', 'WvW', 'PvP', 'Raid', 'Fractal', 'Other'];
   var SLOTS = ['Helm', 'Shoulders', 'Coat', 'Gloves', 'Leggings', 'Boots', 'WeaponA1', 'WeaponA2', 'WeaponB1', 'WeaponB2',
     'Backpack', 'Accessory1', 'Accessory2', 'Amulet', 'Ring1', 'Ring2'];
@@ -129,7 +130,70 @@
       '<p><span class="bld-cap">Runa</span> ' + it(ae2.runeId) + ' · <span class="bld-cap" style="display:inline">Reliquia</span> ' + it(ae2.relicId) + '</p></div>';
   }
 
+  // EQ-9a (BL-084): el equipo real de la ficha (GNBldItems.sheet) a lo que pide encode(). Puro.
+  // view = GNBldItems.sheet() o null; b = la build ({ code, mode: 'pve'|'wvw'|'pvp', sub }). null si no hay código.
+  // En PvP el amuleto se elige en el juego: AE2 lleva solo armas y sigilos.
+  var FROM_SLOT = { 'Casco': ['Helm'], 'Hombreras': ['Shoulders'], 'Pecho': ['Coat'], 'Guantes': ['Gloves'], 'Perneras': ['Leggings'], 'Botas': ['Boots'],
+    'Espalda': ['Backpack'], 'Accesorio': ['Accessory1', 'Accessory2'], 'Amuleto': ['Amulet'], 'Anillo': ['Ring1', 'Ring2'] };
+  var FROM_WEAPON = { LongBow: 'Longbow', ShortBow: 'Shortbow', Harpoon: 'Spear' };
+  function modeOf(b) {
+    var m = String((b && b.mode) || '').toLowerCase(), s = String((b && b.sub) || '').toLowerCase();
+    if (m === 'wvw') return 'WvW';
+    if (m === 'pvp') return 'PvP';
+    if (s === 'raids') return 'Raid';
+    if (s === 'fractals') return 'Fractal';
+    return 'PvE';
+  }
+  function fromSheet(view, b) {
+    if (!b || !b.code) return null;
+    var out = { code: b.code, mode: modeOf(b), gear: {}, runeId: 0, relicId: 0 };
+    if (!view) return out;
+    var sid = function (s) { return s && !s.missing && s.id ? s.id : 0; };
+    var used = {};
+    var put = function (label, statId) {
+      var k = (FROM_SLOT[label] || []).filter(function (x) { return !used[x]; })[0];
+      if (!k || !statId) return;
+      used[k] = 1; out.gear[k] = { statId: statId };
+    };
+    (view.armor || []).forEach(function (r) { put(r.slot, sid(r.stat)); });
+    (view.trinkets || []).forEach(function (r) { put(r.slot, sid(r.stat)); });
+    if (view.rune && view.rune.id) out.runeId = view.rune.id;
+    else if (view.runeMixed) {
+      var n = {}, best = 0;
+      (view.armor || []).forEach(function (r) {
+        var id = r.rune && r.rune.id;
+        if (!id) return;
+        n[id] = (n[id] || 0) + 1;
+        if (!best || n[id] > n[best]) best = id;
+      });
+      out.runeId = best;
+    }
+    if (view.relic && view.relic.id) out.relicId = view.relic.id;
+    (view.sets || []).forEach(function (set) {
+      var pre = String(set.n) === '1' ? 'WeaponA' : String(set.n) === '2' ? 'WeaponB' : '';
+      if (!pre) return;
+      (set.hands || []).forEach(function (h) {
+        var sub = (h.item && h.item.sub) || '', wt = FROM_WEAPON[sub] || sub;
+        if (!wt || !weaponId(wt)) wt = '';
+        var sg = (h.sigils || []).filter(function (x) { return x && x.id; }).map(function (x) { return x.id; });
+        var g = { statId: sid(h.stat) };
+        if (wt) g.weaponType = wt;
+        if (sg[0]) g.sigilId = sg[0];
+        if (sg[1]) g.sigil2Id = sg[1];
+        if (g.statId || g.weaponType || g.sigilId) out.gear[pre + (h.hand === 'o' ? '2' : '1')] = g;
+      });
+    });
+    return out;
+  }
+  // El AE2 de la ficha, o '' si no se puede (sin código o código inválido).
+  function fromSheetCode(view, b) {
+    var x = fromSheet(view, b);
+    if (!x) return '';
+    try { return encode(x); } catch (_) { return ''; }
+  }
+
   var api = { version: VERSION, MODES: MODES, SLOTS: SLOTS, SLOTS_ES: SLOTS_ES, encode: encode, decode: decode, parse: parse, gearHTML: gearHTML,
+    fromSheet: fromSheet, fromSheetCode: fromSheetCode, modeOf: modeOf,
     _names: { stats: {}, items: {} } };
   root.GNBldAe2 = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

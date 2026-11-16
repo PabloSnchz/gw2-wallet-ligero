@@ -6,18 +6,21 @@
 //    Si la fuente cambió el código y el código es válido para la misma profesión y élite, lo actualiza (y las armas).
 //    Una build pasa al último parche solo si su fuente se actualizó después de ese parche: si no, sigue «para revisar».
 //    Nunca borra builds ni inventa datos: lo que no puede resolver solo queda en catalog.review para que lo mire yo.
+// 3) Equipo (BL-084): de cada ficha de Snow Crows lee el equipo como ids oficiales (bld-gear-scrape.cjs) y rehace
+//    assets/data/builds/gear.json (una build por línea). Si una ficha deja de mostrarlo, queda el anterior y se avisa.
 // Seguridad: solo páginas públicas (robots «Allow»), User-Agent que dice quién es, y frenos si la fuente cambia de forma
 // (bench con muchas menos filas, o demasiadas páginas sin respuesta): en ese caso no escribe nada.
 'use strict';
 const fs = require('fs');
 const path = require('path');
 const C = require(path.join(__dirname, '..', '..', 'js', 'bld-code.js'));
+const GS = require(path.join(__dirname, 'bld-gear-scrape.cjs'));
 
 const DIR = 'assets/data/builds/';
-const FILES = { catalog: DIR + 'catalog.json', bench: DIR + 'bench.json', watch: DIR + 'watch.json' };
+const FILES = { catalog: DIR + 'catalog.json', bench: DIR + 'bench.json', watch: DIR + 'watch.json', gear: DIR + 'gear.json' };
 const BENCH_URL = 'https://snowcrows.com/en/benchmarks';
 const UA = { headers: { 'User-Agent': 'LaBovedaDelGatoNegro/1.0 (+https://github.com/PabloSnchz/gw2-factory-dev; curacion semanal de builds)' } };
-const PAUSE = 1200;
+const PAUSE = 2500; // BL-084: con 1,2 s Snow Crows responde 429 (demasiados pedidos)
 const PROFS = ['', 'guardian', 'warrior', 'engineer', 'ranger', 'thief', 'elementalist', 'mesmer', 'necromancer', 'revenant'];
 const ELITES = { druid: 5, daredevil: 7, berserker: 18, dragonhunter: 27, reaper: 34, chronomancer: 40, scrapper: 43, tempest: 48, herald: 52,
   soulbeast: 55, weaver: 56, holosmith: 57, deadeye: 58, mirage: 59, scourge: 60, spellbreaker: 61, firebrand: 62, renegade: 63, harbinger: 64,
@@ -164,15 +167,42 @@ function curateCatalog(cat, results, ctx) {
   return { next, changed, log, review };
 }
 
+// ---------------------------------------------------------------- equipo (BL-084)
+// found: { [id]: equipo leído | null } de las fichas de Snow Crows que respondieron; ids: builds del catálogo en orden.
+// Freno: si menos del 70 % de las fichas que respondieron trae un equipo sano, la página cambió de forma: no se toca nada.
+// Una ficha sin equipo sano conserva el anterior (y se avisa); las builds que ya no están en el catálogo se van.
+function mergeGear(prev, found, ids, today) {
+  const keys = Object.keys(found || {});
+  const good = new Set(keys.filter((k) => found[k] && !GS.gearProblems(found[k]).length));
+  if (keys.length && good.size < keys.length * 0.7) return { next: prev, changed: false, missing: [], refused: 'equipo sano en ' + good.size + ' de ' + keys.length + ' fichas: no toqué gear.json' };
+  const old = (prev && prev.gear) || {}, gear = {}, missing = [];
+  (ids || []).forEach((id) => {
+    if (good.has(id)) gear[id] = found[id];
+    else if (old[id]) { gear[id] = old[id]; if (keys.indexOf(id) >= 0) missing.push(id); }
+  });
+  const updated = Object.keys(gear).filter((id) => JSON.stringify(old[id]) !== JSON.stringify(gear[id])).length;
+  if (JSON.stringify(gear) === JSON.stringify(old)) return { next: prev, changed: false, missing, updated: 0 };
+  const next = Object.assign({ version: 1, fetched: today, source: { name: 'Snow Crows', url: 'https://snowcrows.com/' },
+    about: 'Equipo de cada build como ids oficiales de la API de Guild Wars 2, leído de su ficha en Snow Crows. Nombres, íconos y descripciones: la API en castellano.' },
+  prev || {}, { fetched: today, gear });
+  return { next, changed: true, missing, updated };
+}
+// Cabecera en una línea y una build por línea (diffs legibles).
+function gearText(g) {
+  const head = Object.assign({}, g); delete head.gear;
+  const ks = Object.keys(g.gear || {});
+  return JSON.stringify(head).slice(0, -1) + ',"gear":{\n' + ks.map((k) => JSON.stringify(k) + ':' + JSON.stringify(g.gear[k])).join(',\n') + '\n}}\n';
+}
 // ---------------------------------------------------------------- red
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function fetchPage(url) {
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 3; i++) {
     try {
       const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 20000);
       const r = await fetch(url, Object.assign({ signal: ctl.signal }, UA)); clearTimeout(t);
       if (r.ok) return { status: 200, html: await r.text() };
       if (r.status === 404 || r.status === 410) return { status: 404, html: '' };
+      if (r.status === 429) { await sleep(20000); continue; }
     } catch (_) {}
     await sleep(3000);
   }
@@ -201,7 +231,7 @@ async function main() {
   if (mb.changed) { fs.writeFileSync(FILES.bench, benchText(mb.next)); changed = true; }
 
   if (cat) {
-    const results = {};
+    const results = {}, gears = {};
     for (const b of cat.builds || []) {
       const url = b.source && b.source.url;
       const kind = /snowcrows\.com/.test(url || '') ? 'sc' : /metabattle\.com/.test(url || '') ? 'mb' : '';
@@ -209,17 +239,22 @@ async function main() {
       await sleep(PAUSE);
       const p = await fetchPage(url);
       results[b.id] = p.status === 200 ? Object.assign({ status: 200 }, kind === 'sc' ? parseSc(p.html) : parseMb(p.html)) : { status: p.status };
+      if (kind === 'sc' && p.status === 200) gears[b.id] = GS.parseGear(p.html);
     }
     const cc = curateCatalog(cat, results, ctx);
     summary.push('- Catálogo: ' + Object.keys(results).length + ' páginas · ' + (cc.refused || (cc.changed ? cc.log.length + ' builds actualizadas' : 'sin cambios')));
     (cc.log || []).forEach((l) => summary.push('  - ' + l));
     (cc.review || []).forEach((r) => summary.push('  - para revisar a mano: ' + r.id + ' — ' + r.issue));
     if (cc.changed) { fs.writeFileSync(FILES.catalog, catalogText(cc.next)); changed = true; }
+    const mg = mergeGear(read(FILES.gear), gears, (cc.next.builds || []).map((b) => b.id), today);
+    summary.push('- Equipo: ' + Object.keys(gears).length + ' fichas · ' + (mg.refused || (mg.changed ? mg.updated + ' builds con equipo nuevo o distinto' : 'sin cambios')));
+    (mg.missing || []).forEach((id) => summary.push('  - para revisar a mano: ' + id + ' — la ficha no muestra el equipo (quedó el anterior)'));
+    if (mg.changed) { fs.writeFileSync(FILES.gear, gearText(mg.next)); changed = true; }
   }
   console.log(summary.join('\n'));
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary.join('\n') + '\n');
   if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, 'changed=' + changed + '\n');
 }
 
-module.exports = { toIso, parseBench, mergeBench, benchText, catalogText, parseSc, parseMb, curateBuild, curateCatalog, ELITES };
+module.exports = { toIso, parseBench, mergeBench, benchText, catalogText, parseSc, parseMb, curateBuild, curateCatalog, mergeGear, gearText, ELITES };
 if (require.main === module) main().catch((e) => { console.error(e); process.exit(1); });

@@ -44,17 +44,24 @@
   "routes": {
     "#/builds": [
       { "src": "js/bld-code.js", "v": "1.0.0" },
-      { "src": "js/bld-ref.js", "v": "1.2.0" },
+      { "src": "js/bld-ref.js", "v": "1.3.0" },
       { "src": "js/bld-show.js", "v": "1.1.0" },
       { "src": "js/bld-store.js", "v": "1.0.0" },
-      { "src": "js/bld-ae2.js", "v": "1.0.0" },
+      { "src": "js/bld-ae2.js", "v": "1.1.0" },
       { "src": "js/bld-gear.js", "v": "1.0.0" },
-      { "src": "js/bld-view.js", "v": "1.5.1" },
+      { "src": "js/bld-items.js", "v": "1.0.1" },
+      { "src": "js/bld-view.js", "v": "1.6.1" },
       { "src": "js/bld-bench.js", "v": "1.0.0" },
-      { "src": "js/bld-lib.js", "v": "1.7.0" },
-      { "src": "js/bld-import.js", "v": "1.0.0" },
-      { "src": "js/bld-editor.js", "v": "1.3.0" },
-      { "src": "js/bld-mine.js", "v": "1.4.0" }
+      { "src": "js/bld-rows.js", "v": "1.0.0" },
+      { "src": "js/bld-lib.js", "v": "1.9.0" },
+      { "src": "js/bld-gearview.js", "v": "1.0.0" },
+      { "src": "js/bld-traitview.js", "v": "1.0.1" },
+      { "src": "js/bld-notes.js", "v": "1.1.0" },
+      { "src": "js/bld-play.js", "v": "1.2.0" },
+      { "src": "js/bld-sheet.js", "v": "1.6.0" },
+      { "src": "js/bld-import.js", "v": "1.1.0" },
+      { "src": "js/bld-editor.js", "v": "1.4.0" },
+      { "src": "js/bld-mine.js", "v": "1.5.0" }
     ]
   }
 }

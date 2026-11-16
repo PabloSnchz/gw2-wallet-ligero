@@ -1,6 +1,7 @@
 /*!
  * js/boot.js — Cargador de módulos nuevos de la Bóveda (DEC-035, BL-065 FP-4)
- * Versión: 1.2.0 (2026-10-28) · BL-082 BLD-1: módulos «por ruta» (ver abajo)
+ * Versión: 1.3.0 (2026-10-30) · BL-084 EQ-2: hasta 20 módulos por ruta (Builds llegó a 12 y suma la ficha con equipo)
+ *          · antes 1.2.0: BL-082 BLD-1: módulos «por ruta» (ver abajo)
  *
  * Para qué: sumar un archivo JS nuevo sin tocar index.html. index.html carga este archivo
  * una sola vez; los módulos nuevos se declaran en js/modules.json con su versión:
@@ -26,13 +27,13 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.2.0';
+  var VERSION = '1.3.0';
   var MANIFEST = 'js/modules.json';
   var MAX = 40; // 1.1.0: de 30 a 40 (BL-070 paso 5, TOP-1, D5). Juntar módulos para entrar en 30 iría contra DEC-035.
   var SRC_RE = /^js\/[a-z0-9][a-z0-9-]*\.js$/;
   var VER_RE = /^\d+\.\d+\.\d+$/;
   var ROUTE_RE = /^#\/[a-z0-9-]+$/;
-  var ROUTE_MAX = 12, ROUTES_MAX = 10; // módulos por ruta y rutas
+  var ROUTE_MAX = 20, ROUTES_MAX = 10; // módulos por ruta y rutas (1.3.0: de 12 a 20; juntar módulos iría contra DEC-035)
   var state = { status: 'idle', loaded: [], errors: [], routes: {}, routeLoaded: {}, listening: false };
 
   // Valida el manifiesto. Las entradas malas se saltean con su motivo; las buenas cargan igual.

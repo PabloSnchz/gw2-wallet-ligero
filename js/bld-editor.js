@@ -1,6 +1,8 @@
 /*!
  * js/bld-editor.js — Builds: pestaña Editor (BL-082 BLD-5: B1, B2, B3, B5, B6 y C2)
- * Versión: 1.3.0 (2026-10-29) · BUI-5: contraste AA en los 19 temas (lo elegido sobre --bg-0 al 14 %, la profesión sin
+ * Versión: 1.4.0 (2026-11-15) · BL-084 EQ-9c: la ficha de la derecha es la misma que la de la Biblioteca e Importar
+ *          (emblema, nombre, «Copiar código» y «Guardar», y «Rasgos y habilidades» como en el juego con js/bld-traitview.js);
+ *          con un ref viejo, la de antes · antes 1.3.0 (2026-10-29) · BUI-5: contraste AA en los 19 temas (lo elegido sobre --bg-0 al 14 %, la profesión sin
  *          elegir se atenúa solo en el ícono) y rótulos de la barra a .7rem · antes 1.2.0 BUI-3: como el panel del
  *          juego: profesiones con su ícono, cada línea con el fondo
  *          oficial de su especialización y los rasgos como íconos (menores incluidos), barra de 5 casilleros con
@@ -16,7 +18,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.3.0';
+  var VERSION = '1.4.0';
   var TIER = ['Adepto', 'Maestro', 'Gran maestro'];
   var SLOT = ['Curación', 'Utilidad 1', 'Utilidad 2', 'Utilidad 3', 'Élite'];
   var SLOT_TYPE = ['Heal', 'Utility', 'Utility', 'Utility', 'Elite'];
@@ -189,9 +191,23 @@
       return { level: 'err', msg: p.code === 'DUP_SKILL' ? 'La misma habilidad está dos veces en la barra: el juego no lo acepta.' : 'Especialización repetida.' };
     }));
     return '<div class="bld-ed-prev"><label for="bldEdTitle"><small>Nombre</small></label><input id="bldEdTitle" data-ed="title" maxlength="80" value="' + esc(st.title) + '" placeholder="Mi build">' +
-      (err ? '<p class="bld-err">' + esc(err) + '</p>' : root.GNBldShow.detailHTML(v, { code: code, checks: checks, title: st.title || null,
+      (err ? '<p class="bld-err">' + esc(err) + '</p>' : sheetOk(ref) ? sheetHTML(b, ref, v, checks, code) : root.GNBldShow.detailHTML(v, { code: code, checks: checks, title: st.title || null,
         actions: ['copy', 'share', 'gw2skills', 'save'] })) +
       (st.mineId ? '<p class="bld-muted">Editando una build de Mis builds: «Guardar» actualiza esa misma.</p>' : '') + (err ? '' : gearHTML(b, code)) + '</div>';
+  }
+  // EQ-9c (BL-084): la misma ficha que la Biblioteca e Importar, con el ref nuevo (js/bld-traitview.js): emblema, nombre,
+  // «Copiar código» y «Guardar», y «Rasgos y habilidades» como en el juego (las armas salen del código). Sin él, la de antes.
+  function sheetOk(ref) { var TV = root.GNBldTraitView; return !!(TV && typeof TV.ready === 'function' && TV.ready(ref)); }
+  function sheetHTML(b, ref, v, checks, code) {
+    var S = root.GNBldShow, el = eliteId(b, ref), sp = el ? root.GNBldRef.specById(ref, el) : null;
+    var title = st.title || ((sp ? sp.name : (v.profName || 'Build')) + ' · tu build');
+    return '<article class="bld-card bld-ed-sheet" aria-label="Así queda tu build">' +
+      '<header class="bld-ed-sh">' + (S.emblem ? S.emblem(b.profession, el, 48, { label: true }) : '') +
+      '<div><b>' + esc(title) + '</b><small class="bld-muted">' + esc(v.profName || '') + (sp ? ' · ' + esc(sp.name) : '') + '</small></div></header>' +
+      '<div class="bld-acts"><button type="button" class="bld-btn is-primary" data-bld-act="copy">Copiar código</button>' +
+      '<button type="button" class="bld-btn" data-bld-act="save">Guardar en Mis builds</button></div>' +
+      root.GNBldTraitView.html({ build: b, ref: ref, view: v, checks: checks, code: code, gear: null, title: title, actions: ['share', 'gw2skills'] }) +
+      '</article>';
   }
   // BLD-12/13: equipo, sugerencia y AE2 (si js/bld-gear.js está cargado).
   function gearHTML(b, code) {
@@ -226,7 +242,7 @@
   }
 
   var CSS = [
-    '#buildsPanel .bld-ed{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,420px);gap:14px;align-items:start}',
+    '#buildsPanel .bld-ed{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,480px);gap:14px;align-items:start}',
     '@media (max-width:980px){#buildsPanel .bld-ed{grid-template-columns:1fr}}',
     '#buildsPanel .bld-ed fieldset{border:1px solid var(--bd-1);border-radius:10px;padding:8px;margin:0 0 10px;display:flex;flex-wrap:wrap;gap:6px}',
     '#buildsPanel .bld-ed fieldset.bld-ed-bar{display:grid}',
@@ -265,7 +281,9 @@
     '#buildsPanel .bld-ed-opt[aria-pressed=true]{border-color:var(--gn-mod);box-shadow:0 0 0 1px var(--gn-mod)}',
     '#buildsPanel .bld-ed-pick-a{display:flex;gap:6px;justify-content:flex-end}',
     '#buildsPanel .bld-ed-water summary{cursor:pointer;color:var(--tx-2);margin-bottom:8px}',
-    '#buildsPanel .bld-ed-prev{position:sticky;top:12px;display:grid;gap:8px}'
+    '#buildsPanel .bld-ed-prev{position:sticky;top:12px;display:grid;gap:8px}',
+    '#buildsPanel .bld-ed-sheet{display:grid;gap:10px}#buildsPanel .bld-ed-sh{display:flex;gap:10px;align-items:center}#buildsPanel .bld-ed-sh div{display:grid;gap:2px}#buildsPanel .bld-ed-sh b{color:var(--tx-1)}',
+    '#buildsPanel .bld-ed-prev .bld-tvl{grid-template-columns:1fr}#buildsPanel .bld-ed-prev .bld-tvlh{grid-auto-flow:column;justify-content:start}'
   ].join('\n');
   function ensureCss() {
     var d = root.document;
@@ -390,10 +408,12 @@
 
   function render(host, ctx) {
     if (root.GNBldShow) root.GNBldShow.ensureCss();
+    if (root.GNBldTraitView) root.GNBldTraitView.ensureCss();
     ensureCss();
     ctx.host = host;
     if (!host._bldEd) {
       host._bldEd = true;
+      if (root.GNBldTraitView) root.GNBldTraitView.wire(host);
       host.addEventListener('change', function (e) { if (!host.querySelector('.bld-ed')) return; if (onGear(st.ctx, e)) return; onInput(st.ctx, e); });
       host.addEventListener('toggle', function (e) { if (host.querySelector('.bld-ed')) onGear(st.ctx, e); }, true);
       host.addEventListener('input', function (e) { if (e.target && e.target.getAttribute && e.target.getAttribute('data-ed') === 'title') st.title = e.target.value; });

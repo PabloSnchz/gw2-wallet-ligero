@@ -101,3 +101,37 @@ test('catálogo: freno si respondieron pocas páginas; lista de revisión establ
   assert.equal(txt.split('\n').length, 2 + 2 + 2);
   assert.deepEqual(JSON.parse(txt), r.next);
 });
+
+// BL-084 EQ-1: equipo (gear.json).
+const GOOD = { armor: [[48087, 1077], [48089, 1077], [48085, 1077], [48086, 1077], [48088, 1077], [48084, 1077]], rune: 74978,
+  trinkets: [[79837, 1077], [79745, 1077], [79444, 1077], [81169, 1077], [79710, 1077], [81167, 1077]], relic: 100916, weapons: [[1, 'm', 46768, 1077, [24615, 24554]]] };
+const PVP = { rune: 21210, relic: 100090, amulet: 8, weapons: [[1, 'm', 31283, 0, [21152, 81254]]] };
+
+test('equipo: arma gear.json en el orden del catálogo, conserva el anterior si una ficha no lo muestra y avisa', () => {
+  const r = K.mergeGear(null, { a: GOOD, b: PVP }, ['b', 'a', 'z'], '2026-10-30');
+  assert.equal(r.changed, true);
+  assert.deepEqual(Object.keys(r.next.gear), ['b', 'a']);
+  assert.equal(r.next.fetched, '2026-10-30');
+  assert.equal(r.next.source.name, 'Snow Crows');
+  const txt = K.gearText(r.next);
+  assert.deepEqual(JSON.parse(txt), r.next);
+  assert.equal(txt.split('\n').length, 1 + 2 + 2, 'cabecera, una build por línea y cierre');
+  const same = K.mergeGear(r.next, { a: GOOD, b: PVP }, ['b', 'a'], '2026-11-06');
+  assert.equal(same.changed, false, 'sin novedades no reescribe');
+  const lost = K.mergeGear(r.next, { a: null, b: PVP, c: PVP, d: PVP }, ['b', 'a', 'c', 'd'], '2026-11-06');
+  assert.deepEqual(lost.missing, ['a']);
+  assert.deepEqual(lost.next.gear.a, GOOD, 'la ficha sin equipo deja el que había');
+  assert.equal(lost.updated, 2);
+  const gone = K.mergeGear(r.next, { a: GOOD }, ['a'], '2026-11-06');
+  assert.deepEqual(Object.keys(gone.next.gear), ['a'], 'la build que salió del catálogo se va');
+});
+
+test('equipo: freno si la página cambió de forma (menos del 70 % sano) y equipo raro no entra', () => {
+  const prev = K.mergeGear(null, { a: GOOD, b: PVP }, ['a', 'b'], '2026-10-30').next;
+  const r = K.mergeGear(prev, { a: null, b: { weapons: [] }, c: GOOD }, ['a', 'b', 'c'], '2026-11-06');
+  assert.match(r.refused, /1 de 3/);
+  assert.equal(r.next, prev);
+  const raro = K.mergeGear(prev, { a: GOOD, b: PVP, c: GOOD, d: { armor: [[1, 1]], weapons: [[1, 'm', 2, 0, []]] } }, ['a', 'b', 'c', 'd'], '2026-11-06');
+  assert.equal(raro.next.gear.d, undefined, 'un equipo con 1 pieza de armadura no se guarda');
+  assert.deepEqual(K.mergeGear(prev, {}, ['a', 'b'], '2026-11-06').changed, false, 'si no respondió ninguna ficha, nada cambia');
+});

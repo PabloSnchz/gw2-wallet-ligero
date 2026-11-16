@@ -1,6 +1,8 @@
 /*!
  * js/bld-mine.js — Builds: pestaña Mis builds (BL-082 BLD-6, B7)
- * Versión: 1.4.0 (2026-10-29) · BENCH-2: cada build muestra el bench de la build de la Biblioteca en que se basa o,
+ * Versión: 1.5.0 (2026-10-30) · EQ-3b: con js/bld-rows.js, la misma fila que la Biblioteca (emblema, nombre, élite, editada, DPS
+ *          de la build en que se basa) y cada una abre su ficha en pantalla propia (#/builds/ver/m:<id>, js/bld-sheet.js) con
+ *          nombre y notas, Editar, Duplicar y Borrar; al volver, el foco vuelve a esa fila · antes 1.4.0 (2026-10-29) · BENCH-2: cada build muestra el bench de la build de la Biblioteca en que se basa o,
  *          si no hay, la «Referencia» medida más parecida (js/bld-bench.js), sin inventar su DPS · antes 1.3.0 BUI-6b: la tarjeta pasa su profesión al marco (franja con el arte de su élite,
  *          filo y tinte del color de la profesión) · antes 1.2.0 BUI-6: como la Biblioteca, la tarjeta lleva el fondo de su élite de borde a borde y el
  *          emblema a 56 px · antes 1.1.0 BUI-4: la misma tarjeta que la Biblioteca: emblema de la élite, «Copiar código»,
@@ -12,8 +14,8 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.4.0';
-  var st = { open: '', confirm: '', view: {}, checks: {} };
+  var VERSION = '1.5.0';
+  var st = { open: '', confirm: '', view: {}, checks: {}, last: '', back: false, ctx: null };
 
   function esc(s) { return root.GNBldShow ? root.GNBldShow.esc(s) : String(s == null ? '' : s); }
   function fmt(t) { try { return new Date(t).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }); } catch (_) { return ''; } }
@@ -60,13 +62,49 @@
     return h + '</li>';
   }
 
+  // EQ-3b: la build de la Biblioteca en que se basa (mismo código o misma fuente); null si no hay o no cargó.
+  function baseOf(b) {
+    var Lb = root.GNBldLib, s = Lb && Lb._state, list = s && s.cat && s.cat.builds;
+    if (!list || !b) return null;
+    var same = list.filter(function (x) { return x.code === b.code; })[0];
+    if (same) return same;
+    var u = b.source && b.source.url;
+    return (u && list.filter(function (x) { return x.source && x.source.url === u; })[0]) || null;
+  }
+  // EQ-3b: la fila (la de la Biblioteca, en lista plana); toda la fila es un enlace a su ficha.
+  function mineRowHTML(b) {
+    var C = root.GNBldCode, el = eliteOf(b), V = root.GNBld, R = root.GNBldRows, Lb = root.GNBldLib, base = baseOf(b);
+    var col = V && V._pure && V._pure.PROF_COLOR ? V._pure.PROF_COLOR[b.profession] : '';
+    var Rf = root.GNBldRef, idn = Rf && typeof Rf.identitySync === 'function' ? Rf.identitySync() : null;
+    var eName = (idn && idn.elites && idn.elites[el] && idn.elites[el].name) || (base && base.eliteName) || '';
+    var meta = [C ? C.PROF_ES[b.profession] || '' : '', eName, 'editada ' + fmt(b.updated)].filter(Boolean).join(' · ');
+    var tags = (base ? '<span class="bld-tag">basada en la Biblioteca</span>' : b.source && b.source.name ? '<span class="bld-tag">basada en ' + esc(b.source.name) + '</span>' : '<span class="bld-tag">propia</span>') +
+      (b.notes ? '<span class="bld-tag is-boon">con notas</span>' : '');
+    var dps = base && R && R._pure && Lb ? R._pure.dpsHTML(base, { lib: Lb._pure, idx: Lb._state && Lb._state.bidx }) : '<span class="bld-rdps is-none">Tuya · sin bench propio</span>';
+    var S = root.GNBldShow, emb = S && typeof S.emblem === 'function' ? S.emblem(b.profession, el, 32, { label: true }) : '';
+    return '<a class="bld-row is-flat is-mine" href="#/builds/ver/' + encodeURIComponent('m:' + b.id) + '" data-id="' + esc(b.id) + '"' +
+      (/^#[0-9A-Fa-f]{6}$/.test(col || '') ? ' style="--bld-prof:' + col + '"' : '') + '>' + emb +
+      '<span class="bld-rt"><b>' + esc(b.title) + '</b><small>' + esc(meta) + '</small></span><span class="bld-rtags">' + tags + '</span>' + dps +
+      '<span class="bld-rgo" aria-hidden="true">›</span></a>';
+  }
+  // Al volver de la ficha, el foco va a la fila de esa build (una sola vez).
+  function remember(id) { st.last = String(id || ''); st.back = !!id; }
+  function focusBack(ctx) {
+    if (!st.back || !st.last || !ctx || !ctx.host || !ctx.host.querySelector) return false;
+    st.back = false;
+    var x = ctx.host.querySelector('a.bld-row[data-id="' + st.last.replace(/["\\\]]/g, '') + '"]');
+    if (!x) return false;
+    if (x.scrollIntoView) x.scrollIntoView({ block: 'center' });
+    if (x.focus) x.focus({ preventScroll: true });
+    return true;
+  }
   function viewHTML(list) {
     if (!list.length) {
       return '<div class="bld-card"><p><b>Todavía no guardaste builds.</b></p><p class="bld-muted">Armá una en el <a href="#/builds/editor">Editor</a>, ' +
         'importá un código en <a href="#/builds/importar">Importar</a> o guardá una de la <a href="#/builds">Biblioteca</a>. Quedan en este navegador y viajan en tu respaldo.</p></div>';
     }
     return '<p class="bld-muted">' + list.length + (list.length === 1 ? ' build guardada' : ' builds guardadas') + ' en este navegador · viajan en tu respaldo.</p>' +
-      '<ul class="bld-mine">' + list.map(rowHTML).join('') + '</ul>';
+      (root.GNBldRows ? '<div class="bld-rlist is-flat">' + list.map(mineRowHTML).join('') + '</div>' : '<ul class="bld-mine">' + list.map(rowHTML).join('') + '</ul>');
   }
 
   var CSS = [
@@ -114,6 +152,8 @@
   }
 
   function onClick(ctx, e) {
+    var a = e.target && e.target.closest ? e.target.closest('a.bld-row') : null;
+    if (a) { remember(a.getAttribute('data-id')); return 'row'; }
     var b = e.target && e.target.closest ? e.target.closest('[data-mine]') : null;
     if (!b) return;
     var row = b.closest('[data-id]'), id = row && row.getAttribute('data-id'), act = b.getAttribute('data-mine');
@@ -138,21 +178,29 @@
   function render(host, ctx) {
     if (root.GNBldShow) root.GNBldShow.ensureCss();
     if (root.GNBldBench) root.GNBldBench.ensureCss();
+    if (root.GNBldRows) root.GNBldRows.ensureCss();
     ensureCss();
     ctx.host = host;
+    st.ctx = ctx;
     if (!ctx.store) { host.innerHTML = '<div class="bld-card bld-err">Mis builds no cargó: recargá la página.</div>'; return; }
-    host.addEventListener('click', function (e) { onClick(ctx, e); });
-    if (root.GNBldShow) root.GNBldShow.wire(host, function (btn) {
-      var row = btn.closest('[data-id]'), item = row && ctx.store.get(row.getAttribute('data-id'));
-      return item ? { code: item.code, title: item.title } : null;
-    }, ctx);
+    // EQ-3b: si la pestaña se vuelve a dibujar sobre el mismo contenedor, no sumo otra vez los oyentes.
+    if (!host.__bldMine) {
+      host.__bldMine = true;
+      host.addEventListener('click', function (e) { onClick(st.ctx, e); });
+      if (root.GNBldShow) root.GNBldShow.wire(host, function (btn) {
+        var row = btn.closest('[data-id]'), item = row && st.ctx.store.get(row.getAttribute('data-id'));
+        return item ? { code: item.code, title: item.title } : null;
+      }, ctx);
+    }
     paint(ctx);
+    focusBack(ctx);
     // BENCH-2: el bench vive en la Biblioteca; si todavía no se cargó, lo pido y vuelvo a dibujar.
     var Lb = root.GNBldLib;
     if (Lb && typeof Lb.preload === 'function' && !(Lb._state && Lb._state.cat)) Lb.preload().then(function () { paint(ctx); }, function () {});
   }
 
-  var api = { version: VERSION, render: render, _pure: { viewHTML: viewHTML, rowHTML: rowHTML, eliteOf: eliteOf }, _state: st };
+  var api = { version: VERSION, render: render, remember: remember,
+    _pure: { viewHTML: viewHTML, rowHTML: rowHTML, mineRowHTML: mineRowHTML, eliteOf: eliteOf, baseOf: baseOf, focusBack: focusBack, onClick: onClick }, _state: st };
   root.GNBldMine = api;
   if (root.GNBld && typeof root.GNBld.register === 'function') root.GNBld.register('mine', api);
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

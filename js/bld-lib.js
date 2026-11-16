@@ -1,6 +1,9 @@
 /*!
  * js/bld-lib.js — Builds: pestaña Biblioteca (BL-082 BLD-7, BLD-8, BLD-10 y BLD-15: A1–A6, C2, D4)
- * Versión: 1.7.0 (2026-10-29) · BENCH-2: sin bench exacto, la build de PvE que hace daño muestra la «Referencia» medida más
+ * Versión: 1.9.0 (2026-10-30) · EQ-3b: la lista en filas agrupadas por profesión y élite (js/bld-rows.js; «Más DPS primero»
+ *          plano) y los filtros en una sola barra con la búsqueda; cada fila es un enlace a su ficha · antes 1.8.0 (2026-10-30) · EQ-3: «Ver ficha» y tocar la tarjeta abren la ficha en su pantalla (#/builds/ver/<id>,
+ *          js/bld-sheet.js); al volver, la Biblioteca sigue igual y el foco vuelve a esa build; list() da lo que se ve
+ *          · antes 1.7.0 (2026-10-29) · BENCH-2: sin bench exacto, la build de PvE que hace daño muestra la «Referencia» medida más
  *          parecida (js/bld-bench.js), diciendo en qué se parece y que no es su DPS · antes 1.6.0 BENCH-1: cada build de PvE con bench publicado muestra su DPS en el golem de Snow Crows
  *          (máximo, promedio, % de la mejor y barra), «Más DPS primero» y, si no hay bench, por qué · antes 1.5.0 BUI-6b: la tarjeta pasa su profesión al marco (franja con el arte de su élite,
  *          filo y tinte del color de la profesión) · antes 1.4.0 BUI-6: la tarjeta lleva el fondo oficial de su élite de borde a borde (GNBld.bandStyle)
@@ -24,7 +27,7 @@
 (function (root) {
   'use strict';
 
-  var VERSION = '1.7.0';
+  var VERSION = '1.9.0';
   var CATALOG = 'assets/data/builds/catalog.json';
   var WATCH = 'assets/data/builds/watch.json';
   var BENCH = 'assets/data/builds/bench.json';
@@ -33,7 +36,7 @@
   var SUB = { raids: 'raids y strikes', fractals: 'fractales', 'open-world': 'mundo abierto', accessibuilds: 'accesible', roaming: 'roaming', zerg: 'zerg', conquest: 'conquista' };
   var ROLES = { dps: 'DPS', quickness: 'Celeridad', alacrity: 'Alacridad', heal: 'Curación', support: 'Apoyo', boon: 'Bendiciones', cc: 'Control' };
   var DAMAGE = { power: 'Poder', condition: 'Condición', hybrid: 'Híbrido' };
-  var SORT = { '': 'Orden de la biblioteca', dps: 'Más DPS primero' };
+  var SORT = { '': 'Por profesión', dps: 'Más DPS primero' };
   var st = { cat: null, watch: null, bench: null, bidx: null, error: '', loading: false, f: { prof: 0, elite: 0, mode: '', role: '', weapon: '', damage: '', state: '', q: '', sort: '' },
     open: '', more: false, views: {}, checks: {}, viewErr: {} };
 
@@ -118,7 +121,7 @@
   }
   function fmtDate(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : (iso || '—'); }
   // Cuántos filtros de «Más filtros» están puestos (para mostrarlo en el botón y abrirlo solo).
-  function moreCount(f) { return ['weapon', 'damage', 'state', 'q'].filter(function (k) { return f[k]; }).length; }
+  function moreCount(f) { return ['weapon', 'damage', 'state'].filter(function (k) { return f[k]; }).length; }
 
   // ---------------------------------------------------------------- vista
   function chips(label, key, map, cur) {
@@ -159,19 +162,21 @@
     var n = moreCount(f), open = st.more || n > 0;
     var wopts = Object.keys(weapons).map(function (w) { return [w, weapons[w]]; }).sort(function (a, b) { return a[1].localeCompare(b[1], 'es'); });
     return '<details class="bld-more" data-lib-more' + (open ? ' open' : '') + '><summary>Más filtros' + (n ? ' (' + n + ')' : '') + '</summary><div class="bld-more-b">' +
-      '<label class="bld-f" for="bldLibQ"><small>Buscar</small><input id="bldLibQ" type="search" data-lib-f="q" value="' + esc(f.q) + '" placeholder="nombre o élite"></label>' +
       '<label class="bld-f" for="bldLibWeapon"><small>Arma</small><select id="bldLibWeapon" data-lib-f="weapon"><option value="">Todas</option>' +
       wopts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === f.weapon ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>' +
       '<div class="bld-f"><small>Daño</small>' + chips('Daño', 'damage', DAMAGE, f.damage) + '</div>' +
       '<div class="bld-f"><small>Vigencia</small>' + chips('Vigencia', 'state', { vigente: 'Vigentes', revisar: 'Para revisar' }, f.state) + '</div>' +
-      (n || f.prof || f.mode || f.role ? '<button type="button" class="bld-btn" data-lib="clear">Sacar todos los filtros</button>' : '') +
+      (n || f.q || f.prof || f.mode || f.role ? '<button type="button" class="bld-btn" data-lib="clear">Sacar todos los filtros</button>' : '') +
       '</div></details>';
   }
   function filtersHTML(cat, f) {
     var id = ident();
-    return '<div class="bld-filters">' + profsHTML(f, id) + elitesHTML(cat, f, id) +
-      '<div class="bld-chiprow">' + chips('Modo', 'mode', MODES, f.mode) + '<span class="bld-sep" aria-hidden="true"></span>' + chips('Rol', 'role', ROLES, f.role) +
-      (st.bidx && st.bidx.n ? '<span class="bld-sep" aria-hidden="true"></span><div class="bld-chips" role="group" aria-label="Orden">' + Object.keys(SORT).map(function (k) {
+    // EQ-3b: una sola barra (profesión, modo, rol y búsqueda), como Snow Crows; debajo las élites, el orden y «Más filtros».
+    return '<div class="bld-filters"><div class="bld-bar1">' + profsHTML(f, id) + '<span class="bld-sep" aria-hidden="true"></span>' + chips('Modo', 'mode', MODES, f.mode) +
+      '<span class="bld-sep" aria-hidden="true"></span>' + chips('Rol', 'role', ROLES, f.role) +
+      '<input id="bldLibQ" class="bld-q" type="search" data-lib-f="q" value="' + esc(f.q) + '" placeholder="Buscar build o élite" aria-label="Buscar build o élite"></div>' +
+      elitesHTML(cat, f, id) + '<div class="bld-chiprow">' +
+      (st.bidx && st.bidx.n ? '<div class="bld-chips" role="group" aria-label="Orden"><small class="bld-muted">Orden:</small>' + Object.keys(SORT).map(function (k) {
         return '<button type="button" class="bld-chip" data-lib-p="sort" data-v="' + k + '" aria-pressed="' + ((f.sort || '') === k) + '">' + esc(SORT[k]) + '</button>'; }).join('') + '</div>' : '') + '</div>' +
       moreHTML(cat, f) + '</div>';
   }
@@ -202,6 +207,12 @@
     }
     return h + '</li>';
   }
+  // EQ-3b: con js/bld-rows.js, filas agrupadas por profesión y élite (planas con «Más DPS primero»); sin él, las tarjetas.
+  function listHTML(list, latest) {
+    var R = root.GNBldRows;
+    if (R && typeof R.listHTML === 'function' && !st.open) return R.listHTML(list, { lib: api._pure, latest: latest, idx: st.bidx, flat: st.f.sort === 'dps' });
+    return '<ul class="bld-lib">' + list.map(function (b) { return cardHTML(b, latest); }).join('') + '</ul>';
+  }
   function viewHTML() {
     if (st.loading) return '<div class="bld-card" role="status">Cargando la biblioteca…</div>';
     if (st.error) return '<div class="bld-card bld-err" role="alert">' + esc(st.error) + ' <button type="button" class="bld-btn" data-lib="retry">Reintentar</button></div>';
@@ -218,7 +229,7 @@
       : '<p class="bld-shv">Todas las builds están revisadas para el último parche de balance (' + fmtDate(latest) + '). <small class="bld-muted">Lo sé por: la biblioteca y la vigía semanal</small></p>';
     return line + filtersHTML(st.cat, st.f) +
       '<p class="bld-muted bld-count" aria-live="polite">' + list.length + ' de ' + st.cat.builds.length + ' builds · élites cubiertas: ' + ['pve', 'wvw', 'pvp'].filter(function (m) { return cov[m]; }).map(function (m) { return MODES[m] + ' ' + cov[m] + '/36' + (ok[m] !== cov[m] ? ' (' + (ok[m] || 0) + ' vigentes)' : ''); }).join(', ') + (nb ? ' · ' + nb + ' con bench de daño' : '') + '</p>' +
-      (list.length ? '<ul class="bld-lib">' + list.map(function (b) { return cardHTML(b, latest); }).join('') + '</ul>'
+      (list.length ? listHTML(list, latest)
         : '<div class="bld-card bld-muted">Ninguna build con esos filtros. <button type="button" class="bld-btn" data-lib="clear">Sacar todos los filtros</button></div>') +
       '<p class="bld-muted"><small>Builds curadas por mí con datos de ' + (st.cat.sources || []).map(function (s) { return '<a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.name) + '</a>'; }).join(', ') +
       ': élite, modo, rol, armas, código y fecha; los textos, guías y rotaciones están en cada fuente.' +
@@ -227,6 +238,9 @@
 
   var CSS = [
     '#buildsPanel .bld-filters{display:grid;gap:10px;margin-bottom:12px}',
+    '#buildsPanel .bld-bar1{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;border:1px solid var(--bd-1);border-radius:12px;background:var(--bg-1)}',
+    '#buildsPanel .bld-q{margin-left:auto;flex:0 1 230px;min-width:170px;background:var(--bg-0);color:var(--tx-1);border:1px solid var(--bd-1);border-radius:8px;padding:6px 10px;font:inherit;font-size:.85rem}',
+    '#buildsPanel .bld-chips>small{align-self:center;margin-right:2px}@media (max-width:560px){#buildsPanel .bld-q{margin-left:0;flex:1 1 100%}}',
     '#buildsPanel .bld-profs{display:flex;flex-wrap:wrap;gap:6px}',
     '#buildsPanel .bld-pf{min-width:44px;height:44px;border-radius:10px;border:1px solid var(--bd-1);background:var(--bg-0);color:var(--tx-1);display:grid;place-items:center;padding:0 6px;cursor:pointer;font:inherit;font-size:.8rem}',
     '#buildsPanel .bld-pf .bld-emb{background:none;box-shadow:none;padding:0}',
@@ -325,10 +339,26 @@
       if (st.open === b.id) paint(ctx);
     }, function (e) { st.viewErr[b.id] = 'No pude traer los nombres del juego (' + (e && e.message || '') + ').'; if (st.open === b.id) paint(ctx); });
   }
+  // EQ-3: con el marco de Builds (ctx.go) la ficha se abre en su pantalla; sin él, adentro de la tarjeta como antes.
   function toggle(ctx, b) {
+    if (ctx.go) { st.last = b.id; st.back = true; ctx.go('sheet', b.id); return; }
     st.open = st.open === b.id ? '' : b.id;
     if (st.open && !st.views[b.id]) { delete st.viewErr[b.id]; openView(ctx, b); }
     paint(ctx);
+  }
+  // EQ-3: lo que la Biblioteca está mostrando, en su orden (la ficha lo usa para «anterior / siguiente»).
+  function list() { return st.cat ? sortBuilds(filter(st.cat.builds, st.f, latestPatch(st.cat, st.watch)), st.f.sort, st.bidx) : []; }
+  // Al volver de la ficha, el foco va a «Ver ficha» de esa build (y se la muestra), una sola vez.
+  function remember(id) { st.last = String(id || ''); st.back = !!id; }
+  function focusBack(ctx) {
+    if (!st.back || !st.last || !ctx || !ctx.host || !ctx.host.querySelector) return false;
+    st.back = false;
+    var x = ctx.host.querySelector('[data-id="' + st.last.replace(/["\\\]]/g, '') + '"] [data-lib="toggle"]');
+    if (!x) x = ctx.host.querySelector('a.bld-row[data-id="' + st.last.replace(/["\\\]]/g, '') + '"]');
+    if (!x) return false;
+    if (x.scrollIntoView) x.scrollIntoView({ block: 'center' });
+    if (x.focus) x.focus({ preventScroll: true });
+    return true;
   }
   function clearFilters() { st.f = { prof: 0, elite: 0, mode: '', role: '', weapon: '', damage: '', state: '', q: '', sort: st.f.sort || '' }; st.more = false; }
 
@@ -350,6 +380,9 @@
       if (b) { toggle(ctx, b); return 'toggle'; }
       return '';
     }
+    // EQ-3b: la fila es un enlace a su ficha (navega sola); me acuerdo de cuál era para devolverle el foco al volver.
+    x = near('a.bld-row');
+    if (x) { remember(x.getAttribute('data-id')); return 'row'; }
     if (near('button,a,summary,details,input,select,label,.bld-detail')) return '';
     var card = near('.bld-lib-card');
     if (card && !card.classList.contains('is-open')) { var c = byId(card.getAttribute('data-id')); if (c) { toggle(ctx, c); return 'card'; } }
@@ -359,6 +392,7 @@
   function render(host, ctx) {
     if (root.GNBldShow) root.GNBldShow.ensureCss();
     if (root.GNBldBench) root.GNBldBench.ensureCss();
+    if (root.GNBldRows) root.GNBldRows.ensureCss();
     ensureCss();
     ctx.host = host;
     st.ctx = ctx;
@@ -395,10 +429,11 @@
     loadIcons(ctx);
     if (!st.cat) return load(ctx);
     paint(ctx);
+    focusBack(ctx);
   }
 
-  var api = { version: VERSION, render: render, preload: preload, _pure: { filter: filter, stateOf: stateOf, latestPatch: latestPatch, coverage: coverage, issueUrl: issueUrl, cardHTML: cardHTML, viewHTML: viewHTML,
-    filtersHTML: filtersHTML, moreCount: moreCount, onClick: onClick, MODES: MODES, ROLES: ROLES, CSS: CSS,
+  var api = { version: VERSION, render: render, preload: preload, list: list, byId: byId, remember: remember, _pure: { focusBack: focusBack, filter: filter, stateOf: stateOf, latestPatch: latestPatch, coverage: coverage, issueUrl: issueUrl, cardHTML: cardHTML, viewHTML: viewHTML,
+    filtersHTML: filtersHTML, moreCount: moreCount, onClick: onClick, MODES: MODES, ROLES: ROLES, SUB: SUB, DAMAGE: DAMAGE, SORT: SORT, listHTML: listHTML, CSS: CSS,
     benchKey: benchKey, benchIndex: benchIndex, benchOf: benchOf, benchHTML: benchHTML, sortBuilds: sortBuilds, fmtN: fmtN }, _state: st };
   root.GNBldLib = api;
   if (root.GNBld && typeof root.GNBld.register === 'function') root.GNBld.register('lib', api);
