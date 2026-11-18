@@ -1,0 +1,231 @@
+/* ==========================================================================
+   css/universo.css — La Bóveda en mi universo (BL-092, DEC-025)
+   Versión: 1.5.0 (2026-11-18) · BV-6b: los paneles de los módulos como los de La Guarida (color solo en el borde de arriba)
+            1.4.0 (2026-11-18) · BV-5: celular y revisión final (lugar para mi globo, botón de 44 px, mensajes largos,
+                                  me corro mientras escribís en el celular, no salgo impreso)
+            1.3.0 (2026-11-17) · BV-4: mis poses sin fondo en Inicio y en las pantallas vacías
+            1.2.0 (2026-11-17) · BV-3: mi globo con el gato en vez del rincón de la barra lateral
+            1.1.0 (2026-11-17) · BV-2: cabeceras de los módulos (antetítulo del grupo y cifras en ámbar)
+            1.0.0 (2026-11-17) · BV-1: fondo «Taller», barra de arriba y barra lateral
+
+   Lo que Pablo eligió en BV-0 (2026-11-17, las ★): D1 fondo «Taller» (cuadrícula tenue y
+   chispas que suben despacio), D2 globo con el gato, D3 antetítulo y cifras en ámbar,
+   D4 mis poses en Inicio y en los vacíos. Este archivo crece por pasos: BV-1 trae el fondo,
+   la barra de arriba y la barra lateral; BV-2 las cabeceras; BV-3 el globo; BV-4 las poses.
+
+   Reglas de este archivo (las vigila tests/universo.test.cjs):
+   - Solo con el theme Gato Negro, el oficial y el de por defecto. Todo selector empieza con
+     :root:is([data-theme="gato"],:not([data-theme])) — el «:not» cubre el primer pintado,
+     antes de que theme-selector.js ponga data-theme, para que no haya parpadeo. Los otros
+     18 themes quedan exactamente como estaban.
+   - No toca tokens (--bg, --tx-…): el contraste del theme lo sigue midiendo theme-gato.test.
+   - Ambiente, no contenido: nada de esto le saca lugar ni clics a los datos (pointer-events:none).
+   - Sin JS: el fondo y las chispas son seudo-elementos. No suma un módulo a js/modules.json.
+     El globo (BV-3) lo pone js/shv-bubble.js; acá solo se acomoda.
+   - «Reducir movimiento» apaga las chispas; en el celular hay menos. Sin backdrop-filter.
+   Paleta del universo (La Guarida y el Centro de mando): fondo #0B0B10, superficie #15151D,
+   línea #2A2A38, ámbar #E8B34B, violeta #9B82FF.
+   ========================================================================== */
+
+/* ---------- 1. Fondo «Taller»: resplandores + cuadrícula, fijo detrás de todo ---------- */
+:root:is([data-theme="gato"],:not([data-theme])) { background: #0B0B10; }
+:root:is([data-theme="gato"],:not([data-theme])) body { background: transparent; }
+:root:is([data-theme="gato"],:not([data-theme])) body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(40% 40% at 88% 4%, rgba(155,130,255,.16), transparent 70%),
+    radial-gradient(35% 30% at 6% 30%, rgba(232,179,75,.07), transparent 70%),
+    linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px) 0 0 / 100% 48px,
+    linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px) 0 0 / 48px 100%,
+    #0B0B10;
+}
+
+/* ---------- 2. Chispas: dos tandas iguales, una debajo de la otra, que suben una pantalla
+   entera; cuando termina la vuelta la segunda quedó donde empezó la primera (sin salto). ---------- */
+:root:is([data-theme="gato"],:not([data-theme])) body::after {
+  content: ""; position: fixed; left: 0; top: 0; z-index: -1; pointer-events: none;
+  width: 3px; height: 3px; border-radius: 50%; opacity: .4;
+  box-shadow:
+    4vw 92vh 2px #E8B34B, 13vw 18vh 2px #E8B34B, 21vw 64vh 2px #9B82FF, 30vw 40vh 2px #E8B34B,
+    38vw 84vh 2px #E8B34B, 47vw 10vh 2px #9B82FF, 55vw 56vh 2px #E8B34B, 63vw 30vh 2px #E8B34B,
+    72vw 76vh 2px #9B82FF, 80vw 48vh 2px #E8B34B, 88vw 4vh 2px #E8B34B, 96vw 68vh 2px #9B82FF,
+    4vw 192vh 2px #E8B34B, 13vw 118vh 2px #E8B34B, 21vw 164vh 2px #9B82FF, 30vw 140vh 2px #E8B34B,
+    38vw 184vh 2px #E8B34B, 47vw 110vh 2px #9B82FF, 55vw 156vh 2px #E8B34B, 63vw 130vh 2px #E8B34B,
+    72vw 176vh 2px #9B82FF, 80vw 148vh 2px #E8B34B, 88vw 104vh 2px #E8B34B, 96vw 168vh 2px #9B82FF;
+  animation: gn-uv-chispas 60s linear infinite;
+}
+@keyframes gn-uv-chispas { from { transform: translateY(0); } to { transform: translateY(-100vh); } }
+
+/* ---------- 3. Barra de arriba (index.html header.gn-tb, conducta en js/gn-topbar.js) ---------- */
+:root:is([data-theme="gato"],:not([data-theme])) header.gn-tb {
+  /* sin backdrop-filter: la barra no es fija (no hay nada que desenfocar) y el filtro volvería
+     «contenedor» de lo fijo que tenga adentro */
+  background: rgba(11,11,16,.82); border-bottom-color: #2A2A38;
+}
+:root:is([data-theme="gato"],:not([data-theme])) .gn-tb .brand-logo-compact {
+  border-radius: 50%; background: #000; box-shadow: 0 0 0 2px #E8B34B;
+}
+:root:is([data-theme="gato"],:not([data-theme])) .gn-tb #keySelectGlobal { background-color: rgba(21,21,29,.8); border-color: #2A2A38; }
+:root:is([data-theme="gato"],:not([data-theme])) .gn-tb__btn:hover,
+:root:is([data-theme="gato"],:not([data-theme])) .gn-tb__btn[aria-expanded="true"] { background: #15151D; border-color: #2A2A38; }
+:root:is([data-theme="gato"],:not([data-theme])) .gn-tb__menu { background: #15151D; border-color: #2A2A38; }
+:root:is([data-theme="gato"],:not([data-theme])) .gn-tb__menu [role="menuitem"]:hover,
+:root:is([data-theme="gato"],:not([data-theme])) .gn-tb__menu [role="menuitem"]:focus { background: #1C1C26; }
+
+/* ---------- 4. Barra lateral (js/sidebar-nav.js: #appSidebar, la barra #sbrTabs y la hoja #sbrSheet) ---------- */
+:root:is([data-theme="gato"],:not([data-theme])) #appSidebar .sbr-cap { color: #E8B34B; letter-spacing: .2em; font-weight: 700; }
+:root:is([data-theme="gato"],:not([data-theme])) :is(#appSidebar,#sbrSheet) .sbr-acct { background: rgba(21,21,29,.86); border-color: #2A2A38; }
+:root:is([data-theme="gato"],:not([data-theme])) :is(#appSidebar,#sbrSheet) .sbr-acct img { background: #0B0B10; }
+:root:is([data-theme="gato"],:not([data-theme])) :is(#appSidebar,#sbrSheet) .sbr-list a:hover { background: rgba(21,21,29,.86); border-color: #2A2A38; }
+:root:is([data-theme="gato"],:not([data-theme])) :is(#appSidebar,#sbrSheet) .sbr-list a.is-active {
+  background: color-mix(in srgb, var(--x, #A896FF) 14%, rgba(21,21,29,.92));
+  border-color: color-mix(in srgb, var(--x, #A896FF) 45%, transparent);
+}
+:root:is([data-theme="gato"],:not([data-theme])) #appSidebar .sbr-sep { background: #2A2A38; }
+:root:is([data-theme="gato"],:not([data-theme])) #sbrTabs { background: rgba(21,21,29,.96); border-top-color: #2A2A38; }
+:root:is([data-theme="gato"],:not([data-theme])) #sbrSheet { background: #15151D; border-top-color: #2A2A38; }
+
+/* ---------- 5. Cabeceras de los módulos (BV-2, D3) ----------
+   Cada vista pone un id fijo en su título (lo vigila el test): arriba va el grupo en el orden
+   que eligió Pablo (Tu oro · Lo diario · Lo semanal · Tu progreso · Tu cuenta), en el color
+   del módulo, el mismo de la barra lateral. Es un ::before con texto alternativo vacío
+   (content: "…" / ""): se ve, pero no entra en el nombre de la región ni lo lee el lector
+   de pantalla. Un navegador sin texto alternativo descarta la regla entera: sin antetítulo,
+   nada más. Las cifras de los 4 indicadores van en ámbar; el «de N» y las notas, como estaban. */
+:root:is([data-theme="gato"],:not([data-theme])) :is(#walletTitle,#walletDashboardPanel .wn-hero .panel__title,#metaTitle,#wvxTitle,#avTitle,#hsTitle,#rvTitle,#achxTitle,#ivTitle,#armTitle,#bldTitle,#cvTitle,#welcomeTitle)::before {
+  display: block; margin: 0 0 4px; font-size: .7rem; font-weight: 700; line-height: 1.2;
+  letter-spacing: .2em; text-transform: uppercase;
+  /* sin color acá: :is() toma la especificidad de su selector más fuerte y le ganaría al de cada módulo */
+}
+:root:is([data-theme="gato"],:not([data-theme])) :is(#walletTitle,#walletDashboardPanel .wn-hero .panel__title)::before { content: "Tu oro" / ""; color: #F2B94B; }
+:root:is([data-theme="gato"],:not([data-theme])) #metaTitle::before { content: "Lo diario" / ""; color: #A896FF; }
+:root:is([data-theme="gato"],:not([data-theme])) #wvxTitle::before { content: "Lo diario" / ""; color: #15C3B7; }
+:root:is([data-theme="gato"],:not([data-theme])) #avTitle::before { content: "Lo diario" / ""; color: #3CC48A; }
+:root:is([data-theme="gato"],:not([data-theme])) #hsTitle::before { content: "Lo diario" / ""; color: #D9A55B; }
+:root:is([data-theme="gato"],:not([data-theme])) #rvTitle::before { content: "Lo semanal" / ""; color: #F47C7C; }
+:root:is([data-theme="gato"],:not([data-theme])) #achxTitle::before { content: "Tu progreso" / ""; color: #6EA3FF; }
+:root:is([data-theme="gato"],:not([data-theme])) #ivTitle::before { content: "Tu progreso" / ""; color: #7EC3FF; }
+:root:is([data-theme="gato"],:not([data-theme])) #armTitle::before { content: "Tu progreso" / ""; color: #E868D4; } /* #E545CA aclarado: AA sobre su cabecera teñida */
+:root:is([data-theme="gato"],:not([data-theme])) #bldTitle::before { content: "Tu progreso" / ""; color: #C9B6FF; }
+:root:is([data-theme="gato"],:not([data-theme])) #cvTitle::before { content: "Tu cuenta" / ""; color: #8E96A3; }
+:root:is([data-theme="gato"],:not([data-theme])) #welcomeTitle::before { content: "Bienvenida" / ""; color: #A896FF; }
+/* el título, con el peso del universo (en el celular cada vista conserva su tamaño) */
+:root:is([data-theme="gato"],:not([data-theme])) :is(#walletTitle,#walletDashboardPanel .wn-hero .panel__title,#metaTitle,#wvxTitle,#avTitle,#hsTitle,#rvTitle,#achxTitle,#ivTitle,#armTitle,#bldTitle,#cvTitle) {
+  font-weight: 800; letter-spacing: -.01em;
+}
+@media (min-width: 901px) {
+  :root:is([data-theme="gato"],:not([data-theme])) :is(#walletTitle,#walletDashboardPanel .wn-hero .panel__title,#metaTitle,#wvxTitle,#avTitle,#hsTitle,#rvTitle,#achxTitle,#ivTitle,#armTitle,#bldTitle,#cvTitle) {
+    font-size: 1.45rem;
+  }
+}
+/* las cifras de los indicadores (el «de N» va en un <span> con su propio color: no cambia) */
+:root:is([data-theme="gato"],:not([data-theme])) :is(.wvx-st,.achx-st,.rv-st,.av-st,.iv-st,.hs-st,.arm-st,.cv-st,#buildsPanel .bld-st) > b {
+  color: #E8B34B; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 6. Mi globo con el gato (BV-3, D2) ----------
+   js/shv-bubble.js 1.5.0 baja el kit de escena (css/escena-kit.css y js/escena-kit.js, copia fija del repo
+   shiruvana) solo con este theme, arma el globo abajo a la derecha y pone body.shv-escena. Mi rincón de la
+   barra lateral pasa a ser el globo; con una ventana abierta me aparto; los avisos suben para no taparme.
+   Sin body.shv-escena (el kit no cargó) el rincón sigue donde estaba. Contraste: texto del theme y ámbar
+   #E8B34B sobre el globo #15151D. */
+:root:is([data-theme="gato"],:not([data-theme])) body.shv-escena :is(#appSidebar,#sbrSheet) [data-shv-place="corner"] { display: none; }
+:root:is([data-theme="gato"],:not([data-theme])):is(.gn-mod-open,.gn-dlg-open) .svk-globo { visibility: hidden; }
+:root:is([data-theme="gato"],:not([data-theme])) body.shv-escena #toasts.gn-ui { bottom: 150px; }
+:root:is([data-theme="gato"],:not([data-theme])) .svk-globo #shvBubble {
+  position: static; width: auto; margin: 0; border: 0; border-radius: 0; background: none; box-shadow: none; animation: none;
+}
+:root:is([data-theme="gato"],:not([data-theme])) .svk-globo #shvBubble .shv-voice { margin: 0; padding: 0; border: 0; border-radius: 0; background: none; }
+:root:is([data-theme="gato"],:not([data-theme])) .svk-globo #shvBubble .shv-bub__x { display: none; }
+:root:is([data-theme="gato"],:not([data-theme])) .svk-globo.shv-hablando :is(.svk-nombre,.svk-texto) { display: none; }
+:root:is([data-theme="gato"],:not([data-theme])) .svk-globo #shvBubble .shv-voice__label {
+  color: #E8B34B; font-size: .7rem; letter-spacing: .18em; text-transform: uppercase;
+}
+/* BV-5: lo último de cada pantalla no queda debajo de mi globo plegado ni de su gato (se puede bajar un poco más) */
+:root:is([data-theme="gato"],:not([data-theme])) body.shv-escena { padding-bottom: 150px; }
+/* BV-5: un mensaje largo no se sale de la pantalla: se desplaza adentro (el gato queda afuera del recorte) */
+:root:is([data-theme="gato"],:not([data-theme])) .svk-globo .svk-dice { max-height: calc(100vh - 150px); overflow-y: auto; overscroll-behavior: contain; }
+@media (max-width: 900px) {
+  /* sobre la barra de abajo (#sbrTabs), como el globo de antes */
+  :root:is([data-theme="gato"],:not([data-theme])) .svk-globo { right: 12px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); width: calc(100vw - 24px); }
+  :root:is([data-theme="gato"],:not([data-theme])) .svk-globo.is-plegado { width: auto; }
+  :root:is([data-theme="gato"],:not([data-theme])) body.shv-escena #toasts.gn-ui { bottom: 200px; }
+  /* BV-5: la barra de abajo (68 px) más mi globo plegado con el gato encima */
+  :root:is([data-theme="gato"],:not([data-theme])) body.shv-escena { padding-bottom: calc(210px + env(safe-area-inset-bottom, 0px)); }
+  :root:is([data-theme="gato"],:not([data-theme])) .svk-globo .svk-dice { max-height: calc(100vh - 250px); max-height: calc(100dvh - 250px); }
+  /* el botón para abrirme y plegarme, a medida del dedo */
+  :root:is([data-theme="gato"],:not([data-theme])) .svk-globo .svk-plegar { width: 44px; height: 44px; }
+  /* mientras escribís, me corro: con el teclado abierto queda poco lugar */
+  :root:is([data-theme="gato"],:not([data-theme])):has(:is(input:not([type="checkbox"],[type="radio"],[type="range"],[type="button"],[type="submit"],[type="reset"],[type="color"],[type="file"],[type="hidden"]),textarea,[contenteditable="true"]):focus) .svk-globo { visibility: hidden; }
+}
+
+/* ---------- 7. Mis poses de cuerpo entero (BV-4, D4) ----------
+   js/shv-bubble.js 1.6.0 les saca el fondo con el recorte del kit y las deja en body como --svk-p-<pose>
+   con la clase svk-p-<pose>: hasta que no están listas estas reglas no aplican (nunca un rectángulo negro).
+   Inicio («Shiruvana te guía», también el saludo sin Key): saluda, en lugar del avatar redondo.
+   Pantallas vacías de verdad (no las de filtros ni las que cargan): la cola de la Armería, Cuentas sin
+   cuentas y Compras fijadas sin nada fijado: pensando. Nunca en saldos, tablas ni navegación. La pose va
+   al costado, con su lugar propio (padding), así no tapa el texto. */
+:root:is([data-theme="gato"],:not([data-theme])) body.svk-p-saluda #welcomePanel [data-shv-place="welcome"] {
+  grid-template-columns: minmax(0, 1fr); min-height: 270px; padding-right: 200px;
+  background-image: var(--svk-p-saluda); background-repeat: no-repeat; background-position: right 16px bottom 0; background-size: 170px auto;
+}
+:root:is([data-theme="gato"],:not([data-theme])) body.svk-p-saluda #welcomePanel [data-shv-place="welcome"] > .shv-voice__avatar { display: none; }
+:root:is([data-theme="gato"],:not([data-theme])) body.svk-p-pensando :is(.arm-qview > .arm-empty, .cv-empty, div.wvp-empty) {
+  min-height: 210px; padding-right: 170px; text-align: left;
+  background-image: var(--svk-p-pensando); background-repeat: no-repeat; background-position: right 12px bottom 0; background-size: 140px auto;
+}
+/* en el celular, más chicas: van en el bloque de 640 px de la sección 9 */
+
+/* ---------- 8. Paneles de los módulos como los de La Guarida (BV-6b, pedido de Pablo 2026-11-18) ----------
+   El panel es oscuro (#1C1C26 a #15151D, como las tarjetas de La Guarida) y el color del módulo va solo en el
+   borde de arriba, con una luz leve que baja desde la esquina y un brillo suave sobre el borde. Antes el color
+   teñía todo el fondo (js/gn-shell.js y las cabeceras de cada vista): acá se apaga ese tinte, solo con este theme.
+   El color es el del botón del módulo en la barra lateral. Lo vigila tests/universo-paneles.test.cjs. */
+:root:is([data-theme="gato"],:not([data-theme])) :is(#welcomePanel,#walletPanel,#walletDashboardPanel,#metaPanel,#wvPanel,#activitiesPanel,#homesteadPanel,#raidTrackerPanel,#achievementsPanel,#inventoryPanel,#legendaryArmoryPanel,#buildsPanel,#accountsPanel) {
+  border: 1px solid #2A2A38; border-top: 3px solid #2A2A38; border-radius: 16px;
+  background: linear-gradient(180deg, #1C1C26, #15151D 320px);
+  box-shadow: 0 18px 50px rgba(0,0,0,.35);
+}
+/* la cabecera de cada vista sin su degradado de color: la luz ya la da el panel */
+:root:is([data-theme="gato"],:not([data-theme])) :is(#welcomePanel,#walletPanel,#walletDashboardPanel,#metaPanel,#wvPanel,#activitiesPanel,#homesteadPanel,#raidTrackerPanel,#achievementsPanel,#inventoryPanel,#legendaryArmoryPanel,#buildsPanel,#accountsPanel) :is(.wvx-hero,.achx-hero,.av-hero,.iv-hero,.rv-hero,.arm-hero,.mh-head,.wn-hero,.wl-head) { background: none; }
+:root:is([data-theme="gato"],:not([data-theme])) #welcomePanel { border-top-color: #A896FF; background: radial-gradient(70% 160px at 0 0, rgba(168,150,255,.08), transparent 70%), linear-gradient(180deg, #1C1C26, #15151D 320px); box-shadow: 0 -2px 16px -8px rgba(168,150,255,.55), 0 18px 50px rgba(0,0,0,.35); }
+:root:is([data-theme="gato"],:not([data-theme])) #walletPanel { border-top-color: #F2B94B; background: radial-gradient(70% 160px at 0 0, rgba(242,185,75,.08), transparent 70%), linear-gradient(180deg, #1C1C26, #15151D 320px); box-shadow: 0 -2px 16px -8px rgba(242,185,75,.55), 0 18px 50px rgba(0,0,0,.35); }
+:root:is([data-theme="gato"],:not([data-theme])) #walletDashboardPanel { border-top-color: #F2B94B; background: radial-gradient(70% 160px at 0 0, rgba(242,185,75,.08), transparent 70%), linear-gradient(180deg, #1C1C26, #15151D 320px); box-shadow: 0 -2px 16px -8px rgba(242,185,75,.55), 0 18px 50px rgba(0,0,0,.35); }
+:root:is([data-theme="gato"],:not([data-theme])) #metaPanel { border-top-color: #A896FF; background: radial-gradient(70% 160px at 0 0, rgba(168,150,255,.08), transparent 70%), linear-gradient(180deg, #1C1C26, #15151D 320px); box-shadow: 0 -2px 16px -8px rgba(168,150,255,.55), 0 18px 50px rgba(0,0,0,.35); }
+:root:is([data-theme="gato"],:not([data-theme])) #wvPanel { border-top-color: #15C3B7; background: radial-gradient(70% 160px at 0 0, rgba(21,195,183,.08), transparent 70%), linear-gradient(180deg, #1C1C26, #15151D 320px); box-shadow: 0 -2px 16px -8px rgba(21,195,183,.55), 0 18px 50px rgba(0,0,0,.35); }
+:root:is([data-theme="gato"],:not([data-theme])) #activitiesPanel { border-top-color: #3CC48A; background: radial-gradient(70% 160px at 0 0, rgba(60,196,138,.08), transparent 70%), linear-gradient(180deg, #1C1C26, #15151D 320px); box-shadow: 0 -2px 16px -8px rgba(60,196,138,.55), 0 18px 50px rgba(0,0,0,.35); }
+:root:is([data-theme="gato"],:not([data-theme])) #homesteadPanel { border-top-color: #D9A55B; background: radial-gradient(70% 160px at 0 0, rgba(217,165,91,.08), transparent 70%), linear-gradient(180deg, #1C1C26, #15151D 320px); box-shadow: 0 -2px 16px -8px rgba(217,165,91,.55), 0 18px 50px rgba(0,0,0,.35); }
+:root:is([data-theme="gato"],:not([data-theme])) #raidTrackerPanel { border-top-color: #F47C7C; background: radial-gradient(70% 160px at 0 0, rgba(244,124,124,.08), transparent 70%), linear-gradient(180deg, #1C1C26, #15151D 320px); box-shadow: 0 -2px 16px -8px rgba(244,124,124,.55), 0 18px 50px rgba(0,0,0,.35); }
+:root:is([data-theme="gato"],:not([data-theme])) #achievementsPanel { border-top-color: #6EA3FF; background: radial-gradient(70% 160px at 0 0, rgba(110,163,255,.08), transparent 70%), linear-gradient(180deg, #1C1C26, #15151D 320px); box-shadow: 0 -2px 16px -8px rgba(110,163,255,.55), 0 18px 50px rgba(0,0,0,.35); }
+:root:is([data-theme="gato"],:not([data-theme])) #inventoryPanel { border-top-color: #7EC3FF; background: radial-gradient(70% 160px at 0 0, rgba(126,195,255,.08), transparent 70%), linear-gradient(180deg, #1C1C26, #15151D 320px); box-shadow: 0 -2px 16px -8px rgba(126,195,255,.55), 0 18px 50px rgba(0,0,0,.35); }
+:root:is([data-theme="gato"],:not([data-theme])) #legendaryArmoryPanel { border-top-color: #E545CA; background: radial-gradient(70% 160px at 0 0, rgba(229,69,202,.08), transparent 70%), linear-gradient(180deg, #1C1C26, #15151D 320px); box-shadow: 0 -2px 16px -8px rgba(229,69,202,.55), 0 18px 50px rgba(0,0,0,.35); }
+:root:is([data-theme="gato"],:not([data-theme])) #buildsPanel { border-top-color: #C9B6FF; background: radial-gradient(70% 160px at 0 0, rgba(201,182,255,.08), transparent 70%), linear-gradient(180deg, #1C1C26, #15151D 320px); box-shadow: 0 -2px 16px -8px rgba(201,182,255,.55), 0 18px 50px rgba(0,0,0,.35); }
+:root:is([data-theme="gato"],:not([data-theme])) #accountsPanel { border-top-color: #8E96A3; background: radial-gradient(70% 160px at 0 0, rgba(142,150,163,.08), transparent 70%), linear-gradient(180deg, #1C1C26, #15151D 320px); box-shadow: 0 -2px 16px -8px rgba(142,150,163,.55), 0 18px 50px rgba(0,0,0,.35); }
+
+/* ---------- 9. Celular y movimiento ---------- */
+@media (max-width: 640px) {
+  /* la mitad de las chispas */
+  :root:is([data-theme="gato"],:not([data-theme])) body::after {
+    box-shadow:
+      8vw 80vh 2px #E8B34B, 26vw 22vh 2px #9B82FF, 44vw 60vh 2px #E8B34B,
+      62vw 8vh 2px #E8B34B, 78vw 44vh 2px #9B82FF, 92vw 70vh 2px #E8B34B,
+      8vw 180vh 2px #E8B34B, 26vw 122vh 2px #9B82FF, 44vw 160vh 2px #E8B34B,
+      62vw 108vh 2px #E8B34B, 78vw 144vh 2px #9B82FF, 92vw 170vh 2px #E8B34B;
+  }
+  /* mis poses (sección 7), más chicas */
+  :root:is([data-theme="gato"],:not([data-theme])) body.svk-p-saluda #welcomePanel [data-shv-place="welcome"] {
+    min-height: 180px; padding-right: 108px; background-size: 96px auto; background-position: right 8px bottom 0;
+  }
+  :root:is([data-theme="gato"],:not([data-theme])) body.svk-p-pensando :is(.arm-qview > .arm-empty, .cv-empty, div.wvp-empty) {
+    min-height: 160px; padding-right: 100px; background-size: 88px auto; background-position: right 6px bottom 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root:is([data-theme="gato"],:not([data-theme])) body::after { display: none; animation: none; }
+}
+@media print {
+  :root:is([data-theme="gato"],:not([data-theme])) body::before,
+  :root:is([data-theme="gato"],:not([data-theme])) body::after,
+  :root:is([data-theme="gato"],:not([data-theme])) .svk-globo { display: none; }
+}

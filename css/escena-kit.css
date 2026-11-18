@@ -1,0 +1,75 @@
+/* kit/escena-kit.css — «Escena» compartida de Shiruvana (1.0.0, 2026-11-17, BL-091 CD-3)
+   Mi globo abajo a la derecha, con mi cara y el gato robot sentado encima. Se pliega a la
+   cara y el gato. Todas las clases empiezan con svk- y los colores van en --svk-*: cada sitio
+   puede ajustarlos sin tocar este archivo.
+   Contraste (WCAG 2.1 AA, lo mide tests/kit.test.cjs):
+     texto #EDEDF2 sobre el globo #15151D, nombre ámbar #E8B34B sobre el globo,
+     botón #A6A6B8 sobre el globo, lo que dice el gato #111117 sobre ámbar.
+   Con «reducir movimiento» no hay entrada ni saltos. */
+
+.svk-globo {
+  --svk-bg: #15151D;
+  --svk-line: #2A2A38;
+  --svk-text: #EDEDF2;
+  --svk-muted: #A6A6B8;
+  --svk-amber: #E8B34B;
+  --svk-ink: #111117;
+  --svk-shadow: rgba(0, 0, 0, 0.5);
+  position: fixed; right: 20px; bottom: 20px; z-index: 900; box-sizing: border-box;
+  width: min(400px, calc(100vw - 40px));
+  display: flex; align-items: flex-start; gap: 12px; padding: 14px 14px 14px 16px;
+  border: 1px solid var(--svk-line); border-radius: 18px; background: var(--svk-bg);
+  box-shadow: 0 12px 40px var(--svk-shadow); color: var(--svk-text);
+  font: 400 0.9rem/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  animation: svkSube 0.4s ease-out 0.3s both;
+}
+.svk-globo *, .svk-globo *::before, .svk-globo *::after { box-sizing: border-box; }
+.svk-cara {
+  flex: none; width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: #000000;
+  box-shadow: 0 0 0 2px var(--svk-amber);
+}
+.svk-cara[hidden] { display: none; }
+.svk-dice { flex: 1; min-width: 0; }
+.svk-nombre { margin: 0; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--svk-amber); }
+.svk-texto { margin: 2px 0 0; overflow-wrap: anywhere; }
+.svk-plegar {
+  flex: none; width: 28px; height: 28px; padding: 0; border: 1px solid transparent; border-radius: 8px; background: none;
+  color: var(--svk-muted); font: inherit; font-size: 1rem; line-height: 1; cursor: pointer;
+}
+.svk-plegar:hover { color: var(--svk-text); border-color: var(--svk-line); }
+.svk-plegar:focus-visible, .svk-gato:focus-visible { outline: 2px solid var(--svk-amber); outline-offset: 2px; }
+
+/* El gato, sentado sobre el borde del globo */
+.svk-gato {
+  position: absolute; right: 44px; bottom: calc(100% - 14px); width: 88px; padding: 0; border: 0; background: none; cursor: pointer;
+  filter: drop-shadow(0 6px 10px var(--svk-shadow));
+}
+.svk-gato[hidden] { display: none; }
+.svk-gato img { display: block; width: 100%; height: auto; }
+.svk-gato.is-salta img { animation: svkSalta 0.6s ease both; }
+.svk-gato-dice {
+  position: absolute; right: 136px; bottom: calc(100% + 30px); padding: 5px 11px; border-radius: 12px;
+  background: var(--svk-amber); color: var(--svk-ink); font-size: 0.8rem; font-weight: 650; white-space: nowrap; pointer-events: none;
+}
+.svk-gato-dice:empty { display: none; }
+
+/* Plegado: solo la cara y el gato */
+.svk-globo.is-plegado { width: auto; padding: 8px; border-radius: 999px; align-items: center; }
+.svk-globo.is-plegado .svk-dice { display: none; }
+.svk-globo.is-plegado .svk-gato { right: 30px; width: 64px; }
+.svk-globo.is-plegado .svk-gato-dice { right: 0; }
+
+/* Celular: el globo ocupa el ancho de abajo; plegado, se corre a la derecha */
+@media (max-width: 760px) {
+  .svk-globo { right: 12px; bottom: 12px; width: calc(100vw - 24px); }
+  .svk-globo.is-plegado { width: auto; }
+  .svk-gato { width: 72px; }
+}
+
+@keyframes svkSube { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes svkSalta { 0%, 100% { transform: none; } 40% { transform: translateY(-12px) rotate(-4deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .svk-globo { animation: none; }
+  .svk-gato.is-salta img { animation: none; }
+}

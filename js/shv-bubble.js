@@ -1,6 +1,21 @@
 /*!
  * js/shv-bubble.js — Shiruvana que aparece: mi globo (BL-075 SHE-1, DEC-038)
- * Versión: 1.4.0
+ * Versión: 1.6.0
+ *
+ * 1.6.0 (BL-092 BV-4, D4): con el globo puesto también preparo mis poses de cuerpo entero sin fondo (saluda y
+ *   pensando) con el recorte del kit (posesSinFondo, una vez por imagen, desde assets/brand/shiruvana/): quedan en
+ *   body como --svk-p-<pose> y la clase svk-p-<pose>. css/universo.css 1.3.0 las pone en Inicio y en las pantallas
+ *   vacías. Mientras no están listas no se ve nada: nunca un rectángulo negro.
+ *
+ * 1.5.0 (BL-092 BV-3, D2): con el theme Gato Negro (el oficial; también sin data-theme, como css/universo.css)
+ *   hablo desde mi globo con el gato, abajo a la derecha, en vez del rincón de la Sidebar. Cargo el kit de escena
+ *   copiado en la Bóveda con versión fija (js/escena-kit.js y css/escena-kit.css 1.0.0, iguales byte a byte al del
+ *   repo shiruvana: lo vigila tests/shv-escena.test.cjs) recién cuando hace falta, así los otros 18 themes no bajan
+ *   nada y quedan como en 1.4.0. El globo arranca plegado (mi cara y el gato) y se abre solo con algo nuevo: mismas
+ *   reglas de siempre (una vez por novedad, 2 s, nunca con una ventana abierta, 12 s, Escape, «Después», silenciar).
+ *   Plegarlo con un mensaje a la vista lo da por leído; abrirlo con algo sin leer te lo muestra; abrirlo sin nada
+ *   te dice lo que decía mi rincón. Mi cara sale de js/shiruvana.js (FACES: no pide nada a la red) y el gato de
+ *   assets/brand/gato/. No guarda nada nuevo. Si el kit no carga o cambiás de theme, vuelvo al rincón.
  *
  * 1.4.0 (BL-076 SHV-5a): lo que escribo dentro del módulo (avisos, lo que el módulo pide dejar escrito o si me
  *   silenciaste) también dice «Lo sé por», con la misma fuente que uso en el globo. meta.at (opcional): la hora
@@ -36,7 +51,7 @@
  */
 (function (root) {
   'use strict';
-  var VERSION = '1.4.0';
+  var VERSION = '1.6.0';
   var SEEN_KEY = 'gn:shv:seen', QUIET_KEY = 'gn:shv:quiet';
   var DELAY = 2000, TTL = 12000, RETRY = 3000, RETRY_ROUTE = 400, MIN_LEFT = 3000, SEEN_MAX = 200, SEEN_DAYS = 60;
   var ID = 'shvBubble', LIVE_ID = 'shvBubbleLive', STYLE_ID = 'shv-bubble-css';
@@ -219,6 +234,7 @@
       box.parentNode.removeChild(box);
       if (hadFocus) focusBack();
     }
+    escenaRest();
     if (!c) return false;
     markSeen(c);
     if (how === 'later') st.unread.push(c);
@@ -229,7 +245,7 @@
 
   function render(o, focus) {
     var C = root.ShvCore;
-    var voice = C && C.render ? C.render(o, { doc: doc }) : null;
+    var voice = C && C.render ? C.render(o, { doc: doc, avatar: !esc.on }) : null; // en el globo, mi cara ya está
     if (!voice) return false;
     var live = ensure();
     var box = el('section', 'shv-bub');
@@ -255,14 +271,13 @@
     box.addEventListener('mouseleave', resume);
     box.addEventListener('focusin', pause);
     box.addEventListener('focusout', function (e) { if (!e || !e.relatedTarget || !box.contains(e.relatedTarget)) resume(); });
-    place(box);
-    doc.body.appendChild(box);
+    if (!escenaPut(box, o)) { place(box); doc.body.appendChild(box); }
     st.cur = o;
     live.textContent = '';
     live.textContent = (root.Shiruvana && root.Shiruvana.KINDS && root.Shiruvana.KINDS[o.kind] ? root.Shiruvana.KINDS[o.kind].label : 'Shiruvana') + ': ' + o.text.join(' ');
     st.left = TTL;
     arm(TTL);
-    if (focus && x.focus) x.focus(); // solo si me abriste vos (reopen)
+    if (focus && x.focus && !esc.on) x.focus(); // solo si me abriste vos (reopen); en el globo el foco queda en su botón
     return true;
   }
 
@@ -447,6 +462,7 @@
     ensure();
     paintQuiet();
     setUnread();
+    escenaWire();
     if (typeof root.MutationObserver === 'function' && !st.mo) {
       // Mi rincón se rearma cuando cambia lo que dice: vuelvo a poner el punto y «Te dejé un mensaje».
       st.mo = new root.MutationObserver(function () { setUnread(); });
@@ -455,12 +471,134 @@
     return true;
   }
 
+  // ------------------------------------------------------------------ BV-3: mi globo con el gato (theme Gato Negro)
+  var KIT_V = '1.0.0', KIT_JS = 'js/escena-kit.js', KIT_CSS = 'css/escena-kit.css', BRAND = 'assets/brand/';
+  var ESC_HOLA = 'Hola. Cuando tenga algo nuevo para vos, te aviso acá.';
+  var esc = { on: false, g: null, loading: false, failed: false, mo: null, poses: false };
+  var POSES = ['saluda', 'pensando']; // BV-4: Inicio saluda; las pantallas vacías, pensando
+
+  /** El theme oficial: data-theme="gato" o todavía sin data-theme (el primer pintado, igual que css/universo.css). */
+  function gatoTheme() {
+    var r = doc && doc.documentElement, t = r && r.getAttribute ? r.getAttribute('data-theme') : null;
+    return t == null || t === 'gato';
+  }
+  function kitReady() { var K = root.ShiruvanaKit; return !!(K && typeof K.globo === 'function'); }
+  function face(kind) {
+    var S = root.Shiruvana;
+    return (S && S.FACES && S.FACES[kind]) || (S && S.AVATAR) || '';
+  }
+  /** Bajo el kit una sola vez (estilos y código, con su versión fija). done(true) si quedó listo. */
+  function loadKit(done) {
+    if (kitReady()) { done(true); return; }
+    if (esc.failed || esc.loading || !doc.createElement || !doc.head) return;
+    esc.loading = true;
+    var left = 2;
+    function one(ok) {
+      if (!ok) esc.failed = true;
+      if (--left) return;
+      esc.loading = false;
+      done(!esc.failed && kitReady());
+    }
+    var l = doc.createElement('link');
+    l.id = 'shvKitCss';
+    l.rel = 'stylesheet';
+    l.href = KIT_CSS + '?v=' + KIT_V;
+    l.onload = function () { one(true); };
+    l.onerror = function () { one(false); };
+    var s = doc.createElement('script');
+    s.id = 'shvKitJs';
+    s.async = false;
+    s.src = KIT_JS + '?v=' + KIT_V;
+    s.onload = function () { one(true); };
+    s.onerror = function () { one(false); };
+    doc.head.appendChild(l);
+    doc.head.appendChild(s);
+  }
+  function escenaOn() {
+    if (esc.on || !kitReady() || !gatoTheme() || !doc.body) return false;
+    var g = root.ShiruvanaKit.globo({ texto: ESC_HOLA, cara: 'hola', base: BRAND, storageKey: null });
+    var cara = g.el.querySelector('.svk-cara'), f = face('saluda');
+    if (cara && f) cara.src = f; // mi cara oficial de la Bóveda, sin pedirla a la red
+    g.plegar(true);
+    esc.g = g;
+    esc.on = true;
+    if (doc.body.classList) doc.body.classList.add('shv-escena');
+    var pl = g.el.querySelector('.svk-plegar');
+    if (pl) pl.addEventListener('click', onFold); // corre después del del kit: ya cambió de estado
+    st.anchor = pl || null; // el punto de «sin leer» y el foco al cerrar van al botón de mi globo
+    setUnread();
+    var K = root.ShiruvanaKit;
+    if (!esc.poses && typeof K.posesSinFondo === 'function') { esc.poses = true; K.posesSinFondo({ el: doc.body, base: BRAND, poses: POSES }); }
+    return true;
+  }
+  function escenaOff() {
+    if (!esc.on) return;
+    if (st.cur) close('later');
+    esc.g.destruir();
+    esc.g = null;
+    esc.on = false;
+    st.anchor = null;
+    if (doc.body && doc.body.classList) doc.body.classList.remove('shv-escena');
+    setUnread();
+  }
+  function escenaSync() {
+    if (!gatoTheme()) { escenaOff(); return; }
+    if (!esc.on) loadKit(function (ok) { if (ok) escenaOn(); });
+  }
+  function escenaWire() {
+    escenaSync();
+    var r = doc.documentElement;
+    if (typeof root.MutationObserver === 'function' && !esc.mo && r) {
+      esc.mo = new root.MutationObserver(escenaSync);
+      esc.mo.observe(r, { attributes: true, attributeFilter: ['data-theme'] });
+    }
+  }
+  /** Lo que decía mi rincón de la Sidebar (lo arma js/shiruvana-places.js), para cuando abrís el globo sin novedades. */
+  function cornerText() {
+    var b = doc.querySelector ? doc.querySelector('#appSidebar [data-shv-place="corner"] .shv-voice__body') : null;
+    var ps = b && b.querySelectorAll ? b.querySelectorAll('p') : [], out = [];
+    for (var i = 0; i < ps.length; i++) if (ps[i].textContent) out.push(ps[i].textContent);
+    return out.join(' ');
+  }
+  // Tocaste el botón de mi globo (el kit ya lo plegó o lo abrió).
+  function onFold() {
+    if (!esc.g) return;
+    if (esc.g.plegado()) { if (st.cur) close('read'); return; } // plegarme con un mensaje a la vista = leído
+    if (st.cur) return;
+    if (st.unread.length) { reopen(); return; } // abrirme con algo sin leer = te lo muestro
+    var t = esc.g.el.querySelector('.svk-texto');
+    if (t) t.textContent = cornerText() || ESC_HOLA;
+  }
+  /** Pone el mensaje dentro de mi globo. false si no hay globo (otro theme o sin kit): sale como en 1.4.0. */
+  function escenaPut(box, o) {
+    var g = esc.on && esc.g, dice = g && g.el.querySelector('.svk-dice');
+    if (!dice) return false;
+    box.className += ' shv-bub--escena';
+    dice.appendChild(box);
+    if (g.el.classList) g.el.classList.add('shv-hablando');
+    var cara = g.el.querySelector('.svk-cara'), f = face(o.kind);
+    if (cara && f) { cara.hidden = false; cara.src = f; }
+    g.plegar(false);
+    g.gato(o.kind === 'explica' ? 'camina' : 'festeja', '');
+    return true;
+  }
+  /** Se fue el mensaje: vuelvo a mi cara de siempre y me pliego. */
+  function escenaRest() {
+    var g = esc.on && esc.g;
+    if (!g) return;
+    if (g.el.classList) g.el.classList.remove('shv-hablando');
+    var cara = g.el.querySelector('.svk-cara'), f = face('saluda');
+    if (cara && f) cara.src = f;
+    if (!g.plegado()) g.plegar(true);
+  }
+
   root.ShvBubble = {
     version: VERSION, SEEN_KEY: SEEN_KEY, QUIET_KEY: QUIET_KEY, DELAY: DELAY, TTL: TTL, ID: ID, CSS: CSS,
     offer: offer, reopen: reopen, close: function () { return close('read'); }, quiet: quiet, setAnchor: setAnchor,
     seen: seenObs, wire: wire, speak: speak, seenCount: seenCount, forgetSeen: forgetSeen,
     unread: function () { return st.unread.length; }, current: function () { return st.cur; },
-    _pure: { sig: sig, prune: prune }, _setStorage: function (L) { st.ls = L; }
+    _pure: { sig: sig, prune: prune }, _setStorage: function (L) { st.ls = L; },
+    escena: function () { return esc.on ? esc.g : null; }, KIT: { v: KIT_V, js: KIT_JS, css: KIT_CSS, base: BRAND }
   };
   // La Sidebar y mi rincón se arman en DOMContentLoaded; boot.js me puede cargar antes o después.
   if (doc && doc.addEventListener) {

@@ -3,22 +3,28 @@
    Construido con el Gato Design System (gw2-factory-dashboard/gds, DEC-010):
    obsidiana para fondos, niebla para texto, arcano para acción e identidad,
    ámbar para el oro y la marca. El contraste lo verifica tests/theme-gato.test.cjs.
+   Versión: 2.0.0 (2026-11-18) · la pide js/theme-selector.js (THEME_V) e index.html con ?v=2.0.0:
+   si cambia un color, sube la versión acá y allá, o el navegador sigue con la vieja.
+   BV-6 (BL-092, 2026-11-18): la obsidiana es la de mi universo (La Guarida y el Centro de
+   mando): fondo #0B0B10, superficie #15151D, línea #2A2A38. Antes era gris azulada
+   (#0F1117 / #1A1F2B / #2E3649) y chocaba con el fondo y mi globo de css/universo.css.
+   Textos y acentos no cambian; los tintes semánticos son el color al 14 % sobre la superficie.
    ========================================================================== */
 
 :root,
 [data-theme="gato"] {
   /* Colores base (obsidiana) */
-  --bg: #0F1117;
-  --bg-0: #0F1117;
-  --bg-1: #1A1F2B;
-  --bg-2: #1A1F2B;
-  --panel: #1A1F2B;
-  --panel-border: #2E3649;
-  --panel-outline: #232A3A;
+  --bg: #0B0B10;
+  --bg-0: #0B0B10;
+  --bg-1: #15151D;
+  --bg-2: #15151D;
+  --panel: #15151D;
+  --panel-border: #2A2A38;
+  --panel-outline: #1C1C26;
 
   /* Bordes */
-  --bd-1: #2E3649;
-  --bd-2: #3B4560;
+  --bd-1: #2A2A38;
+  --bd-2: #3A3A4C;
 
   /* Texto (niebla) */
   --text: #F4F6FA;
@@ -39,20 +45,20 @@
 
   /* Colores semánticos (tintes del GDS compuestos sobre la superficie) */
   --color-green: #3CC48A;
-  --color-green-bg: #1D3436;
+  --color-green-bg: #1A2E2C;
   --color-amber: #F2B94B;
-  --color-amber-bg: #38352F;
+  --color-amber-bg: #342C23;
   --color-red: #F47C7C;
-  --color-red-bg: #392630;
+  --color-red-bg: #34232A;
   --color-blue: #6EA3FF;
-  --color-blue-bg: #212E49;
+  --color-blue-bg: #21293D;
   --color-gray: #8E96A3;
-  --color-gray-bg: #232A3A;
+  --color-gray-bg: #1C1C26;
 
   /* Botones */
-  --btn: #232A3A;
-  --btn-border: #6B7690;
-  --btn-hover: #2E3649;
+  --btn: #1C1C26;
+  --btn-border: #72728C;
+  --btn-hover: #2A2A38;
 
   /* Glow y elevaciones (halo arcano tenue) */
   --glow-base: rgba(123, 92, 255, 0.12);
@@ -83,7 +89,7 @@
   --font: "Inter", system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   /* Sombras */
-  --shadow: 0 0 0 1px #232A3A inset;
+  --shadow: 0 0 0 1px #1C1C26 inset;
   --shadow-hover: 0 0 0 1px #7B5CFF, 0 4px 12px rgba(123,92,255,.25);
 
   /* Hover */
@@ -99,7 +105,7 @@
   --bg-texture: none;
 
   /* Scrollbar */
-  --scrollbar-color: #3B4560;
+  --scrollbar-color: #3A3A4C;
 
   /* Animación */
   --animation: fadeIn 0.2s ease-out;
@@ -111,22 +117,22 @@
   --glow-color: rgba(123,92,255,0.35);
 
   /* Home Nodes */
-  --gw-mining-bg: linear-gradient(180deg,#232A3A,#1A1F2B);
-  --gw-logging-bg: linear-gradient(180deg,#1E2A2B,#151C1F);
-  --gw-harvest-bg: linear-gradient(180deg,#22263A,#1A1F2B);
+  --gw-mining-bg: linear-gradient(180deg,#1C1C26,#15151D);
+  --gw-logging-bg: linear-gradient(180deg,#19221F,#111515);
+  --gw-harvest-bg: linear-gradient(180deg,#1F1C2C,#15151D);
 
   /* Activities */
-  --gw-card-bg: #1A1F2B;
-  --gw-card-borda: #2E3649;
-  --gw-card-borda-hover: #3B4560;
+  --gw-card-bg: #15151D;
+  --gw-card-borda: #2A2A38;
+  --gw-card-borda-hover: #3A3A4C;
   --gw-muted: #8E96A3;
   --gw-ok: #3CC48A;
   --gw-bad: #F47C7C;
-  --gw-chip-bg: linear-gradient(180deg,#232A3A,#1A1F2B);
-  --gw-chip-borda: #3B4560;
+  --gw-chip-bg: linear-gradient(180deg,#1C1C26,#15151D);
+  --gw-chip-borda: #3A3A4C;
   --gw-pill-ok-bg: rgba(47,182,124,.14);
   --gw-pill-bad-bg: rgba(217,74,74,.16);
-  --gw-shadow: 0 0 0 1px rgba(59,69,96,.6) inset, 0 2px 18px rgba(8,9,13,.6);
+  --gw-shadow: 0 0 0 1px rgba(58,58,76,.6) inset, 0 2px 18px rgba(5,5,8,.6);
 
   /* Esquema de color nativo */
   color-scheme: dark;

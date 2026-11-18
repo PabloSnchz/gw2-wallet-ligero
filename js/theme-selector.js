@@ -1,6 +1,6 @@
 /*!
  * js/theme-selector.js — Selector de Temas
- * Versión: 1.2.0
+ * Versión: 1.3.0
  * Proyecto: Bóveda del Gato Negro (GW2 Wallet Ligero)
  *
  * Responsabilidad:
@@ -14,6 +14,9 @@
  *    que init() guardaba siempre) pasa a "Gato Negro". Si después elige Bóveda,
  *    se respeta: la marca gn:theme:official impide repetir la migración.
  *  - La etiqueta "Activo" elige el texto más legible sobre el acento de cada theme.
+ *
+ * 1.3.0 (BL-092 BV-6a): cada theme se pide con su versión (THEME_V). Antes todos iban con ?v=1.0.0 fijo,
+ *  así que al cambiar los colores de Gato Negro el navegador seguía con los de antes.
  */
 
 (function (root) {
@@ -24,9 +27,11 @@
   var DEFAULT_THEME = 'gato';
   var LS_OFFICIAL = 'gn:theme:official';
   var OFFICIAL_MARK = 'gato-v1';
+  // Versión de cada CSS de theme (la dirección cambia cuando cambia el archivo). Los que no están: 1.0.0.
+  var THEME_V = { gato: '2.0.0' };
 
   var THEMES = [
-    { id: 'gato',            name: 'Gato Negro',      mood: 'oficial',    colors: ['#0F1117', '#1A1F2B', '#A896FF', '#F2B94B'] },
+    { id: 'gato',            name: 'Gato Negro',      mood: 'oficial',    colors: ['#0B0B10', '#15151D', '#A896FF', '#F2B94B'] },
     { id: 'boveda',          name: 'Bóveda',          mood: 'serio',      colors: ['#0e0e10', '#15151a', '#ffd966', '#7bc2ff'] },
     { id: 'catppuccin',      name: 'Catppuccin',      mood: 'pastel',     colors: ['#1e1e2e', '#28283a', '#f5c2e7', '#89b4fa'] },
     { id: 'cyberpunk',       name: 'Cyberpunk',       mood: 'agresivo',   colors: ['#0a0a0f', '#12121a', '#ff00ff', '#00ffff'] },
@@ -106,7 +111,7 @@
       document.head.appendChild(link);
     }
 
-    link.href = 'css/themes/' + theme + '.css?v=1.0.0';
+    link.href = 'css/themes/' + theme + '.css?v=' + (THEME_V[theme] || '1.0.0');
     document.documentElement.setAttribute('data-theme', theme);
     state.currentTheme = theme;
     setSavedTheme(theme);
@@ -290,7 +295,7 @@
       injectThemeButton();
     }
 
-    console.info(LOGT, 'OK v1.2.0 — Temas disponibles:', THEMES.length);
+    console.info(LOGT, 'OK v1.3.0 — Temas disponibles:', THEMES.length);
   }
 
   root.ThemeSelector = {
